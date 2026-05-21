@@ -1,0 +1,64 @@
+<div class="detail-container" dir="rtl" *ngIf="!loading">
+
+  <!-- Back Button -->
+  <button class="btn-back" (click)="router.navigate(['/voiture-list'])">← العودة للقائمة</button>
+
+  <!-- Top Section: Image & Info -->
+  <div class="detail-header">
+    <div class="car-image">
+      <img [src]="car?.image || 'assets/placeholder.png'" alt="{{ car?.modele }}">
+    </div>
+
+    <div class="car-info">
+      <h1>{{ car?.marque }} {{ car?.modele }} | {{ car?.annee }}</h1>
+
+      <div class="price-tag">
+        {{ car?.prixJour }} <span>MAD / يوم</span>
+      </div>
+
+      <!-- General Info Grid -->
+      <h3>المعلومات العامة</h3>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="label">السنة:</span>
+          <span class="value">{{ car?.annee }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">المسافة:</span>
+          <span class="value">{{ car?.kilometrageActuel }} كم</span>
+        </div>
+        <div class="info-item">
+          <span class="label">الوقود:</span>
+          <span class="value">{{ car?.typeCarburant }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">اللون:</span>
+          <span class="value">{{ car?.couleur || 'N/A' }}</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn-edit" (click)="router.navigate(['/voiture-create'])">تعديل البيانات</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Statistics Section (Mockup) -->
+  <div class="stats-section">
+    <div class="stats-header">
+      <h3>(السنة 12) إحصائيات المركبة</h3>
+    </div>
+
+    <div class="chart-placeholder">
+      <!-- You can integrate Chart.js here later -->
+      <div class="chart-row">
+        <div class="bar" style="height: 40%"></div>
+        <div class="bar" style="height: 70%"></div>
+        <div class="bar" style="height: 50%"></div>
+        <div class="bar" style="height: 90%"></div>
+        <div class="bar" style="height: 60%"></div>
+      </div>
+    </div>
+  </div>
+
+</div>

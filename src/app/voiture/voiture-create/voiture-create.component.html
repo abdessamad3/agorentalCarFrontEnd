@@ -1,0 +1,70 @@
+<div class="create-container" dir="rtl">
+  <div class="card">
+    <h2>إضافة بيانات السيارة الجديدة</h2>
+
+    <form [formGroup]="carForm" (ngSubmit)="onSubmit()">
+
+      <!-- Image Upload Area -->
+      <div class="image-upload" (click)="fileInput.click()">
+        <img *ngIf="imagePreview" [src]="imagePreview" alt="Preview">
+        <div *ngIf="!imagePreview" class="placeholder">
+          <span>📷</span>
+          <p>رفع صورة السيارة</p>
+        </div>
+        <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" style="display: none;">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>العلامة التجارية (Brand)*</label>
+          <input type="text" formControlName="marque" placeholder="مثال: Dacia">
+        </div>
+        <div class="form-group">
+          <label>الموديل (Model)*</label>
+          <input type="text" formControlName="modele" placeholder="مثال: Sandero">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>السنة (Year)</label>
+          <input type="number" formControlName="annee">
+        </div>
+        <div class="form-group">
+          <label>المسافة (Mileage)</label>
+          <input type="number" formControlName="kilometrage">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>السعر اليومي (Price)</label>
+          <input type="number" formControlName="prix">
+        </div>
+        <div class="form-group">
+          <label>نوع الوقود (Fuel)</label>
+          <select formControlName="typeCarburant">
+            <option value="Essence">بنزين</option>
+            <option value="Diesel">ديزل</option>
+            <option value="Electrique">كهرباء</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>اللون (Color)</label>
+          <input type="text" formControlName="couleur">
+        </div>
+        <div class="form-group" style="display: flex; align-items: center; padding-top: 1rem;">
+          <input type="checkbox" formControlName="climatisation" id="ac">
+          <label for="ac" style="margin: 0 0 0 0.5rem; margin-bottom: 0;">تكييف (AC)</label>
+        </div>
+      </div>
+
+      <button type="submit" [disabled]="isUploading" class="btn-submit">
+        {{ isUploading ? 'جاري الحفظ...' : 'حفظ البيانات' }}
+      </button>
+    </form>
+  </div>
+</div>

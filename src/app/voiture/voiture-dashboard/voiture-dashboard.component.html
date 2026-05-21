@@ -1,0 +1,28 @@
+<div class="voiture-container">
+
+  <!-- Header -->
+  <div class="voiture-header">
+    <div class="header-left">
+      <h1>{{ getLabel('myCars') }}</h1>
+      <p class="subtitle">Manage your fleet, finances, and users.</p>
+    </div>
+  </div>
+
+  <!-- Tab Navigation -->
+  <nav class="tab-nav">
+    <a
+      *ngFor="let item of subMenuItems"
+      [routerLink]="item.link"
+      routerLinkActive="active-tab"
+      class="tab-item"
+    >
+      <span class="tab-icon">{{ item.icon }}</span>
+      <span class="tab-label">{{ getLabel(item.key) }}</span>
+    </a>
+  </nav>
+
+  <!-- Child Content Area -->
+  <div class="content-area">
+    <router-outlet></router-outlet>
+  </div>
+</div>

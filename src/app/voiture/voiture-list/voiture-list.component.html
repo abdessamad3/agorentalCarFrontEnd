@@ -1,0 +1,25 @@
+<div class="list-container" dir="rtl">
+  <div class="header">
+    <h1>سياراتي</h1>
+    <button class="btn-add" (click)="router.navigate(['/voiture-create'])">+ إضافة سيارة</button>
+  </div>
+
+  <div *ngIf="loading">جاري التحميل...</div>
+
+  <div class="grid">
+    <div *ngFor="let car of voitures" class="car-card" (click)="viewCar(car.id)">
+      <div class="car-img">
+        <img [src]="car.fullImage || 'assets/placeholder.png'" alt="{{ car.modele }}">
+      </div>
+      <div class="car-info">
+        <h3>{{ car.marque }} {{ car.modele }}</h3>
+        <p class="year">{{ car.annee }}</p>
+        <p class="price">{{ car.prixJour }} <span>Mad/jour</span></p>
+        <div class="tags">
+          <span class="tag">{{ car.kilometrageActuel }} كم</span>
+          <span class="tag">{{ car.typeCarburant }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

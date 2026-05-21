@@ -1,0 +1,52 @@
+<div class="dashboard-container">
+  <h1>Dashboard</h1>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Available</div>
+      <div class="kpi-value">{{ stats.availableVoitures }}</div>
+      <div class="kpi-icon">✅</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-label">Active Rentals</div>
+      <div class="kpi-value">{{ stats.activeReservations }}</div>
+      <div class="kpi-icon">📅</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-label">Total Revenue</div>
+      <div class="kpi-value">{{ (stats.revenue | number:'1.0-0') }} MAD</div>
+      <div class="kpi-icon">💰</div>
+    </div>
+  </div>
+
+  <!-- Recent Reservations -->
+  <div class="recent-section">
+    <h2>Recent Reservations</h2>
+
+    <div *ngIf="reservations.length > 0; else noReservations" class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>Client</th>
+            <th>Car</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let res of reservations">
+            <td>{{ res.client }}</td>
+            <td>{{ res.voiture }}</td>
+            <td>{{ res.dateDebut }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <ng-template #noReservations>
+      <div class="no-data">No recent reservations</div>
+    </ng-template>
+  </div>
+</div>

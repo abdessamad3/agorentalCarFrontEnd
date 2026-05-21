@@ -1,0 +1,37 @@
+<div class="sidebar" [class.open]="isSidebarOpen" [attr.dir]="dir">
+
+  <!-- Logo -->
+  <div class="sidebar-header">
+    <div class="logo-icon">🚙</div>
+    <div class="logo-text">{{ getLabel('logo') }}</div>
+  </div>
+
+  <!-- Language Switcher -->
+  <div class="lang-switcher">
+    <button [class.active]="currentLang === 'en'" (click)="changeLanguage('en')">EN</button> |
+    <button [class.active]="currentLang === 'fr'" (click)="changeLanguage('fr')">FR</button> |
+    <button [class.active]="currentLang === 'ar'" (click)="changeLanguage('ar')">AR</button>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="sidebar-nav">
+    <a
+      *ngFor="let item of menuItems"
+      [routerLink]="item.link"
+      routerLinkActive="active-link"
+      (click)="onClose()"
+      class="nav-item"
+    >
+      <span class="nav-icon">{{ item.icon }}</span>
+      <span class="nav-label">{{ getLabel(item.key) }}</span>
+    </a>
+  </nav>
+
+  <!-- Footer / Logout -->
+  <div class="sidebar-footer">
+    <button class="logout-btn" (click)="onLogout()">
+      <span class="logout-icon">🚪</span>
+      <span>{{ getLabel('logout') }}</span>
+    </button>
+  </div>
+</div>

@@ -1,0 +1,41 @@
+<div class="register-container">
+  <div class="card">
+    <h2>Register</h2>
+
+    <div *ngIf="errorMessage" class="error-message">
+      {{ errorMessage }}
+    </div>
+
+    <div *ngIf="successMessage" class="success-message">
+      {{ successMessage }}
+    </div>
+
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input id="email" type="email" formControlName="email" placeholder="Enter your email">
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input id="password" type="password" formControlName="password" placeholder="Min 8 characters">
+      </div>
+
+      <div class="form-group">
+        <label for="confirmPassword">Confirm Password</label>
+        <input id="confirmPassword" type="password" formControlName="confirmPassword" placeholder="Confirm password">
+        <div *ngIf="registerForm.errors?.['mismatch'] && registerForm.get('confirmPassword')?.touched" class="error-text">
+          Passwords do not match
+        </div>
+      </div>
+
+      <button type="submit" [disabled]="isLoading">
+        {{ isLoading ? 'Registering...' : 'Register' }}
+      </button>
+    </form>
+
+    <div class="footer-link">
+      <p>Already have an account? <a routerLink="/login">Login</a></p>
+    </div>
+  </div>
+</div>
