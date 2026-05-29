@@ -1,0 +1,60 @@
+<header class="top-header" [class.rtl]="dir === 'rtl'">
+
+  <!-- Left section -->
+  <div class="header-left">
+    <button class="hamburger-btn" (click)="menuToggle.emit()" title="Menu">
+      <span class="hamburger-icon">&#9776;</span>
+    </button>
+
+    <div class="company-chip">
+      <span class="company-icon">🚗</span>
+      <span class="company-name">AGOCAR</span>
+    </div>
+
+    <div class="header-actions">
+      <a routerLink="/client" class="btn-outline-header">
+        <span>+</span> {{ t('newClient') }}
+      </a>
+      <a routerLink="/reservation/create" class="btn-filled-header">
+        <span>+</span> {{ t('newBooking') }}
+      </a>
+    </div>
+
+    <div class="profit-chip" [class.profit-positive]="netProfit >= 0" [class.profit-negative]="netProfit < 0">
+      <span class="profit-icon">{{ netProfit >= 0 ? '📈' : '📉' }}</span>
+      <span class="profit-label">{{ t('netProfit') }}:</span>
+      <span class="profit-value">{{ netProfit | number:'1.0-0' }} MAD</span>
+    </div>
+
+    <div class="pending-chip" *ngIf="pendingAmount > 0">
+      <span class="pending-icon">💳</span>
+      <span class="pending-label">{{ t('clientsOwed') }}:</span>
+      <span class="pending-value">{{ pendingAmount | number:'1.0-0' }} MAD</span>
+    </div>
+  </div>
+
+  <!-- Right section -->
+  <div class="header-right">
+    <div class="lang-switcher">
+      <button [class.active]="currentLang === 'en'" (click)="changeLang('en')">EN</button>
+      <span class="lang-sep">|</span>
+      <button [class.active]="currentLang === 'fr'" (click)="changeLang('fr')">FR</button>
+      <span class="lang-sep">|</span>
+      <button [class.active]="currentLang === 'ar'" (click)="changeLang('ar')">AR</button>
+    </div>
+
+    <div class="header-divider"></div>
+
+    <button class="notif-btn" title="Notifications">
+      <span class="notif-icon">🔔</span>
+    </button>
+
+    <div class="header-divider"></div>
+
+    <div class="page-title-area">
+      <span class="page-title-text">{{ t(pageTitle) }}</span>
+      <span class="brand-logo">🚙 AGOCAR</span>
+    </div>
+  </div>
+
+</header>

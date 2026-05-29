@@ -1,0 +1,169 @@
+/* ===== TABS ===== */
+.tab-bar {
+  display: flex;
+  gap: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.tab-btn {
+  padding: 0.6rem 1.25rem;
+  background: white;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #718096;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background 0.15s, color 0.15s;
+}
+
+.tab-btn:not(:last-child) {
+  border-right: 1px solid #e2e8f0;
+}
+
+.tab-btn.active {
+  background: #3182ce;
+  color: white;
+}
+
+.tab-btn.active .tab-count {
+  background: rgba(255,255,255,0.25);
+  color: white;
+}
+
+.tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #edf2f7;
+  color: #4a5568;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border-radius: 999px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+}
+
+.sold-count { background: #fed7d7; color: #c53030; }
+.tab-btn.active .sold-count { background: rgba(255,255,255,0.25); color: white; }
+
+/* ===== PLATE BADGE ===== */
+.plate-badge {
+  display: inline-block;
+  font-family: 'Courier New', monospace;
+  font-weight: 700;
+  font-size: 0.82rem;
+  background: #f7fafc;
+  border: 1px solid #cbd5e0;
+  border-radius: 5px;
+  padding: 0.15rem 0.55rem;
+  letter-spacing: 0.05em;
+  color: #2d3748;
+}
+
+/* ===== SELL BUTTON ===== */
+.btn-sell {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 0.9rem;
+  background: #48bb78;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: background 0.2s, box-shadow 0.2s;
+  white-space: nowrap;
+}
+
+.btn-sell:hover {
+  background: #38a169;
+  box-shadow: 0 2px 8px rgba(72,187,120,0.35);
+}
+
+/* ===== SELL CONFIRM BUTTON ===== */
+.btn-sell-confirm {
+  padding: 0.65rem 1.5rem;
+  background: #48bb78;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.95rem;
+  transition: background 0.2s;
+}
+
+.btn-sell-confirm:hover:not(:disabled) { background: #38a169; }
+.btn-sell-confirm:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ===== CAR SUMMARY INSIDE MODAL ===== */
+.sell-car-summary {
+  display: flex;
+  gap: 1.5rem;
+  background: #f7fafc;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.summary-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #718096;
+}
+
+.summary-val {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+/* ===== SELL WARNING ===== */
+.sell-warning {
+  background: #fffaf0;
+  border: 1px solid #fbd38d;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  color: #744210;
+  margin-top: 0.5rem;
+}
+
+/* ===== PRICE + PROFIT ===== */
+.price-cell {
+  font-weight: 700;
+  color: #276749;
+}
+
+.profit-positive {
+  font-weight: 700;
+  color: #276749;
+}
+
+.profit-negative {
+  font-weight: 700;
+  color: #c53030;
+}
+
+/* ===== SOLD ROW DIM ===== */
+.sold-row td {
+  opacity: 0.8;
+}

@@ -1,0 +1,58 @@
+<div class="form-container">
+  <div class="form-card">
+    <h1>🏢 Add New Bureau</h1>
+    <p class="subtitle">Create a new office location</p>
+
+    <form [formGroup]="bureauForm" (ngSubmit)="onSubmit()">
+
+      <!-- Name -->
+      <div class="form-group">
+        <label for="nom">Bureau Name *</label>
+        <input
+          id="nom"
+          type="text"
+          formControlName="nom"
+          placeholder="e.g., Fès Office"
+          class="form-input"
+        />
+        <div *ngIf="bureauForm.get('nom')?.invalid && bureauForm.get('nom')?.touched" class="error-text">
+          Bureau name is required
+        </div>
+      </div>
+
+      <!-- Address -->
+      <div class="form-group">
+        <label for="adresse">Address</label>
+        <input
+          id="adresse"
+          type="text"
+          formControlName="adresse"
+          placeholder="e.g., 123 Main Street, Fès"
+          class="form-input"
+        />
+      </div>
+
+      <!-- Status -->
+      <div class="form-group">
+        <label for="statut">Status *</label>
+        <select formControlName="statut" class="form-input">
+          <option value="actif">✅ Active</option>
+          <option value="inactif">⏸️ Inactive</option>
+        </select>
+        <div *ngIf="bureauForm.get('statut')?.invalid && bureauForm.get('statut')?.touched" class="error-text">
+          Status is required
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      <div class="form-buttons">
+        <button type="button" (click)="onCancel()" class="btn-cancel">
+          Cancel
+        </button>
+        <button type="submit" [disabled]="isSubmitting" class="btn-submit">
+          {{ isSubmitting ? '⏳ Creating...' : '✅ Create Bureau' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

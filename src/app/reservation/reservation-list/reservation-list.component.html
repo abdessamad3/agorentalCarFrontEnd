@@ -1,0 +1,261 @@
+<div class="res-page" [class.rtl]="dir === 'rtl'">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1 class="page-title">{{ t('reservations') }}</h1>
+    <div class="header-actions">
+      <div class="search-box">
+        <input type="text" [(ngModel)]="search" [placeholder]="t('search') + '...'" />
+      </div>
+      <a routerLink="/reservation/create" class="btn-new">+ {{ t('newBooking') }}</a>
+    </div>
+  </div>
+
+  <!-- Loading / Error -->
+  <div *ngIf="loading" class="state-msg">{{ t('loading') }}</div>
+  <div *ngIf="error && !loading" class="state-error">
+    {{ error }} <button (click)="load()" class="btn-retry">{{ t('retry') }}</button>
+  </div>
+
+  <ng-container *ngIf="!loading && !error">
+
+    <!-- ===== ACTIVE CONTRACTS ===== -->
+    <div class="section-card" *ngIf="activeContracts.length > 0">
+      <div class="section-header active-header">
+        <span class="section-dot dot-active"></span>
+        <span class="section-title">{{ t('activeContracts') }}</span>
+        <span class="section-count">{{ activeContracts.length }}</span>
+      </div>
+      <div class="active-grid">
+        <div *ngFor="let r of activeContracts" class="active-card">
+          <div class="ac-top">
+            <div class="ac-vehicle">🚗 {{ r.voiture?.marque || r.voitureId }} {{ r.voiture?.modele || '' }}</div>
+            <span class="status-chip chip-active">{{ statusLabel(r) }}</span>
+          </div>
+          <div class="ac-client">👤 {{ r.client?.nom || r.clientId }}</div>
+          <div class="ac-dates">
+            <span>{{ r.dateDebut | date:'dd/MM/yy' }}</span>
+            <span class="dates-sep">→</span>
+            <span>{{ r.dateFin | date:'dd/MM/yy' }}</span>
+          </div>
+          <div class="ac-accessories" *ngIf="getAccessoireLabels(r) !== '—'">
+            🎒 {{ getAccessoireLabels(r) }}
+          </div>
+          <div class="ac-payment">
+            <span class="status-chip" [ngClass]="paymentStatusClass(r)">{{ paymentStatusLabel(r) }}</span>
+            <span class="ac-amount-paid">{{ (r.montantPaye || 0) | number:'1.0-0' }} / {{ (r.total || r.montant || 0) | number:'1.0-0' }} MAD</span>
+          </div>
+          <div class="ac-remaining" *ngIf="remaining(r) > 0">
+            💳 {{ t('remaining') }}: <strong>{{ remaining(r) | number:'1.0-0' }} MAD</strong>
+          </div>
+          <div class="ac-days-left" *ngIf="daysLeft(r.dateFin) > 0">
+            {{ daysLeft(r.dateFin) }} {{ t('days') }} {{ t('remaining') }}
+          </div>
+          <div class="ac-actions">
+            <button class="btn-sm btn-view" (click)="openView(r)">{{ t('view') }}</button>
+            <button class="btn-sm btn-edit" (click)="openEdit(r)">{{ t('edit') }}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== UPCOMING DEPARTURES ===== -->
+    <div class="section-card" *ngIf="upcomingDepartures.length > 0">
+      <div class="section-header upcoming-header">
+        <span class="section-dot dot-upcoming"></span>
+        <span class="section-title">{{ t('upcomingDepartures') }}</span>
+        <span class="section-count">{{ upcomingDepartures.length }}</span>
+      </div>
+      <div class="table-wrap">
+        <table class="res-table">
+          <thead>
+            <tr>
+              <th>{{ t('client') }}</th>
+              <th>{{ t('car') }}</th>
+              <th>{{ t('departureDate') }}</th>
+              <th>{{ t('returnDate') }}</th>
+              <th>{{ t('accessories') }}</th>
+              <th>{{ t('status') }}</th>
+              <th>{{ t('paymentStatus') }}</th>
+              <th>{{ t('amountPaid') }}</th>
+              <th>{{ t('remaining') }}</th>
+              <th>{{ t('actions') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of upcomingDepartures">
+              <td>{{ r.client?.nom || r.clientId }}</td>
+              <td>{{ r.voiture?.marque || r.voitureId }} {{ r.voiture?.modele || '' }}</td>
+              <td><span class="date-badge upcoming">{{ r.dateDebut | date:'dd/MM/yy' }}</span></td>
+              <td>{{ r.dateFin | date:'dd/MM/yy' }}</td>
+              <td class="td-accessories">{{ getAccessoireLabels(r) }}</td>
+              <td><span class="status-chip chip-upcoming">{{ statusLabel(r) }}</span></td>
+              <td><span class="status-chip" [ngClass]="paymentStatusClass(r)">{{ paymentStatusLabel(r) }}</span></td>
+              <td class="td-amount">{{ (r.montantPaye || 0) | number:'1.0-0' }} MAD</td>
+              <td class="td-remaining" [class.td-remaining-zero]="remaining(r) === 0">{{ remaining(r) | number:'1.0-0' }} MAD</td>
+              <td class="actions-cell">
+                <button class="btn-icon" (click)="openView(r)" [title]="t('view')">👁</button>
+                <button class="btn-icon" (click)="openEdit(r)" [title]="t('edit')">✏️</button>
+                <button class="btn-icon btn-del" (click)="openDelete(r.id)" [title]="t('delete')">🗑</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== HISTORICAL RECORDS ===== -->
+    <div class="section-card">
+      <div class="section-header history-header">
+        <span class="section-dot dot-history"></span>
+        <span class="section-title">{{ t('historicalRecords') }}</span>
+        <span class="section-count">{{ historicalRecords.length }}</span>
+      </div>
+      <div *ngIf="historicalRecords.length === 0" class="empty-msg">{{ t('noData') }}</div>
+      <div *ngIf="historicalRecords.length > 0" class="table-wrap">
+        <table class="res-table">
+          <thead>
+            <tr>
+              <th>{{ t('client') }}</th>
+              <th>{{ t('car') }}</th>
+              <th>{{ t('startDate') }}</th>
+              <th>{{ t('endDate') }}</th>
+              <th>{{ t('accessories') }}</th>
+              <th>{{ t('montant') }}</th>
+              <th>{{ t('status') }}</th>
+              <th>{{ t('paymentStatus') }}</th>
+              <th>{{ t('amountPaid') }}</th>
+              <th>{{ t('remaining') }}</th>
+              <th>{{ t('actions') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of historicalRecords">
+              <td>{{ r.client?.nom || r.clientId }}</td>
+              <td>{{ r.voiture?.marque || r.voitureId }} {{ r.voiture?.modele || '' }}</td>
+              <td>{{ r.dateDebut | date:'dd/MM/yy' }}</td>
+              <td>{{ r.dateFin | date:'dd/MM/yy' }}</td>
+              <td class="td-accessories">{{ getAccessoireLabels(r) }}</td>
+              <td class="td-amount">{{ (r.total || r.montant || 0) | number:'1.0-0' }} MAD</td>
+              <td>
+                <span class="status-chip"
+                  [class.chip-cancelled]="isCancelled(r)"
+                  [class.chip-done]="!isCancelled(r)">
+                  {{ statusLabel(r) }}
+                </span>
+              </td>
+              <td><span class="status-chip" [ngClass]="paymentStatusClass(r)">{{ paymentStatusLabel(r) }}</span></td>
+              <td class="td-amount">{{ (r.montantPaye || 0) | number:'1.0-0' }} MAD</td>
+              <td class="td-remaining" [class.td-remaining-zero]="remaining(r) === 0">{{ remaining(r) | number:'1.0-0' }} MAD</td>
+              <td class="actions-cell">
+                <button class="btn-icon" (click)="openView(r)" [title]="t('view')">👁</button>
+                <button class="btn-icon" (click)="openEdit(r)" [title]="t('edit')">✏️</button>
+                <button class="btn-icon btn-del" (click)="openDelete(r.id)" [title]="t('delete')">🗑</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- No data at all -->
+    <div *ngIf="filteredItems.length === 0" class="empty-page">
+      <div class="empty-icon">📅</div>
+      <p>{{ t('noData') }}</p>
+      <a routerLink="/reservation/create" class="btn-new">{{ t('createBooking') }}</a>
+    </div>
+
+  </ng-container>
+
+</div>
+
+<!-- Modal -->
+<div *ngIf="modalMode" class="modal-overlay" (click)="closeModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+
+    <ng-container *ngIf="modalMode === 'view' && selected">
+      <div class="modal-header"><h2>{{ t('reservation') }}</h2><button class="modal-close" (click)="closeModal()">×</button></div>
+      <div class="modal-body">
+        <div class="detail-row" *ngFor="let e of objectEntries(selected)">
+          <span class="detail-label">{{ e[0] }}</span>
+          <span class="detail-value">{{ displayValue(e[1]) }}</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModal()">{{ t('close') }}</button>
+        <button class="btn-primary" (click)="openEdit(selected)">{{ t('edit') }}</button>
+      </div>
+    </ng-container>
+
+    <ng-container *ngIf="modalMode === 'form'">
+      <div class="modal-header"><h2>{{ (isEditing ? 'edit' : 'add') | translate }} {{ t('reservation') }}</h2><button class="modal-close" (click)="closeModal()">×</button></div>
+      <form [formGroup]="form" (ngSubmit)="save()">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>{{ t('client') }} *</label>
+              <select formControlName="clientId">
+                <option value="">-- {{ t('select') }} --</option>
+                <option *ngFor="let c of clients" [value]="c.id">{{ c.nom }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>{{ t('car') }} *</label>
+              <select formControlName="voitureId">
+                <option value="">-- {{ t('select') }} --</option>
+                <option *ngFor="let v of voitures" [value]="v.id">{{ v.marque }} {{ v.modele }}</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>{{ t('dateDebut') }}</label><input type="date" formControlName="dateDebut" /></div>
+            <div class="form-group"><label>{{ t('dateFin') }}</label><input type="date" formControlName="dateFin" /></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>{{ t('status') }}</label>
+              <select formControlName="reservationStatus">
+                <option value="confirmed">{{ t('confirmed') }}</option>
+                <option value="pending">{{ t('pending') }}</option>
+                <option value="cancelled">{{ t('cancelled') }}</option>
+              </select>
+            </div>
+            <div class="form-group"><label>{{ t('montant') }}</label><input type="number" formControlName="total" min="0" /></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>{{ t('paymentMethod') }}</label>
+              <select formControlName="modePaiement">
+                <option value="especes">Espèces</option>
+                <option value="carte">Carte</option>
+                <option value="virement">Virement</option>
+                <option value="cheque">Chèque</option>
+              </select>
+            </div>
+            <div class="form-group"><label>{{ t('amountPaid') }}</label><input type="number" formControlName="montantPaye" min="0" /></div>
+          </div>
+          <div class="remaining-row" [class.overpaid]="editRemaining < 0">
+            <span>{{ t('remaining') }}</span>
+            <span class="remaining-val" [class.zero]="editRemaining <= 0">{{ editRemaining | number:'1.0-2' }} MAD</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="closeModal()">{{ t('cancel') }}</button>
+          <button type="submit" class="btn-primary" [disabled]="form.invalid || isSubmitting">
+            {{ isSubmitting ? t('saving') : t('save') }}
+          </button>
+        </div>
+      </form>
+    </ng-container>
+
+    <ng-container *ngIf="modalMode === 'delete'">
+      <div class="modal-header"><h2>{{ t('confirmDelete') }}</h2><button class="modal-close" (click)="closeModal()">×</button></div>
+      <div class="modal-body"><p class="delete-warn">{{ t('deleteWarning') }}</p></div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModal()">{{ t('cancel') }}</button>
+        <button class="btn-danger" (click)="confirmDelete()">{{ t('delete') }}</button>
+      </div>
+    </ng-container>
+
+  </div>
+</div>

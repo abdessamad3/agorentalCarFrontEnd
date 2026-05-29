@@ -1,13 +1,14 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, TranslatePipe],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css']
 })
@@ -40,16 +41,8 @@ export class LoginComponent {
 
     const { email, password } = this.loginForm.value;
 
-    console.log('🔵 Attempting login with:', email);
-
     this.authService.login(email, password).subscribe({
-      next: (response) => {
-        console.log('✅ LOGIN SUCCESS');
-        console.log('Response:', response);
-        console.log('Token from response:', response.token);
-        console.log('Token in localStorage:', localStorage.getItem('auth_token'));
-        console.log('Token from service:', this.authService.getToken());
-
+      next: () => {
         this.isLoading = false;
         this.successMessage = 'Login successful! Redirecting...';
 
@@ -58,11 +51,6 @@ export class LoginComponent {
         }, 1000);
       },
       error: (err) => {
-        console.error('❌ LOGIN FAILED');
-        console.error('Error:', err);
-        console.error('Error message:', err.error?.message);
-        console.error('Error status:', err.status);
-
         this.isLoading = false;
         this.errorMessage = err.error?.message || 'Login failed. Please try again.';
       }

@@ -1,0 +1,67 @@
+<div class="detail-container">
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-state">
+    <p>⏳ Loading bureau...</p>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error && !loading" class="error-state">
+    <p>⚠️ {{ error }}</p>
+    <button (click)="goBack()" class="btn-back">Back</button>
+  </div>
+
+  <!-- Detail -->
+  <div *ngIf="!loading && bureau" class="detail-card">
+    <div class="card-header">
+      <div class="header-left">
+        <h1>{{ bureau.nom }}</h1>
+        <p class="subtitle">Office Details</p>
+      </div>
+      <div class="header-right">
+        <button (click)="goBack()" class="btn-back">Back</button>
+      </div>
+    </div>
+
+    <div class="card-content">
+      <!-- Status Badge -->
+      <div class="status-section">
+        <span class="status-badge" [ngClass]="'status-' + bureau.statut">
+          {{ bureau.statut }}
+        </span>
+      </div>
+
+      <!-- Details Grid -->
+      <div class="details-grid">
+        <div class="detail-item">
+          <span class="label">📝 Name</span>
+          <span class="value">{{ bureau.nom }}</span>
+        </div>
+
+        <div class="detail-item">
+          <span class="label">📍 Address</span>
+          <span class="value">{{ bureau.adresse || 'Not specified' }}</span>
+        </div>
+
+        <div class="detail-item">
+          <span class="label">📅 Created</span>
+          <span class="value">{{ bureau.creeAu | date:'medium' }}</span>
+        </div>
+
+        <div class="detail-item" *ngIf="bureau.editAu">
+          <span class="label">✏️ Last Updated</span>
+          <span class="value">{{ bureau.editAu | date:'medium' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="card-footer">
+      <button (click)="deleteBureau()" class="btn-delete">
+        🗑️ Delete Bureau
+      </button>
+      <button (click)="editBureau()" class="btn-edit">
+        ✏️ Edit Bureau
+      </button>
+    </div>
+  </div>
+</div>

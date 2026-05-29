@@ -1,0 +1,192 @@
+<div class="list-container" [attr.dir]="dir">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left"><h1>{{ t('monthlyPayments') }}</h1></div>
+    <button class="btn-add" (click)="loadAll()">↻ {{ t('retry') }}</button>
+  </div>
+
+  <!-- Stats Bar -->
+  <div class="stats-bar">
+    <div class="stat-card accent-amber">
+      <span class="stat-label">{{ t('pending') }}</span>
+      <span class="stat-value">{{ totalPending }}</span>
+    </div>
+    <div class="stat-card accent-red">
+      <span class="stat-label">{{ t('overdue') }}</span>
+      <span class="stat-value">{{ totalLate }}</span>
+    </div>
+    <div class="stat-card accent-green">
+      <span class="stat-label">{{ t('paid') }}</span>
+      <span class="stat-value">{{ totalPaid }}</span>
+    </div>
+    <div class="stat-card accent-blue">
+      <span class="stat-label">{{ t('totalDue') }}</span>
+      <span class="stat-value" style="font-size:1.1rem">{{ fmt(amountDue) }}</span>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="search-filter-bar">
+    <div class="search-input">
+      <input type="text" [(ngModel)]="search" [placeholder]="t('search')" />
+    </div>
+    <select class="filter-select" [(ngModel)]="filterStatus">
+      <option value="">{{ t('allStatuses') }}</option>
+      <option value="pending">{{ t('pay_pending') }}</option>
+      <option value="paid">{{ t('pay_paid') }}</option>
+      <option value="late">{{ t('pay_late') }}</option>
+      <option value="partial">{{ t('pay_partial') }}</option>
+    </select>
+    <select class="filter-select" [(ngModel)]="filterAchat">
+      <option value="">{{ t('allVehicles') }}</option>
+      <option *ngFor="let a of achatOptions" [value]="a.id">{{ a.label }}</option>
+    </select>
+  </div>
+
+  <div *ngIf="loading" class="loading-state"><p>{{ t('loading') }}</p></div>
+  <div *ngIf="error && !loading" class="error-state"><p>{{ error }}</p><button (click)="loadAll()" class="btn-retry">{{ t('retry') }}</button></div>
+  <div *ngIf="!loading && !error && filtered.length === 0" class="empty-state"><p>{{ t('noData') }}</p></div>
+
+  <!-- Table -->
+  <div *ngIf="!loading && !error && filtered.length > 0" class="table-container">
+    <table class="bureaus-table">
+      <thead><tr>
+        <th>#</th>
+        <th>{{ t('car') }}</th>
+        <th>{{ t('supplier') }}</th>
+        <th>{{ t('dueDate') }}</th>
+        <th>{{ t('monthlyAmount') }}</th>
+        <th>{{ t('remainingBalance') }}</th>
+        <th>{{ t('paymentStatus') }}</th>
+        <th>{{ t('invoice') }}</th>
+        <th>{{ t('actions') }}</th>
+      </tr></thead>
+      <tbody>
+        <tr *ngFor="let inst of filtered" [ngClass]="{'late-row': inst.status === 'late'}">
+          <td><strong>{{ inst.num }}</strong></td>
+          <td class="name-cell">{{ inst.voitureName }}</td>
+          <td>{{ inst.fournisseurName }}</td>
+          <td>
+            {{ inst.dueDate | date:'mediumDate' }}
+            <ng-container *ngIf="inst.status !== 'paid'">
+              <span *ngIf="daysUntil(inst.dueDate) < 0" class="days-chip overdue">{{ -daysUntil(inst.dueDate) }}d late</span>
+              <span *ngIf="daysUntil(inst.dueDate) >= 0 && daysUntil(inst.dueDate) <= 7" class="days-chip soon">{{ daysUntil(inst.dueDate) }}d</span>
+              <span *ngIf="daysUntil(inst.dueDate) > 7" class="days-chip ok">{{ daysUntil(inst.dueDate) }}d</span>
+            </ng-container>
+          </td>
+          <td><strong>{{ fmt(inst.amount) }}</strong></td>
+          <td>{{ fmt(inst.balance) }}</td>
+          <td>
+            <span class="badge" [ngClass]="payStatusClass(inst.status)">{{ t('pay_' + inst.status) }}</span>
+            <div *ngIf="inst.paidDate" style="font-size:.72rem;color:#718096;margin-top:.2rem">{{ inst.paidDate | date:'shortDate' }}</div>
+          </td>
+          <td class="invoice-cell">
+            <ng-container *ngIf="!inst.invoiceFile">
+              <label class="btn-upload" [for]="'file-' + inst.id" [title]="t('uploadInvoice')">
+                📎 {{ t('upload') }}
+              </label>
+              <input [id]="'file-' + inst.id" class="file-input-hidden" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" (change)="onFileSelected($event, inst)" />
+            </ng-container>
+            <ng-container *ngIf="inst.invoiceFile">
+              <button class="btn-invoice preview" (click)="openInvoicePreview(inst)" [title]="t('previewInvoice')">👁</button>
+              <button class="btn-invoice download" (click)="downloadInvoice(inst)" [title]="t('downloadInvoice')">⬇</button>
+              <label class="btn-upload" [for]="'file-r-' + inst.id" [title]="t('replaceInvoice')">↺</label>
+              <input [id]="'file-r-' + inst.id" class="file-input-hidden" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" (change)="onFileSelected($event, inst)" />
+              <button class="btn-invoice remove" (click)="removeInvoice(inst)" [title]="t('removeInvoice')">✕</button>
+            </ng-container>
+          </td>
+          <td class="actions-cell">
+            <button
+              class="btn-pay"
+              [ngClass]="{'paid': inst.status === 'paid'}"
+              (click)="inst.status !== 'paid' && openPay(inst)"
+              [disabled]="inst.status === 'paid'">
+              {{ inst.status === 'paid' ? '✓ ' + t('paid') : t('markAsPaid') }}
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── MODALS ──────────────────────────────────────────────────────────── -->
+<div *ngIf="modalMode" class="modal-overlay" (click)="closeModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+
+    <!-- PAY MODAL -->
+    <ng-container *ngIf="modalMode === 'pay' && selectedInstallment">
+      <div class="modal-header">
+        <h2>{{ t('recordPayment') }}</h2>
+        <button class="modal-close" (click)="closeModal()">&times;</button>
+      </div>
+      <form [formGroup]="payForm" (ngSubmit)="savePay()">
+        <div class="modal-body">
+          <div class="pay-summary">
+            <div class="pay-sum-row"><span class="pay-sum-label">{{ t('car') }}</span><span class="pay-sum-value">{{ selectedInstallment.voitureName }}</span></div>
+            <div class="pay-sum-row"><span class="pay-sum-label">{{ t('installmentNum') }}</span><span class="pay-sum-value"># {{ selectedInstallment.num }}</span></div>
+            <div class="pay-sum-row"><span class="pay-sum-label">{{ t('dueDate') }}</span><span class="pay-sum-value">{{ selectedInstallment.dueDate | date:'mediumDate' }}</span></div>
+            <div class="pay-sum-row"><span class="pay-sum-label">{{ t('monthlyAmount') }}</span><span class="pay-sum-value" style="color:#2b6cb0">{{ fmt(selectedInstallment.amount) }}</span></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>{{ t('paymentDate') }}</label>
+              <input type="date" formControlName="paidDate" />
+            </div>
+            <div class="form-group">
+              <label>{{ t('paymentStatus') }}</label>
+              <select formControlName="status">
+                <option value="paid">{{ t('pay_paid') }}</option>
+                <option value="partial">{{ t('pay_partial') }}</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>{{ t('notes') }}</label>
+            <textarea formControlName="notes" rows="2" style="resize:vertical"></textarea>
+          </div>
+
+          <!-- Optional invoice upload in modal -->
+          <div class="form-group" style="margin-top:.5rem">
+            <label>{{ t('uploadInvoice') }}</label>
+            <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
+              <label class="btn-upload" [for]="'modal-file'">📎 {{ selectedInstallment.invoiceFile ? t('replaceInvoice') : t('chooseFile') }}</label>
+              <input id="modal-file" class="file-input-hidden" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" (change)="onFileSelected($event, selectedInstallment!)" />
+              <span *ngIf="selectedInstallment.invoiceFile" style="font-size:.8rem;color:#38a169">✓ {{ selectedInstallment.invoiceName }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="closeModal()">{{ t('cancel') }}</button>
+          <button type="submit" class="btn-primary" [disabled]="isSubmitting">{{ isSubmitting ? t('saving') : t('confirmPayment') }}</button>
+        </div>
+      </form>
+    </ng-container>
+
+    <!-- INVOICE PREVIEW -->
+    <ng-container *ngIf="modalMode === 'invoice-preview' && selectedInstallment">
+      <div class="modal-header" style="background:#1a202c;color:#fff">
+        <h2 style="color:#fff">{{ selectedInstallment.invoiceName }}</h2>
+        <button class="modal-close" style="color:#fff" (click)="closeModal()">&times;</button>
+      </div>
+      <div class="invoice-preview-wrap">
+        <ng-container *ngIf="isImage(selectedInstallment.invoiceName); else pdfPreview">
+          <img [src]="previewUrl" [alt]="selectedInstallment.invoiceName" />
+        </ng-container>
+        <ng-template #pdfPreview>
+          <div class="invoice-pdf-placeholder">
+            <div style="font-size:3rem">📄</div>
+            <div style="font-weight:600;font-size:.9rem">{{ selectedInstallment.invoiceName }}</div>
+            <div style="font-size:.78rem;opacity:.7">PDF Document</div>
+          </div>
+        </ng-template>
+      </div>
+      <div class="modal-footer" style="background:#2d3748">
+        <button class="btn-secondary" (click)="closeModal()">{{ t('close') }}</button>
+        <button class="btn-primary" (click)="downloadInvoice(selectedInstallment!)">⬇ {{ t('downloadInvoice') }}</button>
+      </div>
+    </ng-container>
+
+  </div>
+</div>

@@ -1,0 +1,72 @@
+<div class="list-container" [attr.dir]="dir">
+  <div class="header">
+    <div class="header-left"><h1>{{ 'contrats' | translate }}</h1></div>
+    <button class="btn-add" (click)="openAdd()">+ {{ 'add' | translate }}</button>
+  </div>
+  <div class="search-filter-bar"><div class="search-input"><input type="text" [(ngModel)]="search" [placeholder]="'search' | translate" /></div></div>
+  <div *ngIf="loading" class="loading-state"><p>{{ 'loading' | translate }}</p></div>
+  <div *ngIf="error && !loading" class="error-state"><p>{{ error }}</p><button (click)="load()" class="btn-retry">{{ 'retry' | translate }}</button></div>
+  <div *ngIf="!loading && !error && filtered.length === 0" class="empty-state"><p>{{ 'noData' | translate }}</p></div>
+  <div *ngIf="!loading && !error && filtered.length > 0" class="table-container">
+    <table class="bureaus-table">
+      <thead><tr>
+        <th>{{ 'client' | translate }}</th><th>{{ 'car' | translate }}</th>
+        <th>{{ 'dateDebut' | translate }}</th><th>{{ 'dateFin' | translate }}</th>
+        <th>{{ 'montant' | translate }}</th><th>{{ 'actions' | translate }}</th>
+      </tr></thead>
+      <tbody>
+        <tr *ngFor="let item of filtered" class="bureau-row">
+          <td>{{ item.client?.nom || item.clientId }}</td>
+          <td>{{ item.voiture?.marque || item.voitureId }}</td>
+          <td class="date-cell">{{ item.dateDebut | date:'shortDate' }}</td>
+          <td class="date-cell">{{ item.dateFin | date:'shortDate' }}</td>
+          <td>{{ item.montantTotal }} MAD</td>
+          <td class="actions-cell">
+            <button (click)="openView(item)" class="btn-action btn-view" [title]="'view'|translate"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+            <button (click)="openPrint(item)" class="btn-action btn-print" title="Imprimer / Télécharger"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
+            <button (click)="openDelete(item.id)" class="btn-action btn-delete" [title]="'delete'|translate"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div *ngIf="modalMode" class="modal-overlay" (click)="closeModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <ng-container *ngIf="modalMode === 'view' && selected">
+      <div class="modal-header"><h2>{{ 'contrat' | translate }}</h2><button class="modal-close" (click)="closeModal()">&times;</button></div>
+      <div class="modal-body"><div class="detail-row" *ngFor="let e of objectEntries(selected)"><span class="detail-label">{{ e[0] }}</span><span class="detail-value">{{ displayValue(e[1]) }}</span></div></div>
+      <div class="modal-footer"><button class="btn-secondary" (click)="closeModal()">{{ 'close' | translate }}</button></div>
+    </ng-container>
+    <ng-container *ngIf="modalMode === 'form'">
+      <div class="modal-header"><h2>{{ 'add' | translate }} {{ 'contrat' | translate }}</h2><button class="modal-close" (click)="closeModal()">&times;</button></div>
+      <form [formGroup]="form" (ngSubmit)="save()">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group"><label>{{ 'clientId' | translate }} <span class="required">*</span></label><input type="number" formControlName="clientId" /></div>
+            <div class="form-group"><label>{{ 'voitureId' | translate }} <span class="required">*</span></label><input type="number" formControlName="voitureId" /></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>{{ 'dateDebut' | translate }}</label><input type="date" formControlName="dateDebut" /></div>
+            <div class="form-group"><label>{{ 'dateFin' | translate }}</label><input type="date" formControlName="dateFin" /></div>
+          </div>
+          <div class="form-group"><label>{{ 'montant' | translate }}</label><input type="number" formControlName="montantTotal" min="0" /></div>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn-secondary" (click)="closeModal()">{{ 'cancel' | translate }}</button><button type="submit" class="btn-primary" [disabled]="form.invalid || isSubmitting">{{ (isSubmitting ? 'saving' : 'save') | translate }}</button></div>
+      </form>
+    </ng-container>
+    <ng-container *ngIf="modalMode === 'delete'">
+      <div class="modal-header"><h2>{{ 'confirmDelete' | translate }}</h2><button class="modal-close" (click)="closeModal()">&times;</button></div>
+      <div class="modal-body"><p class="delete-warning">{{ 'deleteWarning' | translate }}</p></div>
+      <div class="modal-footer"><button class="btn-secondary" (click)="closeModal()">{{ 'cancel' | translate }}</button><button class="btn-danger" (click)="confirmDelete()">{{ 'delete' | translate }}</button></div>
+    </ng-container>
+  </div>
+</div>
+
+<!-- Print overlay — full-screen Angular component; window.print() fires inside it -->
+<app-print-contrat
+  *ngIf="printItem"
+  [contractData]="printItem"
+  (closed)="printItem = null">
+</app-print-contrat>

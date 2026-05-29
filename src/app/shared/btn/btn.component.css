@@ -1,0 +1,83 @@
+:host { display: contents; }
+
+.app-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-family: inherit;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.18s, box-shadow 0.18s, transform 0.1s, border-color 0.18s, color 0.18s;
+  white-space: nowrap;
+  line-height: 1;
+  outline: none;
+}
+
+.app-btn:focus-visible { box-shadow: 0 0 0 3px rgba(49,130,206,0.35); }
+
+.app-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* ── Sizes ── */
+.s-sm { padding: 0.35rem 0.75rem; font-size: 0.78rem; }
+.s-md { padding: 0.6rem  1.25rem; font-size: 0.88rem; }
+.s-lg { padding: 0.75rem 1.5rem;  font-size: 0.95rem; }
+
+/* ── Primary ── */
+.v-primary { background: #3182ce; color: #fff; }
+.v-primary:not(:disabled):hover  { background: #2b6cb0; box-shadow: 0 2px 8px rgba(49,130,206,0.35); }
+.v-primary:not(:disabled):active { transform: scale(0.98); }
+
+/* ── Secondary ── */
+.v-secondary { background: #edf2f7; color: #4a5568; border: 1px solid #cbd5e0; }
+.v-secondary:not(:disabled):hover { background: #e2e8f0; }
+
+/* ── Danger ── */
+.v-danger { background: #e53e3e; color: #fff; }
+.v-danger:not(:disabled):hover  { background: #c53030; box-shadow: 0 2px 8px rgba(229,62,62,0.3); }
+.v-danger:not(:disabled):active { transform: scale(0.98); }
+
+/* ── Success ── */
+.v-success { background: #48bb78; color: #fff; }
+.v-success:not(:disabled):hover  { background: #38a169; box-shadow: 0 2px 8px rgba(72,187,120,0.35); }
+.v-success:not(:disabled):active { transform: scale(0.98); }
+
+/* ── Icon variants ── */
+.v-icon-view,
+.v-icon-edit,
+.v-icon-delete {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  background: none;
+  border: 1px solid #cbd5e0;
+  color: #4a5568;
+}
+
+.v-icon-view:not(:disabled):hover   { background: #ebf8ff; border-color: #3182ce; color: #3182ce; }
+.v-icon-edit:not(:disabled):hover   { background: #fffaf0; border-color: #d69e2e; color: #d69e2e; }
+.v-icon-delete:not(:disabled):hover { background: #fff5f5; border-color: #e53e3e; color: #e53e3e; }
+
+/* Icon sizes override — always square regardless of size input */
+.v-icon-view.s-sm,
+.v-icon-edit.s-sm,
+.v-icon-delete.s-sm { width: 28px; height: 28px; }
+.v-icon-view.s-lg,
+.v-icon-edit.s-lg,
+.v-icon-delete.s-lg { width: 40px; height: 40px; }
+
+/* ── Spinner ── */
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }

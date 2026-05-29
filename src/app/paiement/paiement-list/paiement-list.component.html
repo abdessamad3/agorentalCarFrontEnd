@@ -1,0 +1,136 @@
+<div class="list-container" [attr.dir]="dir">
+  <div class="header">
+    <div class="header-left"><h1>{{ 'paiements' | translate }}</h1></div>
+    <app-btn variant="primary" size="lg" (click)="openAdd()">+ {{ 'add' | translate }}</app-btn>
+  </div>
+  <div class="search-filter-bar">
+    <div class="search-input"><input type="text" [(ngModel)]="search" [placeholder]="'search' | translate" /></div>
+  </div>
+  <div *ngIf="loading" class="loading-state"><p>{{ 'loading' | translate }}</p></div>
+  <div *ngIf="error && !loading" class="error-state">
+    <p>{{ error }}</p>
+    <app-btn variant="danger" size="sm" (click)="load()">{{ 'retry' | translate }}</app-btn>
+  </div>
+  <div *ngIf="!loading && !error && filtered.length === 0" class="empty-state"><p>{{ 'noData' | translate }}</p></div>
+  <div *ngIf="!loading && !error && filtered.length > 0" class="table-container">
+    <table class="bureaus-table">
+      <thead>
+        <tr>
+          <th>{{ 'contratId' | translate }}</th>
+          <th>{{ 'montant' | translate }}</th>
+          <th>{{ 'date' | translate }}</th>
+          <th>{{ 'modePaiement' | translate }}</th>
+          <th>{{ 'status' | translate }}</th>
+          <th>{{ 'actions' | translate }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of filtered" class="bureau-row">
+          <td>{{ item.contratId || item.contrat?.id }}</td>
+          <td>{{ item.montant }} MAD</td>
+          <td class="date-cell">{{ item.date | date:'shortDate' }}</td>
+          <td>{{ item.modePaiement }}</td>
+          <td><span class="status-badge" [ngClass]="'status-' + item.statut">{{ item.statut }}</span></td>
+          <td class="actions-cell">
+            <app-btn variant="icon-view"   (click)="openView(item)"      [title]="'view'   | translate"></app-btn>
+            <app-btn variant="icon-edit"   (click)="openEdit(item)"      [title]="'edit'   | translate"></app-btn>
+            <app-btn variant="icon-delete" (click)="openDelete(item.id)" [title]="'delete' | translate"></app-btn>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div *ngIf="modalMode" class="modal-overlay" (click)="closeModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+
+    <!-- View -->
+    <ng-container *ngIf="modalMode === 'view' && selected">
+      <div class="modal-header">
+        <h2>{{ 'paiement' | translate }}</h2>
+        <button class="modal-close" (click)="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="detail-row" *ngFor="let e of objectEntries(selected)">
+          <span class="detail-label">{{ e[0] }}</span>
+          <span class="detail-value">{{ displayValue(e[1]) }}</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <app-btn variant="secondary" (click)="closeModal()">{{ 'close' | translate }}</app-btn>
+        <app-btn variant="primary"   (click)="openEdit(selected)">{{ 'edit' | translate }}</app-btn>
+      </div>
+    </ng-container>
+
+    <!-- Form -->
+    <ng-container *ngIf="modalMode === 'form'">
+      <div class="modal-header">
+        <h2>{{ (isEditing ? 'edit' : 'add') | translate }} {{ 'paiement' | translate }}</h2>
+        <button class="modal-close" (click)="closeModal()">&times;</button>
+      </div>
+      <form [formGroup]="form" (ngSubmit)="save()">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>{{ 'contratId' | translate }} <span class="required">*</span></label>
+              <select formControlName="contratId">
+                <option value="">— {{ 'select' | translate }} —</option>
+                <option *ngFor="let c of filteredContrats" [value]="c.id">{{ contratLabel(c) }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>{{ 'montant' | translate }} <span class="required">*</span></label>
+              <input type="number" formControlName="montant" min="0" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>{{ 'date' | translate }}</label>
+              <input type="date" formControlName="date" />
+            </div>
+            <div class="form-group">
+              <label>{{ 'modePaiement' | translate }}</label>
+              <select formControlName="modePaiement">
+                <option value="especes">Espèces</option>
+                <option value="virement">Virement</option>
+                <option value="cheque">Chèque</option>
+                <option value="carte">Carte</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>{{ 'status' | translate }}</label>
+            <select formControlName="statut">
+              <option value="en_attente">En attente</option>
+              <option value="paye">Payé</option>
+              <option value="annule">Annulé</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <app-btn variant="secondary" type="button" (click)="closeModal()">{{ 'cancel' | translate }}</app-btn>
+          <app-btn variant="primary" type="submit" [disabled]="form.invalid" [isLoading]="isSubmitting">
+            {{ 'save' | translate }}
+          </app-btn>
+        </div>
+      </form>
+    </ng-container>
+
+    <!-- Delete -->
+    <ng-container *ngIf="modalMode === 'delete'">
+      <div class="modal-header">
+        <h2>{{ 'confirmDelete' | translate }}</h2>
+        <button class="modal-close" (click)="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="delete-warning">{{ 'deleteWarning' | translate }}</p>
+      </div>
+      <div class="modal-footer">
+        <app-btn variant="secondary" (click)="closeModal()">{{ 'cancel' | translate }}</app-btn>
+        <app-btn variant="danger"    (click)="confirmDelete()">{{ 'delete' | translate }}</app-btn>
+      </div>
+    </ng-container>
+
+  </div>
+</div>

@@ -1,29 +1,26 @@
-<div class="app-layout" [attr.dir]="dir">
+<div class="app-layout" [attr.dir]="dir" [class.has-sidebar]="showShell">
 
-  <!-- Sidebar -->
-  <app-sidebar
-    [isSidebarOpen]="isSidebarOpen"
-    (closeSidebar)="closeSidebar()"
-  ></app-sidebar>
+  <ng-container *ngIf="showShell">
+    <app-sidebar
+      [isSidebarOpen]="isSidebarOpen"
+      (closeSidebar)="closeSidebar()"
+    ></app-sidebar>
+  </ng-container>
 
-  <!-- Main Content -->
   <div class="main-content">
 
-    <!-- Mobile Header (Hamburger + Logo) -->
-    <header class="mobile-header">
-      <button class="hamburger" (click)="toggleSidebar()">☰</button>
-      <div class="logo-small">AGOCAR</div>
-    </header>
+    <app-top-header
+      *ngIf="showShell"
+      (menuToggle)="toggleSidebar()"
+    ></app-top-header>
 
-    <!-- Page Content -->
     <div class="page-content">
       <router-outlet></router-outlet>
     </div>
   </div>
 
-  <!-- Mobile Overlay (Click to close sidebar) -->
   <div
-    *ngIf="isSidebarOpen"
+    *ngIf="showShell && isSidebarOpen"
     class="sidebar-overlay"
     (click)="closeSidebar()"
   ></div>

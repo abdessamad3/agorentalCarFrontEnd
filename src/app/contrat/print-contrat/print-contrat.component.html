@@ -1,0 +1,444 @@
+<div class="pct-overlay" *ngIf="contractData">
+
+  <!-- ── Non-print toolbar ── -->
+  <div class="pct-toolbar">
+    <div class="pct-tb-info">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2">
+        <polyline points="6 9 6 2 18 2 18 9"/>
+        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+        <rect x="6" y="14" width="12" height="8"/>
+      </svg>
+      Aper&ccedil;u &mdash; Contrat N&deg;&nbsp;{{contractNum}}
+    </div>
+    <div class="pct-tb-btns">
+      <button class="pct-btn-print" (click)="print()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 6 2 18 2 18 9"/>
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+          <rect x="6" y="14" width="12" height="8"/>
+        </svg>
+        Imprimer / T&eacute;l&eacute;charger PDF
+      </button>
+      <button class="pct-btn-close" (click)="close()">&#10005; Fermer</button>
+    </div>
+  </div>
+
+  <!-- ── Pages wrapper ── -->
+  <div class="pct-pages-wrap">
+
+    <!-- ══════════════════════════════════════ PAGE 1 — RECTO ══════════════════════════════════════ -->
+    <div class="pct-page pct-recto">
+
+      <!-- HEADER -->
+      <div class="pct-hdr">
+        <div class="pct-hdr-logo">
+          <svg width="36" height="36" viewBox="0 0 80 80">
+            <ellipse cx="40" cy="40" rx="36" ry="36" fill="none" stroke="#b8860b" stroke-width="5"/>
+            <text x="40" y="27" text-anchor="middle" font-family="Arial" font-size="13" font-weight="900" fill="#b8860b">A.G.O</text>
+            <path d="M15 35 Q40 49 65 35" fill="none" stroke="#b8860b" stroke-width="2"/>
+            <text x="40" y="48" text-anchor="middle" font-family="Arial" font-size="8" fill="#333">RENT</text>
+            <text x="40" y="58" text-anchor="middle" font-family="Arial" font-size="8" fill="#333">CAR</text>
+          </svg>
+          <div>
+            <div class="pct-brand-name">A.G.O</div>
+            <div class="pct-brand-sub">RENT CAR</div>
+          </div>
+        </div>
+        <div class="pct-hdr-title">
+          <div class="pct-title-fr">LOCATION DE VOITURES</div>
+          <div class="pct-title-ar">&#1603;&#1600;&#1585;&#1575;&#1569; &#1575;&#1604;&#1600;&#1587;&#1600;&#1610;&#1600;&#1575;&#1585;&#1575;&#1578;</div>
+        </div>
+        <div class="pct-hdr-meta">
+          <div class="pct-meta-row">
+            <span><b>CONTRAT&nbsp;:</b>&nbsp;{{contractNum}}</span>
+            <span class="pct-rtl"><b>&#1593;&#1602;&#1600;&#1583;&nbsp;:</b></span>
+          </div>
+          <div class="pct-meta-row">
+            <span><b>Le&nbsp;:</b>&nbsp;{{today}}</span>
+            <span><b>&agrave;&nbsp;:</b></span>
+          </div>
+          <p class="pct-meta-notice">Ce Contrat doit accompagner le v&eacute;hicule pendant toute la dur&eacute;e de location, afin d&apos;&ecirc;tre pr&eacute;sent&eacute; &agrave; toute r&eacute;quisition des services de police ou de gendarmerie.</p>
+        </div>
+      </div>
+
+      <!-- PHONE BAR -->
+      <div class="pct-phone-bar">&#9742; 06.48.79.34.53 / 06.69.08.89.99</div>
+
+      <!-- ADDRESS BAR -->
+      <div class="pct-addr-bar">
+        &#9400; B 65/18 BLOC&nbsp;A, Rue Jbel Aouam Quartier Zaytoune , SEFROU<br>
+        PAT&nbsp;:&nbsp;153&nbsp;033&nbsp;99&nbsp;&nbsp;/&nbsp;&nbsp;RC&nbsp;:&nbsp;5003&nbsp;&nbsp;/&nbsp;&nbsp;IF&nbsp;:&nbsp;68&nbsp;33&nbsp;21&nbsp;17&nbsp;&nbsp;/&nbsp;&nbsp;ICE&nbsp;:&nbsp;003&nbsp;763&nbsp;417&nbsp;000&nbsp;091&nbsp;&nbsp;/&nbsp;&nbsp;CNSS&nbsp;:&nbsp;64&nbsp;72&nbsp;725
+      </div>
+
+      <!-- BODY: 2 COLUMNS -->
+      <div class="pct-body">
+
+        <!-- ── LEFT COLUMN ── -->
+        <div class="pct-col-l">
+
+          <div class="pct-fld"><span class="pct-lbl">Date et heure de D&eacute;part&nbsp;:</span><span class="pct-val">{{fmtDateTime(v(contractData?.dateDebut))}}</span></div>
+          <div class="pct-fld"><span class="pct-lbl">Date et heure de retour pr&eacute;vue&nbsp;:</span><span class="pct-val">{{fmtDateTime(v(contractData?.dateFin))}}</span></div>
+          <div class="pct-fld"><span class="pct-lbl">Dur&eacute;e total&nbsp;:</span><span class="pct-val">{{daysLabel}}</span></div>
+          <div class="pct-fld"><span class="pct-lbl">Prolongations&nbsp;: Date &amp; Heure&nbsp;:</span><span class="pct-val"></span></div>
+          <div class="pct-fld"><span class="pct-lbl">Nbrs total jours Prolong&eacute;s&nbsp;:</span><span class="pct-val"></span></div>
+
+          <div class="pct-sep"></div>
+
+          <div class="pct-fld"><span class="pct-lbl">Nom&nbsp;:</span><span class="pct-val">{{v(client.nom)}} {{v(client.prenom)}}</span></div>
+          <div class="pct-fld"><span class="pct-lbl">Date et lieu de naissance&nbsp;:</span><span class="pct-val">{{v(client.dateNaissance)}}</span></div>
+          <div class="pct-fld"><span class="pct-lbl">Nationalit&eacute;&nbsp;:</span><span class="pct-val">{{v(client.nationalite)}}</span></div>
+          <div class="pct-fld"><span class="pct-lbl">Adresse au Maroc&nbsp;:</span><span class="pct-val">{{v(client.adresse)}}</span></div>
+          <div class="pct-frow">
+            <div class="pct-fld pct-fw"><span class="pct-val"></span></div>
+            <div class="pct-fld"><span class="pct-lbl">T&eacute;l&nbsp;:</span><span class="pct-val">{{v(client.telephone)}}</span></div>
+          </div>
+          <div class="pct-fld"><span class="pct-lbl">Adresse &agrave; l&apos;&eacute;tranger&nbsp;:</span><span class="pct-val"></span></div>
+          <div class="pct-frow">
+            <div class="pct-fld pct-fw"><span class="pct-val"></span></div>
+            <div class="pct-fld"><span class="pct-lbl">T&eacute;l&nbsp;:</span><span class="pct-val"></span></div>
+          </div>
+          <div class="pct-fld"><span class="pct-lbl">C.I.N N&deg;&nbsp;:</span><span class="pct-val">{{v(client.cin)}}</span></div>
+          <div class="pct-fld"><span class="pct-lbl">Permis de conduire N&deg;&nbsp;:</span><span class="pct-val">{{v(client.permisConduire)}}</span></div>
+          <div class="pct-frow">
+            <div class="pct-fld"><span class="pct-lbl">D&eacute;livr&eacute; le&nbsp;:</span><span class="pct-val"></span></div>
+            <div class="pct-fld"><span class="pct-lbl">&agrave;&nbsp;:</span><span class="pct-val"></span></div>
+          </div>
+          <div class="pct-fld"><span class="pct-lbl">Passeport N&deg;&nbsp;:</span><span class="pct-val"></span></div>
+          <div class="pct-frow">
+            <div class="pct-fld"><span class="pct-lbl">D&eacute;livr&eacute; le&nbsp;:</span><span class="pct-val"></span></div>
+            <div class="pct-fld"><span class="pct-lbl">&agrave;&nbsp;:</span><span class="pct-val"></span></div>
+          </div>
+
+          <div class="pct-sep"></div>
+          <div class="pct-sec-hd">2 &egrave;me CONDUCTEUR :</div>
+
+          <div class="pct-fld"><span class="pct-lbl">Nom&nbsp;:</span><span class="pct-val"></span></div>
+          <div class="pct-fld"><span class="pct-lbl">Date et lieu de naissance&nbsp;:</span><span class="pct-val"></span></div>
+          <div class="pct-fld"><span class="pct-lbl">Nationalit&eacute;&nbsp;:</span><span class="pct-val"></span></div>
+          <div class="pct-fld"><span class="pct-lbl">Adresse au Maroc&nbsp;:</span><span class="pct-val"></span></div>
+          <div class="pct-frow">
+            <div class="pct-fld pct-fw"><span class="pct-val"></span></div>
+            <div class="pct-fld"><span class="pct-lbl">T&eacute;l&nbsp;:</span><span class="pct-val"></span></div>
+          </div>
+          <div class="pct-fld"><span class="pct-lbl">Adresse &agrave; l&apos;&eacute;tranger&nbsp;:</span><span class="pct-val"></span></div>
+          <div class="pct-frow">
+            <div class="pct-fld pct-fw"><span class="pct-val"></span></div>
+            <div class="pct-fld"><span class="pct-lbl">T&eacute;l&nbsp;:</span><span class="pct-val"></span></div>
+          </div>
+          <div class="pct-fld"><span class="pct-lbl">C.I.N N&deg;&nbsp;:</span><span class="pct-val"></span></div>
+          <div class="pct-fld"><span class="pct-lbl">Permis de conduire N&deg;&nbsp;:</span><span class="pct-val"></span></div>
+          <div class="pct-frow">
+            <div class="pct-fld"><span class="pct-lbl">D&eacute;livr&eacute; le&nbsp;:</span><span class="pct-val"></span></div>
+            <div class="pct-fld"><span class="pct-lbl">&agrave;&nbsp;:</span><span class="pct-val"></span></div>
+          </div>
+          <div class="pct-fld"><span class="pct-lbl">Passeport N&deg;&nbsp;:</span><span class="pct-val"></span></div>
+          <div class="pct-frow">
+            <div class="pct-fld"><span class="pct-lbl">D&eacute;livr&eacute; le&nbsp;:</span><span class="pct-val"></span></div>
+            <div class="pct-fld"><span class="pct-lbl">&agrave;&nbsp;:</span><span class="pct-val"></span></div>
+          </div>
+        </div><!-- /col-l -->
+
+        <!-- ── RIGHT COLUMN ── -->
+        <div class="pct-col-r">
+
+          <div class="pct-fld"><span class="pct-lbl">Marque&nbsp;:</span><span class="pct-val">{{v(voiture.marque)}} {{v(voiture.modele)}}</span></div>
+          <div class="pct-fld"><span class="pct-lbl">N&deg; Immt&nbsp;:</span><span class="pct-val">{{v(voiture.immatriculation)}}</span></div>
+          <div class="pct-fld"><span class="pct-lbl">Lieu de Livraison&nbsp;:</span><span class="pct-val"></span></div>
+          <div class="pct-fld"><span class="pct-lbl">Lieu de Retour&nbsp;:</span><span class="pct-val"></span></div>
+          <div class="pct-fld"><span class="pct-lbl">Date de Retour&nbsp;:</span><span class="pct-val">{{fmtDate(v(contractData?.dateFin))}}</span></div>
+
+          <div class="pct-sep"></div>
+
+          <div class="pct-fld"><span class="pct-lbl">Km D&eacute;part&nbsp;:</span><span class="pct-val">{{v(voiture.kilometrageActuel)}}</span></div>
+          <div class="pct-fld"><span class="pct-lbl">Km R&eacute;cup&eacute;r&eacute;&nbsp;:</span><span class="pct-val"></span></div>
+          <div class="pct-fld"><span class="pct-lbl">Km Effectu&eacute;&nbsp;:</span><span class="pct-val"></span></div>
+          <div class="pct-fld"><span class="pct-lbl">Prix Jours&nbsp;:</span><span class="pct-val">{{v(voiture.prixJour)}}</span></div>
+
+          <div class="pct-sep"></div>
+
+          <div class="pct-fld"><span class="pct-lbl">Avance&nbsp;:</span><span class="pct-val"></span></div>
+          <div class="pct-fld"><span class="pct-lbl">Reste&nbsp;:</span><span class="pct-val"></span></div>
+          <div class="pct-fld"><span class="pct-lbl">Nbrs de jours factur&eacute;s&nbsp;:</span><span class="pct-val">{{days || ''}}</span></div>
+          <div class="pct-fld"><span class="pct-lbl">Total net &agrave; payer&nbsp;:</span><span class="pct-val">{{v(contractData?.montantTotal)}}</span></div>
+          <div class="pct-fld"><span class="pct-lbl">Franchise&nbsp;:</span><span class="pct-val"></span></div>
+
+          <div class="pct-caution">
+            Caution&nbsp;:&nbsp;oui&nbsp;<span class="pct-box"></span>&nbsp;&nbsp;non&nbsp;<span class="pct-box"></span>
+          </div>
+
+          <div class="pct-sep"></div>
+
+          <!-- Accessories -->
+          <div class="pct-acc">
+            <span class="pct-acc-item"><span class="pct-box"></span>&nbsp;Extincteur</span>
+            <span class="pct-acc-item"><span class="pct-box"></span>&nbsp;Lavage</span>
+            <span class="pct-acc-item"><span class="pct-box"></span>&nbsp;Plaque d&apos;empanne</span>
+          </div>
+          <div class="pct-acc">
+            <span class="pct-acc-item"><span class="pct-box"></span>&nbsp;Cric</span>
+            <span class="pct-acc-item"><span class="pct-box"></span>&nbsp;Gilet</span>
+            <span class="pct-acc-item"><span class="pct-box"></span>&nbsp;Roue secours</span>
+          </div>
+          <div class="pct-acc">
+            <span class="pct-acc-item"><span class="pct-box"></span>&nbsp;Si&egrave;ge b&eacute;b&eacute;</span>
+          </div>
+          <div class="pct-fld"><span class="pct-lbl">NB&nbsp;:</span><span class="pct-val"></span></div>
+
+          <div class="pct-sep"></div>
+
+          <!-- Fuel gauge -->
+          <div class="pct-fuel">
+            <svg viewBox="0 0 200 115" class="pct-fuel-svg">
+              <path d="M20 105 A80 80 0 0 1 180 105" fill="none" stroke="#bbb" stroke-width="3"/>
+              <line x1="20"  y1="105" x2="29"  y2="105" stroke="#000" stroke-width="2"/>
+              <line x1="43"  y1="48"  x2="51"  y2="55"  stroke="#000" stroke-width="2"/>
+              <line x1="100" y1="25"  x2="100" y2="34"  stroke="#000" stroke-width="2"/>
+              <line x1="157" y1="48"  x2="149" y2="55"  stroke="#000" stroke-width="2"/>
+              <line x1="180" y1="105" x2="171" y2="105" stroke="#000" stroke-width="2"/>
+              <text x="4"   y="113" font-family="Arial" font-size="13" font-weight="bold">0</text>
+              <text x="24"  y="44"  font-family="Arial" font-size="11">1/4</text>
+              <text x="84"  y="20"  font-family="Arial" font-size="13" font-weight="bold">1/2</text>
+              <text x="145" y="44"  font-family="Arial" font-size="11">3/4</text>
+              <text x="182" y="113" font-family="Arial" font-size="13" font-weight="bold">1</text>
+              <circle cx="100" cy="105" r="5" fill="#000"/>
+              <line x1="100" y1="105" x2="100" y2="33" stroke="#000" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+            <div class="pct-fuel-scale">
+              <div class="pct-fs"></div>
+              <div class="pct-fs"></div>
+              <div class="pct-fs"></div>
+              <div class="pct-fs"></div>
+              <div class="pct-fs pct-fs-last"></div>
+            </div>
+          </div>
+
+          <div class="pct-sep"></div>
+
+          <!-- Vehicle inspection diagram -->
+          <div class="pct-sec-hd" style="text-align: center; border-left: 2px solid #000; border-right: 2px solid #000; margin: 0; padding: 1mm 0 0;">
+            ETAT DU VEHICULE AVANT LA LOCATION
+          </div>
+          <div class="pct-car-wrap">
+            <svg viewBox="0 0 800 330" class="pct-car-svg">
+              <rect x="120" y="20" width="70" height="30" rx="5" fill="#fff" stroke="#000" stroke-width="3" />
+              <rect x="120" y="280" width="70" height="30" rx="5" fill="#fff" stroke="#000" stroke-width="3" />
+              <rect x="610" y="20" width="70" height="30" rx="5" fill="#fff" stroke="#000" stroke-width="3" />
+              <rect x="610" y="280" width="70" height="30" rx="5" fill="#fff" stroke="#000" stroke-width="3" />
+              <path d="M 70,165 C 70,100 100,50 160,50 L 640,50 C 700,50 730,100 730,165 C 730,230 700,280 640,280 L 160,280 C 100,280 70,230 70,165 Z" fill="#fff" stroke="#000" stroke-width="3.5" />
+              <path d="M 200,80 C 185,120 185,210 200,250 L 240,235 C 225,195 225,135 240,95 Z" fill="#fff" stroke="#000" stroke-width="2" />
+              <path d="M 265,75 L 390,75 C 390,75 385,115 375,120 L 280,120 Z" fill="none" stroke="#000" stroke-width="2" />
+              <path d="M 410,75 L 555,75 C 540,115 525,120 510,120 L 410,120 Z" fill="none" stroke="#000" stroke-width="2" />
+              <path d="M 265,255 L 390,255 C 390,255 385,215 375,210 L 280,210 Z" fill="none" stroke="#000" stroke-width="2" />
+              <path d="M 410,255 L 555,255 C 540,215 525,210 510,210 L 410,210 Z" fill="none" stroke="#000" stroke-width="2" />
+              <path d="M 595,95 C 615,130 615,200 595,235 L 575,225 C 590,195 590,135 575,105 Z" fill="#fff" stroke="#000" stroke-width="2" />
+              <text x="400" y="180" font-size="48" font-weight="900" fill="#000" text-anchor="middle">D</text>
+              <path d="M 220,73 C 205,55 205,45 220,45" fill="none" stroke="#000" stroke-width="2" />
+              <path d="M 220,257 C 205,275 205,285 220,285" fill="none" stroke="#000" stroke-width="2" />
+              <line x1="400" y1="75" x2="400" y2="255" stroke="#000" stroke-width="2" />
+              <text x="25" y="172" font-size="14" font-weight="bold">AVANT</text>
+              <text x="742" y="172" font-size="14" font-weight="bold">ARRIÈRE</text>
+            </svg>
+          </div>
+
+          <div class="pct-sig-r-lbl">Signature de La Soci&eacute;t&eacute;</div>
+          <div class="pct-fld"><span class="pct-lbl">Fait &agrave;&nbsp;:</span><span class="pct-val"></span></div>
+          <div class="pct-fld"><span class="pct-lbl">Le&nbsp;:</span><span class="pct-val"></span></div>
+          <div class="pct-dlv">
+            <span class="pct-dlv-item">&agrave; la livraison</span>
+            <span class="pct-dlv-item">&agrave; la reprise</span>
+          </div>
+
+        </div><!-- /col-r -->
+      </div><!-- /body -->
+
+      <!-- SIGNATURE SECTION -->
+      <div class="pct-sig-wrap">
+        <div class="pct-sig-ar">&#1593;&#1606;&#1583; &#1575;&#1604;&#1578;&#1608;&#1602;&#1610;&#1593; &#1575;&#1604;&#1605;&#1587;&#1578;&#1571;&#1580;&#1585; &#1610;&#1602;&#1600;&#1585; &#1576;&#1602;&#1600;&#1585;&#1575;&#1569;&#1577; &#1575;&#1604;&#1588;&#1600;&#1585;&#1608;&#1591; &#1608;&#1575;&#1604;&#1571;&#1581;&#1603;&#1600;&#1575;&#1605; &#1575;&#1604;&#1605;&#1606;&#1589;&#1600;&#1608;&#1589; &#1593;&#1604;&#1610;&#1607;&#1600;&#1575; &#1593;&#1604;&#1609; &#1592;&#1607;&#1585; &#1607;&#1584;&#1575; &#1575;&#1604;&#1593;&#1602;&#1583;.</div>
+        <div class="pct-sig-fr">&Agrave; la signature le locataire d&eacute;clare avoir pris connaissance des clauses et conditions stipul&eacute;es au verso du pr&eacute;sent contrat.</div>
+        <div class="pct-sig-row">
+          <div class="pct-sig-l">
+            <div class="pct-sig-l-ttl">Signature du Locataire</div>
+            <div class="pct-sig-conds">
+              <div class="pct-sig-cond">&#9679;&nbsp;1er conducteur</div>
+              <div class="pct-sig-cond">&#9679;&nbsp;2&egrave;me conducteur</div>
+            </div>
+          </div>
+          <div class="pct-sig-r">
+            <div class="pct-sig-r-ttl">Signature de La Soci&eacute;t&eacute;</div>
+            <div class="pct-fld"><span class="pct-lbl">Fait &agrave;&nbsp;:</span><span class="pct-val"></span></div>
+            <div class="pct-fld"><span class="pct-lbl">Le&nbsp;:</span><span class="pct-val"></span></div>
+            <div class="pct-dlv pct-dlv-sm">
+              <span class="pct-dlv-item">&agrave; la livraison</span>
+              <span class="pct-dlv-item">&agrave; la reprise</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LEGAL FOOTER -->
+      <div class="pct-footer">
+        <div class="pct-foot-ar">&#1603;&#1604; &#1590;&#1585;&#1585; &#1610;&#1605;&#1587; &#1575;&#1604;&#1588;&#1585;&#1603;&#1577; &#1603;&#1585;&#1575;&#1569; &#1605;&#1606; &#1591;&#1585;&#1601; &#1575;&#1604;&#1605;&#1587;&#1578;&#1571;&#1580;&#1585; &#1587;&#1610;&#1593;&#1585;&#1590;&#1607; &#1604;&#1604;&#1605;&#1587;&#1575;&#1569;&#1604;&#1577; &#1575;&#1604;&#1573;&#1583;&#1575;&#1585;&#1610;&#1577; &#1608;&#1575;&#1604;&#1602;&#1575;&#1606;&#1608;&#1606;&#1610;&#1577; &#1573;&#1604;&#1609; &#1581;&#1610;&#1606; &#1580;&#1576;&#1585; &#1575;&#1604;&#1590;&#1585;&#1585; &#1605;&#1593; &#1571;&#1583;&#1575;&#1569; &#1580;&#1605;&#1610;&#1593; &#1575;&#1604;&#1605;&#1589;&#1575;&#1585;&#1610;&#1601; &#1575;&#1604;&#1606;&#1575;&#1578;&#1580;&#1577; &#1593;&#1606; &#1584;&#1604;&#1603;.</div>
+        <div>Chaque dommage touche la soci&eacute;t&eacute; pendant la p&eacute;riode de location, le locataire sera expos&eacute; &agrave; la responsabilit&eacute; adminiSrative et judiciaire jusqu&apos;a decision finale, ainsi le paiement de tous les frais r&eacute;sultants.</div>
+      </div>
+
+    </div><!-- /pct-recto -->
+
+    <!-- Screen separator between pages -->
+    <div class="pct-page-gap"></div>
+
+    <!-- ══════════════════════════════════════ PAGE 2 — VERSO ══════════════════════════════════════ -->
+    <div class="pct-page pct-verso">
+
+      <div class="pct-cg-hdr">
+        <div class="pct-cg-fr-ttl">CONDITIONS GENERALES</div>
+        <div class="pct-cg-ar-ttl">&#1575;&#1604;&#1588;&#1585;&#1608;&#1591; &#1575;&#1604;&#1593;&#1575;&#1605;&#1600;&#1577;</div>
+      </div>
+
+      <div class="pct-cg-body">
+
+        <!-- French articles -->
+        <div class="pct-cg-fr">
+
+          <div class="pct-at">ARTICLE 1 : UTILISATION DE VOITURE</div>
+          <div class="pct-ab">
+            <p>-Le locataire s&apos;engage &agrave; ne pas laisser conduire la voiture que par ceux d&eacute;sign&eacute;s au contrat.</p>
+            <p>-Ne pas utiliser le v&eacute;hicule &agrave; des fins illicites ou pour le transport de marchandises interdites le remorquage ou le transport des personnes &agrave; contre partie.</p>
+            <p>-Ne pas utiliser le v&eacute;hicule dans les pistes.</p>
+          </div>
+
+          <div class="pct-at">ARTICLE 2 : &Eacute;TAT DE VOITURE</div>
+          <div class="pct-ab">
+            <p>-Le v&eacute;hicule est livr&eacute; en parfait &eacute;tat de propret&eacute;, m&eacute;canique, &eacute;lectrique et pneumatique&nbsp;; doit &ecirc;tre rendu dans les m&ecirc;mes conditions.</p>
+            <p>-Si le v&eacute;hicule est lou&eacute; moins de 03 jours le kilom&eacute;trage est fix&eacute; &agrave; 250 Km/jour. En cas de d&eacute;passement de cette valeur, le locataire paiera 1.20 DH pour chaque kilom&egrave;tre de plus. Au-del&agrave; de 03 jours le kilom&eacute;trage est illimit&eacute;.</p>
+          </div>
+
+          <div class="pct-at">ARTICLE 3 : ENTRETIEN ET R&Eacute;PARATION</div>
+          <div class="pct-ab">
+            <p>Toute op&eacute;ration, d&apos;entretien ou de r&eacute;paration, pr&eacute;vue du v&eacute;hicule, doit &ecirc;tre accord&eacute;e par l&apos;agence de location soit par Email ou Fax.</p>
+            <p>-Le locataire doit v&eacute;rifier les niveaux (l&apos;huile, eau, les lumi&egrave;res de la voitures.) si la dur&eacute;e d&eacute;passe <b>un jour.</b></p>
+            <p>-Toute panne caus&eacute;e par l&apos;inconscience du client la facturation sera &agrave; sa charge.</p>
+            <p>-<i>L&apos;agence n&apos;est pas responsable des violations li&eacute;es aux feux de la voiture, ni de l&apos;absence des moyens de signalisation (triangle de faute)</i></p>
+          </div>
+
+          <div class="pct-at">ARTICLE 4 : ASSURANCES</div>
+          <div class="pct-ab">
+            <p>-<i>Assurance Responsabilit&eacute; civile uniquement, le locataire assume l&apos;enti&egrave;re responsabilit&eacute; concernant la r&eacute;paration de la voitures en cas d&apos;accident, aussi que les frais dues &agrave; l&apos;immobilisation de la voiture pendant toute la p&eacute;riode de r&eacute;paration.</i></p>
+            <p>-Le locataire doit aviser imm&eacute;diatement l&apos;agence de location <b>en cas d&apos;accident.</b></p>
+          </div>
+
+          <div class="pct-at">ARTICLE 5 : LOCATION PROLONGATION</div>
+          <div class="pct-ab">
+            <p>-Le paiement de location est payable &agrave; l&apos;avance <b><i>de location. Faute de cela le locataire est responsable de tous les frais caus&eacute;s par n&eacute;gligence</i></b></p>
+            <p>En cas de prolongation le locataire doit aviser 2 jours &agrave; l&apos;avance.</p>
+            <p>-Le locataire doit rendre le v&eacute;hicule en temps r&eacute;el de la livraison. Pour tout retard (plus de 2 heures), une journ&eacute;e sera factur&eacute;e.</p>
+            <p>-La soci&eacute;t&eacute; se r&eacute;serve le plein droit de mettre fin au statut du contrat sans justification ni compensation, ne rembourse pas dans le cas ou le locataire n&apos;a pas respect&eacute; les termes de ce contrat.</p>
+            <p>-Dans le cas d&apos;un retour avant terme, le locataire n&apos;a pas le droit d&apos;aucun remboursement.</p>
+            <p>-Dans le cas d&apos;une prolongation de contrat non autoris&eacute;e par la soci&eacute;t&eacute;, le locataire reste engag&eacute; de payer une somme forfaitaire de 100 dirhams pour chaque heure de retard&nbsp;; jusqu&apos;a reprise de la voiture</p>
+          </div>
+
+          <div class="pct-at">ARTICLE 6 : PAPIERS DE LA VOITURE</div>
+          <div class="pct-ab">
+            <p>-En cas de perte de papiers de voiture toutes les charges et les frais sont &agrave; la charge du locataire (immobilisation du v&eacute;hicule renouvellement de papiers &hellip;).</p>
+          </div>
+
+          <div class="pct-at">ARTICLE 7 : RESPONSABILIT&Eacute;</div>
+          <div class="pct-ab">
+            <p>-Le locataire est responsable des amendes, contraventions et proc&egrave;s-verbaux &eacute;tablis contre lui par les autorit&eacute;s.</p>
+            <p>-L&apos;Agence ne prend pas une infraction lib&eacute;r&eacute;e par les autorit&eacute;s concernant les feux de voiture mal fonctionn&eacute; pendant la p&eacute;riode de location.</p>
+            <p>-Le Conducteur restera le responsable financi&egrave;rement des dommages caus&eacute;s au v&eacute;hicule dans les cas ou la conduite sous l&apos;emprise de l&apos;alcool, drogue ou m&eacute;dicament interdit lors de conduite.</p>
+            <p>-Le locataire ne doit pas renoncer &agrave; la voiture, quelle que soit les raisons d&apos;arr&ecirc;t.</p>
+            <p>-<i>Le paiement anticip&eacute; ne peut &ecirc;tre rembours&eacute; ni r&eacute;clam&eacute; dans les cas suivant: Restart - Annulation - Changement.</i></p>
+            <p>-<i>La soci&eacute;t&eacute; a le droit de r&eacute;cup&eacute;rer le v&eacute;hicule lou&eacute; si c&apos;est prouv&eacute; par une contravention ou un pv que le chauffeur a d&eacute;pass&eacute; la vitesse d&eacute;clar&eacute; par la loi routi&egrave;re.</i></p>
+            <p>-<b>Le client doit assumer la responsabilit&eacute; de rembourser tout d&eacute;gat mat&eacute;riel en cas d&apos;accident et d&apos;absence de permis de conduire &agrave; cause d&apos;une contravention, pv, ect...</b></p>
+            <p>-<b>Le d&eacute;passement de 50 km/h de la vitesse l&eacute;galement prescrite permet &agrave; l&apos;entreprise de reprendre la voiture sans justification ni indemnit&eacute;</b></p>
+          </div>
+
+          <div class="pct-at">ARTICLE 8 : ANNULATION DU DROIT DE LOCATAIRE</div>
+          <div class="pct-ab">
+            <p>-Tous les droits du locataire qui lui sont accord&eacute;s en vertu du pr&eacute;sent contrat seront exclus dans le cas de non respect d&apos;un acte de contrat sans pr&eacute;tendre &agrave; aucune indemnit&eacute; pour la dur&eacute;e restante du contrat de location.</p>
+          </div>
+
+          <div class="pct-at">ARTICLE 9 : LITIGES</div>
+          <div class="pct-ab">
+            <p>-Toutes les contestations pouvant na&icirc;tre entre la soci&eacute;t&eacute; de location et le locataire sont de la comp&eacute;tence exclusive du si&egrave;ge social de ladite soci&eacute;t&eacute;.</p>
+          </div>
+
+        </div><!-- /cg-fr -->
+
+        <!-- Arabic articles -->
+        <div class="pct-cg-ar">
+
+          <div class="pct-at">&#1575;&#1604;&#1576;&#1606;&#1583; 1 : &#1575;&#1587;&#1578;&#1593;&#1605;&#1575;&#1604; &#1575;&#1604;&#1587;&#1610;&#1575;&#1585;&#1577;</div>
+          <div class="pct-ab">
+            <p>&#1604;&#1575; &#1610;&#1587;&#1605;&#1581; &#1576;&#1587;&#1610;&#1575;&#1602;&#1577; &#1575;&#1604;&#1587;&#1610;&#1575;&#1585;&#1577; &#1575;&#1604;&#1575; &#1605;&#1606; &#1591;&#1585;&#1601; &#1575;&#1604;&#1571;&#1588;&#1582;&#1575;&#1589; &#1575;&#1604;&#1605;&#1581;&#1583;&#1583;&#1577; &#1571;&#1587;&#1605;&#1575;&#1572;&#1607;&#1605; &#1601;&#1610; &#1575;&#1604;&#1593;&#1602;&#1583;.</p>
+            <p>&#1604;&#1575; &#1610;&#1587;&#1605;&#1581; &#1576;&#1575;&#1587;&#1578;&#1582;&#1583;&#1575;&#1605; &#1575;&#1604;&#1587;&#1610;&#1575;&#1585;&#1577; &#1604;&#1571;&#1594;&#1585;&#1575;&#1590; &#1594;&#1610;&#1585; &#1605;&#1588;&#1585;&#1608;&#1593;&#1577; &#8206;&#1548; (&#1606;&#1602;&#1604; &#1575;&#1604;&#1576;&#1590;&#1575;&#1574;&#1593; &#1575;&#1604;&#1605;&#1605;&#1606;&#1608;&#1593;&#1577; &#1580;&#1585; &#1575;&#1604;&#1593;&#1585;&#1576;&#1610;&#1575;&#1578; &#1548; &#1571;&#1608; &#1606;&#1602;&#1604; &#1575;&#1604;&#1571;&#1588;&#1582;&#1575;&#1589; &#1576;&#1605;&#1602;&#1575;&#1576;&#1604;).</p>
+            <p>&#1610;&#1605;&#1606;&#1593; &#1575;&#1587;&#1578;&#1593;&#1605;&#1575;&#1604; &#1575;&#1604;&#1587;&#1610;&#1575;&#1585;&#1577; &#1601;&#1610; &#1575;&#1604;&#1591;&#1585;&#1602; &#1575;&#1604;&#1594;&#1610;&#1585; &#1575;&#1604;&#1605;&#1593;&#1576;&#1583;&#1577;</p>
+          </div>
+
+          <div class="pct-at">&#1575;&#1604;&#1576;&#1606;&#1583; 2 : &#1581;&#1575;&#1604;&#1577; &#1575;&#1604;&#1587;&#1610;&#1575;&#1585;&#1577;</div>
+          <div class="pct-ab">
+            <p>&#1578;&#1587;&#1604;&#1605; &#1575;&#1604;&#1587;&#1610;&#1575;&#1585;&#1577; &#1601;&#1610; &#1581;&#1575;&#1604;&#1577; &#1580;&#1610;&#1583;&#1577;(&#1575;&#1604;&#1606;&#1592;&#1575;&#1601;&#1577;&#1548; &#1575;&#1604;&#1581;&#1575;&#1604;&#1577; &#1575;&#1604;&#1605;&#1610;&#1603;&#1575;&#1606;&#1610;&#1603;&#1610;&#1577;&#1548; &#1575;&#1604;&#1575;&#1590;&#1608;&#1575;&#1569;&#1548; &#1575;&#1604;&#1593;&#1580;&#1604;&#1575;&#1578;) &#1593;&#1604;&#1609; &#1575;&#1606; &#1578;&#1593;&#1575;&#1583; &#1601;&#1610; &#1606;&#1601;&#1587; &#1575;&#1604;&#1592;&#1585;&#1608;&#1601;</p>
+            <p>&#1575;&#1584;&#1575; &#1575;&#1587;&#1578;&#1571;&#1580;&#1585;&#1578; &#1575;&#1604;&#1587;&#1610;&#1575;&#1585;&#1577; &#1571;&#1602;&#1604; &#1605;&#1606; 03 &#1571;&#1610;&#1575;&#1605; &#1610;&#1581;&#1583;&#1583; &#1593;&#1583;&#1583; &#1575;&#1604;&#1603;&#1610;&#1604;&#1608;&#1605;&#1578;&#1585;&#1575;&#1578; &#1601;&#1610; 250 &#1603;&#1604;&#1605;/&#1610;&#1608;&#1605; &#1608;&#1601;&#1610; &#1581;&#1575;&#1604;&#1577; &#1578;&#1580;&#1575;&#1608;&#1586; &#1575;&#1604;&#1593;&#1583;&#1583; &#1575;&#1604;&#1605;&#1581;&#1583;&#1583; &#1610;&#1581;&#1578;&#1587;&#1576; 1.20 &#1583;&#1585;&#1607;&#1605; &#1604;&#1604;&#1603;&#1610;&#1604;&#1608;&#1605;&#1578;&#1585; &#1575;&#1604;&#1608;&#1575;&#1581;&#1583;</p>
+            <p>&#1575;&#1605;&#1575; &#1575;&#1584;&#1575; &#1578;&#1580;&#1575;&#1608;&#1586;&#1578; &#1575;&#1604;&#1605;&#1583;&#1577; 03 &#1571;&#1610;&#1575;&#1605; &#1605;&#1575; &#1610;&#1576;&#1602;&#1609; &#1593;&#1583;&#1583; &#1575;&#1604;&#1603;&#1610;&#1604;&#1608;&#1605;&#1578;&#1585;&#1575;&#1578; <b>&#1601;&#1610; 350 &#1603;&#1604;&#1605;/&#1610;&#1608;&#1605;</b></p>
+          </div>
+
+          <div class="pct-at">&#1575;&#1604;&#1576;&#1606;&#1583; 3 :&#1575;&#1604;&#1589;&#1610;&#1575;&#1606;&#1577; &#1608; &#1575;&#1604;&#1575;&#1589;&#1604;&#1575;&#1581;</div>
+          <div class="pct-ab">
+            <p>&#1604;&#1575;&#1610;&#1605;&#1603;&#1606; &#1575;&#1604;&#1602;&#1610;&#1575;&#1605; &#1576;&#1571;&#1610; &#1593;&#1605;&#1604;&#1610;&#1577; &#1589;&#1610;&#1575;&#1606;&#1577; &#1571;&#1608; &#1573;&#1589;&#1604;&#1575;&#1581; &#1576;&#1575;&#1604;&#1587;&#1610;&#1575;&#1585;&#1577;&#1548; &#1573;&#1604;&#1575; &#1576;&#1593;&#1583; &#1575;&#1604;&#1581;&#1589;&#1608;&#1604; &#1593;&#1604;&#1609; &#1605;&#1608;&#1575;&#1601;&#1602;&#1577; &#1575;&#1604;&#1608;&#1603;&#1575;&#1604;&#1577; &#1593;&#1606; &#1591;&#1585;&#1610;&#1602; &#1575;&#1604;&#1601;&#1575;&#1603;&#1587; &#1571;&#1608; &#1575;&#1604;&#1576;&#1585;&#1610;&#1583; &#1575;&#1604;&#1575;&#1604;&#1603;&#1578;&#1585;&#1608;&#1606;&#1610;.</p>
+            <p>&#1610;&#1580;&#1576; &#1593;&#1604;&#1609; &#1575;&#1604;&#1605;&#1587;&#1578;&#1571;&#1580;&#1585; &#1575;&#1604;&#1578;&#1581;&#1602;&#1602; &#1605;&#1606; &#1605;&#1587;&#1578;&#1608;&#1610;&#1575;&#1578;&#1607; (&#1586;&#1610;&#1578; &#1575;&#1604;&#1605;&#1581;&#1585;&#1603;&#1548;&#1575;&#1604;&#1605;&#1575;&#1569;&#1548; &#1571;&#1590;&#1608;&#1575;&#1569; &#1575;&#1604;&#1587;&#1610;&#1575;&#1585;&#1575;&#1578;.) &#1573;&#1584;&#1575; &#1578;&#1580;&#1575;&#1608;&#1586;&#1578; &#1575;&#1604;&#1605;&#1583;&#1577; 24 &#1587;&#1575;&#1593;&#1577;</p>
+            <p>&#1571;&#1610; &#1593;&#1591;&#1604; &#1606;&#1575;&#1580;&#1605; &#1593;&#1606; &#1573;&#1607;&#1605;&#1575;&#1604; &#1605;&#1606; &#1591;&#1585;&#1601; &#1575;&#1604;&#1605;&#1587;&#1578;&#1571;&#1580;&#1585;&#1548; &#1610;&#1604;&#1586;&#1605;&#1607; &#1571;&#1583;&#1575;&#1569; &#1603;&#1604; &#1575;&#1604;&#1606;&#1601;&#1602;&#1575;&#1578; &#1575;&#1604;&#1605;&#1578;&#1585;&#1578;&#1576;&#1577; &#1593;&#1606; &#1584;&#1604;&#1603;.</p>
+          </div>
+
+          <div class="pct-at">&#1575;&#1604;&#1576;&#1606;&#1583; 4 : &#1575;&#1604;&#1578;&#1571;&#1605;&#1610;&#1606;</div>
+          <div class="pct-ab">
+            <p><b>-&#1575;&#1604;&#1578;&#1571;&#1605;&#1610;&#1606; &#1593;&#1604;&#1609; &#1575;&#1604;&#1605;&#1587;&#1572;&#1608;&#1604;&#1610;&#1577; &#1575;&#1604;&#1605;&#1583;&#1606;&#1610;&#1577; &#1601;&#1602;&#1591; &#1573;&#1584; &#1571;&#1606; &#1575;&#1604;&#1605;&#1603;&#1578;&#1585;&#1610; &#1610;&#1578;&#1581;&#1605;&#1604; &#1603;&#1604; &#1575;&#1604;&#1605;&#1587;&#1572;&#1608;&#1604;&#1610;&#1577; &#1575;&#1604;&#1605;&#1578;&#1593;&#1604;&#1602;&#1577; &#1576;&#1573;&#1589;&#1604;&#1575;&#1581; &#1575;&#1604;&#1587;&#1610;&#1575;&#1585;&#1577;</b></p>
+            <p><b>&#1601;&#1610; &#1581;&#1575;&#1604;&#1577; &#1608;&#1602;&#1608;&#1593; &#1581;&#1575;&#1583;&#1579;&#1577;&#1548; &#1576;&#1575;&#1604;&#1573;&#1590;&#1575;&#1601;&#1577; &#1573;&#1604;&#1609; &#1575;&#1604;&#1605;&#1589;&#1575;&#1585;&#1610;&#1601; &#1575;&#1604;&#1606;&#1575;&#1578;&#1580;&#1577; &#1593;&#1606; &#1578;&#1608;&#1602;&#1601; &#1575;&#1604;&#1587;&#1610;&#1575;&#1585;&#1577; &#1582;&#1604;&#1575;&#1604; &#1601;&#1578;&#1585;&#1577; &#1575;&#1604;&#1573;&#1589;&#1604;&#1575;&#1581;</b></p>
+            <p>&#1610;&#1580;&#1576; &#1593;&#1604;&#1609; &#1575;&#1604;&#1605;&#1587;&#1578;&#1571;&#1580;&#1585; &#1573;&#1582;&#1576;&#1575;&#1585; &#1608;&#1603;&#1575;&#1604;&#1577; &#1575;&#1604;&#1603;&#1585;&#1575;&#1569; &#1601;&#1608;&#1585; &#1581;&#1583;&#1608;&#1579; &#1581;&#1575;&#1583;&#1579;&#1577; &#1587;&#1610;&#1585;.</p>
+          </div>
+
+          <div class="pct-at">&#1575;&#1604;&#1576;&#1606;&#1583; 5 : &#1575;&#1604;&#1578;&#1605;&#1583;&#1610;&#1583;</div>
+          <div class="pct-ab">
+            <p>-&#1610;&#1608;&#1583;&#1610; &#1605;&#1587;&#1576;&#1602;&#1575; &#1575;&#1604;&#1605;&#1576;&#1604;&#1594; &#1575;&#1604;&#1575;&#1580;&#1605;&#1575;&#1604;&#1610; &#1604;&#1604;&#1573;&#1610;&#1580;&#1575;&#1585;.</p>
+            <p>-&#1604;&#1575; &#1610;&#1605;&#1603;&#1606; &#1578;&#1605;&#1583;&#1610;&#1583; &#1593;&#1605;&#1604;&#1610;&#1577; &#1575;&#1604;&#1573;&#1610;&#1580;&#1575;&#1585; &#1575;&#1604;&#1575; &#1576;&#1605;&#1608;&#1575;&#1601;&#1602;&#1577; &#1575;&#1604;&#1608;&#1603;&#1575;&#1604;&#1577; &#1548; &#1608;&#1575;&#1604;&#1575; &#1587;&#1610;&#1578;&#1581;&#1605;&#1604; &#1575;&#1604;&#1605;&#1587;&#1578;&#1571;&#1580;&#1585; &#1603;&#1604; &#1575;&#1604;&#1605;&#1589;&#1575;&#1585;&#1610;&#1601; &#1575;&#1604;&#1606;&#1575;&#1578;&#1580;&#1577; &#1593;&#1606; &#1607;&#1584;&#1575; &#1575;&#1604;&#1573;&#1607;&#1605;&#1575;&#1604;.</p>
+            <p>&#1610;&#1580;&#1576; &#1593;&#1604;&#1609; &#1575;&#1604;&#1605;&#1587;&#1578;&#1571;&#1580;&#1585; &#1573;&#1585;&#1580;&#1575;&#1593; &#1575;&#1604;&#1587;&#1610;&#1575;&#1585;&#1577; &#1601;&#1610; &#1575;&#1604;&#1608;&#1602;&#1578; &#1575;&#1604;&#1605;&#1581;&#1583;&#1583; . &#1608;&#1571;&#1610; &#1578;&#1571;&#1582;&#1585; (&#1601;&#1610; &#1581;&#1583;&#1608;&#1583; &#1587;&#1575;&#1593;&#1578;&#1610;&#1606;) &#1610;&#1581;&#1578;&#1587;&#1576; &#1610;&#1608;&#1605;&#1575; &#1573;&#1590;&#1575;&#1601;&#1610;&#1575; &#1610;&#1608;&#1583;&#1610;&#1607; &#1575;&#1604;&#1605;&#1587;&#1578;&#1571;&#1580;&#1585;.</p>
+            <p>&#1601;&#1610; &#1581;&#1575;&#1604;&#1577; &#1573;&#1585;&#1580;&#1575;&#1593; &#1587;&#1575;&#1576;&#1602; &#1604;&#1571;&#1608;&#1575;&#1606;&#1607; &#1604;&#1575; &#1610;&#1605;&#1603;&#1606; &#1604;&#1604;&#1605;&#1603;&#1578;&#1585;&#1610; &#1571;&#1606; &#1610;&#1591;&#1575;&#1604;&#1576; &#1576;&#1571;&#1610; &#1578;&#1587;&#1583;&#1610;&#1583; &#1571;&#1608; &#1578;&#1582;&#1601;&#1610;&#1590;</p>
+            <p>&#1601;&#1610; &#1581;&#1575;&#1604;&#1577; &#1573;&#1606;&#1578;&#1607;&#1575;&#1569; &#1605;&#1583;&#1577; &#1575;&#1604;&#1593;&#1602;&#1583; &#1608;&#1593;&#1583;&#1605; &#1578;&#1605;&#1583;&#1610;&#1583;&#1607; &#1605;&#1606; &#1591;&#1585;&#1601; &#1575;&#1604;&#1588;&#1585;&#1603;&#1577; &#1610;&#1576;&#1602;&#1609; &#1575;&#1604;&#1605;&#1603;&#1578;&#1585;&#1610; &#1605;&#1604;&#1578;&#1586;&#1605;&#1575; &#1576;&#1578;&#1571;&#1583;&#1610;&#1577; &#1594;&#1585;&#1575;&#1605;&#1577; &#1580;&#1586;&#1575;&#1574;&#1610;&#1577; &#1605;&#1602;&#1583;&#1575;&#1585;&#1607;&#1575; 100 &#1583;&#1585;&#1607;&#1605; &#1593;&#1606; &#1603;&#1604; &#1587;&#1575;&#1593;&#1577; &#1578;&#1571;&#1582;&#1585; &#1573;&#1604;&#1609; &#1581;&#1610;&#1606; &#1575;&#1587;&#1578;&#1585;&#1580;&#1575;&#1593; &#1575;&#1604;&#1587;&#1610;&#1575;&#1585;&#1577;.</p>
+          </div>
+
+          <div class="pct-at">&#1575;&#1604;&#1576;&#1606;&#1583; 6 : &#1571;&#1608;&#1585;&#1575;&#1602; &#1575;&#1604;&#1587;&#1610;&#1575;&#1585;&#1577;</div>
+          <div class="pct-ab">
+            <p>&#1601;&#1610; &#1581;&#1575;&#1604;&#1577; &#1601;&#1602;&#1583;&#1575;&#1606; &#1608;&#1579;&#1575;&#1574;&#1602; &#1575;&#1604;&#1587;&#1610;&#1575;&#1585;&#1577; &#1548; &#1610;&#1576;&#1602;&#1609; &#1575;&#1604;&#1605;&#1587;&#1578;&#1571;&#1580;&#1585; &#1607;&#1608; &#1575;&#1604;&#1605;&#1587;&#1572;&#1608;&#1604; &#1593;&#1606; &#1578;&#1603;&#1575;&#1604;&#1610;&#1601; &#1573;&#1606;&#1580;&#1575;&#1586; &#1575;&#1604;&#1571;&#1608;&#1585;&#1575;&#1602; &#1608; &#1593;&#1606; &#1571;&#1610;&#1575;&#1605; &#1578;&#1608;&#1602;&#1601; &#1575;&#1604;&#1587;&#1610;&#1575;&#1585;&#1577;.</p>
+          </div>
+
+          <div class="pct-at">&#1575;&#1604;&#1576;&#1606;&#1583; 7 : &#1575;&#1604;&#1605;&#1587;&#1572;&#1608;&#1604;&#1610;&#1577;</div>
+          <div class="pct-ab">
+            <p>- &#1610;&#1576;&#1602;&#1609; &#1575;&#1604;&#1605;&#1587;&#1578;&#1571;&#1580;&#1585; &#1575;&#1604;&#1605;&#1587;&#1572;&#1608;&#1604; &#1575;&#1604;&#1608;&#1581;&#1610;&#1583; &#1593;&#1606; &#1575;&#1604;&#1594;&#1585;&#1575;&#1605;&#1575;&#1578;&#1548; &#1575;&#1604;&#1605;&#1582;&#1575;&#1604;&#1601;&#1575;&#1578; &#1608;&#1603;&#1604; &#1575;&#1604;&#1605;&#1581;&#1575;&#1590;&#1585; &#1575;&#1604;&#1605;&#1581;&#1585;&#1585;&#1577; &#1590;&#1583;&#1607; &#1605;&#1606; &#1602;&#1576;&#1604; &#1575;&#1604;&#1587;&#1604;&#1591;&#1575;&#1578; &#1575;&#1604;&#1605;&#1593;&#1606;&#1610;&#1577;.</p>
+            <p>- &#1610;&#1604;&#1576;&#1602;&#1609; &#1575;&#1604;&#1587;&#1575;&#1574;&#1602; &#1605;&#1587;&#1572;&#1608;&#1604;&#1575; &#1605;&#1575;&#1604;&#1610;&#1575; &#1593;&#1606; &#1575;&#1604;&#1575;&#1590;&#1585;&#1575;&#1585; &#1575;&#1604;&#1578;&#1610; &#1604;&#1581;&#1602;&#1578; &#1576;&#1575;&#1604;&#1587;&#1610;&#1575;&#1585;&#1577; &#1582;&#1604;&#1575;&#1604; &#1605;&#1583;&#1577; &#1575;&#1604;&#1603;&#1585;&#1575;&#1569; &#1593;&#1606;&#1583; &#1575;&#1604;&#1602;&#1610;&#1575;&#1583;&#1577; &#1578;&#1581;&#1578; &#1578;&#1571;&#1579;&#1610;&#1585; &#1575;&#1604;&#1603;&#1581;&#1608;&#1604; &#1571;&#1608; &#1575;&#1604;&#1605;&#1582;&#1583;&#1585;&#1575;&#1578; &#1571;&#1608; &#1575;&#1604;&#1575;&#1583;&#1608;&#1610;&#1577; &#1575;&#1604;&#1605;&#1581;&#1592;&#1608;&#1585;&#1577; &#1571;&#1579;&#1606;&#1575;&#1569; &#1575;&#1604;&#1587;&#1610;&#1575;&#1602;&#1577;</p>
+            <p>-<b>&#1610;&#1605;&#1603;&#1606; &#1575;&#1587;&#1578;&#1585;&#1580;&#1575;&#1593; &#1571;&#1608; &#1575;&#1604;&#1605;&#1591;&#1575;&#1604;&#1576;&#1577; &#1576;&#1575;&#1604;&#1605;&#1576;&#1604;&#1594; &#1575;&#1604;&#1605;&#1587;&#1576;&#1602; &#1604;&#1604;&#1581;&#1580;&#1586; &#1601;&#1610; &#1575;&#1604;&#1581;&#1575;&#1604;&#1575;&#1578; &#1575;&#1604;&#1578;&#1575;&#1604;&#1610;&#1577;: &#1575;&#1604;&#1573;&#1604;&#1594;&#1575;&#1569; - &#1578;&#1594;&#1610;&#1610;&#1585; &#1606;&#1608;&#1593; &#1575;&#1604;&#1587;&#1610;&#1575;&#1585;&#1577;</b></p>
+            <p>-&#1610;&#1581;&#1602; &#1604;&#1604;&#1588;&#1585;&#1603;&#1577; &#1575;&#1587;&#1578;&#1585;&#1580;&#1575;&#1593; &#1575;&#1604;&#1587;&#1610;&#1575;&#1585;&#1577; &#1575;&#1604;&#1605;&#1603;&#1578;&#1585;&#1571;&#1577; &#1573;&#1584;&#1575; &#1605;&#1575; &#1579;&#1576;&#1578; &#1571;&#1608; &#1571;&#1601;&#1610;&#1578; &#1601;&#1610; &#1581;&#1602; &#1575;&#1604;&#1605;&#1603;&#1578;&#1585;&#1610; &#1602;&#1575;&#1606;&#1608;&#1606;&#1610;&#1611;&#1575; &#1576;&#1605;&#1582;&#1575;&#1604;&#1601;&#1577; &#1571;&#1608; &#1605;&#1581;&#1590;&#1585; &#1585;&#1587;&#1605;&#1610;</p>
+            <p>&#1610;&#1578;&#1581;&#1605;&#1604; &#1575;&#1604;&#1586;&#1576;&#1608;&#1606; &#1603;&#1604; &#1575;&#1604;&#1582;&#1587;&#1575;&#1574;&#1585; &#1601;&#1610; &#1581;&#1575;&#1604;&#1577; &#1608;&#1602;&#1608;&#1593; &#1581;&#1575;&#1583;&#1579;&#1577; &#1608;&#1593;&#1583;&#1605; &#1578;&#1608;&#1601;&#1585;&#1607; &#1593;&#1604;&#1609; &#1585;&#1582;&#1589;&#1577; &#1575;&#1604;&#1587;&#1610;&#1575;&#1602;&#1577; &#1604;&#1587;&#1576;&#1576;&#1607;&#1575; &#1605;&#1606;&#1607; &#1604;&#1605;&#1582;&#1575;&#1604;&#1601;&#1577; &#1571;&#1608;&#1594;&#1610;&#1585;&#1607;&#1575;</p>
+            <p>-&#1578;&#1580;&#1575;&#1608;&#1586; &#1575;&#1604;&#1587;&#1585;&#1593;&#1577; &#1575;&#1604;&#1605;&#1581;&#1583;&#1583;&#1577; &#1602;&#1575;&#1606;&#1608;&#1606;&#1610;&#1611;&#1575; &#1576;&#1600; 50Km/h &#1610;&#1582;&#1608;&#1604; &#1604;&#1604;&#1588;&#1585;&#1603;&#1577; &#1575;&#1587;&#1578;&#1585;&#1580;&#1575;&#1593; &#1575;&#1604;&#1587;&#1610;&#1575;&#1585;&#1577; &#1576;&#1583;&#1608;&#1606; &#1578;&#1576;&#1585;&#1610;&#1585; &#1608;&#1604;&#1575; &#1578;&#1593;&#1608;&#1610;&#1590;</p>
+          </div>
+
+          <div class="pct-at">&#1575;&#1604;&#1576;&#1606;&#1583; 8 : &#1587;&#1602;&#1608;&#1591; &#1581;&#1602; &#1575;&#1604;&#1605;&#1603;&#1578;&#1585;&#1610;</div>
+          <div class="pct-ab">
+            <p>&#1578;&#1587;&#1602;&#1591; &#1603;&#1575;&#1601;&#1577; &#1581;&#1602;&#1608;&#1602; &#1575;&#1604;&#1605;&#1603;&#1578;&#1585;&#1610; &#1575;&#1604;&#1605;&#1605;&#1606;&#1608;&#1581;&#1577; &#1604;&#1607; &#1576;&#1605;&#1602;&#1578;&#1590;&#1609; &#1607;&#1584;&#1575; &#1575;&#1604;&#1593;&#1602;&#1583; &#1601;&#1610; &#1581;&#1575;&#1604;&#1577; &#1593;&#1583;&#1605; &#1575;&#1581;&#1578;&#1585;&#1575;&#1605;&#1607; &#1604;&#1571;&#1610; &#1605;&#1606; &#1607;&#1584;&#1575; &#1575;&#1604;&#1593;&#1602;&#1583; &#1605;&#1606; &#1593;&#1583;&#1605; &#1575;&#1604;&#1605;&#1591;&#1575;&#1604;&#1576;&#1577; &#1576;&#1593;&#1583;&#1605; &#1575;&#1604;&#1578;&#1593;&#1608;&#1610;&#1590; &#1593;&#1606; &#1575;&#1604;&#1605;&#1583;&#1577; &#1575;&#1604;&#1605;&#1578;&#1576;&#1602;&#1610;&#1577;.</p>
+          </div>
+
+          <div class="pct-at">&#1575;&#1604;&#1576;&#1606;&#1583; 9 : &#1575;&#1604;&#1605;&#1606;&#1575;&#1586;&#1593;&#1575;&#1578;</div>
+          <div class="pct-ab">
+            <p>&#1580;&#1605;&#1610;&#1593; &#1575;&#1604;&#1605;&#1606;&#1575;&#1586;&#1593;&#1575;&#1578; &#1575;&#1604;&#1578;&#1610; &#1602;&#1583; &#1578;&#1606;&#1588;&#1571; &#1576;&#1610;&#1606; &#1588;&#1585;&#1603;&#1577; &#1575;&#1604;&#1578;&#1571;&#1580;&#1610;&#1585; &#1608; &#1575;&#1604;&#1605;&#1587;&#1578;&#1571;&#1580;&#1585; &#1578;&#1576;&#1602;&#1609; &#1601;&#1610; &#1575;&#1604;&#1575;&#1582;&#1578;&#1589;&#1575;&#1589; &#1575;&#1604;&#1581;&#1589;&#1585;&#1610; &#1604;&#1604;&#1605;&#1581;&#1575;&#1603;&#1605; &#1575;&#1604;&#1578;&#1575;&#1576;&#1593;&#1577; &#1604;&#1605;&#1602;&#1585; &#1575;&#1604;&#1588;&#1585;&#1603;&#1577;.</p>
+          </div>
+
+        </div><!-- /cg-ar -->
+      </div><!-- /cg-body -->
+
+      <div class="pct-cg-foot">
+        <div class="pct-cgf-ar">&#1603;&#1604; &#1590;&#1585;&#1585; &#1610;&#1605;&#1587; &#1575;&#1604;&#1588;&#1585;&#1603;&#1577; &#1603;&#1585;&#1575;&#1569; &#1605;&#1606; &#1591;&#1585;&#1601; &#1575;&#1604;&#1605;&#1587;&#1578;&#1571;&#1580;&#1585; &#1587;&#1610;&#1593;&#1585;&#1590;&#1607; &#1604;&#1604;&#1605;&#1587;&#1575;&#1569;&#1604;&#1577; &#1575;&#1604;&#1573;&#1583;&#1575;&#1585;&#1610;&#1577; &#1608;&#1575;&#1604;&#1602;&#1575;&#1606;&#1608;&#1606;&#1610;&#1577; &#1573;&#1604;&#1609; &#1581;&#1610;&#1606; &#1580;&#1576;&#1585; &#1575;&#1604;&#1590;&#1585;&#1585; &#1605;&#1593; &#1571;&#1583;&#1575;&#1569; &#1580;&#1605;&#1610;&#1593; &#1575;&#1604;&#1605;&#1589;&#1575;&#1585;&#1610;&#1601; &#1575;&#1604;&#1606;&#1575;&#1578;&#1580;&#1577; &#1593;&#1606; &#1584;&#1604;&#1603;.</div>
+        <div class="pct-cgf-fr">Chaque dommage touche la soci&eacute;t&eacute; pendant la p&eacute;riode de location, le locataire sera expos&eacute; &agrave; la responsabilit&eacute; adminiSrative et judiciaire jusqu&apos;a decision finale, ainsi le paiement de tous les frais r&eacute;sultants.</div>
+      </div>
+
+    </div><!-- /pct-verso -->
+
+  </div><!-- /pct-pages-wrap -->
+</div><!-- /pct-overlay -->

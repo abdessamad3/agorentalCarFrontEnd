@@ -1,62 +1,37 @@
 <div class="login-container">
   <div class="card">
-    <h2>Login</h2>
+    <h2>{{ 'loginTitle' | translate }}</h2>
 
-    <!-- Error Message -->
-    <div *ngIf="errorMessage" class="error-message">
-      {{ errorMessage }}
-    </div>
+    <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
+    <div *ngIf="successMessage" class="success-message">{{ successMessage }}</div>
 
-    <!-- Success Message -->
-    <div *ngIf="successMessage" class="success-message">
-      {{ successMessage }}
-    </div>
-
-    <!-- Login Form -->
     <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
       <div class="form-group">
-        <label for="email">Email</label>
-        <input
-          id="email"
-          type="email"
-          formControlName="email"
-          placeholder="Enter your email"
-          required
-        />
-        <div
-          *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
-          class="error-text"
-        >
-          Valid email required
+        <label for="email">{{ 'emailLabel' | translate }}</label>
+        <input id="email" type="email" formControlName="email"
+          [placeholder]="'emailLabel' | translate" required />
+        <div *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched" class="error-text">
+          {{ 'invalidEmail' | translate }}
         </div>
       </div>
 
       <div class="form-group">
-        <label for="password">Password</label>
-        <input
-          id="password"
-          type="password"
-          formControlName="password"
-          placeholder="Enter your password"
-          required
-        />
-        <div
-          *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
-          class="error-text"
-        >
-          Password must be at least 6 characters
+        <label for="password">{{ 'passwordLabel' | translate }}</label>
+        <input id="password" type="password" formControlName="password"
+          [placeholder]="'passwordLabel' | translate" required />
+        <div *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched" class="error-text">
+          {{ 'passwordMin' | translate }}
         </div>
       </div>
 
       <button type="submit" [disabled]="isLoading">
-        {{ isLoading ? 'Logging in...' : 'Login' }}
+        {{ (isLoading ? 'saving' : 'loginBtn') | translate }}
       </button>
     </form>
 
-    <!-- Footer Link -->
     <div class="footer-link">
-      Don't have an account?
-      <a routerLink="/register">Register here</a>
+      {{ 'noAccount' | translate }}
+      <a routerLink="/register">{{ 'registerLink' | translate }}</a>
     </div>
   </div>
 </div>

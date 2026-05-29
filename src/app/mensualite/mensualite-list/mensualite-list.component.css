@@ -1,0 +1,90 @@
+/* Stats */
+.stats-bar { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:1.75rem; }
+.stat-card { background:#fff; border-radius:10px; padding:1.1rem 1.25rem; box-shadow:0 1px 6px rgba(0,0,0,.07); display:flex; flex-direction:column; gap:.25rem; }
+.stat-label { font-size:.78rem; font-weight:600; color:#718096; text-transform:uppercase; letter-spacing:.04em; }
+.stat-value { font-size:1.55rem; font-weight:700; color:#1a202c; line-height:1; }
+.stat-card.accent-amber { border-top:3px solid #d69e2e; }
+.stat-card.accent-red   { border-top:3px solid #e53e3e; }
+.stat-card.accent-green { border-top:3px solid #38a169; }
+.stat-card.accent-blue  { border-top:3px solid #3182ce; }
+
+/* Badges */
+.badge { display:inline-flex; align-items:center; padding:.2rem .65rem; border-radius:999px; font-size:.78rem; font-weight:600; white-space:nowrap; }
+.pay-pending { background:#fef3c7; color:#92400e; }
+.pay-paid    { background:#d1fae5; color:#065f46; }
+.pay-late    { background:#fee2e2; color:#991b1b; }
+.pay-partial { background:#dbeafe; color:#1e40af; }
+
+/* Late row highlight */
+.late-row td { background: #fff5f5; }
+.late-row td:first-child { border-left: 3px solid #e53e3e; }
+
+/* Days indicator */
+.days-chip {
+  display: inline-block;
+  font-size: .72rem;
+  font-weight: 700;
+  padding: .1rem .45rem;
+  border-radius: 4px;
+  margin-left: .4rem;
+}
+.days-chip.overdue { background: #fed7d7; color: #9b2c2c; }
+.days-chip.soon    { background: #fef3c7; color: #92400e; }
+.days-chip.ok      { background: #e6fffa; color: #276749; }
+
+/* Invoice cell */
+.invoice-cell { display:flex; align-items:center; gap:.4rem; flex-wrap:wrap; }
+.btn-upload {
+  display: inline-flex; align-items:center; gap:.3rem;
+  padding: .3rem .65rem; border-radius:6px; font-size:.78rem; font-weight:600; cursor:pointer;
+  border: 1px solid #e2e8f0; background:#f7fafc; color:#4a5568; transition:all .18s;
+}
+.btn-upload:hover { border-color:#90cdf4; background:#ebf8ff; color:#2b6cb0; }
+.btn-invoice {
+  display: inline-flex; align-items:center; gap:.3rem;
+  padding: .3rem .65rem; border-radius:6px; font-size:.78rem; font-weight:600; cursor:pointer;
+  border: none; transition:all .18s;
+}
+.btn-invoice.preview { background:#ebf8ff; color:#2b6cb0; }
+.btn-invoice.preview:hover { background:#bee3f8; }
+.btn-invoice.download { background:#e6fffa; color:#276749; }
+.btn-invoice.download:hover { background:#b2f5ea; }
+.btn-invoice.remove  { background:#fff5f5; color:#9b2c2c; }
+.btn-invoice.remove:hover { background:#fed7d7; }
+
+/* Pay button */
+.btn-pay {
+  padding:.35rem .75rem; border-radius:6px; font-size:.8rem; font-weight:600;
+  background:#3182ce; color:#fff; border:none; cursor:pointer; transition:all .18s;
+}
+.btn-pay:hover { background:#2c5282; }
+.btn-pay.paid { background:#e6fffa; color:#276749; cursor:default; }
+
+/* Modal pay */
+.pay-summary {
+  background: #f7fafc; border-radius:10px; padding:1rem 1.25rem; margin-bottom:1.25rem; border:1px solid #e2e8f0;
+  display:grid; grid-template-columns:1fr 1fr; gap:.5rem;
+}
+.pay-sum-row { display:flex; flex-direction:column; }
+.pay-sum-label { font-size:.73rem; color:#718096; font-weight:600; text-transform:uppercase; }
+.pay-sum-value { font-size:1rem; font-weight:700; color:#1a202c; }
+
+/* Invoice preview */
+.invoice-preview-wrap {
+  display:flex; flex-direction:column; align-items:center; padding:1.5rem; gap:1rem;
+  min-height:300px; background:#1a202c; border-radius:0;
+}
+.invoice-preview-wrap img { max-width:100%; max-height:70vh; border-radius:8px; object-fit:contain; }
+.invoice-pdf-placeholder {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  width:180px; height:220px; background:#2d3748; border-radius:12px; gap:.75rem; color:#a0aec0;
+}
+
+/* Upload file input hidden */
+.file-input-hidden { display:none; }
+
+@media (max-width:768px) {
+  .stats-bar { grid-template-columns:1fr 1fr; }
+  .pay-summary { grid-template-columns:1fr; }
+}
+@media (max-width:480px) { .stats-bar { grid-template-columns:1fr; } }

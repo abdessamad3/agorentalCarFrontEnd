@@ -1,0 +1,395 @@
+<div class="ins-page" [attr.dir]="dir">
+
+  <!-- ── PAGE HEADER ── -->
+  <div class="ins-header">
+    <div class="ins-title-block">
+      <h1 class="ins-title">{{ t('insuranceManagement') }}</h1>
+      <p class="ins-subtitle">{{ t('managePoliciesDesc') }}</p>
+    </div>
+    <div class="ins-kpi-row">
+      <div class="kpi-card kpi-active">
+        <div class="kpi-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-value">{{ stats.active }}</span>
+          <span class="kpi-label">{{ t('activePolicies') }}</span>
+        </div>
+      </div>
+      <div class="kpi-card kpi-expiring">
+        <div class="kpi-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-value">{{ stats.expiring }}</span>
+          <span class="kpi-label">{{ t('expiringSoon') }}</span>
+        </div>
+      </div>
+      <div class="kpi-card kpi-expired">
+        <div class="kpi-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-value">{{ stats.expired }}</span>
+          <span class="kpi-label">{{ t('expiredPolicies') }}</span>
+        </div>
+      </div>
+      <div class="kpi-card kpi-cost">
+        <div class="kpi-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></svg>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-value">{{ stats.totalCost | number:'1.0-0' }}</span>
+          <span class="kpi-label">{{ t('totalInsuranceCost') }} (MAD)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ALERTS PANEL ── -->
+  <div class="ins-alerts" *ngIf="alerts.length > 0">
+    <div class="alerts-header">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span>{{ t('policyAlerts') }} — {{ alerts.length }} {{ t('requireAttention') }}</span>
+    </div>
+    <div class="alerts-list">
+      <div class="alert-item" *ngFor="let a of alerts"
+           [class.alert-expired]="daysUntil(a.dateFin) < 0"
+           [class.alert-critical]="daysUntil(a.dateFin) >= 0 && daysUntil(a.dateFin) <= 3"
+           [class.alert-warning]="daysUntil(a.dateFin) > 3">
+        <div class="alert-dot"></div>
+        <div class="alert-info">
+          <span class="alert-car">{{ voitureName(a) }}</span>
+          <span class="alert-plate" *ngIf="voiturePlate(a)">{{ voiturePlate(a) }}</span>
+        </div>
+        <div class="alert-expiry">
+          <span *ngIf="daysUntil(a.dateFin) < 0" class="alert-tag tag-expired">{{ t('overdue') }}</span>
+          <span *ngIf="daysUntil(a.dateFin) >= 0" class="alert-tag tag-warning">
+            {{ daysUntil(a.dateFin) === 0 ? t('today') : daysUntil(a.dateFin) + ' ' + t('daysLeft') }}
+          </span>
+          <span class="alert-date">{{ a.dateFin | date:'dd/MM/yyyy' }}</span>
+        </div>
+        <button class="alert-action" (click)="openRenew(a)">{{ t('renewInsurance') }}</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TOOLBAR ── -->
+  <div class="ins-toolbar">
+    <div class="toolbar-left">
+      <div class="search-wrap">
+        <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input class="search-input" type="text" [(ngModel)]="search" [placeholder]="t('search') + '…'" />
+      </div>
+      <select class="filter-select" [(ngModel)]="statusFilter">
+        <option value="">{{ t('allStatuses') }}</option>
+        <option value="active">{{ t('active') }}</option>
+        <option value="expiring">{{ t('expiringSoon') }}</option>
+        <option value="expired">{{ t('expiredPolicies') }}</option>
+      </select>
+      <select class="filter-select" [(ngModel)]="companyFilter">
+        <option value="">{{ t('allCompanies') }}</option>
+        <option *ngFor="let c of companies" [value]="c">{{ c }}</option>
+      </select>
+    </div>
+    <div class="toolbar-right">
+      <span class="item-count" *ngIf="!loading">{{ filtered.length }} {{ t('policies') }}</span>
+      <button class="btn-add" (click)="openAdd()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        {{ t('addInsurance') }}
+      </button>
+    </div>
+  </div>
+
+  <!-- ── LOADING ── -->
+  <div class="ins-loading" *ngIf="loading">
+    <div class="skeleton-row" *ngFor="let _ of [1,2,3,4,5]">
+      <div class="skel skel-sm"></div>
+      <div class="skel skel-md"></div>
+      <div class="skel skel-lg"></div>
+      <div class="skel skel-md"></div>
+      <div class="skel skel-sm"></div>
+      <div class="skel skel-sm"></div>
+      <div class="skel skel-badge"></div>
+    </div>
+  </div>
+
+  <!-- ── ERROR ── -->
+  <div class="ins-error" *ngIf="error && !loading">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span>{{ error }}</span>
+    <button (click)="load()">{{ t('retry') }}</button>
+  </div>
+
+  <!-- ── TABLE ── -->
+  <div class="ins-table-wrap" *ngIf="!loading && !error">
+
+    <!-- Empty state -->
+    <div class="ins-empty" *ngIf="filtered.length === 0">
+      <div class="empty-icon">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <p class="empty-title">{{ t('noPolicies') }}</p>
+      <p class="empty-sub">{{ t('addFirstPolicy') }}</p>
+      <button class="btn-add" (click)="openAdd()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        {{ t('addInsurance') }}
+      </button>
+    </div>
+
+    <table class="ins-table" *ngIf="filtered.length > 0">
+      <thead>
+        <tr>
+          <th class="th-num">#</th>
+          <th class="th-sort" (click)="toggleSort('voiture')">
+            {{ t('vehicle') }}
+            <span class="sort-arrow" [class.active]="sortCol==='voiture'">{{ sortCol==='voiture' ? (sortAsc ? '↑' : '↓') : '↕' }}</span>
+          </th>
+          <th class="th-sort" (click)="toggleSort('numeroContrat')">
+            {{ t('numeroContrat') }}
+            <span class="sort-arrow" [class.active]="sortCol==='numeroContrat'">{{ sortCol==='numeroContrat' ? (sortAsc ? '↑' : '↓') : '↕' }}</span>
+          </th>
+          <th class="th-sort" (click)="toggleSort('compagnie')">
+            {{ t('compagnie') }}
+            <span class="sort-arrow" [class.active]="sortCol==='compagnie'">{{ sortCol==='compagnie' ? (sortAsc ? '↑' : '↓') : '↕' }}</span>
+          </th>
+          <th>{{ t('typeAssurance') }}</th>
+          <th class="th-sort th-right" (click)="toggleSort('dateDebut')">
+            {{ t('dateDebut') }}
+            <span class="sort-arrow" [class.active]="sortCol==='dateDebut'">{{ sortCol==='dateDebut' ? (sortAsc ? '↑' : '↓') : '↕' }}</span>
+          </th>
+          <th class="th-sort th-right" (click)="toggleSort('dateFin')">
+            {{ t('dateFin') }}
+            <span class="sort-arrow" [class.active]="sortCol==='dateFin'">{{ sortCol==='dateFin' ? (sortAsc ? '↑' : '↓') : '↕' }}</span>
+          </th>
+          <th class="th-right">{{ t('montant') }}</th>
+          <th>{{ t('status') }}</th>
+          <th class="th-actions">{{ t('actions') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of filtered; let i = index"
+            class="ins-row"
+            [class.row-expiring]="getStatus(item) === 'expiring'"
+            [class.row-expired]="getStatus(item) === 'expired'">
+          <td class="td-num">{{ i + 1 }}</td>
+          <td>
+            <div class="vehicle-cell">
+              <div class="vehicle-avatar">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="3" width="15" height="13"/><polygon points="16,8 20,8 23,11 23,16 16,16 16,8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+              </div>
+              <div>
+                <div class="vehicle-name">{{ voitureName(item) }}</div>
+                <div class="vehicle-plate" *ngIf="voiturePlate(item)">{{ voiturePlate(item) }}</div>
+              </div>
+            </div>
+          </td>
+          <td class="td-policy">{{ item.numeroContrat || '—' }}</td>
+          <td class="td-company">{{ item.compagnie || '—' }}</td>
+          <td><span class="coverage-tag" *ngIf="item.typeAssurance">{{ item.typeAssurance }}</span><span *ngIf="!item.typeAssurance" class="td-muted">—</span></td>
+          <td class="td-right td-date">{{ item.dateDebut ? (item.dateDebut | date:'dd/MM/yyyy') : '—' }}</td>
+          <td class="td-right td-date">
+            <span [class.expiry-warn]="getStatus(item) === 'expiring'" [class.expiry-red]="getStatus(item) === 'expired'">
+              {{ item.dateFin ? (item.dateFin | date:'dd/MM/yyyy') : '—' }}
+            </span>
+            <span class="days-badge" *ngIf="item.dateFin && getStatus(item) !== 'active'">
+              {{ daysUntil(item.dateFin) < 0 ? t('overdue') : (daysUntil(item.dateFin) + 'd') }}
+            </span>
+          </td>
+          <td class="td-right td-amount">{{ item.montant ? ((item.montant | number:'1.0-0') + ' MAD') : '—' }}</td>
+          <td>
+            <span class="ins-badge"
+              [class.badge-active]="getStatus(item) === 'active'"
+              [class.badge-expiring]="getStatus(item) === 'expiring'"
+              [class.badge-expired]="getStatus(item) === 'expired'">
+              <span class="badge-dot"></span>
+              {{ getStatus(item) === 'active' ? t('active') : getStatus(item) === 'expiring' ? t('expiringSoon') : t('expiredPolicies') }}
+            </span>
+          </td>
+          <td class="td-actions">
+            <button class="act-btn act-view" (click)="openView(item)" [title]="t('view')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+            <button class="act-btn act-edit" (click)="openEdit(item)" [title]="t('edit')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="act-btn act-renew" (click)="openRenew(item)" [title]="t('renewInsurance')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23,4 23,10 17,10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            </button>
+            <button class="act-btn act-delete" (click)="openDelete(item.id)" [title]="t('delete')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ══════════ MODALS ══════════ -->
+
+  <!-- VIEW MODAL -->
+  <div class="modal-overlay" *ngIf="modalMode === 'view'" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h2>{{ t('assurance') }}</h2>
+          <span class="ins-badge"
+            [class.badge-active]="getStatus(selected) === 'active'"
+            [class.badge-expiring]="getStatus(selected) === 'expiring'"
+            [class.badge-expired]="getStatus(selected) === 'expired'">
+            <span class="badge-dot"></span>
+            {{ getStatus(selected) === 'active' ? t('active') : getStatus(selected) === 'expiring' ? t('expiringSoon') : t('expiredPolicies') }}
+          </span>
+        </div>
+        <button class="modal-close" (click)="closeModal()">×</button>
+      </div>
+      <div class="modal-body" *ngIf="selected">
+        <div class="view-grid">
+          <div class="vr"><span class="vr-label">{{ t('vehicle') }}</span><span class="vr-val">{{ voitureName(selected) }}</span></div>
+          <div class="vr"><span class="vr-label">{{ t('immatriculation') }}</span><span class="vr-val"><span class="plate-badge" *ngIf="voiturePlate(selected)">{{ voiturePlate(selected) }}</span><span *ngIf="!voiturePlate(selected)">—</span></span></div>
+          <div class="vr"><span class="vr-label">{{ t('numeroContrat') }}</span><span class="vr-val mono">{{ selected.numeroContrat || '—' }}</span></div>
+          <div class="vr"><span class="vr-label">{{ t('compagnie') }}</span><span class="vr-val">{{ selected.compagnie || '—' }}</span></div>
+          <div class="vr"><span class="vr-label">{{ t('typeAssurance') }}</span><span class="vr-val">{{ selected.typeAssurance || '—' }}</span></div>
+          <div class="vr"><span class="vr-label">{{ t('dateDebut') }}</span><span class="vr-val">{{ selected.dateDebut ? (selected.dateDebut | date:'dd/MM/yyyy') : '—' }}</span></div>
+          <div class="vr"><span class="vr-label">{{ t('dateFin') }}</span><span class="vr-val" [class.text-red]="getStatus(selected) === 'expired'" [class.text-amber]="getStatus(selected) === 'expiring'">{{ selected.dateFin ? (selected.dateFin | date:'dd/MM/yyyy') : '—' }}</span></div>
+          <div class="vr"><span class="vr-label">{{ t('montant') }}</span><span class="vr-val">{{ selected.montant ? ((selected.montant | number:'1.0-0') + ' MAD') : '—' }}</span></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModal()">{{ t('close') }}</button>
+        <button class="btn-primary" (click)="openEdit(selected)">{{ t('edit') }}</button>
+        <button class="btn-renew" (click)="openRenew(selected)">{{ t('renewInsurance') }}</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD / EDIT MODAL -->
+  <div class="modal-overlay" *ngIf="modalMode === 'form'" (click)="closeModal()">
+    <div class="modal modal-lg" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ isEditing ? t('edit') : t('add') }} {{ t('assurance') }}</h2>
+        <button class="modal-close" (click)="closeModal()">×</button>
+      </div>
+      <form [formGroup]="form" (ngSubmit)="save()">
+        <div class="modal-body">
+          <div class="form-section-title">{{ t('vehicleInfo') }}</div>
+          <div class="form-group">
+            <label>{{ t('vehicle') }}</label>
+            <select formControlName="voitureId" class="form-control">
+              <option [value]="null">— {{ t('select') }} —</option>
+              <option *ngFor="let v of voitures" [value]="v.id">{{ v.marque }} {{ v.modele }} — {{ v.immatriculation }}</option>
+            </select>
+          </div>
+
+          <div class="form-section-title">{{ t('policyDetails') }}</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>{{ t('numeroContrat') }} <span class="req">*</span></label>
+              <input type="text" formControlName="numeroContrat" class="form-control"
+                [class.invalid]="form.get('numeroContrat')?.invalid && form.get('numeroContrat')?.touched" />
+              <span class="field-error" *ngIf="form.get('numeroContrat')?.invalid && form.get('numeroContrat')?.touched">{{ t('required') }}</span>
+            </div>
+            <div class="form-group">
+              <label>{{ t('compagnie') }}</label>
+              <input type="text" formControlName="compagnie" class="form-control" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>{{ t('typeAssurance') }}</label>
+              <select formControlName="typeAssurance" class="form-control">
+                <option value="">— {{ t('select') }} —</option>
+                <option *ngFor="let ct of COVERAGE_TYPES" [value]="ct">{{ ct }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>{{ t('montant') }} (MAD)</label>
+              <input type="number" min="0" formControlName="montant" class="form-control" placeholder="0" />
+            </div>
+          </div>
+
+          <div class="form-section-title">{{ t('dates') }}</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>{{ t('dateDebut') }}</label>
+              <input type="date" formControlName="dateDebut" class="form-control" />
+            </div>
+            <div class="form-group">
+              <label>{{ t('dateFin') }} <span class="req">*</span></label>
+              <input type="date" formControlName="dateFin" class="form-control"
+                [class.invalid]="form.get('dateFin')?.invalid && form.get('dateFin')?.touched" />
+              <span class="field-error" *ngIf="form.get('dateFin')?.invalid && form.get('dateFin')?.touched">{{ t('required') }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="closeModal()">{{ t('cancel') }}</button>
+          <button type="submit" class="btn-primary" [disabled]="form.invalid || isSubmitting">
+            {{ isSubmitting ? t('saving') : t('save') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- RENEW MODAL -->
+  <div class="modal-overlay" *ngIf="modalMode === 'renew'" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:6px"><polyline points="23,4 23,10 17,10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          {{ t('renewInsurance') }} — {{ voitureName(selected) }}
+        </h2>
+        <button class="modal-close" (click)="closeModal()">×</button>
+      </div>
+      <form [formGroup]="renewForm" (ngSubmit)="confirmRenew()">
+        <div class="modal-body">
+          <div class="renew-from" *ngIf="selected?.dateFin">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+            {{ t('currentExpiry') }}: <strong>{{ selected.dateFin | date:'dd/MM/yyyy' }}</strong>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>{{ t('dateDebut') }} <span class="req">*</span></label>
+              <input type="date" formControlName="dateDebut" class="form-control"
+                [class.invalid]="renewForm.get('dateDebut')?.invalid && renewForm.get('dateDebut')?.touched" />
+            </div>
+            <div class="form-group">
+              <label>{{ t('dateFin') }} <span class="req">*</span></label>
+              <input type="date" formControlName="dateFin" class="form-control"
+                [class.invalid]="renewForm.get('dateFin')?.invalid && renewForm.get('dateFin')?.touched" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>{{ t('montant') }} (MAD)</label>
+            <input type="number" min="0" formControlName="montant" class="form-control" placeholder="0" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="closeModal()">{{ t('cancel') }}</button>
+          <button type="submit" class="btn-renew" [disabled]="renewForm.invalid || isSubmitting">
+            {{ isSubmitting ? t('saving') : t('confirmRenew') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- DELETE MODAL -->
+  <div class="modal-overlay" *ngIf="modalMode === 'delete'" (click)="closeModal()">
+    <div class="modal modal-sm" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ t('confirmDelete') }}</h2>
+        <button class="modal-close" (click)="closeModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="delete-warning">{{ t('deleteWarning') }}</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModal()">{{ t('cancel') }}</button>
+        <button class="btn-danger" (click)="confirmDelete()">{{ t('delete') }}</button>
+      </div>
+    </div>
+  </div>
+
+</div>

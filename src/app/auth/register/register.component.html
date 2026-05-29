@@ -1,41 +1,45 @@
 <div class="register-container">
   <div class="card">
-    <h2>Register</h2>
+    <h2>{{ 'registerTitle' | translate }}</h2>
 
-    <div *ngIf="errorMessage" class="error-message">
-      {{ errorMessage }}
-    </div>
-
-    <div *ngIf="successMessage" class="success-message">
-      {{ successMessage }}
-    </div>
+    <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
+    <div *ngIf="successMessage" class="success-message">{{ successMessage }}</div>
 
     <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
       <div class="form-group">
-        <label for="email">Email</label>
-        <input id="email" type="email" formControlName="email" placeholder="Enter your email">
+        <label for="email">{{ 'emailLabel' | translate }}</label>
+        <input id="email" type="email" formControlName="email"
+          [placeholder]="'emailLabel' | translate">
+        <div *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched" class="error-text">
+          {{ 'invalidEmail' | translate }}
+        </div>
       </div>
 
       <div class="form-group">
-        <label for="password">Password</label>
-        <input id="password" type="password" formControlName="password" placeholder="Min 8 characters">
+        <label for="password">{{ 'passwordLabel' | translate }}</label>
+        <input id="password" type="password" formControlName="password"
+          [placeholder]="'passwordMin' | translate">
+        <div *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched" class="error-text">
+          {{ 'passwordMin' | translate }}
+        </div>
       </div>
 
       <div class="form-group">
-        <label for="confirmPassword">Confirm Password</label>
-        <input id="confirmPassword" type="password" formControlName="confirmPassword" placeholder="Confirm password">
+        <label for="confirmPassword">{{ 'confirmPasswordLabel' | translate }}</label>
+        <input id="confirmPassword" type="password" formControlName="confirmPassword"
+          [placeholder]="'confirmPasswordLabel' | translate">
         <div *ngIf="registerForm.errors?.['mismatch'] && registerForm.get('confirmPassword')?.touched" class="error-text">
-          Passwords do not match
+          {{ 'passwordMismatch' | translate }}
         </div>
       </div>
 
       <button type="submit" [disabled]="isLoading">
-        {{ isLoading ? 'Registering...' : 'Register' }}
+        {{ (isLoading ? 'saving' : 'registerBtn') | translate }}
       </button>
     </form>
 
     <div class="footer-link">
-      <p>Already have an account? <a routerLink="/login">Login</a></p>
+      {{ 'hasAccount' | translate }} <a routerLink="/login">{{ 'loginLink' | translate }}</a>
     </div>
   </div>
 </div>

@@ -1,70 +1,283 @@
-<div class="create-container" dir="rtl">
-  <div class="card">
-    <h2>إضافة بيانات السيارة الجديدة</h2>
+<div class="create-page" [attr.dir]="dir">
 
-    <form [formGroup]="carForm" (ngSubmit)="onSubmit()">
-
-      <!-- Image Upload Area -->
-      <div class="image-upload" (click)="fileInput.click()">
-        <img *ngIf="imagePreview" [src]="imagePreview" alt="Preview">
-        <div *ngIf="!imagePreview" class="placeholder">
-          <span>📷</span>
-          <p>رفع صورة السيارة</p>
-        </div>
-        <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" style="display: none;">
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label>العلامة التجارية (Brand)*</label>
-          <input type="text" formControlName="marque" placeholder="مثال: Dacia">
-        </div>
-        <div class="form-group">
-          <label>الموديل (Model)*</label>
-          <input type="text" formControlName="modele" placeholder="مثال: Sandero">
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label>السنة (Year)</label>
-          <input type="number" formControlName="annee">
-        </div>
-        <div class="form-group">
-          <label>المسافة (Mileage)</label>
-          <input type="number" formControlName="kilometrage">
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label>السعر اليومي (Price)</label>
-          <input type="number" formControlName="prix">
-        </div>
-        <div class="form-group">
-          <label>نوع الوقود (Fuel)</label>
-          <select formControlName="typeCarburant">
-            <option value="Essence">بنزين</option>
-            <option value="Diesel">ديزل</option>
-            <option value="Electrique">كهرباء</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label>اللون (Color)</label>
-          <input type="text" formControlName="couleur">
-        </div>
-        <div class="form-group" style="display: flex; align-items: center; padding-top: 1rem;">
-          <input type="checkbox" formControlName="climatisation" id="ac">
-          <label for="ac" style="margin: 0 0 0 0.5rem; margin-bottom: 0;">تكييف (AC)</label>
-        </div>
-      </div>
-
-      <button type="submit" [disabled]="isUploading" class="btn-submit">
-        {{ isUploading ? 'جاري الحفظ...' : 'حفظ البيانات' }}
-      </button>
-    </form>
+  <!-- Header -->
+  <div class="create-header">
+    <a routerLink="/voiture/list" class="back-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><path d="M19 12H5m7-7-7 7 7 7"/></svg>
+      {{ t('viewFleet') }}
+    </a>
+    <div>
+      <h1 class="create-title">{{ t('addVehicle') }}</h1>
+      <p class="create-sub">{{ t('fleetManagement') }}</p>
+    </div>
   </div>
+
+  <!-- Section Stepper -->
+  <div class="section-stepper">
+    <button *ngFor="let sec of SECTIONS; let i = index"
+      type="button"
+      class="step-btn"
+      [class.active]="activeSection === i"
+      [class.done]="i < activeSection"
+      (click)="activeSection = i">
+      <span class="step-icon">{{ sec.icon }}</span>
+      <span class="step-label">{{ t(sec.labelKey) }}</span>
+    </button>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="form-card">
+
+      <!-- ══ SECTION 0: Technical ══════════════════════════════════════ -->
+      <div *ngIf="activeSection === 0" class="form-section">
+        <div class="section-title">
+          <span class="section-icon">⚙️</span>
+          <h2>{{ t('technicalInfo') }}</h2>
+        </div>
+
+        <div class="form-grid">
+          <div class="fg req">
+            <label>{{ t('brand') }}</label>
+            <input formControlName="marque" placeholder="ex: Dacia, Toyota…" />
+          </div>
+          <div class="fg req">
+            <label>{{ t('model') }}</label>
+            <input formControlName="modele" placeholder="ex: Sandero, Corolla…" />
+          </div>
+          <div class="fg">
+            <label>{{ t('version') }}</label>
+            <input formControlName="version" placeholder="ex: Stepway, Sport…" />
+          </div>
+          <div class="fg req">
+            <label>{{ t('year') }}</label>
+            <input type="number" formControlName="annee" min="1990" max="2030" />
+          </div>
+          <div class="fg fg-plate">
+            <label>{{ t('licensePlate') }}</label>
+            <div class="plate-input">
+              <input formControlName="immatNum1" class="plate-num1" placeholder="1231" maxlength="4"
+                     (input)="filterDigits($event.target)" />
+              <span class="plate-sep">-</span>
+              <input formControlName="immatLetter" class="plate-letter" placeholder="A" maxlength="1"
+                     (input)="filterLetter($event.target)" />
+              <span class="plate-sep">-</span>
+              <input formControlName="immatNum2" class="plate-num2" placeholder="18" maxlength="2"
+                     (input)="filterDigits($event.target)" />
+            </div>
+          </div>
+          <div class="fg">
+            <label>{{ t('vin') }}</label>
+            <input formControlName="vin" placeholder="17 characters…" class="monospace" />
+          </div>
+          <div class="fg">
+            <label>{{ t('fuel') }}</label>
+            <select formControlName="typeCarburant">
+              <option *ngFor="let f of FUEL_OPTIONS" [value]="f">{{ t(f.toLowerCase()) }}</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label>{{ t('transmission') }}</label>
+            <select formControlName="transmission">
+              <option value="Manuelle">{{ t('manuelle') }}</option>
+              <option value="Automatique">{{ t('automatique') }}</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label>{{ t('vehicleCategory') }}</label>
+            <select formControlName="categorie">
+              <option value="">— {{ t('select') }} —</option>
+              <option *ngFor="let c of CAT_OPTIONS" [value]="c">{{ c }}</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label>{{ t('color') }}</label>
+            <input formControlName="couleur" placeholder="ex: Blanc, Noir…" />
+          </div>
+          <div class="fg">
+            <label>{{ t('places') }}</label>
+            <input type="number" formControlName="places" min="1" max="20" />
+          </div>
+          <div class="fg">
+            <label>{{ t('portes') }}</label>
+            <input type="number" formControlName="portes" min="2" max="6" />
+          </div>
+          <div class="fg">
+            <label>{{ t('puissanceCv') }}</label>
+            <input type="number" formControlName="puissanceCv" min="0" placeholder="ex: 90" />
+          </div>
+          <div class="fg">
+            <label>{{ t('mileage') }} (km)</label>
+            <input type="number" formControlName="kilometrageActuel" min="0" />
+          </div>
+          <div class="fg">
+            <label>{{ t('status') }}</label>
+            <select formControlName="voitureStatus">
+              <option *ngFor="let s of STATUS_OPTIONS" [value]="s">{{ t(s) }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="check-row">
+          <label class="check-label">
+            <input type="checkbox" formControlName="climatisation" />
+            <span class="check-text">{{ t('ac') }}</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- ══ SECTION 1: Financial ══════════════════════════════════════ -->
+      <div *ngIf="activeSection === 1" class="form-section">
+        <div class="section-title">
+          <span class="section-icon">💰</span>
+          <h2>{{ t('financialInfo') }}</h2>
+        </div>
+
+        <div class="pricing-cards">
+          <div class="price-card price-day">
+            <div class="price-label">{{ t('pricePerDay') }} *</div>
+            <div class="price-input-wrap">
+              <input type="number" formControlName="prixJour" min="0" class="price-input" placeholder="0" />
+              <span class="price-curr">MAD / {{ t('daily') }}</span>
+            </div>
+          </div>
+          <div class="price-card price-week">
+            <div class="price-label">{{ t('weeklyRate') }}</div>
+            <div class="price-input-wrap">
+              <input type="number" formControlName="prixSemaine" min="0" class="price-input" placeholder="0" />
+              <span class="price-curr">MAD / {{ t('weekly') }}</span>
+            </div>
+          </div>
+          <div class="price-card price-month">
+            <div class="price-label">{{ t('monthlyRate') }}</div>
+            <div class="price-input-wrap">
+              <input type="number" formControlName="prixMois" min="0" class="price-input" placeholder="0" />
+              <span class="price-curr">MAD / {{ t('monthly') }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-grid mt-1">
+          <div class="fg">
+            <label>{{ t('purchasePrice') }} (MAD)</label>
+            <input type="number" formControlName="prixAchat" min="0" />
+          </div>
+          <div class="fg">
+            <label>{{ t('deposit') }} (MAD)</label>
+            <input type="number" formControlName="caution" min="0" />
+          </div>
+          <div class="fg">
+            <label>{{ t('purchaseDate') }}</label>
+            <input type="date" formControlName="dateAchat" />
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ SECTION 2: Administrative ════════════════════════════════ -->
+      <div *ngIf="activeSection === 2" class="form-section">
+        <div class="section-title">
+          <span class="section-icon">📋</span>
+          <h2>{{ t('adminInfo') }}</h2>
+        </div>
+
+        <div class="doc-cards">
+          <div class="doc-card">
+            <div class="doc-icon doc-insurance">🛡️</div>
+            <div class="doc-info">
+              <div class="doc-name">{{ t('insuranceDoc') }}</div>
+              <div class="doc-desc">{{ t('insuranceExpiry') }}</div>
+            </div>
+            <div class="doc-input">
+              <input type="date" formControlName="dateExpirationAssurance" />
+            </div>
+          </div>
+          <div class="doc-card">
+            <div class="doc-icon doc-vignette">📄</div>
+            <div class="doc-info">
+              <div class="doc-name">{{ t('vignetteDoc') }}</div>
+              <div class="doc-desc">{{ t('vignetteExpiry') }}</div>
+            </div>
+            <div class="doc-input">
+              <input type="date" formControlName="dateExpirationVignette" />
+            </div>
+          </div>
+          <div class="doc-card">
+            <div class="doc-icon doc-tech">🔬</div>
+            <div class="doc-info">
+              <div class="doc-name">{{ t('technicalDoc') }}</div>
+              <div class="doc-desc">{{ t('technicalExpiry') }}</div>
+            </div>
+            <div class="doc-input">
+              <input type="date" formControlName="dateExpirationVisite" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ SECTION 3: Images ═════════════════════════════════════════ -->
+      <div *ngIf="activeSection === 3" class="form-section">
+        <div class="section-title">
+          <span class="section-icon">📸</span>
+          <h2>{{ t('vehicleImages') }}</h2>
+        </div>
+
+        <!-- Drop Zone -->
+        <div class="drop-zone"
+          [class.dragging]="isDragging"
+          (dragover)="onDragOver($event)"
+          (dragleave)="onDragLeave($event)"
+          (drop)="onDrop($event)"
+          (click)="fileInput.click()">
+          <input #fileInput type="file" accept="image/*" multiple style="display:none" (change)="onFileSelect($event)" />
+          <div class="drop-icon">📷</div>
+          <div class="drop-text">{{ t('dropImages') }}</div>
+          <div class="drop-sub">PNG, JPG, WEBP — max 10 MB each</div>
+          <button type="button" class="btn-pick">{{ t('addImages') }}</button>
+        </div>
+
+        <!-- Image Previews -->
+        <div *ngIf="imagePreviews.length > 0" class="image-grid">
+          <div *ngFor="let img of imagePreviews; let i = index"
+            class="img-item"
+            [class.img-main]="img.isMain">
+            <img [src]="img.url" [alt]="img.name" class="img-thumb" />
+            <div class="img-overlay">
+              <button type="button" class="img-btn set-main" (click)="setMain(i)" title="Set as main">⭐</button>
+              <button type="button" class="img-btn remove-img" (click)="removeImage(i)" title="Remove">✕</button>
+            </div>
+            <div class="img-meta">
+              <span class="img-name">{{ img.name }}</span>
+              <span class="img-size">{{ img.size }}</span>
+            </div>
+            <div *ngIf="img.isMain" class="main-badge">{{ t('mainImage') }}</div>
+          </div>
+        </div>
+
+        <div *ngIf="imagePreviews.length === 0" class="no-images-hint">
+          <span>{{ t('noImages') }}</span> — {{ t('dropImages') }}
+        </div>
+      </div>
+
+    </div><!-- /.form-card -->
+
+    <!-- ── Form Navigation ─────────────────────────────────────────────────── -->
+    <div class="form-nav">
+      <button *ngIf="activeSection > 0" type="button" class="btn-nav btn-prev" (click)="activeSection = activeSection - 1">
+        ‹ {{ t('previous') }}
+      </button>
+      <div class="form-nav-dots">
+        <span *ngFor="let sec of SECTIONS; let i = index"
+          class="dot"
+          [class.dot-active]="i === activeSection"
+          (click)="activeSection = i">
+        </span>
+      </div>
+      <button *ngIf="activeSection < SECTIONS.length - 1" type="button" class="btn-nav btn-next" (click)="activeSection = activeSection + 1">
+        {{ t('next') }} ›
+      </button>
+      <button *ngIf="activeSection === SECTIONS.length - 1" type="submit" class="btn-nav btn-submit" [disabled]="isSubmitting">
+        {{ t(isSubmitting ? 'saving' : 'save') }}
+      </button>
+    </div>
+
+  </form>
 </div>

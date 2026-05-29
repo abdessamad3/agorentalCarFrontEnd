@@ -1,0 +1,239 @@
+<div class="create-page" [class.rtl]="dir === 'rtl'">
+
+  <div class="page-header">
+    <div class="page-header-left">
+      <a routerLink="/reservation" class="back-btn">← {{ t('reservations') }}</a>
+      <h1 class="page-title">{{ t('createBooking') }}</h1>
+    </div>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" class="create-form">
+    <div class="form-layout">
+
+      <!-- LEFT COLUMN -->
+      <div class="form-left">
+
+        <!-- Client Section -->
+        <div class="form-section">
+          <div class="section-title">👤 {{ t('clients') }}</div>
+
+          <div class="client-search-wrap" *ngIf="!selectedClient">
+            <div class="client-search-input">
+              <input type="text" [(ngModel)]="clientSearch" [ngModelOptions]="{standalone: true}"
+                [placeholder]="t('searchClient')"
+                (input)="onClientSearch()"
+                (focus)="onClientSearch()"
+                autocomplete="off" />
+              <button type="button" class="btn-add-client" (click)="openAddClient()">
+                + {{ t('addNewClient') }}
+              </button>
+            </div>
+            <div class="client-dropdown" *ngIf="showClientDropdown && filteredClients.length > 0">
+              <div class="client-option" *ngFor="let c of filteredClients | slice:0:8"
+                (click)="selectClient(c)">
+                <span class="client-avatar">{{ (c.nom || '?')[0].toUpperCase() }}</span>
+                <div class="client-info">
+                  <span class="client-name">{{ c.nom }} {{ c.prenom }}</span>
+                  <span class="client-phone">{{ c.telephone }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="selected-client" *ngIf="selectedClient">
+            <span class="client-avatar large">{{ (selectedClient.nom || '?')[0].toUpperCase() }}</span>
+            <div class="client-info">
+              <span class="client-name">{{ selectedClient.nom }} {{ selectedClient.prenom }}</span>
+              <span class="client-phone">{{ selectedClient.telephone || selectedClient.cin }}</span>
+            </div>
+            <button type="button" class="btn-clear" (click)="clearClient()">×</button>
+          </div>
+
+          <div class="field-error" *ngIf="form.get('clientId')?.invalid && form.get('clientId')?.touched">
+            {{ t('required') }}
+          </div>
+        </div>
+
+        <!-- Dates -->
+        <div class="form-section">
+          <div class="section-title">📅 {{ t('startDate') }} / {{ t('endDate') }}</div>
+          <div class="date-row">
+            <div class="form-group">
+              <label>{{ t('startDate') }}</label>
+              <input type="date" formControlName="dateDebut" (change)="onDateChange()" />
+            </div>
+            <div class="form-group">
+              <label>{{ t('endDate') }}</label>
+              <input type="date" formControlName="dateFin" (change)="onDateChange()" />
+            </div>
+            <div class="days-chip" *ngIf="numberOfDays > 0">
+              <span class="days-num">{{ numberOfDays }}</span>
+              <span class="days-label">{{ t('days') }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vehicle -->
+        <div class="form-section">
+          <div class="section-title">🚗 {{ t('selectVehicle') }}</div>
+          <div class="vehicle-grid">
+            <div *ngFor="let v of voitures"
+              class="vehicle-card"
+              [class.selected]="selectedVoiture?.id === v.id"
+              [class.booked]="isVoitureConflicted(v.id)"
+              (click)="selectVoiture(v)">
+              <div class="vehicle-icon">🚗</div>
+              <div class="vehicle-info">
+                <span class="vehicle-name">{{ v.marque }} {{ v.modele }}</span>
+                <span class="vehicle-meta">{{ v.annee }} · {{ v.carburant || v.typeCarburant }}</span>
+                <span class="vehicle-price">{{ v.prixJour }} MAD/{{ t('days') }}</span>
+              </div>
+              <div class="vehicle-booked-badge" *ngIf="isVoitureConflicted(v.id)">{{ t('booked') }}</div>
+              <div class="vehicle-check" *ngIf="selectedVoiture?.id === v.id && !isVoitureConflicted(v.id)">✓</div>
+            </div>
+            <div *ngIf="voitures.length === 0" class="no-vehicles">
+              {{ t('noData') }}
+            </div>
+          </div>
+          <div class="field-error" *ngIf="form.get('voitureId')?.invalid && form.get('voitureId')?.touched">
+            {{ t('required') }}
+          </div>
+        </div>
+
+        <!-- Accessories -->
+        <div class="form-section" *ngIf="accessoires.length > 0">
+          <div class="section-title">🧩 {{ t('accessories') }}</div>
+          <div class="accessory-grid">
+            <div *ngFor="let acc of accessoires"
+              class="accessory-toggle"
+              [class.active]="isAccessoireSelected(acc.id)"
+              (click)="toggleAccessoire(acc.id)">
+              <span class="acc-icon">{{ isAccessoireSelected(acc.id) ? '✓' : '+' }}</span>
+              <span class="acc-name">{{ acc.nom }}</span>
+              <span class="acc-price" *ngIf="acc.prix">{{ acc.prix }} MAD/j</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN: Summary + Payment -->
+      <div class="form-right">
+
+        <!-- Pricing Summary -->
+        <div class="form-section summary-section">
+          <div class="section-title">💰 {{ t('totalAmount') }}</div>
+          <div class="summary-rows">
+            <div class="summary-row">
+              <span>{{ t('dailyRate') }}</span>
+              <span>{{ dailyRate }} MAD</span>
+            </div>
+            <div class="summary-row">
+              <span>{{ t('numberOfDays') }}</span>
+              <span>{{ numberOfDays }}</span>
+            </div>
+            <div class="summary-row">
+              <span>{{ t('accessories') }}</span>
+              <span>{{ accessoryTotal | number:'1.0-2' }} MAD</span>
+            </div>
+            <div class="summary-divider"></div>
+            <div class="summary-row total-row">
+              <span>{{ t('totalAmount') }}</span>
+              <span class="total-val">{{ totalAmount | number:'1.0-2' }} MAD</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment -->
+        <div class="form-section">
+          <div class="section-title">💳 {{ t('paymentMethod') }}</div>
+          <div class="form-group">
+            <label>{{ t('paymentMethod') }}</label>
+            <select formControlName="modePaiement">
+              <option value="especes">Espèces</option>
+              <option value="carte">Carte</option>
+              <option value="virement">Virement</option>
+              <option value="cheque">Chèque</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>{{ t('amountPaid') }}</label>
+            <input type="number" formControlName="montantPaye" min="0" [max]="totalAmount" />
+          </div>
+          <div class="remaining-row" [class.overpaid]="remaining < 0">
+            <span>{{ t('remaining') }}</span>
+            <span class="remaining-val" [class.zero]="remaining <= 0">
+              {{ remaining | number:'1.0-2' }} MAD
+            </span>
+          </div>
+        </div>
+
+        <!-- Status + Notes -->
+        <div class="form-section">
+          <div class="section-title">📋 {{ t('status') }} & {{ t('notes') }}</div>
+          <div class="form-group">
+            <label>{{ t('status') }}</label>
+            <select formControlName="reservationStatus">
+              <option value="pending">{{ t('pending') }}</option>
+              <option value="confirmed">{{ t('confirmed') }}</option>
+              <option value="cancelled">{{ t('cancelled') }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>{{ t('notes') }}</label>
+            <textarea formControlName="notes" rows="3" [placeholder]="t('notes') + '...'"></textarea>
+          </div>
+        </div>
+
+        <!-- Submit -->
+        <div *ngIf="submitError" class="submit-error">{{ submitError }}</div>
+        <button type="submit" class="btn-submit"
+          [disabled]="form.invalid || !selectedVoiture || isSubmitting">
+          {{ isSubmitting ? t('saving') : t('createBooking') }}
+        </button>
+
+      </div>
+    </div>
+  </form>
+
+</div>
+
+<!-- Add Client Modal -->
+<div *ngIf="showAddClientModal" class="modal-overlay" (click)="closeAddClient()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ t('addNewClient') }}</h2>
+      <button class="modal-close" (click)="closeAddClient()">×</button>
+    </div>
+    <form [formGroup]="newClientForm" (ngSubmit)="saveNewClient()">
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t('name') }} *</label>
+            <input type="text" formControlName="nom" />
+          </div>
+          <div class="form-group">
+            <label>{{ t('prenom') }}</label>
+            <input type="text" formControlName="prenom" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t('telephone') }}</label>
+            <input type="text" formControlName="telephone" />
+          </div>
+          <div class="form-group">
+            <label>{{ t('cin') }}</label>
+            <input type="text" formControlName="cin" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="closeAddClient()">{{ t('cancel') }}</button>
+        <button type="submit" class="btn-primary" [disabled]="newClientForm.invalid || addingClient">
+          {{ addingClient ? t('saving') : t('save') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

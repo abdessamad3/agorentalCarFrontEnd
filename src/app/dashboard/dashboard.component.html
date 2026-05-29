@@ -1,52 +1,320 @@
-<div class="dashboard-container">
-  <h1>Dashboard</h1>
+<div class="dashboard" [class.rtl]="dir === 'rtl'">
 
-  <!-- KPI Cards -->
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-overlay">
+    <div class="spinner"></div>
+  </div>
+
+  <div class="dash-inner">
+
+  <!-- ===== KPI CARDS ===== -->
   <div class="kpi-grid">
-    <div class="kpi-card">
-      <div class="kpi-label">Available</div>
-      <div class="kpi-value">{{ stats.availableVoitures }}</div>
-      <div class="kpi-icon">✅</div>
+
+    <div class="kpi-card kpi-red">
+      <div class="kpi-top">
+        <div class="kpi-label">{{ t('expenses') }}</div>
+        <div class="kpi-icon">📉</div>
+      </div>
+      <div class="kpi-value">{{ totalExpenses | number:'1.0-0' }} <span class="kpi-currency">MAD</span></div>
+      <div class="kpi-sub">{{ t('monthlySummary') }}</div>
     </div>
 
-    <div class="kpi-card">
-      <div class="kpi-label">Active Rentals</div>
-      <div class="kpi-value">{{ stats.activeReservations }}</div>
-      <div class="kpi-icon">📅</div>
+    <div class="kpi-card kpi-green">
+      <div class="kpi-top">
+        <div class="kpi-label">{{ t('revenue') }}</div>
+        <div class="kpi-icon">💰</div>
+      </div>
+      <div class="kpi-value">{{ totalRevenue | number:'1.0-0' }} <span class="kpi-currency">MAD</span></div>
+      <div class="kpi-sub">{{ t('totalRevenue') }}</div>
     </div>
 
-    <div class="kpi-card">
-      <div class="kpi-label">Total Revenue</div>
-      <div class="kpi-value">{{ (stats.revenue | number:'1.0-0') }} MAD</div>
-      <div class="kpi-icon">💰</div>
+    <div class="kpi-card kpi-teal">
+      <div class="kpi-top">
+        <div class="kpi-label">{{ t('occupancyRate') }}</div>
+        <div class="kpi-icon">📊</div>
+      </div>
+      <div class="kpi-value">{{ occupancyRate }}<span class="kpi-currency">%</span></div>
+      <div class="kpi-sub">{{ bookedCars }} / {{ totalCars }} {{ t('myCars') }}</div>
+    </div>
+
+    <div class="kpi-card kpi-blue">
+      <div class="kpi-top">
+        <div class="kpi-label">{{ t('activeBookings') }}</div>
+        <div class="kpi-icon">📅</div>
+      </div>
+      <div class="kpi-value">{{ activeBookings }}</div>
+      <div class="kpi-sub">{{ t('reservations') }}</div>
+    </div>
+
+    <div class="kpi-card kpi-darkblue">
+      <div class="kpi-top">
+        <div class="kpi-label">{{ t('totalCars') }}</div>
+        <div class="kpi-icon">🚗</div>
+      </div>
+      <div class="kpi-value">{{ totalCars }}</div>
+      <div class="kpi-sub">{{ t('myCars') }}</div>
+    </div>
+
+    <div class="kpi-card kpi-purple">
+      <div class="kpi-top">
+        <div class="kpi-label">{{ t('clients') }}</div>
+        <div class="kpi-icon">👥</div>
+      </div>
+      <div class="kpi-value">{{ totalClients }}</div>
+      <div class="kpi-sub">{{ t('clients') }}</div>
+    </div>
+
+  </div>
+
+  <!-- ===== DOCUMENT ALERTS ===== -->
+  <div class="alerts-row" *ngIf="expiredAlerts.length > 0 || dueThisMonthAlerts.length > 0">
+
+    <!-- Expired Documents -->
+    <div class="card alert-card alert-expired-card" *ngIf="expiredAlerts.length > 0">
+      <div class="card-header">
+        <span class="card-title alert-title-expired">&#9888; {{ t('expiredDocuments') }} ({{ expiredAlerts.length }})</span>
+        <a routerLink="/voiture" class="card-link">→</a>
+      </div>
+      <div class="alert-list">
+        <a *ngFor="let a of expiredAlerts" [routerLink]="['/voiture', a.carId]" class="alert-item alert-item-expired">
+          <div class="alert-car">
+            <span class="alert-car-label">{{ a.carLabel }}</span>
+            <span class="alert-plate">{{ a.immatriculation }}</span>
+          </div>
+          <div class="alert-doc">
+            <span class="alert-doc-type">{{ docTypeLabel(a.docType) }}</span>
+            <span class="alert-date">{{ a.date | date:'dd/MM/yyyy' }}</span>
+          </div>
+          <span class="alert-days expired-days">{{ -a.daysOverOrLeft }}j</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Due This Month -->
+    <div class="card alert-card alert-due-card" *ngIf="dueThisMonthAlerts.length > 0">
+      <div class="card-header">
+        <span class="card-title alert-title-due">&#128276; {{ t('dueThisMonth') }} ({{ dueThisMonthAlerts.length }})</span>
+        <a routerLink="/voiture" class="card-link">→</a>
+      </div>
+      <div class="alert-list">
+        <a *ngFor="let a of dueThisMonthAlerts" [routerLink]="['/voiture', a.carId]" class="alert-item alert-item-due">
+          <div class="alert-car">
+            <span class="alert-car-label">{{ a.carLabel }}</span>
+            <span class="alert-plate">{{ a.immatriculation }}</span>
+          </div>
+          <div class="alert-doc">
+            <span class="alert-doc-type">{{ docTypeLabel(a.docType) }}</span>
+            <span class="alert-date">{{ a.date | date:'dd/MM/yyyy' }}</span>
+          </div>
+          <span class="alert-days due-days">{{ a.daysOverOrLeft }}j</span>
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== CARS IN REPAIR ===== -->
+  <div class="card repair-card" *ngIf="carsInRepair.length > 0">
+    <div class="card-header">
+      <span class="card-title">🔧 {{ t('carsInRepair') }} <span class="repair-count-badge">{{ carsInRepair.length }}</span></span>
+      <a routerLink="/reparation" class="card-link">{{ t('all') }} →</a>
+    </div>
+    <div class="repair-list">
+      <a *ngFor="let item of carsInRepair" [routerLink]="['/voiture', item.car?.id]" class="repair-item">
+        <div class="repair-car-icon">🔧</div>
+        <div class="repair-car-info">
+          <span class="repair-car-name">{{ item.car?.marque }} {{ item.car?.modele }}</span>
+          <span class="repair-car-plate">{{ item.car?.immatriculation || '—' }}</span>
+        </div>
+        <div class="repair-desc">{{ item.repair.descriptionTechnique || '—' }}</div>
+        <div class="repair-dates">
+          <span class="repair-date-from">{{ item.repair.dateDebut | date:'dd/MM/yy' }}</span>
+          <span class="repair-arrow">→</span>
+          <span class="repair-date-to" [class.repair-ongoing]="!item.repair.dateFin">
+            {{ item.repair.dateFin ? (item.repair.dateFin | date:'dd/MM/yy') : t('ongoing') }}
+          </span>
+        </div>
+      </a>
     </div>
   </div>
 
-  <!-- Recent Reservations -->
-  <div class="recent-section">
-    <h2>Recent Reservations</h2>
+  <!-- ===== ROW 2: Fleet Status + Payment Distribution ===== -->
+  <div class="row-2">
 
-    <div *ngIf="reservations.length > 0; else noReservations" class="table-responsive">
-      <table>
+    <!-- Fleet Status -->
+    <div class="card fleet-card">
+      <div class="card-header">
+        <span class="card-title">{{ t('fleetStatus') }}</span>
+        <a routerLink="/voiture" class="card-link">→</a>
+      </div>
+      <div class="fleet-items">
+        <div class="fleet-item fleet-available">
+          <div class="fleet-dot"></div>
+          <div class="fleet-info">
+            <span class="fleet-label">{{ t('availableCars') }}</span>
+            <span class="fleet-count">{{ availableCars }}</span>
+          </div>
+          <div class="fleet-bar-wrap">
+            <div class="fleet-bar" [style.width.%]="totalCars > 0 ? (availableCars / totalCars) * 100 : 0"></div>
+          </div>
+        </div>
+        <div class="fleet-item fleet-booked">
+          <div class="fleet-dot"></div>
+          <div class="fleet-info">
+            <span class="fleet-label">{{ t('bookedCars') }}</span>
+            <span class="fleet-count">{{ bookedCars }}</span>
+          </div>
+          <div class="fleet-bar-wrap">
+            <div class="fleet-bar" [style.width.%]="totalCars > 0 ? (bookedCars / totalCars) * 100 : 0"></div>
+          </div>
+        </div>
+        <div class="fleet-item fleet-maintenance">
+          <div class="fleet-dot"></div>
+          <div class="fleet-info">
+            <span class="fleet-label">{{ t('maintenance') }}</span>
+            <span class="fleet-count">{{ maintenanceCars }}</span>
+          </div>
+          <div class="fleet-bar-wrap">
+            <div class="fleet-bar" [style.width.%]="totalCars > 0 ? (maintenanceCars / totalCars) * 100 : 0"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment Distribution -->
+    <div class="card payment-card">
+      <div class="card-header">
+        <span class="card-title">{{ t('paymentDistribution') }}</span>
+        <a routerLink="/paiement" class="card-link">→</a>
+      </div>
+      <div class="payment-donut">
+        <div class="donut-chart">
+          <svg viewBox="0 0 36 36" class="donut-svg">
+            <circle class="donut-bg" cx="18" cy="18" r="15.9155" />
+            <circle class="donut-paid" cx="18" cy="18" r="15.9155"
+              [attr.stroke-dasharray]="paidPct + ' ' + (100 - paidPct)" />
+            <circle class="donut-partial" cx="18" cy="18" r="15.9155"
+              [attr.stroke-dasharray]="partialPct + ' ' + (100 - partialPct)"
+              [attr.stroke-dashoffset]="100 - paidPct" />
+            <circle class="donut-unpaid" cx="18" cy="18" r="15.9155"
+              [attr.stroke-dasharray]="unpaidPct + ' ' + (100 - unpaidPct)"
+              [attr.stroke-dashoffset]="100 - paidPct - partialPct" />
+          </svg>
+          <div class="donut-center">
+            <span class="donut-pct">{{ paidPct }}%</span>
+            <span class="donut-sub">{{ t('paid') }}</span>
+          </div>
+        </div>
+        <div class="payment-legend">
+          <div class="legend-item">
+            <span class="legend-dot dot-paid"></span>
+            <span>{{ t('paid') }}</span>
+            <span class="legend-val">{{ paidCount }}</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot dot-partial"></span>
+            <span>{{ t('partial') }}</span>
+            <span class="legend-val">{{ partialCount }}</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot dot-unpaid"></span>
+            <span>{{ t('unpaid') }}</span>
+            <span class="legend-val">{{ unpaidCount }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== ROW 3: Financial Chart + Booking Chart ===== -->
+  <div class="row-3">
+
+    <!-- 12-Month Financial Overview -->
+    <div class="card chart-card">
+      <div class="card-header">
+        <span class="card-title">{{ t('financialOverview') }}</span>
+        <div class="chart-legend">
+          <span class="cleg cleg-rev">{{ t('revenue') }}</span>
+          <span class="cleg cleg-exp">{{ t('expenses') }}</span>
+        </div>
+      </div>
+      <div class="bar-chart">
+        <div *ngFor="let bar of monthBars" class="bar-group">
+          <div class="bars-wrap">
+            <div class="bar bar-rev" [style.height.%]="bar.revenueH" [title]="bar.revenue + ' MAD'"></div>
+            <div class="bar bar-exp" [style.height.%]="bar.expensesH" [title]="bar.expenses + ' MAD'"></div>
+          </div>
+          <div class="bar-label">{{ bar.label }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Booking Stats -->
+    <div class="card chart-card">
+      <div class="card-header">
+        <span class="card-title">{{ t('bookingStats') }}</span>
+        <div class="chart-legend">
+          <span class="cleg cleg-book">{{ t('reservations') }}</span>
+        </div>
+      </div>
+      <div class="bar-chart">
+        <div *ngFor="let bar of bookingMonthBars" class="bar-group">
+          <div class="bars-wrap">
+            <div class="bar bar-book" [style.height.%]="bar.h" [title]="bar.count + ''"></div>
+          </div>
+          <div class="bar-label">{{ bar.label }}</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== Recent Bookings — last 10 reservations, full width ===== -->
+  <div class="card recent-card">
+    <div class="card-header">
+      <span class="card-title">{{ t('recentBookings') }}</span>
+      <a routerLink="/reservation" class="card-link">{{ t('all') }} →</a>
+    </div>
+
+    <div *ngIf="recentReservations.length > 0; else noResData" class="table-wrap">
+      <table class="dash-table">
         <thead>
           <tr>
-            <th>Client</th>
-            <th>Car</th>
-            <th>Date</th>
+            <th>#</th>
+            <th>{{ t('client') }}</th>
+            <th>{{ t('car') }}</th>
+            <th>{{ t('startDate') }}</th>
+            <th>{{ t('endDate') }}</th>
+            <th>{{ t('montant') }}</th>
+            <th>{{ t('status') }}</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let res of reservations">
-            <td>{{ res.client }}</td>
-            <td>{{ res.voiture }}</td>
-            <td>{{ res.dateDebut }}</td>
+          <tr *ngFor="let r of recentReservations; let i = index">
+            <td class="td-num">{{ i + 1 }}</td>
+            <td>{{ r.client?.nom || clientName(r) || '—' }}</td>
+            <td>{{ r.voiture?.marque ? (r.voiture.marque + ' ' + (r.voiture.modele || '')) : voitureLabel(r) }}</td>
+            <td>{{ r.dateDebut | date:'dd/MM/yy' }}</td>
+            <td>{{ r.dateFin | date:'dd/MM/yy' }}</td>
+            <td class="td-amount">{{ (r.total || r.montant || 0) | number:'1.0-0' }} MAD</td>
+            <td>
+              <span class="status-badge"
+                [class.status-active]="reservationStatus(r) === 'active'"
+                [class.status-upcoming]="reservationStatus(r) === 'upcoming'"
+                [class.status-closed]="reservationStatus(r) === 'done'">
+                {{ t(reservationStatus(r)) }}
+              </span>
+            </td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <ng-template #noReservations>
-      <div class="no-data">No recent reservations</div>
+    <ng-template #noResData>
+      <div class="no-data-msg">{{ t('noData') }}</div>
     </ng-template>
   </div>
+
+  </div><!-- /.dash-inner -->
 </div>

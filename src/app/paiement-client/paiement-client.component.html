@@ -1,0 +1,157 @@
+<div class="pc-page" [class.rtl]="dir === 'rtl'">
+
+  <!-- Header -->
+  <div class="page-header">
+    <h1 class="page-title">💳 {{ t('clientPayments') }}</h1>
+    <div class="header-actions">
+      <div class="search-box">
+        <input type="text" [(ngModel)]="search" [placeholder]="t('search') + '...'" />
+      </div>
+      <app-btn variant="primary" (click)="openAdd()">+ {{ t('addPayment') }}</app-btn>
+    </div>
+  </div>
+
+  <!-- Summary bar -->
+  <div class="summary-bar" *ngIf="!loading">
+    <div class="summary-chip chip-collected">
+      <span class="chip-icon">✅</span>
+      <span class="chip-label">{{ t('totalCollected') }}:</span>
+      <span class="chip-value">{{ totalCollected | number:'1.0-0' }} MAD</span>
+    </div>
+    <div class="summary-chip chip-count">
+      <span class="chip-icon">🧾</span>
+      <span class="chip-label">{{ t('payments') }}:</span>
+      <span class="chip-value">{{ items.length }}</span>
+    </div>
+  </div>
+
+  <!-- Loading / Error -->
+  <div *ngIf="loading" class="state-msg">{{ t('loading') }}</div>
+  <div *ngIf="error && !loading" class="state-error">{{ error }}</div>
+
+  <!-- Table -->
+  <div *ngIf="!loading && !error" class="table-card">
+    <div *ngIf="filtered.length === 0" class="empty-msg">{{ t('noData') }}</div>
+    <div *ngIf="filtered.length > 0" class="table-wrap">
+      <table class="pc-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>{{ t('date') }}</th>
+            <th>{{ t('client') }}</th>
+            <th>{{ t('car') }}</th>
+            <th>{{ t('reservationDates') }}</th>
+            <th>{{ t('totalAmount') }}</th>
+            <th>{{ t('amountPaid') }}</th>
+            <th>{{ t('paymentMethod') }}</th>
+            <th>{{ t('notes') }}</th>
+            <th class="th-actions">{{ t('actions') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of filtered; let i = index">
+            <td class="td-num">{{ i + 1 }}</td>
+            <td class="td-date">{{ item.datePaiement | date:'dd/MM/yyyy' }}</td>
+            <td class="td-client">
+              {{ item.reservation?.client?.nom || '—' }}
+              {{ item.reservation?.client?.prenom || '' }}
+            </td>
+            <td>{{ item.reservation?.voiture?.marque || '—' }} {{ item.reservation?.voiture?.modele || '' }}</td>
+            <td class="td-dates">
+              {{ item.reservation?.dateDebut | date:'dd/MM/yy' }}
+              → {{ item.reservation?.dateFin | date:'dd/MM/yy' }}
+            </td>
+            <td class="td-amount">{{ (item.reservation?.total || 0) | number:'1.0-0' }} MAD</td>
+            <td class="td-paid">{{ item.montant | number:'1.0-0' }} MAD</td>
+            <td>
+              <span class="method-badge">{{ item.modePaiement || '—' }}</span>
+            </td>
+            <td class="td-note">{{ item.note || '—' }}</td>
+            <td class="actions-cell">
+              <app-btn variant="icon-delete" (click)="confirmDelete(item)" [title]="t('delete')"></app-btn>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Add Payment Modal -->
+<div *ngIf="modalOpen" class="modal-overlay" (click)="closeModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>💳 {{ t('addPayment') }}</h2>
+      <button class="modal-close" (click)="closeModal()">×</button>
+    </div>
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <div class="modal-body">
+
+        <div class="form-group">
+          <label>{{ t('reservation') }} *</label>
+          <select formControlName="reservationId">
+            <option value="">-- {{ t('select') }} --</option>
+            <option *ngFor="let r of selectableReservations" [value]="r.id">
+              {{ reservationLabel(r) }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t('amountPaid') }} * <span class="max-hint" *ngIf="form.get('reservationId')?.value">(max {{ maxPayable(form.get('reservationId')?.value) | number:'1.0-0' }} MAD)</span></label>
+            <input type="number" formControlName="montant" min="0.01" step="0.01" />
+          </div>
+          <div class="form-group">
+            <label>{{ t('date') }} *</label>
+            <input type="date" formControlName="datePaiement" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t('paymentMethod') }}</label>
+            <select formControlName="modePaiement">
+              <option value="especes">Espèces</option>
+              <option value="carte">Carte</option>
+              <option value="virement">Virement</option>
+              <option value="cheque">Chèque</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>{{ t('notes') }}</label>
+            <input type="text" formControlName="note" />
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <app-btn variant="secondary" type="button" (click)="closeModal()">{{ t('cancel') }}</app-btn>
+        <app-btn variant="primary" type="submit" [disabled]="form.invalid" [isLoading]="isSubmitting">
+          {{ t('save') }}
+        </app-btn>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Delete confirmation -->
+<div *ngIf="deleteTarget" class="modal-overlay" (click)="deleteTarget = null">
+  <div class="modal modal-sm" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ t('confirmDelete') }}</h2>
+      <button class="modal-close" (click)="deleteTarget = null">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="delete-warn">
+        {{ t('deleteWarning') }}<br/>
+        <strong>{{ deleteTarget.reservation?.client?.nom }} — {{ deleteTarget.montant | number:'1.0-0' }} MAD</strong>
+      </p>
+    </div>
+    <div class="modal-footer">
+      <app-btn variant="secondary" (click)="deleteTarget = null">{{ t('cancel') }}</app-btn>
+      <app-btn variant="danger" (click)="doDelete()">{{ t('delete') }}</app-btn>
+    </div>
+  </div>
+</div>

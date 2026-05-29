@@ -1,0 +1,464 @@
+<!-- ════════════════════════════════════════
+     MOBILE LAYOUT
+════════════════════════════════════════ -->
+<div *ngIf="isMobile" class="cal-mobile-page" [class.rtl]="dir === 'rtl'" [attr.dir]="dir">
+
+  <!-- Mobile Stats Row -->
+  <div class="mob-stats-scroll">
+    <div class="mob-stat-card">
+      <div class="mob-stat-icon msic-green">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+      </div>
+      <div>
+        <div class="mob-stat-num">{{ activeCount }}</div>
+        <div class="mob-stat-lbl">{{ t('activeRentals') }}</div>
+      </div>
+    </div>
+    <div class="mob-stat-card">
+      <div class="mob-stat-icon msic-blue">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </div>
+      <div>
+        <div class="mob-stat-num">{{ thisMonthCount }}</div>
+        <div class="mob-stat-lbl">{{ t('thisMonth') }}</div>
+      </div>
+    </div>
+    <div class="mob-stat-card">
+      <div class="mob-stat-icon msic-orange">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div>
+        <div class="mob-stat-num">{{ upcomingCount }}</div>
+        <div class="mob-stat-lbl">{{ t('upcoming') }}</div>
+      </div>
+    </div>
+    <div class="mob-stat-card">
+      <div class="mob-stat-icon msic-navy">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <div>
+        <div class="mob-stat-num">{{ availableFleet }}</div>
+        <div class="mob-stat-lbl">{{ t('availableCars') }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Header -->
+  <div class="mob-header">
+    <!-- Nav row -->
+    <div class="mob-nav-row">
+      <button class="mob-nav-btn" (click)="mobilePrev()" [disabled]="mobileView === 'agenda'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="mob-period-label">{{ mobileHeaderLabel }}</span>
+      <button class="mob-nav-btn" (click)="mobileNext()" [disabled]="mobileView === 'agenda'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+      <button class="mob-today-btn" (click)="goToToday()" [class.today-active]="isViewingCurrentMonth && mobileView !== 'day' || isViewingToday && mobileView === 'day'">
+        {{ t('today') }}
+      </button>
+    </div>
+
+    <!-- View mode tabs -->
+    <div class="mob-view-tabs">
+      <button class="mob-vtab" [class.active]="mobileView === 'month'"  (click)="setMobileView('month')">{{ t('month') }}</button>
+      <button class="mob-vtab" [class.active]="mobileView === 'week'"   (click)="setMobileView('week')">{{ t('week') }}</button>
+      <button class="mob-vtab" [class.active]="mobileView === 'day'"    (click)="setMobileView('day')">{{ t('day') }}</button>
+      <button class="mob-vtab" [class.active]="mobileView === 'agenda'" (click)="setMobileView('agenda')">{{ t('agenda') }}</button>
+
+      <!-- Filter toggle -->
+      <button class="mob-filter-btn" (click)="showMobileFilter = !showMobileFilter" [class.filter-active]="filterStatus !== 'all'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+      </button>
+    </div>
+
+    <!-- Filter dropdown -->
+    <div *ngIf="showMobileFilter" class="mob-filter-dropdown">
+      <button class="mob-fpill"              [class.on]="filterStatus === 'all'"       (click)="setFilter('all')">{{ t('all') }}</button>
+      <button class="mob-fpill mob-fp-blue"  [class.on]="filterStatus === 'confirmed'" (click)="setFilter('confirmed')">{{ t('confirmed') }}</button>
+      <button class="mob-fpill mob-fp-green" [class.on]="filterStatus === 'active'"    (click)="setFilter('active')">{{ t('inProgress') }}</button>
+      <button class="mob-fpill mob-fp-orange"[class.on]="filterStatus === 'pending'"   (click)="setFilter('pending')">{{ t('pending') }}</button>
+    </div>
+  </div>
+
+  <!-- ── Month View ── -->
+  <div *ngIf="mobileView === 'month'" class="mob-month-view"
+       (touchstart)="onTouchStart($event)" (touchend)="onTouchEnd($event)">
+    <div class="mob-day-headers">
+      <div *ngFor="let d of dayLabels; let i = index"
+           class="mob-dh" [class.mob-dh-weekend]="i === 0 || i === 6">{{ d }}</div>
+    </div>
+    <div *ngIf="loading" class="mob-month-grid">
+      <div class="mob-cell mob-sk-cell" *ngFor="let _ of skeletonArr">
+        <div class="mob-sk-num"></div>
+      </div>
+    </div>
+    <div *ngIf="!loading" class="mob-month-grid">
+      <ng-container *ngFor="let week of weeks">
+        <div *ngFor="let day of week"
+             class="mob-cell"
+             [class.other-month]="!day.isCurrentMonth"
+             [class.mob-today]="day.isToday"
+             [class.mob-weekend]="day.isWeekend && !day.isToday"
+             [class.has-events]="day.bookings.length > 0"
+             (click)="selectMobileDay(day)">
+          <span class="mob-day-num" [class.mob-today-num]="day.isToday">{{ day.dayNum }}</span>
+          <div *ngIf="day.bookings.length > 0" class="mob-event-dots">
+            <span *ngFor="let b of day.bookings | slice:0:3"
+                  class="mob-dot" [ngClass]="'dot-' + bookingStatusClass(b)"></span>
+            <span *ngIf="day.bookings.length > 3" class="mob-dot-more">+{{ day.bookings.length - 3 }}</span>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+
+  <!-- ── Week View ── -->
+  <div *ngIf="mobileView === 'week'" class="mob-week-view"
+       (touchstart)="onTouchStart($event)" (touchend)="onTouchEnd($event)">
+    <div class="mob-week-grid">
+      <div *ngFor="let cell of weekCells"
+           class="mob-week-col"
+           [class.mob-wc-today]="cell.isToday"
+           [class.mob-wc-weekend]="cell.isWeekend"
+           [class.has-events]="cell.bookings.length > 0"
+           (click)="selectMobileDay(cell)">
+        <div class="mob-wc-dayname">{{ dayLabels[cell.date.getDay()] }}</div>
+        <div class="mob-wc-num" [class.mob-today-num]="cell.isToday">{{ cell.dayNum }}</div>
+        <div *ngIf="cell.bookings.length > 0" class="mob-wc-badge">{{ cell.bookings.length }}</div>
+        <div *ngIf="cell.bookings.length === 0" class="mob-wc-empty-dot"></div>
+        <div class="mob-wc-dots">
+          <span *ngFor="let b of cell.bookings | slice:0:3"
+                class="mob-dot mob-dot-sm" [ngClass]="'dot-' + bookingStatusClass(b)"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Day View ── -->
+  <div *ngIf="mobileView === 'day'" class="mob-day-view"
+       (touchstart)="onTouchStart($event)" (touchend)="onTouchEnd($event)">
+    <div *ngIf="dayViewCell?.bookings?.length === 0" class="mob-empty-state">
+      <div class="mob-empty-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </div>
+      <div class="mob-empty-title">{{ t('noBookingsForDay') }}</div>
+      <a routerLink="/reservation/create" class="mob-empty-cta">{{ t('newBooking') }}</a>
+    </div>
+    <div *ngIf="dayViewCell && dayViewCell.bookings.length > 0" class="mob-day-list">
+      <div *ngFor="let b of dayViewCell.bookings"
+           class="mob-day-item" [ngClass]="'mob-dmi-' + bookingStatusClass(b)">
+        <div class="mob-dmi-accent"></div>
+        <div class="mob-dmi-body">
+          <div class="mob-dmi-top">
+            <span class="mob-dmi-vehicle">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+              {{ getVoitureLabel(b) }}
+            </span>
+            <span class="mob-dmi-badge" [ngClass]="'mob-badge-' + bookingStatusClass(b)">{{ b.reservationStatus || b.statut }}</span>
+          </div>
+          <div class="mob-dmi-mid">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span>{{ getClientName(b) }}</span>
+          </div>
+          <div class="mob-dmi-dates">
+            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            {{ b.dateDebut | date:'dd MMM' }} — {{ b.dateFin | date:'dd MMM yyyy' }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Agenda View ── -->
+  <div *ngIf="mobileView === 'agenda'" class="mob-agenda-view">
+    <div *ngIf="agendaGroups.length === 0" class="mob-empty-state">
+      <div class="mob-empty-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div class="mob-empty-title">{{ t('noUpcomingReservations') }}</div>
+    </div>
+    <div *ngFor="let group of agendaGroups" class="mob-agenda-group">
+      <div class="mob-agenda-date-header" [class.mob-agh-today]="group.isToday">
+        <span class="mob-agd-label">{{ group.dateLabel }}</span>
+        <span class="mob-agd-count">{{ group.items.length }}</span>
+      </div>
+      <div *ngFor="let b of group.items"
+           class="mob-agenda-item" [ngClass]="'mob-agi-' + bookingStatusClass(b)">
+        <div class="mob-agi-accent"></div>
+        <div class="mob-agi-body">
+          <div class="mob-agi-top">
+            <span class="mob-agi-vehicle">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+              {{ getVoitureLabel(b) }}
+            </span>
+            <span class="mob-agi-badge" [ngClass]="'mob-badge-' + bookingStatusClass(b)">{{ b.reservationStatus || b.statut }}</span>
+          </div>
+          <div class="mob-agi-client">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            {{ getClientName(b) }}
+          </div>
+          <div class="mob-agi-dates">
+            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            {{ b.dateDebut | date:'dd MMM' }} — {{ b.dateFin | date:'dd MMM yyyy' }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ════════════════════════════════════════
+     DESKTOP LAYOUT (unchanged)
+════════════════════════════════════════ -->
+<div *ngIf="!isMobile" class="cal-page" [class.rtl]="dir === 'rtl'" [attr.dir]="dir">
+
+  <!-- ── Stats Bar ── -->
+  <div class="stats-bar">
+    <div class="stat-card">
+      <div class="stat-icon icon-green">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+      </div>
+      <div class="stat-info">
+        <span class="stat-num">{{ activeCount }}</span>
+        <span class="stat-lbl">{{ t('activeRentals') }}</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon icon-blue">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </div>
+      <div class="stat-info">
+        <span class="stat-num">{{ thisMonthCount }}</span>
+        <span class="stat-lbl">{{ t('thisMonth') }}</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon icon-orange">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div class="stat-info">
+        <span class="stat-num">{{ upcomingCount }}</span>
+        <span class="stat-lbl">{{ t('upcoming') }}</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon icon-navy">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <div class="stat-info">
+        <span class="stat-num">{{ availableFleet }}</span>
+        <span class="stat-lbl">{{ t('availableCars') }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Calendar Card ── -->
+  <div class="cal-card">
+
+    <!-- Header -->
+    <div class="cal-header">
+      <div class="header-nav">
+        <button class="nav-btn" (click)="prevMonth()" [title]="t('previous')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <h2 class="month-title">{{ currentMonthLabel }}</h2>
+        <button class="nav-btn" (click)="nextMonth()" [title]="t('next')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <button class="today-btn" (click)="goToToday()" [class.today-active]="isViewingCurrentMonth">{{ t('today') }}</button>
+      </div>
+
+      <div class="header-filters">
+        <button class="fpill"              [class.fpill-on]="filterStatus === 'all'"       (click)="setFilter('all')">{{ t('all') }}</button>
+        <button class="fpill fpill-blue"   [class.fpill-on]="filterStatus === 'confirmed'" (click)="setFilter('confirmed')">{{ t('confirmed') }}</button>
+        <button class="fpill fpill-green"  [class.fpill-on]="filterStatus === 'active'"    (click)="setFilter('active')">{{ t('inProgress') }}</button>
+        <button class="fpill fpill-orange" [class.fpill-on]="filterStatus === 'pending'"   (click)="setFilter('pending')">{{ t('pending') }}</button>
+      </div>
+
+      <a routerLink="/reservation/create" class="btn-new">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span class="btn-new-text">{{ t('newBooking') }}</span>
+      </a>
+    </div>
+
+    <!-- Day Headers -->
+    <div class="day-headers">
+      <div class="dh" *ngFor="let d of dayLabels; let i = index" [class.dh-weekend]="i === 0 || i === 6">{{ d }}</div>
+    </div>
+
+    <!-- Skeleton -->
+    <div *ngIf="loading" class="cal-grid">
+      <div class="cal-cell sk-cell" *ngFor="let _ of skeletonArr">
+        <div class="sk-num"></div>
+        <div class="sk-chip"></div>
+        <div class="sk-chip sk-short"></div>
+      </div>
+    </div>
+
+    <!-- Calendar Grid -->
+    <div *ngIf="!loading" class="cal-grid">
+      <ng-container *ngFor="let week of weeks">
+        <div
+          *ngFor="let day of week"
+          class="cal-cell"
+          [class.other-month]="!day.isCurrentMonth"
+          [class.today]="day.isToday"
+          [class.weekend]="day.isWeekend && !day.isToday"
+          [class.has-events]="day.bookings.length > 0"
+          (click)="selectDay(day)">
+
+          <div class="cell-top">
+            <span class="day-num" [class.today-num]="day.isToday">{{ day.dayNum }}</span>
+            <span *ngIf="day.bookings.length > 0" class="event-count-badge">{{ day.bookings.length }}</span>
+          </div>
+
+          <div class="cell-events">
+            <div
+              *ngFor="let b of day.bookings | slice:0:2"
+              class="event-pill"
+              [ngClass]="'ep-' + bookingStatusClass(b)"
+              [title]="getVoitureLabel(b) + ' — ' + getClientName(b)">
+              <span class="ep-text">{{ getVoitureLabel(b) }}</span>
+            </div>
+            <div *ngIf="day.bookings.length > 2" class="ep-more">
+              +{{ day.bookings.length - 2 }} {{ t('more') }}
+            </div>
+          </div>
+
+        </div>
+      </ng-container>
+    </div>
+
+    <!-- Legend -->
+    <div class="cal-legend">
+      <span class="leg-label">{{ t('status') }}:</span>
+      <div class="leg-item"><span class="leg-dot ld-confirmed"></span>{{ t('confirmed') }}</div>
+      <div class="leg-item"><span class="leg-dot ld-active"></span>{{ t('inProgress') }}</div>
+      <div class="leg-item"><span class="leg-dot ld-pending"></span>{{ t('pending') }}</div>
+      <div class="leg-item"><span class="leg-dot ld-completed"></span>{{ t('done') }}</div>
+      <div class="leg-item"><span class="leg-dot ld-cancelled"></span>{{ t('cancelled') }}</div>
+      <div class="leg-spacer"></div>
+      <div class="leg-item"><span class="leg-today-swatch"></span>{{ t('today') }}</div>
+      <div class="leg-item"><span class="leg-weekend-swatch"></span>Weekend</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     DESKTOP DAY DETAIL MODAL
+════════════════════════════════════════ -->
+<div *ngIf="selectedDay && !isMobile" class="modal-overlay" (click)="closeDay()">
+  <div class="detail-modal" (click)="$event.stopPropagation()">
+
+    <div class="dm-header">
+      <div>
+        <h3 class="dm-title">{{ selectedDay.date | date:'EEEE, d MMMM' }}</h3>
+        <span class="dm-subtitle">{{ selectedDay.bookings.length }} {{ t('reservations') }}</span>
+      </div>
+      <button class="dm-close" (click)="closeDay()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="dm-body">
+      <div *ngFor="let b of selectedDay.bookings"
+        class="dm-item"
+        [ngClass]="'dmi-' + bookingStatusClass(b)">
+        <div class="dmi-accent"></div>
+        <div class="dmi-content">
+          <div class="dmi-top">
+            <span class="dmi-vehicle">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+              {{ getVoitureLabel(b) }}
+            </span>
+            <span class="dmi-badge" [ngClass]="'badge-' + bookingStatusClass(b)">{{ b.reservationStatus || b.statut }}</span>
+          </div>
+          <div class="dmi-bottom">
+            <span class="dmi-client">
+              <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              {{ getClientName(b) }}
+            </span>
+            <span class="dmi-dates">
+              <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              {{ b.dateDebut | date:'dd MMM' }} — {{ b.dateFin | date:'dd MMM yyyy' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dm-footer">
+      <button class="dm-close-btn" (click)="closeDay()">{{ t('close') }}</button>
+      <a routerLink="/reservation/create" class="dm-add-btn" (click)="closeDay()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        {{ t('newBooking') }}
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     MOBILE BOTTOM SHEET
+════════════════════════════════════════ -->
+<ng-container *ngIf="isMobile && bottomSheetDay">
+  <div class="mob-bs-overlay" (click)="closeBottomSheet()">
+    <div class="mob-bs" (click)="$event.stopPropagation()">
+      <div class="mob-bs-handle"></div>
+
+      <div class="mob-bs-header">
+        <div>
+          <h3 class="mob-bs-title">{{ bottomSheetDay.date | date:'EEEE, d MMMM' }}</h3>
+          <span class="mob-bs-subtitle">{{ bottomSheetDay.bookings.length }} {{ t('reservations') }}</span>
+        </div>
+        <button class="mob-bs-close-btn" (click)="closeBottomSheet()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="mob-bs-body">
+        <div *ngFor="let b of bottomSheetDay.bookings"
+             class="mob-bs-item" [ngClass]="'mob-bsi-' + bookingStatusClass(b)">
+          <div class="mob-bsi-accent"></div>
+          <div class="mob-bsi-content">
+            <div class="mob-bsi-top">
+              <span class="mob-bsi-vehicle">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                {{ getVoitureLabel(b) }}
+              </span>
+              <span class="mob-bsi-badge" [ngClass]="'mob-badge-' + bookingStatusClass(b)">{{ b.reservationStatus || b.statut }}</span>
+            </div>
+            <div class="mob-bsi-client">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              {{ getClientName(b) }}
+            </div>
+            <div class="mob-bsi-dates">
+              <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              {{ b.dateDebut | date:'dd MMM' }} — {{ b.dateFin | date:'dd MMM yyyy' }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mob-bs-footer">
+        <button class="mob-bs-cancel" (click)="closeBottomSheet()">{{ t('close') }}</button>
+        <a routerLink="/reservation/create" class="mob-bs-add" (click)="closeBottomSheet()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          {{ t('newBooking') }}
+        </a>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<!-- ════════════════════════════════════════
+     MOBILE FAB
+════════════════════════════════════════ -->
+<div *ngIf="isMobile" class="mob-fab-wrap">
+  <a routerLink="/reservation/create" class="mob-fab-primary" [title]="t('newBooking')">
+    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  </a>
+</div>

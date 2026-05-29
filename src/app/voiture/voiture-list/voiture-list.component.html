@@ -1,25 +1,450 @@
-<div class="list-container" dir="rtl">
-  <div class="header">
-    <h1>سياراتي</h1>
-    <button class="btn-add" (click)="router.navigate(['/voiture-create'])">+ إضافة سيارة</button>
-  </div>
+<div class="fleet-page" [attr.dir]="dir">
 
-  <div *ngIf="loading">جاري التحميل...</div>
-
-  <div class="grid">
-    <div *ngFor="let car of voitures" class="car-card" (click)="viewCar(car.id)">
-      <div class="car-img">
-        <img [src]="car.fullImage || 'assets/placeholder.png'" alt="{{ car.modele }}">
-      </div>
-      <div class="car-info">
-        <h3>{{ car.marque }} {{ car.modele }}</h3>
-        <p class="year">{{ car.annee }}</p>
-        <p class="price">{{ car.prixJour }} <span>Mad/jour</span></p>
-        <div class="tags">
-          <span class="tag">{{ car.kilometrageActuel }} كم</span>
-          <span class="tag">{{ car.typeCarburant }}</span>
-        </div>
-      </div>
+  <!-- ══ Page Header ══════════════════════════════════════════════════════ -->
+  <div class="page-header">
+    <div class="page-header-left">
+      <h1 class="page-title">{{ t('fleetManagement') }}</h1>
+      <p class="page-sub">{{ stats.total }} {{ t('totalFleet') }}</p>
+    </div>
+    <div class="page-header-right">
+      <a routerLink="/voiture/create" class="btn-primary-lg">
+        <span>+</span> {{ t('addVehicle') }}
+      </a>
     </div>
   </div>
+
+  <!-- ══ Stats Bar ════════════════════════════════════════════════════════ -->
+  <div class="stats-bar">
+    <div class="stat-card stat-total"       (click)="statusFilter='all'"         [class.stat-active]="statusFilter==='all'">
+      <span class="stat-num">{{ stats.total }}</span>
+      <span class="stat-lbl">{{ t('totalFleet') }}</span>
+    </div>
+    <div class="stat-card stat-green"       (click)="statusFilter='disponible'"  [class.stat-active]="statusFilter==='disponible'">
+      <span class="stat-num">{{ stats.disponible }}</span>
+      <span class="stat-lbl">{{ t('disponible') }}</span>
+    </div>
+    <div class="stat-card stat-blue"        (click)="statusFilter='louee'"       [class.stat-active]="statusFilter==='louee'">
+      <span class="stat-num">{{ stats.louee }}</span>
+      <span class="stat-lbl">{{ t('louee') }}</span>
+    </div>
+    <div class="stat-card stat-orange"      (click)="statusFilter='maintenance'" [class.stat-active]="statusFilter==='maintenance'">
+      <span class="stat-num">{{ stats.maintenance }}</span>
+      <span class="stat-lbl">{{ t('maintenance') }}</span>
+    </div>
+    <div class="stat-card stat-red"         (click)="statusFilter='hors_service'" [class.stat-active]="statusFilter==='hors_service'">
+      <span class="stat-num">{{ stats.horsService }}</span>
+      <span class="stat-lbl">{{ t('horsService') }}</span>
+    </div>
+    <div class="stat-card stat-sold"        (click)="statusFilter='vendu'"       [class.stat-active]="statusFilter==='vendu'">
+      <span class="stat-num">{{ stats.vendu }}</span>
+      <span class="stat-lbl">{{ t('vendu') }}</span>
+    </div>
+    <div class="stat-card stat-arch"        (click)="statusFilter='archive'"     [class.stat-active]="statusFilter==='archive'">
+      <span class="stat-num">{{ stats.archive }}</span>
+      <span class="stat-lbl">{{ t('archive') }}</span>
+    </div>
+  </div>
+
+  <!-- ══ Filter & Search Bar ══════════════════════════════════════════════ -->
+  <div class="filter-card">
+
+    <!-- Row 1 – Status tabs -->
+    <div class="filter-tabs-row">
+      <button *ngFor="let tab of STATUS_TABS"
+        class="tab-btn"
+        [class.active]="statusFilter === tab.key"
+        (click)="statusFilter = tab.key">
+        {{ t(tab.labelKey) }}
+        <span class="tab-count">{{ statCount(tab.key) }}</span>
+      </button>
+    </div>
+
+    <div class="filter-sep"></div>
+
+    <!-- Row 2 – Search + dropdowns + view toggle -->
+    <div class="filter-controls-row">
+      <div class="search-wrap">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" [(ngModel)]="searchQuery" [placeholder]="t('search') + '…'" class="search-input" />
+      </div>
+
+      <div class="filter-selects">
+        <select [(ngModel)]="fuelFilter" class="filter-select">
+          <option value="">{{ t('allFuelTypes') }}</option>
+          <option *ngFor="let f of FUEL_OPTIONS" [value]="f">{{ t(f.toLowerCase()) }}</option>
+        </select>
+        <select [(ngModel)]="transmissionFilter" class="filter-select">
+          <option value="">{{ t('allTransmissions') }}</option>
+          <option *ngFor="let tr of TRANSMISSION_OPTIONS" [value]="tr">{{ t(tr.toLowerCase()) }}</option>
+        </select>
+        <select *ngIf="categoryOptions.length > 0" [(ngModel)]="categoryFilter" class="filter-select">
+          <option value="">{{ t('allBodyStyles') }}</option>
+          <option *ngFor="let c of categoryOptions" [value]="c">{{ c }}</option>
+        </select>
+      </div>
+
+      <div class="view-toggle">
+        <button [class.active]="viewMode==='grid'"  (click)="viewMode='grid'"  [title]="t('gridView')">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M3 3h7v7H3zm11 0h7v7h-7zm0 11h7v7h-7zM3 14h7v7H3z"/></svg>
+        </button>
+        <button [class.active]="viewMode==='table'" (click)="viewMode='table'" [title]="t('tableView')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Reset row -->
+    <div *ngIf="hasActiveFilters" class="filter-reset-row">
+      <button (click)="resetFilters()" class="btn-reset-filters">{{ t('resetFilters') }}</button>
+    </div>
+
+  </div>
+
+  <!-- ══ Date Availability Filter ════════════════════════════════════════ -->
+  <div class="date-filter-row">
+    <span class="date-filter-label">📅 {{ t('availabilityFilter') }}</span>
+    <div class="date-filter-inputs">
+      <input type="date" [(ngModel)]="dateFrom" (change)="onDateFilterChange()" class="date-input" [placeholder]="t('from')" />
+      <span class="date-sep">→</span>
+      <input type="date" [(ngModel)]="dateTo"   (change)="onDateFilterChange()" class="date-input" [placeholder]="t('to')" />
+    </div>
+    <button *ngIf="datesActive" class="btn-clear-dates" (click)="clearDateFilter()">✕ {{ t('clearDates') }}</button>
+    <span *ngIf="datesActive" class="date-active-hint">{{ t('checkAvailability') }}</span>
+  </div>
+
+  <!-- ══ Loading / Error / Empty ══════════════════════════════════════════ -->
+  <div *ngIf="loading" class="state-box">
+    <div class="spinner-lg"></div>
+    <p>{{ t('loading') }}</p>
+  </div>
+
+  <div *ngIf="!loading && error" class="state-box error-box">
+    <p>{{ error }}</p>
+    <button (click)="loadCars()" class="btn-retry">{{ t('retry') }}</button>
+  </div>
+
+  <div *ngIf="!loading && !error && filtered.length === 0" class="state-box empty-box">
+    <div class="empty-icon">🚗</div>
+    <p>{{ t('noCars') }}</p>
+    <a routerLink="/voiture/create" class="btn-primary-lg">{{ t('addVehicle') }}</a>
+  </div>
+
+  <!-- ══ GRID VIEW ════════════════════════════════════════════════════════ -->
+  <div *ngIf="!loading && !error && filtered.length > 0 && viewMode === 'grid'" class="cars-grid">
+    <div *ngFor="let car of filtered" class="car-card" [class.card-archived]="status(car)==='archive' || status(car)==='vendu'">
+
+      <!-- Image + Status badge + Alert badge -->
+      <div class="card-img-wrap" [routerLink]="['/voiture', car.id]">
+        <img [src]="car._img" [alt]="car.marque + ' ' + car.modele" class="card-img" loading="lazy" (error)="car._img = imgUrl()" />
+        <span class="status-badge" [ngClass]="statusClass(effectiveStatus(car))">{{ statusLabel(effectiveStatus(car)) }}</span>
+        <span *ngIf="alertCount(car) > 0" class="alert-badge" [class.badge-danger]="alertLevel(car)==='danger'" [class.badge-warn]="alertLevel(car)==='warning'">
+          ⚠ {{ alertCount(car) }}
+        </span>
+        <span *ngIf="car.availabilityForPeriod" class="avail-badge" [ngClass]="availabilityClass(car)">
+          {{ car.availabilityForPeriod === 'disponible' ? '✓' : '✗' }} {{ availabilityLabel(car) }}
+        </span>
+      </div>
+
+      <!-- Card Body -->
+      <div class="card-body">
+        <div class="card-title-row">
+          <span class="car-name" [routerLink]="['/voiture', car.id]">{{ car.marque }} {{ car.modele }}</span>
+          <span class="car-year">{{ car.annee }}</span>
+        </div>
+        <div *ngIf="car.immatriculation" class="car-plate">🪪 {{ car.immatriculation }}</div>
+
+        <div class="card-specs">
+          <span class="spec-chip">{{ t(car.typeCarburant?.toLowerCase() || 'essence') }}</span>
+          <span *ngIf="car.transmission" class="spec-chip">{{ t(car.transmission?.toLowerCase() || 'manuelle') }}</span>
+          <span *ngIf="car.kilometrageActuel" class="spec-chip">{{ car.kilometrageActuel | number:'1.0-0' }} km</span>
+          <span *ngIf="car.places" class="spec-chip">{{ car.places }} {{ t('places') }}</span>
+        </div>
+
+        <div class="card-pricing">
+          <div class="price-main">{{ car.prixJour | number:'1.0-0' }} <span class="price-unit">MAD/{{ t('daily') }}</span></div>
+          <div *ngIf="car.prixSemaine" class="price-secondary">{{ car.prixSemaine | number:'1.0-0' }} MAD/{{ t('weekly') }}</div>
+        </div>
+
+        <!-- Actions -->
+        <div class="card-actions">
+          <a [routerLink]="['/voiture', car.id]" class="act-btn act-view" [title]="t('view')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </a>
+          <button (click)="openEdit(car)" class="act-btn act-edit" [title]="t('edit')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button (click)="openStatus(car)" class="act-btn act-status" [title]="t('changeStatus')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </button>
+          <button (click)="duplicate(car)" class="act-btn act-dup" [title]="t('duplicateVehicle')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+          <button (click)="openDelete(car.id)" class="act-btn act-del" [title]="t('delete')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══ TABLE VIEW ═══════════════════════════════════════════════════════ -->
+  <div *ngIf="!loading && !error && filtered.length > 0 && viewMode === 'table'" class="table-wrap">
+    <table class="fleet-table">
+      <thead>
+        <tr>
+          <th>{{ t('car') }}</th>
+          <th>{{ t('licensePlate') }}</th>
+          <th>{{ t('status') }}</th>
+          <th>{{ t('fuel') }}</th>
+          <th>{{ t('mileage') }}</th>
+          <th>{{ t('pricePerDay') }}</th>
+          <th>{{ t('alertsPanel') }}</th>
+          <th>{{ t('actions') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let car of filtered" class="table-row" [class.row-archived]="status(car)==='archive'||status(car)==='vendu'">
+          <td class="td-car">
+            <img [src]="car._img" [alt]="car.marque" class="table-img" (error)="car._img = imgUrl()" />
+            <div class="td-car-info">
+              <a [routerLink]="['/voiture', car.id]" class="car-link">{{ car.marque }} {{ car.modele }}</a>
+              <span class="car-year-small">{{ car.annee }}{{ car.version ? ' · ' + car.version : '' }}</span>
+            </div>
+          </td>
+          <td><span *ngIf="car.immatriculation" class="plate-chip">{{ car.immatriculation }}</span><span *ngIf="!car.immatriculation" class="text-muted">—</span></td>
+          <td>
+            <span class="status-badge-sm" [ngClass]="statusClass(effectiveStatus(car))">{{ statusLabel(effectiveStatus(car)) }}</span>
+            <span *ngIf="car.availabilityForPeriod" class="avail-badge-sm" [ngClass]="availabilityClass(car)">
+              {{ car.availabilityForPeriod === 'disponible' ? '✓' : '✗' }} {{ availabilityLabel(car) }}
+            </span>
+          </td>
+          <td>{{ t(car.typeCarburant?.toLowerCase() || '') }}</td>
+          <td>{{ car.kilometrageActuel | number:'1.0-0' }} km</td>
+          <td class="td-price">{{ car.prixJour | number:'1.0-0' }} MAD</td>
+          <td>
+            <div *ngIf="alertCount(car) > 0" class="alert-chips">
+              <span *ngIf="isExpired(car.dateExpirationAssurance)||isExpiring(car.dateExpirationAssurance)"
+                class="alert-chip" [class.chip-danger]="isExpired(car.dateExpirationAssurance)" [class.chip-warn]="!isExpired(car.dateExpirationAssurance)">
+                {{ t('insuranceDoc') }}
+              </span>
+              <span *ngIf="isExpired(car.dateExpirationVignette)||isExpiring(car.dateExpirationVignette)"
+                class="alert-chip" [class.chip-danger]="isExpired(car.dateExpirationVignette)" [class.chip-warn]="!isExpired(car.dateExpirationVignette)">
+                {{ t('vignetteDoc') }}
+              </span>
+              <span *ngIf="isExpired(car.dateExpirationVisite)||isExpiring(car.dateExpirationVisite)"
+                class="alert-chip" [class.chip-danger]="isExpired(car.dateExpirationVisite)" [class.chip-warn]="!isExpired(car.dateExpirationVisite)">
+                {{ t('technicalDoc') }}
+              </span>
+            </div>
+            <span *ngIf="alertCount(car) === 0" class="text-muted">✓</span>
+          </td>
+          <td class="td-actions">
+            <a [routerLink]="['/voiture', car.id]" class="act-btn act-view" [title]="t('view')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </a>
+            <button (click)="openEdit(car)" class="act-btn act-edit" [title]="t('edit')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button (click)="openStatus(car)" class="act-btn act-status" [title]="t('changeStatus')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </button>
+            <button (click)="openDelete(car.id)" class="act-btn act-del" [title]="t('delete')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ══ Pagination ═══════════════════════════════════════════════════════ -->
+  <div *ngIf="pages > 1" class="pagination">
+    <button [disabled]="page <= 1"      (click)="onPreviousPage()" class="pag-btn">‹ {{ t('previous') }}</button>
+    <span class="pag-info">{{ page }} / {{ pages }}</span>
+    <button [disabled]="page >= pages"  (click)="onNextPage()"     class="pag-btn">{{ t('next') }} ›</button>
+  </div>
+
+</div><!-- /.fleet-page -->
+
+
+<!-- ══════════════════════ MODALS ══════════════════════════════════════════ -->
+
+<!-- Edit Modal -->
+<div *ngIf="modalMode === 'edit'" class="modal-overlay" (click)="closeModal()">
+  <div class="modal modal-wide" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ t('editVehicle') }} — {{ selectedVoiture?.marque }} {{ selectedVoiture?.modele }}</h2>
+      <button class="modal-close" (click)="closeModal()">✕</button>
+    </div>
+    <form [formGroup]="editForm" (ngSubmit)="saveEdit()">
+      <div class="modal-body modal-scroll">
+
+        <!-- Technical -->
+        <div class="modal-section">
+          <h3 class="section-head">{{ t('technicalInfo') }}</h3>
+          <div class="form-grid-3">
+            <div class="fg"><label>{{ t('brand') }} *</label><input formControlName="marque" /></div>
+            <div class="fg"><label>{{ t('model') }} *</label><input formControlName="modele" /></div>
+            <div class="fg"><label>{{ t('version') }}</label><input formControlName="version" /></div>
+            <div class="fg"><label>{{ t('year') }} *</label><input type="number" formControlName="annee" /></div>
+            <div class="fg fg-plate">
+              <label>{{ t('licensePlate') }}</label>
+              <div class="plate-input">
+                <input formControlName="immatNum1" class="plate-num1" placeholder="1231" maxlength="4"
+                       (input)="filterDigits($event.target)" />
+                <span class="plate-sep">-</span>
+                <input formControlName="immatLetter" class="plate-letter" placeholder="A" maxlength="1"
+                       (input)="filterLetter($event.target)" />
+                <span class="plate-sep">-</span>
+                <input formControlName="immatNum2" class="plate-num2" placeholder="18" maxlength="2"
+                       (input)="filterDigits($event.target)" />
+              </div>
+            </div>
+            <div class="fg"><label>{{ t('vin') }}</label><input formControlName="vin" /></div>
+            <div class="fg"><label>{{ t('fuel') }}</label>
+              <select formControlName="typeCarburant">
+                <option *ngFor="let f of FUEL_OPTIONS" [value]="f">{{ t(f.toLowerCase()) }}</option>
+              </select>
+            </div>
+            <div class="fg"><label>{{ t('transmission') }}</label>
+              <select formControlName="transmission">
+                <option value="Manuelle">{{ t('manuelle') }}</option>
+                <option value="Automatique">{{ t('automatique') }}</option>
+              </select>
+            </div>
+            <div class="fg"><label>{{ t('color') }}</label><input formControlName="couleur" /></div>
+            <div class="fg"><label>{{ t('places') }}</label><input type="number" formControlName="places" min="1" /></div>
+            <div class="fg"><label>{{ t('portes') }}</label><input type="number" formControlName="portes" min="2" /></div>
+            <div class="fg"><label>{{ t('puissanceCv') }}</label><input type="number" formControlName="puissanceCv" /></div>
+            <div class="fg"><label>{{ t('mileage') }} (km)</label><input type="number" formControlName="kilometrageActuel" /></div>
+            <div class="fg"><label>{{ t('vehicleCategory') }}</label><input formControlName="categorie" /></div>
+          </div>
+          <div class="fg-check"><label><input type="checkbox" formControlName="climatisation" /> {{ t('ac') }}</label></div>
+        </div>
+
+        <!-- Financial -->
+        <div class="modal-section">
+          <h3 class="section-head">{{ t('financialInfo') }}</h3>
+          <div class="form-grid-3">
+            <div class="fg"><label>{{ t('pricePerDay') }} (MAD) *</label><input type="number" formControlName="prixJour" min="0" /></div>
+            <div class="fg"><label>{{ t('weeklyRate') }} (MAD)</label><input type="number" formControlName="prixSemaine" min="0" /></div>
+            <div class="fg"><label>{{ t('monthlyRate') }} (MAD)</label><input type="number" formControlName="prixMois" min="0" /></div>
+            <div class="fg"><label>{{ t('purchasePrice') }} (MAD)</label><input type="number" formControlName="prixAchat" min="0" /></div>
+            <div class="fg"><label>{{ t('deposit') }} (MAD)</label><input type="number" formControlName="caution" min="0" /></div>
+            <div class="fg"><label>{{ t('purchaseDate') }}</label><input type="date" formControlName="dateAchat" /></div>
+          </div>
+        </div>
+
+        <!-- Administrative -->
+        <div class="modal-section">
+          <h3 class="section-head">{{ t('adminInfo') }}</h3>
+          <div class="form-grid-3">
+            <div class="fg"><label>{{ t('insuranceExpiry') }}</label><input type="date" formControlName="dateExpirationAssurance" /></div>
+            <div class="fg"><label>{{ t('vignetteExpiry') }}</label><input type="date" formControlName="dateExpirationVignette" /></div>
+            <div class="fg"><label>{{ t('technicalExpiry') }}</label><input type="date" formControlName="dateExpirationVisite" /></div>
+            <div class="fg"><label>{{ t('status') }}</label>
+              <select formControlName="voitureStatus">
+                <ng-container *ngFor="let s of ALL_STATUSES">
+                  <option *ngIf="s.value !== 'archive' || status(selectedVoiture) === 'disponible'"
+                    [value]="s.value">{{ t(s.label) }}</option>
+                </ng-container>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Image -->
+        <div class="modal-section">
+          <h3 class="section-head">📸 {{ t('vehicleImages') }}</h3>
+
+          <!-- Main image -->
+          <div class="edit-img-row" style="margin-bottom:1rem">
+            <div style="position:relative;display:inline-block">
+              <img [src]="editImagePreview || selectedVoiture?._img" class="edit-img-preview" alt="main" />
+              <span style="position:absolute;top:4px;left:4px;background:#3182ce;color:#fff;font-size:10px;padding:2px 6px;border-radius:4px">{{ t('mainImage') }}</span>
+            </div>
+            <label class="btn-secondary edit-img-btn">
+              {{ t('changeImage') }}
+              <input type="file" accept="image/jpeg,image/png,image/webp" style="display:none" (change)="onEditImageSelect($event)" />
+            </label>
+          </div>
+
+          <!-- Additional gallery -->
+          <div class="edit-gallery">
+            <div *ngFor="let img of editGallery" class="edit-gallery-item">
+              <img [src]="img.path" class="edit-gallery-thumb" alt="photo" />
+              <button class="edit-gallery-del" (click)="removeGalleryImage(img.id)" title="Supprimer">✕</button>
+            </div>
+            <label class="edit-gallery-add">
+              <span>+</span>
+              <input type="file" accept="image/jpeg,image/png,image/webp" style="display:none" (change)="addGalleryImage($event)" />
+            </label>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="closeModal()">{{ t('cancel') }}</button>
+        <button type="submit" class="btn-primary" [disabled]="editForm.invalid || isSubmitting">
+          {{ t(isSubmitting ? 'saving' : 'save') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div *ngIf="modalMode === 'delete'" class="modal-overlay" (click)="closeModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ t('confirmDelete') }}</h2>
+      <button class="modal-close" (click)="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="delete-warning">{{ t('deleteWarning') }}</p>
+      <p *ngIf="deleteError" class="delete-error-msg">{{ deleteError }}</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeModal()">{{ t('cancel') }}</button>
+      <button *ngIf="deleteError" class="btn-warning" (click)="archiveSelected()">{{ t('archiveInstead') }}</button>
+      <button class="btn-danger" (click)="confirmDelete()">{{ t('delete') }}</button>
+    </div>
+  </div>
+</div>
+
+<!-- Change Status Modal -->
+<div *ngIf="modalMode === 'status'" class="modal-overlay" (click)="closeModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ t('changeStatus') }} — {{ selectedVoiture?.marque }} {{ selectedVoiture?.modele }}</h2>
+      <button class="modal-close" (click)="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="status-picker">
+        <ng-container *ngFor="let s of ALL_STATUSES">
+          <button *ngIf="s.value !== 'archive' || status(selectedVoiture) === 'disponible'"
+            class="status-pick-btn"
+            [ngClass]="statusClass(s.value)"
+            [class.selected]="newStatus === s.value"
+            (click)="newStatus = s.value">
+            {{ t(s.label) }}
+          </button>
+        </ng-container>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeModal()">{{ t('cancel') }}</button>
+      <button class="btn-primary"   (click)="confirmStatus()" [disabled]="isSubmitting">
+        {{ t(isSubmitting ? 'saving' : 'confirm') }}
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div *ngIf="toast" class="fleet-toast" [class.fleet-toast-error]="toast.type === 'error'" [class.fleet-toast-success]="toast.type === 'success'">
+  <span>{{ toast.type === 'error' ? '✕' : '✓' }}</span>
+  {{ toast.message }}
 </div>

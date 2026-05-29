@@ -1,4 +1,4 @@
-<div class="sidebar" [class.open]="isSidebarOpen" [attr.dir]="dir">
+<div class="sidebar" [class.open]="isSidebarOpen" [class.rtl]="dir === 'rtl'">
 
   <!-- Logo -->
   <div class="sidebar-header">
@@ -15,16 +15,19 @@
 
   <!-- Navigation -->
   <nav class="sidebar-nav">
-    <a
-      *ngFor="let item of menuItems"
-      [routerLink]="item.link"
-      routerLinkActive="active-link"
-      (click)="onClose()"
-      class="nav-item"
-    >
-      <span class="nav-icon">{{ item.icon }}</span>
-      <span class="nav-label">{{ getLabel(item.key) }}</span>
-    </a>
+    <ng-container *ngFor="let group of menuGroups">
+      <div *ngIf="group.labelKey" class="nav-group-label">{{ getLabel(group.labelKey) }}</div>
+      <a
+        *ngFor="let item of group.items"
+        [routerLink]="item.link"
+        routerLinkActive="active-link"
+        (click)="onNavClick()"
+        class="nav-item"
+      >
+        <span class="nav-icon">{{ item.icon }}</span>
+        <span class="nav-label">{{ getLabel(item.key) }}</span>
+      </a>
+    </ng-container>
   </nav>
 
   <!-- Footer / Logout -->

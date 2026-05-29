@@ -1,0 +1,311 @@
+<div class="list-container" [dir]="dir">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1>🏷️ {{ t('ventes') }}</h1>
+      <p class="subtitle">{{ t('sellCarDesc') }}</p>
+    </div>
+  </div>
+
+  <!-- Tabs + Search -->
+  <div class="search-filter-bar">
+    <div class="tab-bar">
+      <button class="tab-btn" [class.active]="activeTab === 'available'" (click)="activeTab = 'available'">
+        {{ t('availableToSell') }}
+        <span class="tab-count">{{ availableVoitures.length }}</span>
+      </button>
+      <button class="tab-btn" [class.active]="activeTab === 'sold'" (click)="activeTab = 'sold'">
+        {{ t('soldVehicles') }}
+        <span class="tab-count sold-count">{{ soldVoitures.length }}</span>
+      </button>
+    </div>
+    <div class="search-input">
+      <input type="text" [(ngModel)]="search" [placeholder]="t('search') + '...'" />
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-state" *ngIf="loading">
+    <p>{{ t('loading') }}</p>
+  </div>
+
+  <!-- Error -->
+  <div class="error-state" *ngIf="error && !loading">
+    <p>{{ error }}</p>
+    <button class="btn-retry" (click)="load()">{{ t('retry') }}</button>
+  </div>
+
+  <!-- ===== AVAILABLE TAB ===== -->
+  <ng-container *ngIf="!loading && !error && activeTab === 'available'">
+    <div class="table-container" *ngIf="availableVoitures.length > 0; else noAvailable">
+      <table class="bureaus-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>{{ t('car') }}</th>
+            <th>{{ t('immatriculation') }}</th>
+            <th>{{ t('annee') }}</th>
+            <th>{{ t('status') }}</th>
+            <th>{{ t('prixJour') }}</th>
+            <th>{{ t('prixAchat') }}</th>
+            <th>{{ t('actions') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let v of availableVoitures; let i = index" class="bureau-row">
+            <td class="date-cell">{{ i + 1 }}</td>
+            <td>
+              <div class="name-cell">{{ v.marque }} {{ v.modele }}</div>
+              <div class="date-cell">{{ v.couleur || '' }}</div>
+            </td>
+            <td><span class="plate-badge">{{ v.immatriculation || '—' }}</span></td>
+            <td>{{ v.annee || '—' }}</td>
+            <td>
+              <span class="status-badge status-{{ (v.voitureStatus || 'disponible').toLowerCase() }}">
+                {{ t(v.voitureStatus || 'disponible') }}
+              </span>
+            </td>
+            <td>{{ v.prixJour ? ((v.prixJour | number:'1.0-0') + ' MAD') : '—' }}</td>
+            <td>{{ v.prixAchat ? ((v.prixAchat | number:'1.0-0') + ' MAD') : '—' }}</td>
+            <td class="actions-cell">
+              <a [routerLink]="['/voiture', v.id]" class="btn-action btn-view" [title]="t('view')">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </a>
+              <app-btn variant="success" size="sm" (click)="openSell(v)">🏷️ {{ t('sellCar') }}</app-btn>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ng-template #noAvailable>
+      <div class="empty-state"><p>{{ t('noCarsToSell') }}</p></div>
+    </ng-template>
+  </ng-container>
+
+  <!-- ===== SOLD TAB ===== -->
+  <ng-container *ngIf="!loading && !error && activeTab === 'sold'">
+    <div class="table-container" *ngIf="soldVoitures.length > 0; else noSold">
+      <table class="bureaus-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>{{ t('car') }}</th>
+            <th>{{ t('immatriculation') }}</th>
+            <th>{{ t('saleDate') }}</th>
+            <th>{{ t('salePrice') }}</th>
+            <th>{{ t('prixAchat') }}</th>
+            <th>{{ t('profit') }}</th>
+            <th>{{ t('buyer') }}</th>
+            <th>{{ t('actions') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let v of soldVoitures; let i = index" class="bureau-row sold-row">
+            <td class="date-cell">{{ i + 1 }}</td>
+            <td>
+              <div class="name-cell">{{ v.marque }} {{ v.modele }}</div>
+              <div class="date-cell">{{ v.annee || '' }}</div>
+            </td>
+            <td><span class="plate-badge">{{ v.immatriculation || '—' }}</span></td>
+            <td class="date-cell">{{ v.dateVente ? (v.dateVente | date:'dd/MM/yyyy') : '—' }}</td>
+            <td class="price-cell">{{ v.prixVente ? ((v.prixVente | number:'1.0-0') + ' MAD') : '—' }}</td>
+            <td>{{ v.prixAchat ? ((v.prixAchat | number:'1.0-0') + ' MAD') : '—' }}</td>
+            <td>
+              <ng-container *ngIf="saleProfit(v) !== null">
+                <span [class.profit-positive]="saleProfit(v)! >= 0" [class.profit-negative]="saleProfit(v)! < 0">
+                  {{ saleProfit(v)! >= 0 ? '+' : '' }}{{ (saleProfit(v)! | number:'1.0-0') }} MAD
+                </span>
+              </ng-container>
+              <span *ngIf="saleProfit(v) === null">—</span>
+            </td>
+            <td>{{ v.acheteur || '—' }}</td>
+            <td class="actions-cell">
+              <app-btn variant="icon-view" (click)="openView(v)" [title]="t('view')"></app-btn>
+              <button class="btn-action btn-edit" (click)="openEditSale(v)" [title]="t('edit')">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </button>
+              <a [routerLink]="['/voiture', v.id]" class="btn-action btn-view" [title]="t('vehicleDetails')">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                  <polyline points="15,3 21,3 21,9"/>
+                  <line x1="10" y1="14" x2="21" y2="3"/>
+                </svg>
+              </a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ng-template #noSold>
+      <div class="empty-state"><p>{{ t('noSoldCars') }}</p></div>
+    </ng-template>
+  </ng-container>
+
+  <!-- ===== SELL MODAL ===== -->
+  <div class="modal-overlay" *ngIf="modalMode === 'sell'" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>🏷️ {{ t('sellCar') }}</h2>
+        <button class="modal-close" (click)="closeModal()">×</button>
+      </div>
+      <form [formGroup]="form" (ngSubmit)="confirmSell()">
+        <div class="modal-body">
+
+          <!-- Car summary -->
+          <div class="sell-car-summary">
+            <div class="summary-item">
+              <span class="summary-label">{{ t('car') }}</span>
+              <span class="summary-val">{{ carLabel(selectedCar) }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">{{ t('immatriculation') }}</span>
+              <span class="summary-val"><span class="plate-badge">{{ selectedCar?.immatriculation || '—' }}</span></span>
+            </div>
+            <div class="summary-item" *ngIf="selectedCar?.prixAchat">
+              <span class="summary-label">{{ t('prixAchat') }}</span>
+              <span class="summary-val">{{ selectedCar.prixAchat | number:'1.0-0' }} MAD</span>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>{{ t('saleDate') }} <span class="required">*</span></label>
+              <input type="date" formControlName="dateVente"
+                [class.invalid]="form.get('dateVente')?.invalid && form.get('dateVente')?.touched" />
+              <span class="field-error" *ngIf="form.get('dateVente')?.invalid && form.get('dateVente')?.touched">
+                {{ t('required') }}
+              </span>
+            </div>
+            <div class="form-group">
+              <label>{{ t('salePrice') }} (MAD) <span class="required">*</span></label>
+              <input type="number" min="0" formControlName="prixVente" placeholder="0"
+                [class.invalid]="form.get('prixVente')?.invalid && form.get('prixVente')?.touched" />
+              <span class="field-error" *ngIf="form.get('prixVente')?.invalid && form.get('prixVente')?.touched">
+                {{ t('required') }}
+              </span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>{{ t('buyer') }}</label>
+            <input type="text" formControlName="acheteur" [placeholder]="t('buyerName')" />
+          </div>
+
+          <div class="form-group">
+            <label>{{ t('notes') }}</label>
+            <textarea formControlName="notesVente" rows="3" [placeholder]="t('notes') + '...'"></textarea>
+          </div>
+
+          <div class="sell-warning">
+            ⚠️ {{ t('sellWarning') }}
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <app-btn variant="secondary" type="button" (click)="closeModal()">{{ t('cancel') }}</app-btn>
+          <app-btn variant="success" type="submit" [isLoading]="isSubmitting">{{ t('confirmSale') }}</app-btn>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== EDIT SALE MODAL ===== -->
+  <div class="modal-overlay" *ngIf="modalMode === 'editSale'" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>✏️ {{ t('edit') }} — {{ carLabel(selectedCar) }}</h2>
+        <button class="modal-close" (click)="closeModal()">×</button>
+      </div>
+      <form [formGroup]="form" (ngSubmit)="confirmEditSale()">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>{{ t('saleDate') }} <span class="required">*</span></label>
+              <input type="date" formControlName="dateVente"
+                [class.invalid]="form.get('dateVente')?.invalid && form.get('dateVente')?.touched" />
+            </div>
+            <div class="form-group">
+              <label>{{ t('salePrice') }} (MAD) <span class="required">*</span></label>
+              <input type="number" min="0" formControlName="prixVente" placeholder="0"
+                [class.invalid]="form.get('prixVente')?.invalid && form.get('prixVente')?.touched" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>{{ t('buyer') }}</label>
+            <input type="text" formControlName="acheteur" [placeholder]="t('buyerName')" />
+          </div>
+          <div class="form-group">
+            <label>{{ t('notes') }}</label>
+            <textarea formControlName="notesVente" rows="3" [placeholder]="t('notes') + '...'"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <app-btn variant="secondary" type="button" (click)="closeModal()">{{ t('cancel') }}</app-btn>
+          <app-btn variant="primary" type="submit">{{ t('save') }}</app-btn>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== VIEW MODAL (sold car details) ===== -->
+  <div class="modal-overlay" *ngIf="modalMode === 'view'" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ t('soldCar') }} — {{ carLabel(selectedCar) }}</h2>
+        <button class="modal-close" (click)="closeModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="detail-row">
+          <span class="detail-label">{{ t('car') }}</span>
+          <span class="detail-value">{{ carLabel(selectedCar) }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">{{ t('immatriculation') }}</span>
+          <span class="detail-value"><span class="plate-badge">{{ selectedCar?.immatriculation || '—' }}</span></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">{{ t('saleDate') }}</span>
+          <span class="detail-value">{{ selectedCar?.dateVente ? (selectedCar.dateVente | date:'dd/MM/yyyy') : '—' }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">{{ t('salePrice') }}</span>
+          <span class="detail-value price-cell">{{ selectedCar?.prixVente ? ((selectedCar.prixVente | number:'1.0-0') + ' MAD') : '—' }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">{{ t('prixAchat') }}</span>
+          <span class="detail-value">{{ selectedCar?.prixAchat ? ((selectedCar.prixAchat | number:'1.0-0') + ' MAD') : '—' }}</span>
+        </div>
+        <div class="detail-row" *ngIf="saleProfit(selectedCar) !== null">
+          <span class="detail-label">{{ t('profit') }}</span>
+          <span class="detail-value"
+            [class.profit-positive]="saleProfit(selectedCar)! >= 0"
+            [class.profit-negative]="saleProfit(selectedCar)! < 0">
+            {{ saleProfit(selectedCar)! >= 0 ? '+' : '' }}{{ (saleProfit(selectedCar)! | number:'1.0-0') }} MAD
+          </span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">{{ t('buyer') }}</span>
+          <span class="detail-value">{{ selectedCar?.acheteur || '—' }}</span>
+        </div>
+        <div class="detail-row" *ngIf="selectedCar?.notesVente">
+          <span class="detail-label">{{ t('notes') }}</span>
+          <span class="detail-value">{{ selectedCar.notesVente }}</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <app-btn variant="secondary" (click)="closeModal()">{{ t('close') }}</app-btn>
+        <a [routerLink]="['/voiture', selectedCar?.id]" class="btn-primary" (click)="closeModal()">
+          {{ t('vehicleDetails') }}
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div>
