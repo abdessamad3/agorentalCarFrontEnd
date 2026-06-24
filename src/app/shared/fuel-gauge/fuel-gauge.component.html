@@ -1,0 +1,9 @@
+<div class="gauge-row">
+  <span
+    *ngFor="let lvl of levels"
+    class="gauge-seg"
+    [class.gauge-active]="value === lvl.key"
+    [class.gauge-readonly]="readonly"
+    (click)="select(lvl.key)"
+  >{{ lvl.label }}</span>
+</div>

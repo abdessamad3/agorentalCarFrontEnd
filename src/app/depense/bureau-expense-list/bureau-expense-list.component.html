@@ -1,0 +1,248 @@
+<div class="list-container" [attr.dir]="dir">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1>Bureau Expenses</h1>
+      <p class="header-subtitle" style="margin:0;font-size:.82rem;color:#718096">Overhead & office costs (rent, utilities, salaries…)</p>
+    </div>
+    <app-btn variant="primary" (click)="openAdd()">+ Add Expense</app-btn>
+  </div>
+
+  <!-- Search -->
+  <div class="search-filter-bar">
+    <div class="search-input">
+      <input type="text" [(ngModel)]="search" (ngModelChange)="onSearch()" placeholder="Search by type or description…" />
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading-state"><p>Loading…</p></div>
+  <div *ngIf="error && !loading" class="error-state">
+    <p>{{ error }}</p>
+    <button (click)="load()" class="btn-retry">Retry</button>
+  </div>
+
+  <!-- Empty -->
+  <div *ngIf="!loading && !error && items.length === 0" class="empty-state">
+    <span class="empty-icon">🏢</span>
+    <div class="empty-title">No bureau expenses recorded</div>
+    <div class="empty-message">Track rent, salaries, utilities, and other office overhead costs here.</div>
+    <button class="empty-action" (click)="openAdd()">+ Add Bureau Expense</button>
+  </div>
+
+  <!-- Table -->
+  <div *ngIf="!loading && !error && items.length > 0" class="table-container">
+    <table class="bureaus-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Bureau</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th class="td-right">Amount (MAD)</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of paged" class="bureau-row">
+          <td style="white-space:nowrap">{{ item.date | date:'dd/MM/yyyy' }}</td>
+          <td>
+            <span *ngIf="item.bureauNom" style="font-size:.85rem;font-weight:600">{{ item.bureauNom }}</span>
+            <span *ngIf="!item.bureauNom" style="color:#a0aec0">—</span>
+          </td>
+          <td>
+            <span class="badge" style="background:#faf5ff;color:#6b21a8;font-size:.75rem;padding:2px 8px;border-radius:12px">
+              {{ typeLabel(item.typeDepense) }}
+            </span>
+          </td>
+          <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.82rem;color:#718096">
+            {{ item.description || '—' }}
+          </td>
+          <td class="td-right" style="font-weight:700;font-family:monospace">
+            {{ (+item.montant).toLocaleString('fr-FR', {minimumFractionDigits:2}) }}
+          </td>
+          <td>
+            <span [class]="'badge ' + statutClass(item.statut)"
+              style="font-size:.72rem;padding:2px 8px;border-radius:12px">
+              {{ item.statut }}
+            </span>
+          </td>
+          <td class="actions-cell">
+            <app-btn variant="icon-view"   (click)="openView(item)"       title="View"></app-btn>
+            <app-btn variant="icon-edit"   (click)="openEdit(item)"       title="Edit"></app-btn>
+            <app-btn variant="icon-delete" (click)="openDelete(item.id)"  title="Delete"></app-btn>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <app-paginator [page]="page" [limit]="limit" [total]="total" (pageChange)="onPageChange($event)"></app-paginator>
+  </div>
+</div>
+
+<!-- Modal -->
+<div *ngIf="modalMode" class="modal-overlay" (click)="closeModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+
+    <!-- Form -->
+    <ng-container *ngIf="modalMode === 'form'">
+      <div class="modal-header">
+        <h2>{{ isEditing ? 'Edit' : 'Add' }} Bureau Expense</h2>
+        <button class="modal-close" (click)="closeModal()">&times;</button>
+      </div>
+      <form [formGroup]="form" (ngSubmit)="save()">
+        <div class="modal-body">
+
+          <!-- Bureau (admin only) + Type -->
+          <div class="form-row">
+            <div *ngIf="isAdmin" class="form-group" style="flex:1">
+              <label>Bureau</label>
+              <select formControlName="bureauId">
+                <option [ngValue]="null">Auto (from your account)</option>
+                <option *ngFor="let b of bureaux" [value]="b.id">{{ b.nom }}</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex:1">
+              <label>Expense Type <span class="required">*</span></label>
+              <select formControlName="typeDepense">
+                <option value="" disabled>Select type…</option>
+                <option *ngFor="let t of expenseTypes" [value]="t.value">{{ t.label }}</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Amount + Date -->
+          <div class="form-row">
+            <div class="form-group">
+              <label>Amount (MAD) <span class="required">*</span></label>
+              <input type="number" formControlName="montant" min="0.01" step="0.01" />
+            </div>
+            <div class="form-group">
+              <label>Expense Date <span class="required">*</span></label>
+              <input type="date" formControlName="date" />
+            </div>
+          </div>
+
+          <!-- Status + Payment date -->
+          <div class="form-row">
+            <div class="form-group">
+              <label>Status</label>
+              <select formControlName="statut">
+                <option value="pending">Pending</option>
+                <option value="paid">Paid</option>
+                <option value="partial">Partial</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Payment Date</label>
+              <input type="date" formControlName="datePaiement" />
+            </div>
+          </div>
+
+          <!-- Invoice date + Description -->
+          <div class="form-row">
+            <div class="form-group">
+              <label>Invoice Date</label>
+              <input type="date" formControlName="dateFacture" />
+            </div>
+            <div class="form-group" style="flex:2">
+              <label>Description / Notes</label>
+              <input type="text" formControlName="description" placeholder="Optional notes…" />
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <app-btn variant="secondary" (click)="closeModal()">Cancel</app-btn>
+          <app-btn variant="primary" type="submit" [disabled]="form.invalid || isSubmitting">
+            {{ isSubmitting ? 'Saving…' : 'Save' }}
+          </app-btn>
+        </div>
+      </form>
+    </ng-container>
+
+    <!-- Delete -->
+    <ng-container *ngIf="modalMode === 'delete'">
+      <div class="modal-header">
+        <h2>Confirm Delete</h2>
+        <button class="modal-close" (click)="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="delete-warning">This expense record will be permanently removed.</p>
+      </div>
+      <div class="modal-footer">
+        <app-btn variant="secondary" (click)="closeModal()">Cancel</app-btn>
+        <app-btn variant="danger" (click)="confirmDelete()">Delete</app-btn>
+      </div>
+    </ng-container>
+
+  </div>
+</div>
+
+<!-- Drawer: View details -->
+<div class="drawer-backdrop" [class.visible]="drawerOpen" (click)="closeDrawer()"></div>
+<div class="drawer" [class.open]="drawerOpen">
+  <ng-container *ngIf="drawerItem">
+    <div class="drawer-header">
+      <span class="drawer-title">Expense Details</span>
+      <button class="drawer-close" (click)="closeDrawer()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="drawer-body">
+      <div class="drawer-section">
+        <div class="drawer-section-head">Bureau</div>
+        <div class="drawer-row">
+          <span class="drawer-lbl">Bureau</span>
+          <span class="drawer-val">{{ drawerItem.bureauNom || '—' }}</span>
+        </div>
+        <div class="drawer-row">
+          <span class="drawer-lbl">Type</span>
+          <span class="drawer-val">{{ typeLabel(drawerItem.typeDepense) }}</span>
+        </div>
+      </div>
+      <div class="drawer-section">
+        <div class="drawer-section-head">Financial</div>
+        <div class="drawer-row">
+          <span class="drawer-lbl">Amount</span>
+          <span class="drawer-val" style="font-weight:700;color:#e53e3e">
+            {{ (+drawerItem.montant).toLocaleString('fr-FR', {minimumFractionDigits:2}) }} MAD
+          </span>
+        </div>
+        <div class="drawer-row">
+          <span class="drawer-lbl">Status</span>
+          <span class="drawer-val">{{ drawerItem.statut }}</span>
+        </div>
+        <div class="drawer-row" *ngIf="drawerItem.datePaiement">
+          <span class="drawer-lbl">Paid on</span>
+          <span class="drawer-val">{{ drawerItem.datePaiement | date:'dd/MM/yyyy' }}</span>
+        </div>
+      </div>
+      <div class="drawer-section">
+        <div class="drawer-section-head">Dates</div>
+        <div class="drawer-row">
+          <span class="drawer-lbl">Expense date</span>
+          <span class="drawer-val">{{ drawerItem.date | date:'dd/MM/yyyy' }}</span>
+        </div>
+        <div class="drawer-row" *ngIf="drawerItem.dateFacture">
+          <span class="drawer-lbl">Invoice date</span>
+          <span class="drawer-val">{{ drawerItem.dateFacture | date:'dd/MM/yyyy' }}</span>
+        </div>
+        <div class="drawer-row" *ngIf="drawerItem.description">
+          <span class="drawer-lbl">Notes</span>
+          <span class="drawer-val">{{ drawerItem.description }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <button class="btn-outline-danger" (click)="openDelete(drawerItem.id); closeDrawer()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+        Delete
+      </button>
+      <button class="btn-primary-sm" (click)="openEdit(drawerItem); closeDrawer()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Edit
+      </button>
+    </div>
+  </ng-container>
+</div>

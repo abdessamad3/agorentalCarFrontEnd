@@ -1,14 +1,15 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { TranslationService } from '../../services/translation.service';
 import { CrudService } from '../../services/crud.service';
+import { InsuranceModalComponent, InsuranceSavePayload } from '../../shared/insurance-modal/insurance-modal.component';
+import { PaginatorComponent } from '../../shared/paginator/paginator.component';
 
 @Component({
   selector: 'app-assurance-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, InsuranceModalComponent, PaginatorComponent],
   templateUrl: './assurance-list.component.html',
   styleUrls: ['./assurance-list.component.css']
 })
@@ -23,39 +24,21 @@ export class AssuranceListComponent implements OnInit {
   companyFilter = '';
   sortCol = 'dateFin';
   sortAsc = true;
+  showArchived = false;
+  page = 1; limit = 20; total = 0;
 
-  modalMode: 'view' | 'form' | 'delete' | 'renew' | null = null;
+  modalMode: 'add' | 'edit' | 'view' | 'delete' | 'renew' | null = null;
   selected: any = null;
   isSubmitting = false;
   deleteId: number | null = null;
-  isEditing = false;
-  form: FormGroup;
-  renewForm: FormGroup;
 
   readonly endpoint = 'assurance';
-  readonly COVERAGE_TYPES = ['RC', 'Tous Risques', 'Tiers Étendu', 'Tiers Simple'];
 
   constructor(
     private crud: CrudService,
     private ts: TranslationService,
-    private fb: FormBuilder
-  ) {
-    this.form = this.fb.group({
-      voitureId:    [null],
-      numeroContrat: ['', Validators.required],
-      compagnie:    [''],
-      typeAssurance: [''],
-      dateDebut:    [''],
-      dateFin:      ['', Validators.required],
-      montant:      [null],
-      depenseId:    [null]
-    });
-    this.renewForm = this.fb.group({
-      dateDebut: ['', Validators.required],
-      dateFin:   ['', Validators.required],
-      montant:   [null]
-    });
-  }
+  ) {}
+
 
   ngOnInit() {
     this.ts.direction$.subscribe(d => this.dir = d);
@@ -65,13 +48,19 @@ export class AssuranceListComponent implements OnInit {
 
   load() {
     this.loading = true; this.error = '';
-    this.crud.getAll(this.endpoint).subscribe({
-      next: r => {
-        this.items = Array.isArray(r) ? r : (r?.data ?? r?.['hydra:member'] ?? []);
-        this.loading = false;
-      },
+    const params: Record<string, any> = { page: this.page, limit: this.limit };
+    if (this.showArchived) params['archived'] = true;
+    if (this.search.trim()) params['search'] = this.search;
+    this.crud.getPage(this.endpoint, params).subscribe({
+      next: r => { this.items = r.data ?? []; this.total = r.meta?.total ?? 0; this.loading = false; },
       error: () => { this.error = this.ts.translate('loadError'); this.loading = false; }
     });
+  }
+
+  toggleArchived() {
+    this.showArchived = !this.showArchived;
+    this.statusFilter = '';
+    this.load();
   }
 
   loadVoitures() {
@@ -81,7 +70,12 @@ export class AssuranceListComponent implements OnInit {
     });
   }
 
-  getStatus(item: any): 'active' | 'expiring' | 'expired' {
+  get allItems(): any[] {
+    return this.items;
+  }
+
+  getStatus(item: any): 'active' | 'expiring' | 'expired' | 'archived' {
+    if (item.status === 'archived' || item.archivedAt) return 'archived';
     if (!item.dateFin) return 'active';
     const diff = this.daysUntil(item.dateFin);
     if (diff < 0) return 'expired';
@@ -97,9 +91,9 @@ export class AssuranceListComponent implements OnInit {
   }
 
   get stats() {
-    const active   = this.items.filter(i => this.getStatus(i) === 'active').length;
-    const expiring = this.items.filter(i => this.getStatus(i) === 'expiring').length;
-    const expired  = this.items.filter(i => this.getStatus(i) === 'expired').length;
+    const active   = this.allItems.filter(i => this.getStatus(i) === 'active').length;
+    const expiring = this.allItems.filter(i => this.getStatus(i) === 'expiring').length;
+    const expired  = this.allItems.filter(i => this.getStatus(i) === 'expired').length;
     const totalCost = this.items.reduce((s, i) => s + (parseFloat(i.montant) || 0), 0);
     return { active, expiring, expired, totalCost };
   }
@@ -109,21 +103,13 @@ export class AssuranceListComponent implements OnInit {
   }
 
   get alerts(): any[] {
-    return this.items
+    return this.allItems
       .filter(i => i.dateFin && this.daysUntil(i.dateFin) <= 7)
       .sort((a, b) => this.daysUntil(a.dateFin) - this.daysUntil(b.dateFin));
   }
 
   get filtered(): any[] {
-    let list = [...this.items];
-    if (this.search.trim()) {
-      const q = this.search.toLowerCase();
-      list = list.filter(i =>
-        (i.numeroContrat || '').toLowerCase().includes(q) ||
-        (i.compagnie || '').toLowerCase().includes(q) ||
-        this.voitureName(i).toLowerCase().includes(q)
-      );
-    }
+    let list = [...this.allItems];
     if (this.statusFilter) list = list.filter(i => this.getStatus(i) === this.statusFilter);
     if (this.companyFilter) list = list.filter(i => i.compagnie === this.companyFilter);
 
@@ -138,6 +124,11 @@ export class AssuranceListComponent implements OnInit {
       return this.sortAsc ? cmp : -cmp;
     });
   }
+
+  get paged(): any[] { return this.filtered; }
+
+  onSearch(): void { this.page = 1; this.load(); }
+  onPageChange(p: number): void { this.page = p; this.load(); }
 
   toggleSort(col: string) {
     if (this.sortCol === col) { this.sortAsc = !this.sortAsc; }
@@ -164,79 +155,69 @@ export class AssuranceListComponent implements OnInit {
   }
 
   openView(item: any) { this.selected = item; this.modalMode = 'view'; }
+  openAdd()           { this.selected = null; this.modalMode = 'add'; }
+  openEdit(item: any) { this.selected = item; this.modalMode = 'edit'; }
+  openRenew(item: any){ this.selected = item; this.modalMode = 'renew'; }
+  openDelete(item: any){ this.selected = item; this.deleteId = item.id; this.modalMode = 'delete'; }
 
-  openAdd() {
-    this.selected = null; this.isEditing = false;
-    this.form.reset();
-    this.modalMode = 'form';
+  openFormalize(carItem: any) {
+    this.selected = {
+      voitureId:    carItem.voitureId,
+      dateFin:      carItem.dateFin ? carItem.dateFin.split('T')[0] : '',
+      compagnie:    '',
+      typeAssurance: '',
+      numeroContrat: '',
+      dateDebut:    '',
+      montant:      null,
+    };
+    this.modalMode = 'add';
   }
-
-  openEdit(item: any) {
-    this.selected = item; this.isEditing = true;
-    this.form.patchValue({
-      voitureId:    item.voitureId ?? item.voiture?.id ?? null,
-      numeroContrat: item.numeroContrat || '',
-      compagnie:    item.compagnie || '',
-      typeAssurance: item.typeAssurance || '',
-      dateDebut:    item.dateDebut ? item.dateDebut.split('T')[0] : '',
-      dateFin:      item.dateFin ? item.dateFin.split('T')[0] : '',
-      montant:      item.montant ?? null,
-      depenseId:    item.depenseId ?? null
-    });
-    this.modalMode = 'form';
-  }
-
-  openRenew(item: any) {
-    this.selected = item;
-    const oldEnd = item.dateFin ? new Date(item.dateFin) : new Date();
-    const ns = new Date(oldEnd); ns.setDate(ns.getDate() + 1);
-    const ne = new Date(ns);    ne.setFullYear(ne.getFullYear() + 1);
-    this.renewForm.reset({
-      dateDebut: ns.toISOString().split('T')[0],
-      dateFin:   ne.toISOString().split('T')[0],
-      montant:   item.montant ?? null
-    });
-    this.modalMode = 'renew';
-  }
-
-  openDelete(id: number) { this.deleteId = id; this.modalMode = 'delete'; }
 
   closeModal() {
     this.modalMode = null; this.selected = null;
-    this.deleteId = null; this.isSubmitting = false; this.isEditing = false;
+    this.deleteId = null; this.isSubmitting = false;
   }
 
-  @HostListener('document:keydown.escape') onEscape() { this.closeModal(); }
-
-  save() {
-    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+  onModalSaved(payload: InsuranceSavePayload): void {
     this.isSubmitting = true;
-    const payload = Object.fromEntries(
-      Object.entries(this.form.value).filter(([, v]) => v !== null && v !== '')
+    const raw = payload.value;
+    const body = Object.fromEntries(
+      Object.entries(raw).filter(([, v]) => v !== null && v !== '')
     );
-    const req = this.isEditing
-      ? this.crud.update(this.endpoint, this.selected.id, payload)
-      : this.crud.create(this.endpoint, payload);
+    const req = (this.modalMode === 'edit' && this.selected?.id)
+      ? this.crud.update(this.endpoint, this.selected.id, body)
+      : this.crud.create(this.endpoint, body);
     req.subscribe({
       next: () => { this.closeModal(); this.load(); },
       error: () => { this.isSubmitting = false; }
     });
   }
 
-  confirmRenew() {
-    if (this.renewForm.invalid) { this.renewForm.markAllAsTouched(); return; }
+  onRenewConfirmed(data: {
+    dateDebut: string; dateFin: string; montant: number | null;
+    compagnie: string | null; typeAssurance: string | null;
+    numeroContrat: string | null; montantPaye: number | null;
+  }): void {
+    if (!this.selected?.id) return;
     this.isSubmitting = true;
-    const v = this.renewForm.value;
-    this.crud.update(this.endpoint, this.selected.id, {
-      dateDebut: v.dateDebut, dateFin: v.dateFin,
-      ...(v.montant != null ? { montant: parseFloat(v.montant) } : {})
-    }).subscribe({
-      next: () => { this.closeModal(); this.load(); },
-      error: () => { this.isSubmitting = false; }
-    });
+    const body: Record<string, any> = {
+      dateDebut: data.dateDebut,
+      dateFin:   data.dateFin,
+    };
+    if (data.montant      != null) body['montant']       = data.montant;
+    if (data.compagnie)            body['compagnie']     = data.compagnie;
+    if (data.typeAssurance)        body['typeAssurance'] = data.typeAssurance;
+    if (data.numeroContrat)        body['numeroContrat'] = data.numeroContrat;
+    if (data.montantPaye  != null) body['montantPaye']   = data.montantPaye;
+
+    this.crud.customAction(`assurance/${this.selected.id}/renew`, body, 'Insurance renewed successfully')
+      .subscribe({
+        next: () => { this.closeModal(); this.load(); },
+        error: () => { this.isSubmitting = false; }
+      });
   }
 
-  confirmDelete() {
+  onDeleteConfirmed(): void {
     if (!this.deleteId) return;
     this.crud.remove(this.endpoint, this.deleteId).subscribe({
       next: () => { this.closeModal(); this.load(); },

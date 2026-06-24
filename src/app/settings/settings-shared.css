@@ -1,0 +1,106 @@
+/* Shared layout styles used by both settings pages */
+.contrat-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.contrat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.contrat-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #1a3a5c;
+  font-weight: 700;
+}
+
+.contrat-section {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: #1a3a5c;
+  border-bottom: 2px solid #1a3a5c;
+  padding-bottom: 6px;
+  margin-bottom: 14px;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .grid-2 { grid-template-columns: 1fr; }
+}
+
+.field label {
+  display: block;
+  font-size: 0.72rem;
+  color: #6b7280;
+  margin-bottom: 3px;
+  font-weight: 500;
+}
+
+.field input {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 0.85rem;
+  box-sizing: border-box;
+}
+
+.field input:focus {
+  outline: none;
+  border-color: #1a3a5c;
+}
+
+.btn-save {
+  background: #1a3a5c;
+  color: #fff;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 5px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-save:hover:not(:disabled) { background: #15304d; }
+
+.bottom-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+  padding-bottom: 16px;
+}
+
+.state-msg { padding: 40px; text-align: center; color: #6b7280; }
+.state-error {
+  padding: 14px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  color: #dc2626;
+  margin-bottom: 16px;
+}
+
+.hint-text {
+  font-size: 0.78rem;
+  color: #9ca3af;
+  margin: 0 0 12px 0;
+}

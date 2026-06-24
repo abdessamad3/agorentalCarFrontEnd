@@ -1,0 +1,122 @@
+<div class="rp-page" [dir]="dir">
+
+  <!-- Header -->
+  <div class="rp-header">
+    <div class="rp-header-left">
+      <div class="rp-header-icon">🔧</div>
+      <div>
+        <div class="rp-title">Maintenance Planning</div>
+        <div class="rp-subtitle">Scheduled and overdue maintenance tasks across the fleet</div>
+      </div>
+    </div>
+    <div class="rp-actions">
+      <button class="btn-export btn-print" onclick="window.print()">🖨️ Print</button>
+      <button class="btn-export btn-csv" (click)="load()">↻ Refresh</button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" style="padding:3rem;text-align:center;color:#a0aec0;">
+    <span class="rp-loading-spinner"></span> Loading maintenance data…
+  </div>
+
+  <ng-container *ngIf="!loading">
+
+    <!-- Priority summary cards -->
+    <div class="rp-stats">
+      <div class="stat-card sc-red" style="cursor:pointer" (click)="filterPriority='OVERDUE'">
+        <div class="sc-num" style="color:#c53030">{{ counts.OVERDUE }}</div>
+        <div class="sc-lbl">🔴 Overdue</div>
+      </div>
+      <div class="stat-card sc-orange" style="cursor:pointer" (click)="filterPriority='CRITICAL'">
+        <div class="sc-num" style="color:#dd6b20">{{ counts.CRITICAL }}</div>
+        <div class="sc-lbl">🟠 Critical (≤7d)</div>
+      </div>
+      <div class="stat-card sc-orange" style="cursor:pointer" (click)="filterPriority='WARNING'">
+        <div class="sc-num" style="color:#d69e2e">{{ counts.WARNING }}</div>
+        <div class="sc-lbl">🟡 Warning (≤30d)</div>
+      </div>
+      <div class="stat-card sc-blue" style="cursor:pointer" (click)="filterPriority='UPCOMING'">
+        <div class="sc-num" style="color:#2b6cb0">{{ counts.UPCOMING }}</div>
+        <div class="sc-lbl">🔵 Upcoming (≤90d)</div>
+      </div>
+      <div class="stat-card sc-green" style="cursor:pointer" (click)="filterPriority='ALL'">
+        <div class="sc-num">{{ tasks.length }}</div>
+        <div class="sc-lbl">Total Tasks</div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="rp-toolbar">
+      <div class="rp-search-wrap">
+        <span class="rp-search-icon">🔍</span>
+        <input class="rp-search" [(ngModel)]="search" placeholder="Search vehicle, plate, description…" />
+      </div>
+      <select class="rp-select" [(ngModel)]="filterPriority">
+        <option value="ALL">All priorities</option>
+        <option value="OVERDUE">🔴 Overdue</option>
+        <option value="CRITICAL">🟠 Critical</option>
+        <option value="WARNING">🟡 Warning</option>
+        <option value="UPCOMING">🔵 Upcoming</option>
+      </select>
+      <select class="rp-select" [(ngModel)]="filterType">
+        <option value="ALL">All types</option>
+        <option *ngFor="let t of $any(TYPE_LABELS | keyvalue)" [value]="t.key">{{ t.value }}</option>
+      </select>
+    </div>
+
+    <!-- Empty state -->
+    <div *ngIf="filtered.length === 0" style="text-align:center;padding:3rem;color:#a0aec0;">
+      <div style="font-size:2.5rem;margin-bottom:.5rem">✅</div>
+      <div style="font-weight:600">No maintenance tasks match the current filters</div>
+    </div>
+
+    <!-- Task list -->
+    <div *ngIf="filtered.length > 0" class="rp-table-wrap">
+      <table class="rp-table">
+        <thead>
+          <tr>
+            <th>Priority</th>
+            <th>Vehicle</th>
+            <th>Plate</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Due / Remaining</th>
+            <th>Due Date</th>
+            <th class="td-right">Est. Cost</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let t of filtered">
+            <td>
+              <span class="doc-badge" [ngClass]="priorityClass(t.priority)">
+                {{ PRIORITY_LABELS[t.priority] }}
+              </span>
+            </td>
+            <td style="font-weight:600">{{ t.vehicleLabel || '—' }}</td>
+            <td style="font-family:monospace;font-size:.8rem">{{ t.immatriculation || '—' }}</td>
+            <td>{{ t.typeLabel }}</td>
+            <td style="max-width:220px;white-space:normal">{{ t.description }}</td>
+            <td>
+              <span class="doc-badge"
+                [ngClass]="priorityClass(t.priority)"
+                style="font-variant-numeric:tabular-nums">
+                {{ daysLabel(t) }}
+              </span>
+            </td>
+            <td>{{ fmtDate(t.dueDate) }}</td>
+            <td class="td-right mono">
+              <span *ngIf="t.cost">{{ t.cost | number:'1.0-0' }} MAD</span>
+              <span *ngIf="!t.cost" style="color:#a0aec0">—</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="rp-count" style="margin-top:.75rem">
+      Showing {{ filtered.length }} of {{ tasks.length }} tasks
+    </div>
+
+  </ng-container>
+</div>

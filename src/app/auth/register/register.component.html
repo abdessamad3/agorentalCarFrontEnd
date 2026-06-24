@@ -1,41 +1,63 @@
-<div class="register-container">
-  <div class="card">
-    <h2>{{ 'registerTitle' | translate }}</h2>
+<div class="register-page">
+  <div class="register-container">
 
-    <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
-    <div *ngIf="successMessage" class="success-message">{{ successMessage }}</div>
+    <div class="register-logo">🚗</div>
+
+    <div class="register-header">
+      <h2>{{ 'registerTitle' | translate }}</h2>
+      <p>Create your AGOCAR account</p>
+    </div>
+
+    <div *ngIf="errorMessage" class="alert alert-error">{{ errorMessage }}</div>
+    <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
 
     <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+
       <div class="form-group">
         <label for="email">{{ 'emailLabel' | translate }}</label>
-        <input id="email" type="email" formControlName="email"
-          [placeholder]="'emailLabel' | translate">
-        <div *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched" class="error-text">
-          {{ 'invalidEmail' | translate }}
+        <div class="input-wrap">
+          <svg class="input-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <input id="email" type="email" formControlName="email"
+            placeholder="you@company.com"
+            [class.invalid]="registerForm.get('email')?.invalid && registerForm.get('email')?.touched" />
         </div>
+        <span *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched" class="error-text">
+          {{ 'invalidEmail' | translate }}
+        </span>
       </div>
 
       <div class="form-group">
         <label for="password">{{ 'passwordLabel' | translate }}</label>
-        <input id="password" type="password" formControlName="password"
-          [placeholder]="'passwordMin' | translate">
-        <div *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched" class="error-text">
-          {{ 'passwordMin' | translate }}
+        <div class="input-wrap">
+          <svg class="input-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input id="password" type="password" formControlName="password"
+            placeholder="Min 8 characters"
+            [class.invalid]="registerForm.get('password')?.invalid && registerForm.get('password')?.touched" />
         </div>
+        <span *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched" class="error-text">
+          {{ 'passwordMin' | translate }}
+        </span>
       </div>
 
       <div class="form-group">
         <label for="confirmPassword">{{ 'confirmPasswordLabel' | translate }}</label>
-        <input id="confirmPassword" type="password" formControlName="confirmPassword"
-          [placeholder]="'confirmPasswordLabel' | translate">
-        <div *ngIf="registerForm.errors?.['mismatch'] && registerForm.get('confirmPassword')?.touched" class="error-text">
-          {{ 'passwordMismatch' | translate }}
+        <div class="input-wrap">
+          <svg class="input-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input id="confirmPassword" type="password" formControlName="confirmPassword"
+            placeholder="Repeat password"
+            [class.invalid]="registerForm.errors?.['mismatch'] && registerForm.get('confirmPassword')?.touched" />
         </div>
+        <span *ngIf="registerForm.errors?.['mismatch'] && registerForm.get('confirmPassword')?.touched" class="error-text">
+          {{ 'passwordMismatch' | translate }}
+        </span>
       </div>
 
-      <button type="submit" [disabled]="isLoading">
+      <button type="submit" class="btn-register" [disabled]="isLoading || registerForm.invalid">
+        <span class="btn-spinner" *ngIf="isLoading"></span>
+        <svg *ngIf="!isLoading" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
         {{ (isLoading ? 'saving' : 'registerBtn') | translate }}
       </button>
+
     </form>
 
     <div class="footer-link">

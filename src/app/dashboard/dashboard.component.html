@@ -66,6 +66,102 @@
 
   </div>
 
+  <!-- ===== COMPLIANCE KPI CARDS ===== -->
+  <div class="kpi-grid compliance-kpi-grid" *ngIf="totalCars > 0">
+    <div class="kpi-card kpi-green">
+      <div class="kpi-top"><div class="kpi-label">{{ t('compliant') }}</div><div class="kpi-icon">✅</div></div>
+      <div class="kpi-value">{{ compliantCount }}</div>
+      <div class="kpi-sub">{{ t('myCars') }}</div>
+    </div>
+    <div class="kpi-card kpi-yellow">
+      <div class="kpi-top"><div class="kpi-label">{{ t('expiringSoon') }}</div><div class="kpi-icon">⚠️</div></div>
+      <div class="kpi-value">{{ warningCount }}</div>
+      <div class="kpi-sub">&le;30 {{ t('days') }}</div>
+    </div>
+    <div class="kpi-card kpi-orange">
+      <div class="kpi-top"><div class="kpi-label">{{ t('criticalDocs') }}</div><div class="kpi-icon">🔴</div></div>
+      <div class="kpi-value">{{ criticalCount }}</div>
+      <div class="kpi-sub">&le;7 {{ t('days') }}</div>
+    </div>
+    <div class="kpi-card kpi-red">
+      <div class="kpi-top"><div class="kpi-label">{{ t('blocked') }}</div><div class="kpi-icon">🚫</div></div>
+      <div class="kpi-value">{{ blockedCount }}</div>
+      <div class="kpi-sub">{{ t('expiredOrMissing') }}</div>
+    </div>
+  </div>
+
+  <!-- ===== CREDIT KPI STRIP ===== -->
+  <div class="credit-strip" *ngIf="creditsActive > 0 || creditsOverdue > 0">
+    <div class="cs-item cs-active">
+      <span class="cs-icon">📈</span>
+      <div class="cs-body">
+        <div class="cs-val">{{ creditsActive }}</div>
+        <div class="cs-lbl">Credits Active</div>
+      </div>
+    </div>
+    <div class="cs-item cs-due">
+      <span class="cs-icon">📆</span>
+      <div class="cs-body">
+        <div class="cs-val">{{ creditsDue | number:'1.0-0' }} <span class="cs-curr">MAD</span></div>
+        <div class="cs-lbl">Due This Month</div>
+      </div>
+    </div>
+    <div class="cs-item" [class.cs-overdue]="creditsOverdue > 0" [class.cs-ok]="creditsOverdue === 0">
+      <span class="cs-icon">{{ creditsOverdue > 0 ? '⚠️' : '✅' }}</span>
+      <div class="cs-body">
+        <div class="cs-val">{{ creditsOverdue }}</div>
+        <div class="cs-lbl">Credits Overdue</div>
+      </div>
+    </div>
+    <div class="cs-item cs-debt">
+      <span class="cs-icon">💰</span>
+      <div class="cs-body">
+        <div class="cs-val">{{ fmt(creditDebtTotal) }} <span class="cs-curr">MAD</span></div>
+        <div class="cs-lbl">Remaining Debt</div>
+      </div>
+    </div>
+    <a routerLink="/credit-monitoring" class="cs-details-link">View Details →</a>
+  </div>
+
+  <!-- ===== COMPLIANCE ALERT TABLES ===== -->
+  <div class="alerts-row" *ngIf="critical7Days.length > 0 || expiringSoon30.length > 0">
+
+    <div class="card alert-card alert-expired-card" *ngIf="critical7Days.length > 0">
+      <div class="card-header">
+        <span class="card-title alert-title-expired">🔴 {{ t('criticalDocs') }} (&le;7j) ({{ critical7Days.length }})</span>
+        <a routerLink="/voiture" class="card-link">→</a>
+      </div>
+      <div class="alert-list">
+        <a *ngFor="let item of critical7Days" [routerLink]="['/voiture', item.car.id]" class="alert-item alert-item-expired">
+          <div class="alert-car">
+            <span class="alert-car-label">{{ item.car.marque }} {{ item.car.modele }}</span>
+            <span class="alert-plate">{{ item.car.immatriculation || '—' }}</span>
+          </div>
+          <div class="alert-doc"><span class="alert-doc-type">{{ item.doc }}</span></div>
+          <span class="alert-days expired-days">{{ item.days }}j</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="card alert-card alert-due-card" *ngIf="expiringSoon30.length > 0">
+      <div class="card-header">
+        <span class="card-title alert-title-due">⚠️ {{ t('expiringSoon') }} (&le;30j) ({{ expiringSoon30.length }})</span>
+        <a routerLink="/voiture" class="card-link">→</a>
+      </div>
+      <div class="alert-list">
+        <a *ngFor="let item of expiringSoon30" [routerLink]="['/voiture', item.car.id]" class="alert-item alert-item-due">
+          <div class="alert-car">
+            <span class="alert-car-label">{{ item.car.marque }} {{ item.car.modele }}</span>
+            <span class="alert-plate">{{ item.car.immatriculation || '—' }}</span>
+          </div>
+          <div class="alert-doc"><span class="alert-doc-type">{{ item.doc }}</span></div>
+          <span class="alert-days due-days">{{ item.days }}j</span>
+        </a>
+      </div>
+    </div>
+
+  </div>
+
   <!-- ===== DOCUMENT ALERTS ===== -->
   <div class="alerts-row" *ngIf="expiredAlerts.length > 0 || dueThisMonthAlerts.length > 0">
 
@@ -136,6 +232,57 @@
         </div>
       </a>
     </div>
+  </div>
+
+  <!-- ===== OIL CHANGE REMINDERS ===== -->
+  <div class="oil-reminders-row" *ngIf="oilOverdue.length > 0 || oilDueSoon.length > 0">
+
+    <!-- Overdue -->
+    <div class="card oil-card oil-card-overdue" *ngIf="oilOverdue.length > 0">
+      <div class="card-header">
+        <span class="card-title">🔴 {{ t('oilOverdue') || 'Overdue Oil Changes' }} <span class="oil-count-badge oil-count-red">{{ oilOverdue.length }}</span></span>
+        <a routerLink="/voiture" class="card-link">{{ t('all') }} →</a>
+      </div>
+      <div class="oil-list">
+        <a *ngFor="let item of oilOverdue" [routerLink]="['/voiture', item.voitureId]" class="oil-item">
+          <div class="oil-car-icon oil-icon-red">🛢</div>
+          <div class="oil-car-info">
+            <span class="oil-car-name">{{ item.voiture }}</span>
+            <span class="oil-car-plate">{{ item.immatriculation || '—' }}</span>
+          </div>
+          <div class="oil-km-info">
+            <span class="oil-current">{{ item.currentKm | number:'1.0-0' }} km</span>
+            <span class="oil-arrow">→</span>
+            <span class="oil-next">{{ item.nextOilChangeKm | number:'1.0-0' }} km</span>
+          </div>
+          <div class="oil-overdue-badge">{{ (item.remainingKm * -1) | number:'1.0-0' }} km {{ t('overdue') || 'overdue' }}</div>
+        </a>
+      </div>
+    </div>
+
+    <!-- Due Soon -->
+    <div class="card oil-card oil-card-due-soon" *ngIf="oilDueSoon.length > 0">
+      <div class="card-header">
+        <span class="card-title">🟠 {{ t('oilDueSoon') || 'Oil Changes Due Soon' }} <span class="oil-count-badge oil-count-orange">{{ oilDueSoon.length }}</span></span>
+        <a routerLink="/voiture" class="card-link">{{ t('all') }} →</a>
+      </div>
+      <div class="oil-list">
+        <a *ngFor="let item of oilDueSoon" [routerLink]="['/voiture', item.voitureId]" class="oil-item">
+          <div class="oil-car-icon oil-icon-orange">🛢</div>
+          <div class="oil-car-info">
+            <span class="oil-car-name">{{ item.voiture }}</span>
+            <span class="oil-car-plate">{{ item.immatriculation || '—' }}</span>
+          </div>
+          <div class="oil-km-info">
+            <span class="oil-current">{{ item.currentKm | number:'1.0-0' }} km</span>
+            <span class="oil-arrow">→</span>
+            <span class="oil-next">{{ item.nextOilChangeKm | number:'1.0-0' }} km</span>
+          </div>
+          <div class="oil-due-soon-badge">{{ item.remainingKm | number:'1.0-0' }} km {{ t('remaining') || 'remaining' }}</div>
+        </a>
+      </div>
+    </div>
+
   </div>
 
   <!-- ===== ROW 2: Fleet Status + Payment Distribution ===== -->
@@ -314,6 +461,63 @@
     <ng-template #noResData>
       <div class="no-data-msg">{{ t('noData') }}</div>
     </ng-template>
+  </div>
+
+  <!-- ===== PROFITABILITY RANKING ===== -->
+  <div class="profit-rank-row" *ngIf="!profitLoading && (topCars.length > 0 || bottomCars.length > 0)">
+
+    <!-- Most Profitable -->
+    <div class="card profit-rank-card profit-rank-top">
+      <div class="card-header">
+        <span class="card-title">📈 Most Profitable · {{ currentYear }}</span>
+        <a routerLink="/rapports/profitability" class="card-link">Full report →</a>
+      </div>
+      <div class="pr-list">
+        <a *ngFor="let r of topCars; let i = index"
+           [routerLink]="['/voiture', r.id]"
+           class="pr-item">
+          <span class="pr-rank pr-rank-top">{{ i + 1 }}</span>
+          <div class="pr-car">
+            <span class="pr-label">{{ r.label }}</span>
+            <span class="pr-plate">{{ r.immatriculation }}</span>
+          </div>
+          <div class="pr-numbers">
+            <span class="pr-rev">{{ fmt(r.revenue) }} MAD</span>
+            <span class="pr-net pr-net-pos" [class.pr-net-neg]="r.net < 0">
+              {{ r.net >= 0 ? '+' : '' }}{{ fmt(r.net) }} MAD
+            </span>
+          </div>
+          <span class="pr-margin" [class.pr-margin-neg]="r.margin < 0">{{ r.margin }}%</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Least Profitable -->
+    <div class="card profit-rank-card profit-rank-bottom">
+      <div class="card-header">
+        <span class="card-title">📉 Least Profitable · {{ currentYear }}</span>
+        <a routerLink="/rapports/profitability" class="card-link">Full report →</a>
+      </div>
+      <div class="pr-list">
+        <a *ngFor="let r of bottomCars; let i = index"
+           [routerLink]="['/voiture', r.id]"
+           class="pr-item">
+          <span class="pr-rank pr-rank-bottom">{{ i + 1 }}</span>
+          <div class="pr-car">
+            <span class="pr-label">{{ r.label }}</span>
+            <span class="pr-plate">{{ r.immatriculation }}</span>
+          </div>
+          <div class="pr-numbers">
+            <span class="pr-rev">{{ fmt(r.revenue) }} MAD</span>
+            <span class="pr-net" [class.pr-net-pos]="r.net >= 0" [class.pr-net-neg]="r.net < 0">
+              {{ r.net >= 0 ? '+' : '' }}{{ fmt(r.net) }} MAD
+            </span>
+          </div>
+          <span class="pr-margin" [class.pr-margin-neg]="r.margin < 0">{{ r.margin }}%</span>
+        </a>
+      </div>
+    </div>
+
   </div>
 
   </div><!-- /.dash-inner -->

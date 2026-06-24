@@ -1,0 +1,179 @@
+<div class="create-page">
+  <div class="page-header">
+    <button class="btn-back" (click)="router.navigate(['/reservation'])">← Réservations</button>
+    <h1>Nouvelle location</h1>
+  </div>
+
+  <div class="create-layout">
+
+    <!-- Left column: Client + Vehicle + Dates -->
+    <div class="main-col">
+
+      <!-- Client -->
+      <div class="section-card">
+        <h2>Client</h2>
+        <div class="client-search" *ngIf="!selectedClient">
+          <input type="text" [(ngModel)]="clientSearch" (ngModelChange)="onClientSearch()"
+                 placeholder="Rechercher par nom ou téléphone..." (focus)="onClientSearch()" />
+          <div class="dropdown" *ngIf="showClientDropdown && filteredClients.length">
+            <div class="dropdown-item" *ngFor="let c of filteredClients | slice:0:10"
+                 (click)="selectClient(c)">
+              <strong>{{ c.nom }}</strong>
+              <span *ngIf="c.telephone"> · {{ c.telephone }}</span>
+            </div>
+          </div>
+          <button class="btn-link" (click)="showNewClientForm = !showNewClientForm">
+            + Créer un nouveau client
+          </button>
+
+          <!-- Inline new client form -->
+          <div class="inline-form" *ngIf="showNewClientForm">
+            <div class="form-grid2">
+              <div class="form-group">
+                <label>Nom *</label>
+                <input type="text" [(ngModel)]="newClient.nom" placeholder="Nom complet" />
+              </div>
+              <div class="form-group">
+                <label>Téléphone</label>
+                <input type="text" [(ngModel)]="newClient.telephone" />
+              </div>
+              <div class="form-group">
+                <label>CIN</label>
+                <input type="text" [(ngModel)]="newClient.cin" />
+              </div>
+              <div class="form-group">
+                <label>N° Permis</label>
+                <input type="text" [(ngModel)]="newClient.permisConduite" />
+              </div>
+            </div>
+            <div class="form-actions">
+              <button class="btn-secondary" (click)="showNewClientForm = false">Annuler</button>
+              <button class="btn-primary" (click)="createClient()" [disabled]="savingClient">
+                {{ savingClient ? '...' : 'Créer' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="selected-client" *ngIf="selectedClient">
+          <div class="client-tag">
+            <span>{{ selectedClient.nom }}</span>
+            <span *ngIf="selectedClient.telephone" class="text-muted"> · {{ selectedClient.telephone }}</span>
+            <button class="btn-clear" (click)="clearClient()">×</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dates & lieu -->
+      <div class="section-card">
+        <h2>Dates &amp; lieux</h2>
+        <div class="form-grid2">
+          <div class="form-group">
+            <label>Date de départ *</label>
+            <input type="datetime-local" [(ngModel)]="dateDebut" />
+          </div>
+          <div class="form-group">
+            <label>Date de retour *</label>
+            <input type="datetime-local" [(ngModel)]="dateFin" />
+          </div>
+          <div class="form-group">
+            <label>Lieu de livraison</label>
+            <input type="text" [(ngModel)]="lieuLivraison" placeholder="Optionnel" />
+          </div>
+          <div class="form-group">
+            <label>Lieu de retour</label>
+            <input type="text" [(ngModel)]="lieuRetour" placeholder="Optionnel" />
+          </div>
+        </div>
+        <div class="duration-badge" *ngIf="numberOfDays > 0">
+          {{ numberOfDays }} jour{{ numberOfDays > 1 ? 's' : '' }}
+        </div>
+      </div>
+
+      <!-- Vehicle grid -->
+      <div class="section-card">
+        <h2>Véhicule</h2>
+        <div class="vehicle-grid">
+          <div *ngFor="let v of voitures"
+               class="vehicle-card"
+               [class.selected]="selectedVoiture?.id === v.id"
+               [class.unavailable]="!isAvailable(v)"
+               (click)="isAvailable(v) && selectVoiture(v)">
+            <div class="v-header">
+              <span class="v-name">{{ v.marque }} {{ v.modele }}</span>
+              <span class="compliance-tag" [ngClass]="complianceClass(v)">{{ v.compliance?.overall ?? '?' }}</span>
+            </div>
+            <div class="v-plate">{{ v.immatriculation }}</div>
+            <div class="v-price" *ngIf="v.prixJour">{{ v.prixJour | number:'1.0-0' }} MAD/j</div>
+            <div class="v-unavailable-badge" *ngIf="!isAvailable(v)">Indisponible</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Accessories -->
+      <div class="section-card" *ngIf="accessoires.length">
+        <h2>Accessoires</h2>
+        <div class="accessoire-list">
+          <label class="acc-item" *ngFor="let a of accessoires">
+            <input type="checkbox"
+                   [checked]="selectedAccessoireIds.has(a.id)"
+                   (change)="toggleAccessoire(a.id)" />
+            <span>{{ a.nom }}</span>
+            <span class="acc-price" *ngIf="a.prix">{{ a.prix | number:'1.0-0' }} MAD/j</span>
+          </label>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right column: Summary + Payment -->
+    <div class="side-col">
+      <div class="summary-card sticky-top">
+        <h2>Récapitulatif</h2>
+
+        <div class="summary-line" *ngIf="selectedVoiture">
+          <span>{{ selectedVoiture.marque }} {{ selectedVoiture.modele }}</span>
+          <span>{{ numberOfDays }}j × {{ selectedVoiture.prixJour | number:'1.0-0' }} MAD</span>
+        </div>
+        <div class="summary-line" *ngIf="accessoryTotal > 0">
+          <span>Accessoires</span>
+          <span>{{ accessoryTotal | number:'1.2-2' }} MAD</span>
+        </div>
+        <div class="summary-total">
+          <span>Total</span>
+          <strong>{{ totalAmount | number:'1.2-2' }} MAD</strong>
+        </div>
+
+        <div class="form-group mt-4">
+          <label>Mode de paiement</label>
+          <select [(ngModel)]="modePaiement">
+            <option value="especes">Espèces</option>
+            <option value="carte">Carte</option>
+            <option value="virement">Virement</option>
+            <option value="cheque">Chèque</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Acompte (MAD)</label>
+          <input type="number" [(ngModel)]="montantPaye" min="0" step="0.01" />
+        </div>
+        <div class="remaining-row" [class.zero]="remaining <= 0">
+          <span>Restant</span>
+          <span>{{ remaining | number:'1.2-2' }} MAD</span>
+        </div>
+
+        <button class="btn-primary btn-full mt-4" (click)="submit()"
+                [disabled]="!canSubmit || isSubmitting">
+          {{ isSubmitting ? 'Création...' : 'Créer le dossier' }}
+        </button>
+
+        <div class="submit-hint" *ngIf="!canSubmit">
+          <span *ngIf="!selectedClient">Sélectionnez un client</span>
+          <span *ngIf="selectedClient && !selectedVoiture">Sélectionnez un véhicule</span>
+          <span *ngIf="selectedClient && selectedVoiture && numberOfDays <= 0">Vérifiez les dates</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

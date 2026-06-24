@@ -4,6 +4,8 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { TranslationService } from '../../services/translation.service';
 import { CrudService } from '../../services/crud.service';
+import { BtnComponent } from '../../shared/btn/btn.component';
+import { PaginatorComponent } from '../../shared/paginator/paginator.component';
 
 interface InfractionOption {
   value: string;
@@ -15,18 +17,22 @@ interface InfractionOption {
 @Component({
   selector: 'app-infraction-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, TranslatePipe],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, TranslatePipe, BtnComponent, PaginatorComponent],
   templateUrl: './infraction-list.component.html',
   styleUrls: ['../../shared/styles/crud-list.css']
 })
 export class InfractionListComponent implements OnInit {
   items: any[] = [];
   loading = true; error = ''; dir = 'ltr'; search = '';
-  modalMode: 'view' | 'form' | 'delete' | null = null;
+  page = 1; limit = 20; total = 0;
+  modalMode: 'form' | 'delete' | null = null;
   selected: any = null; form: FormGroup; isSubmitting = false; deleteId: number | null = null; isEditing = false;
   customDescription = '';
   readonly endpoint = 'infraction';
   readonly objectEntries = Object.entries;
+
+  drawerOpen = false;
+  drawerItem: any = null;
 
   readonly infractionTypes: InfractionOption[] = [
     { value: 'Excès de vitesse en agglomération',    fr: 'Excès de vitesse en agglomération',    en: 'Speeding in urban area',              ar: 'تجاوز السرعة داخل المدن' },
@@ -74,19 +80,20 @@ export class InfractionListComponent implements OnInit {
 
   load() {
     this.loading = true; this.error = '';
-    this.crud.getAll(this.endpoint).subscribe({
-      next: r => { this.items = Array.isArray(r) ? r : (r?.data ?? []); this.loading = false; },
+    this.crud.getPage(this.endpoint, { page: this.page, limit: this.limit, search: this.search }).subscribe({
+      next: r => { this.items = r.data ?? []; this.total = r.meta?.total ?? 0; this.loading = false; },
       error: () => { this.error = this.ts.translate('loadError'); this.loading = false; }
     });
   }
 
-  get filtered() {
-    if (!this.search.trim()) return this.items;
-    const q = this.search.toLowerCase();
-    return this.items.filter(i => Object.values(i).some(v => String(v).toLowerCase().includes(q)));
-  }
+  get filtered() { return this.items; }
 
-  openView(item: any)    { this.selected = item; this.modalMode = 'view'; }
+  get paged(): any[] { return this.items; }
+
+  onSearch(): void { this.page = 1; this.load(); }
+  onPageChange(p: number): void { this.page = p; this.load(); }
+
+  openView(item: any)    { this.drawerItem = item; this.drawerOpen = true; }
   openAdd()              { this.selected = null; this.isEditing = false; this.customDescription = ''; this.form.reset({ montant: 0, statut: 'en_attente' }); this.modalMode = 'form'; }
   openEdit(item: any)    {
     this.selected = item; this.isEditing = true; this.customDescription = '';
@@ -104,8 +111,9 @@ export class InfractionListComponent implements OnInit {
   }
   openDelete(id: number) { this.deleteId = id; this.modalMode = 'delete'; }
   closeModal()           { this.modalMode = null; this.selected = null; this.deleteId = null; this.isSubmitting = false; this.isEditing = false; this.customDescription = ''; }
+  closeDrawer()          { this.drawerOpen = false; this.drawerItem = null; }
 
-  @HostListener('document:keydown.escape') onEscape() { this.closeModal(); }
+  @HostListener('document:keydown.escape') onEscape() { this.closeModal(); this.closeDrawer(); }
 
   save() {
     if (this.form.invalid) return;

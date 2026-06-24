@@ -1,7 +1,6 @@
 import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { RouterModule } from '@angular/router';
 import { TranslationService } from '../services/translation.service';
 import { CrudService } from '../services/crud.service';
 import { EventBusService } from '../services/event-bus.service';
@@ -12,7 +11,7 @@ import { BtnComponent } from '../shared/btn/btn.component';
 @Component({
   selector: 'app-paiement-client',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, BtnComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, BtnComponent],
   templateUrl: './paiement-client.component.html',
   styleUrls: ['./paiement-client.component.css']
 })
@@ -52,7 +51,7 @@ export class PaiementClientComponent implements OnInit {
   loadAll() {
     this.loading = true;
     forkJoin({
-      history:      this.crud.getAll('historique-paiement').pipe(catchError(() => of([]))),
+      history:      this.crud.getAll('paiement').pipe(catchError(() => of([]))),
       reservations: this.crud.getAll('reservation').pipe(catchError(() => of([]))),
     }).subscribe(({ history, reservations }) => {
       this.items        = this.toArr(history);
@@ -121,7 +120,7 @@ export class PaiementClientComponent implements OnInit {
   submit() {
     if (this.form.invalid) return;
     this.isSubmitting = true;
-    this.crud.create('historique-paiement', this.form.value).subscribe({
+    this.crud.create('paiement', this.form.value).subscribe({
       next: () => { this.closeModal(); this.loadAll(); this.bus.paymentsChanged$.next(); this.isSubmitting = false; },
       error: () => { this.isSubmitting = false; }
     });
@@ -131,7 +130,7 @@ export class PaiementClientComponent implements OnInit {
 
   doDelete() {
     if (!this.deleteTarget) return;
-    this.crud.remove('historique-paiement', this.deleteTarget.id).subscribe({
+    this.crud.remove('paiement', this.deleteTarget.id).subscribe({
       next: () => { this.deleteTarget = null; this.loadAll(); this.bus.paymentsChanged$.next(); },
       error: () => { this.deleteTarget = null; }
     });

@@ -6,10 +6,7 @@
       <span class="hamburger-icon">&#9776;</span>
     </button>
 
-    <div class="company-chip">
-      <span class="company-icon">🚗</span>
-      <span class="company-name">AGOCAR</span>
-    </div>
+    <img *ngIf="!isAdmin && logoUrl" [src]="logoUrl" class="header-logo-img" alt="logo" (error)="logoUrl = null" />
 
     <div class="header-actions">
       <a routerLink="/client" class="btn-outline-header">
@@ -45,15 +42,52 @@
 
     <div class="header-divider"></div>
 
-    <button class="notif-btn" title="Notifications">
-      <span class="notif-icon">🔔</span>
-    </button>
+    <div class="notif-wrapper">
+      <button class="notif-btn" (click)="toggleNotifPanel()" title="Notifications">
+        <span class="notif-icon">🔔</span>
+        <span class="notif-badge" *ngIf="unreadCount > 0">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
+      </button>
+
+      <div class="notif-panel" *ngIf="notifPanelOpen" (click)="$event.stopPropagation()">
+        <div class="notif-panel-header">
+          <span class="notif-panel-title">Notifications</span>
+          <button class="notif-mark-all" (click)="markAllRead()" *ngIf="unreadCount > 0">Mark all read</button>
+        </div>
+
+        <div class="notif-loading" *ngIf="notifLoading">Loading…</div>
+
+        <div class="notif-list" *ngIf="!notifLoading">
+          <div
+            *ngFor="let n of notifications"
+            class="notif-item"
+            [class.notif-unread]="!n.isRead"
+            [ngClass]="priorityClass(n.priority)"
+            (click)="markRead(n.id)"
+          >
+            <span class="notif-type-icon">{{ notifTypeIcon(n.type) }}</span>
+            <div class="notif-body">
+              <div class="notif-item-title">{{ n.title }}</div>
+              <div class="notif-item-msg">{{ n.message }}</div>
+              <div class="notif-item-time">{{ n.createdAt | date:'d MMM, HH:mm' }}</div>
+            </div>
+            <span class="notif-dot" *ngIf="!n.isRead"></span>
+          </div>
+
+          <div class="notif-empty" *ngIf="!notifications.length">
+            <span>✅</span> All caught up
+          </div>
+
+          <a routerLink="/notifications" class="notif-view-all" (click)="notifPanelOpen = false">
+            View all notifications →
+          </a>
+        </div>
+      </div>
+    </div>
 
     <div class="header-divider"></div>
 
     <div class="page-title-area">
       <span class="page-title-text">{{ t(pageTitle) }}</span>
-      <span class="brand-logo">🚙 AGOCAR</span>
     </div>
   </div>
 

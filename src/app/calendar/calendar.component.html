@@ -78,6 +78,7 @@
       <button class="mob-fpill mob-fp-blue"  [class.on]="filterStatus === 'confirmed'" (click)="setFilter('confirmed')">{{ t('confirmed') }}</button>
       <button class="mob-fpill mob-fp-green" [class.on]="filterStatus === 'active'"    (click)="setFilter('active')">{{ t('inProgress') }}</button>
       <button class="mob-fpill mob-fp-orange"[class.on]="filterStatus === 'pending'"   (click)="setFilter('pending')">{{ t('pending') }}</button>
+      <button class="mob-fpill mob-fp-teal"  [class.on]="filterStatus === 'available'" (click)="setFilter('available')">{{ t('available') }}</button>
     </div>
   </div>
 
@@ -275,6 +276,7 @@
         <button class="fpill fpill-blue"   [class.fpill-on]="filterStatus === 'confirmed'" (click)="setFilter('confirmed')">{{ t('confirmed') }}</button>
         <button class="fpill fpill-green"  [class.fpill-on]="filterStatus === 'active'"    (click)="setFilter('active')">{{ t('inProgress') }}</button>
         <button class="fpill fpill-orange" [class.fpill-on]="filterStatus === 'pending'"   (click)="setFilter('pending')">{{ t('pending') }}</button>
+        <button class="fpill fpill-teal"   [class.fpill-on]="filterStatus === 'available'" (click)="setFilter('available')">{{ t('available') }}</button>
       </div>
 
       <a routerLink="/reservation/create" class="btn-new">
@@ -306,15 +308,16 @@
           [class.other-month]="!day.isCurrentMonth"
           [class.today]="day.isToday"
           [class.weekend]="day.isWeekend && !day.isToday"
-          [class.has-events]="day.bookings.length > 0"
+          [class.has-events]="filterStatus === 'available' ? day.availableCars.length > 0 : day.bookings.length > 0"
           (click)="selectDay(day)">
 
           <div class="cell-top">
             <span class="day-num" [class.today-num]="day.isToday">{{ day.dayNum }}</span>
-            <span *ngIf="day.bookings.length > 0" class="event-count-badge">{{ day.bookings.length }}</span>
+            <span *ngIf="filterStatus !== 'available' && day.bookings.length > 0" class="event-count-badge">{{ day.bookings.length }}</span>
+            <span *ngIf="filterStatus === 'available' && day.availableCars.length > 0" class="event-count-badge ecb-teal">{{ day.availableCars.length }}</span>
           </div>
 
-          <div class="cell-events">
+          <div class="cell-events" *ngIf="filterStatus !== 'available'">
             <div
               *ngFor="let b of day.bookings | slice:0:2"
               class="event-pill"
@@ -324,6 +327,18 @@
             </div>
             <div *ngIf="day.bookings.length > 2" class="ep-more">
               +{{ day.bookings.length - 2 }} {{ t('more') }}
+            </div>
+          </div>
+
+          <div class="cell-events" *ngIf="filterStatus === 'available'">
+            <div
+              *ngFor="let v of day.availableCars | slice:0:2"
+              class="event-pill ep-available"
+              [title]="carLabel(v)">
+              <span class="ep-text">{{ carLabel(v) }}</span>
+            </div>
+            <div *ngIf="day.availableCars.length > 2" class="ep-more">
+              +{{ day.availableCars.length - 2 }} {{ t('more') }}
             </div>
           </div>
 

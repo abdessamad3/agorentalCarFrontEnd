@@ -1,0 +1,137 @@
+.toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-width: 360px;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem 0.85rem 1rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
+  font-size: 0.9rem;
+  font-weight: 500;
+  pointer-events: all;
+  cursor: pointer;
+  min-width: 260px;
+  border-left: 4px solid transparent;
+
+  animation: toast-enter 0.3s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.toast--removing {
+  animation: toast-exit 0.35s ease forwards;
+}
+
+/* Colours */
+.toast--success {
+  background: #f0fff4;
+  color: #22543d;
+  border-left-color: #38a169;
+}
+
+.toast--error {
+  background: #fff5f5;
+  color: #742a2a;
+  border-left-color: #e53e3e;
+}
+
+.toast--warning {
+  background: #fffbeb;
+  color: #744210;
+  border-left-color: #d69e2e;
+}
+
+.toast--info {
+  background: #ebf8ff;
+  color: #2a4365;
+  border-left-color: #3182ce;
+}
+
+/* Icon */
+.toast__icon {
+  font-size: 1.05rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  width: 20px;
+  text-align: center;
+}
+
+.toast--success .toast__icon { color: #38a169; }
+.toast--error   .toast__icon { color: #e53e3e; }
+.toast--warning .toast__icon { color: #d69e2e; }
+.toast--info    .toast__icon { color: #3182ce; }
+
+/* Message */
+.toast__message {
+  flex: 1;
+  line-height: 1.4;
+}
+
+/* Close button */
+.toast__close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  opacity: 0.45;
+  padding: 0 0.25rem;
+  line-height: 1;
+  color: inherit;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+
+.toast__close:hover {
+  opacity: 0.85;
+}
+
+/* Animations */
+@keyframes toast-enter {
+  from {
+    opacity: 0;
+    transform: translateX(80px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes toast-exit {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    max-height: 80px;
+    margin-bottom: 0;
+  }
+  to {
+    opacity: 0;
+    transform: translateX(80px) scale(0.95);
+    max-height: 0;
+    margin-bottom: -0.6rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .toast-container {
+    bottom: 1rem;
+    right: 1rem;
+    left: 1rem;
+    max-width: unset;
+  }
+
+  .toast {
+    min-width: unset;
+    width: 100%;
+  }
+}

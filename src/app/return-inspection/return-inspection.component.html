@@ -1,0 +1,254 @@
+<div class="list-container" [attr.dir]="dir">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1>Return Inspections</h1>
+      <span class="count-badge" *ngIf="!loading">{{ filtered.length }}</span>
+    </div>
+    <app-btn variant="primary" (click)="openAdd()">+ New Inspection</app-btn>
+  </div>
+
+  <!-- Filters -->
+  <div class="search-filter-bar">
+    <div class="search-input">
+      <input type="text" [(ngModel)]="search" (ngModelChange)="onSearch()" placeholder="Search by vehicle, plate, client…" />
+    </div>
+    <select [(ngModel)]="filterCondition" (ngModelChange)="onSearch()" class="filter-select">
+      <option value="">All Conditions</option>
+      <option value="clean">Clean</option>
+      <option value="minor_damage">Minor Damage</option>
+      <option value="major_damage">Major Damage</option>
+    </select>
+  </div>
+
+  <!-- Loading / Error / Empty -->
+  <div *ngIf="loading" class="loading-state"><p>Loading…</p></div>
+  <div *ngIf="error && !loading" class="error-state">
+    <p>{{ error }}</p>
+    <button (click)="load()" class="btn-retry">Retry</button>
+  </div>
+  <div *ngIf="!loading && !error && filtered.length === 0" class="empty-state">
+    <span class="empty-icon">🔍</span>
+    <div class="empty-title">No inspections yet</div>
+    <div class="empty-message">Record a vehicle condition check when a rental is returned.</div>
+    <button class="empty-action" (click)="openAdd()">+ Add Inspection</button>
+  </div>
+
+  <!-- Table -->
+  <div *ngIf="!loading && !error && filtered.length > 0" class="table-container">
+    <table class="bureaus-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Vehicle</th>
+          <th>Client</th>
+          <th>Return Date</th>
+          <th>Fuel</th>
+          <th>Km</th>
+          <th>Condition</th>
+          <th>Inspected At</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of paged" class="bureau-row">
+          <td class="id-cell">{{ item.reservationId }}</td>
+          <td>
+            <div class="car-info">
+              <span class="car-name">{{ item.voiture || '—' }}</span>
+              <span class="car-plate" *ngIf="item.immatriculation">{{ item.immatriculation }}</span>
+            </div>
+          </td>
+          <td>{{ item.clientNom || '—' }}</td>
+          <td class="date-cell">{{ item.dateFin | date:'dd/MM/yyyy' }}</td>
+          <td>
+            <div class="fuel-bar-wrap">
+              <div class="fuel-bar">
+                <div class="fuel-fill"
+                     [style.width]="fuelBar(item.fuelLevel)"
+                     [style.background]="fuelColor(item.fuelLevel)">
+                </div>
+              </div>
+              <span class="fuel-label">{{ item.fuelLevel ?? '—' }}%</span>
+            </div>
+          </td>
+          <td>{{ item.kilometrage != null ? (item.kilometrage | number) + ' km' : '—' }}</td>
+          <td>
+            <span class="condition-badge condition-{{ item.condition }}">
+              {{ conditionLabel(item.condition) }}
+            </span>
+          </td>
+          <td class="date-cell">{{ item.inspectedAt | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td class="actions-cell">
+            <app-btn variant="icon-view"   (click)="openView(item)"></app-btn>
+            <app-btn variant="icon-edit"   (click)="openEdit(item)"></app-btn>
+            <app-btn variant="icon-delete" (click)="openDelete(item.id)"></app-btn>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <app-paginator
+      [page]="page" [limit]="limit" [total]="total"
+      (pageChange)="onPageChange($event)">
+    </app-paginator>
+  </div>
+</div>
+
+<!-- Modal overlay -->
+<div *ngIf="modalMode" class="modal-overlay" (click)="closeModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+
+    <!-- View modal -->
+    <ng-container *ngIf="modalMode === 'view' && selected">
+      <div class="modal-header">
+        <h2>Inspection — Res. #{{ selected.reservationId }}</h2>
+        <button class="modal-close" (click)="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body view-body">
+        <div class="view-row"><span class="view-label">Vehicle</span><span>{{ selected.voiture }} — {{ selected.immatriculation }}</span></div>
+        <div class="view-row"><span class="view-label">Client</span><span>{{ selected.clientNom }}</span></div>
+        <div class="view-row"><span class="view-label">Return Date</span><span>{{ selected.dateFin | date:'dd/MM/yyyy' }}</span></div>
+        <div class="view-row"><span class="view-label">Condition</span>
+          <span class="condition-badge condition-{{ selected.condition }}">{{ conditionLabel(selected.condition) }}</span>
+        </div>
+        <div class="view-row"><span class="view-label">Fuel Level</span>
+          <div class="fuel-bar-wrap">
+            <div class="fuel-bar fuel-bar-lg">
+              <div class="fuel-fill" [style.width]="fuelBar(selected.fuelLevel)" [style.background]="fuelColor(selected.fuelLevel)"></div>
+            </div>
+            <span class="fuel-label">{{ selected.fuelLevel ?? '—' }}%</span>
+          </div>
+        </div>
+        <div class="view-row"><span class="view-label">Mileage</span><span>{{ selected.kilometrage != null ? (selected.kilometrage | number) + ' km' : '—' }}</span></div>
+        <div class="view-row" *ngIf="selected.damages"><span class="view-label">Damages</span><span class="view-text">{{ selected.damages }}</span></div>
+        <div class="view-row" *ngIf="selected.notes"><span class="view-label">Notes</span><span class="view-text">{{ selected.notes }}</span></div>
+        <div class="view-row"><span class="view-label">Inspected At</span><span>{{ selected.inspectedAt | date:'dd/MM/yyyy HH:mm' }}</span></div>
+      </div>
+      <div class="modal-footer">
+        <app-btn variant="secondary" (click)="closeModal()">Close</app-btn>
+        <app-btn variant="primary" (click)="openEdit(selected)">Edit</app-btn>
+      </div>
+    </ng-container>
+
+    <!-- Form modal -->
+    <ng-container *ngIf="modalMode === 'form'">
+      <div class="modal-header">
+        <h2>{{ isEditing ? 'Edit' : 'New' }} Return Inspection</h2>
+        <button class="modal-close" (click)="closeModal()">&times;</button>
+      </div>
+      <form [formGroup]="form" (ngSubmit)="save()">
+        <div class="modal-body">
+
+          <!-- Reservation selector (create only) -->
+          <div class="form-group" *ngIf="!isEditing">
+            <label>Reservation <span class="required">*</span></label>
+            <div class="res-dropdown-wrap">
+              <div class="res-search-box">
+                <svg class="res-search-icon" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M12.9 14.32a8 8 0 111.41-1.41l4.38 4.38-1.41 1.42-4.38-4.39zM8 14A6 6 0 108 2a6 6 0 000 12z" clip-rule="evenodd"/>
+                </svg>
+                <input
+                  type="text"
+                  class="res-search-input"
+                  [(ngModel)]="resSearch"
+                  [ngModelOptions]="{standalone: true}"
+                  placeholder="Search by vehicle, client, date…"
+                  autocomplete="off"
+                  (focus)="openResDropdown()"
+                  (blur)="closeResDropdown()"
+                />
+                <span class="res-clear" *ngIf="resSearch" (mousedown)="resSearch=''; form.patchValue({reservationId:''})">&#x2715;</span>
+              </div>
+              <div class="res-dropdown-list" *ngIf="resDropdownOpen">
+                <div *ngIf="filteredResOptions.length === 0" class="res-option res-empty">
+                  No matching reservations
+                </div>
+                <div
+                  *ngFor="let r of filteredResOptions"
+                  class="res-option"
+                  [class.res-option-active]="form.get('reservationId')?.value == r.id"
+                  (mousedown)="selectReservation(r)">
+                  <span class="res-opt-id">#{{ r.id }}</span>
+                  <span class="res-opt-body">{{ reservationLabel(r).split('—')[1] }}</span>
+                </div>
+              </div>
+            </div>
+            <!-- hidden control for reactive form validation -->
+            <input type="hidden" formControlName="reservationId" />
+            <small *ngIf="availableReservations.length === 0" class="hint">
+              All past reservations already have an inspection.
+            </small>
+          </div>
+
+          <!-- Condition -->
+          <div class="form-group">
+            <label>Vehicle Condition <span class="required">*</span></label>
+            <div class="condition-pills">
+              <label *ngFor="let opt of conditionOptions"
+                     class="pill"
+                     [class.pill-clean]="opt.value === 'clean'"
+                     [class.pill-minor]="opt.value === 'minor_damage'"
+                     [class.pill-major]="opt.value === 'major_damage'"
+                     [class.pill-selected]="form.get('condition')!.value === opt.value">
+                <input type="radio" formControlName="condition" [value]="opt.value" />
+                {{ opt.label }}
+              </label>
+            </div>
+          </div>
+
+          <!-- Fuel Level -->
+          <div class="form-group">
+            <label>Fuel Level — {{ form.get('fuelLevel')!.value ?? 50 }}%</label>
+            <input type="range" formControlName="fuelLevel" min="0" max="100" step="5" class="fuel-range" />
+            <div class="fuel-bar fuel-bar-lg">
+              <div class="fuel-fill"
+                   [style.width]="fuelBar(form.get('fuelLevel')!.value)"
+                   [style.background]="fuelColor(form.get('fuelLevel')!.value)">
+              </div>
+            </div>
+          </div>
+
+          <!-- Mileage -->
+          <div class="form-group">
+            <label>Mileage (km)</label>
+            <input type="number" formControlName="kilometrage" placeholder="e.g. 48500" min="0" />
+          </div>
+
+          <!-- Damages -->
+          <div class="form-group">
+            <label>Damages / Notes on Damage</label>
+            <textarea formControlName="damages" rows="3" placeholder="Describe any scratches, dents, or damage…"></textarea>
+          </div>
+
+          <!-- Notes -->
+          <div class="form-group">
+            <label>Additional Notes</label>
+            <textarea formControlName="notes" rows="2" placeholder="Any extra observations…"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <app-btn variant="secondary" (click)="closeModal()">Cancel</app-btn>
+          <app-btn variant="primary" type="submit" [disabled]="form.invalid || isSubmitting">
+            {{ isSubmitting ? 'Saving…' : 'Save Inspection' }}
+          </app-btn>
+        </div>
+      </form>
+    </ng-container>
+
+    <!-- Delete confirm -->
+    <ng-container *ngIf="modalMode === 'delete'">
+      <div class="modal-header">
+        <h2>Delete Inspection</h2>
+        <button class="modal-close" (click)="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete this inspection? This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <app-btn variant="secondary" (click)="closeModal()">Cancel</app-btn>
+        <app-btn variant="danger" (click)="confirmDelete()">Delete</app-btn>
+      </div>
+    </ng-container>
+  </div>
+</div>

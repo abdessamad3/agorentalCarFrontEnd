@@ -5,9 +5,10 @@
     <h1 class="page-title">{{ t('reservations') }}</h1>
     <div class="header-actions">
       <div class="search-box">
-        <input type="text" [(ngModel)]="search" [placeholder]="t('search') + '...'" />
+        <input type="text" [(ngModel)]="search" (ngModelChange)="onSearch()" [placeholder]="t('search') + '...'" />
       </div>
-      <a routerLink="/reservation/create" class="btn-new">+ {{ t('newBooking') }}</a>
+      <a routerLink="/location/new" class="btn-new">+ Nouvelle location</a>
+      <a routerLink="/reservation/create" class="btn-secondary-sm">+ {{ t('newBooking') }}</a>
     </div>
   </div>
 
@@ -34,9 +35,9 @@
           </div>
           <div class="ac-client">👤 {{ r.client?.nom || r.clientId }}</div>
           <div class="ac-dates">
-            <span>{{ r.dateDebut | date:'dd/MM/yy' }}</span>
+            <span>{{ r.dateDebut | date:'dd/MM/yy HH:mm' }}</span>
             <span class="dates-sep">→</span>
-            <span>{{ r.dateFin | date:'dd/MM/yy' }}</span>
+            <span>{{ r.dateFin | date:'dd/MM/yy HH:mm' }}</span>
           </div>
           <div class="ac-accessories" *ngIf="getAccessoireLabels(r) !== '—'">
             🎒 {{ getAccessoireLabels(r) }}
@@ -54,6 +55,7 @@
           <div class="ac-actions">
             <button class="btn-sm btn-view" (click)="openView(r)">{{ t('view') }}</button>
             <button class="btn-sm btn-edit" (click)="openEdit(r)">{{ t('edit') }}</button>
+            <button class="btn-sm btn-dossier" (click)="goToDossier(r)">Ouvrir le dossier</button>
           </div>
         </div>
       </div>
@@ -76,7 +78,9 @@
               <th>{{ t('returnDate') }}</th>
               <th>{{ t('accessories') }}</th>
               <th>{{ t('status') }}</th>
+              <th>Départ</th>
               <th>{{ t('paymentStatus') }}</th>
+              <th>Retour</th>
               <th>{{ t('amountPaid') }}</th>
               <th>{{ t('remaining') }}</th>
               <th>{{ t('actions') }}</th>
@@ -86,16 +90,20 @@
             <tr *ngFor="let r of upcomingDepartures">
               <td>{{ r.client?.nom || r.clientId }}</td>
               <td>{{ r.voiture?.marque || r.voitureId }} {{ r.voiture?.modele || '' }}</td>
-              <td><span class="date-badge upcoming">{{ r.dateDebut | date:'dd/MM/yy' }}</span></td>
-              <td>{{ r.dateFin | date:'dd/MM/yy' }}</td>
+              <td><span class="date-badge upcoming">{{ r.dateDebut | date:'dd/MM/yy HH:mm' }}</span></td>
+              <td>{{ r.dateFin | date:'dd/MM/yy HH:mm' }}</td>
               <td class="td-accessories">{{ getAccessoireLabels(r) }}</td>
               <td><span class="status-chip chip-upcoming">{{ statusLabel(r) }}</span></td>
+              <td><span class="status-dot" [class.dot-done]="deliveryStatus(r) === 'done'" [class.dot-pending]="deliveryStatus(r) === 'pending'"></span></td>
               <td><span class="status-chip" [ngClass]="paymentStatusClass(r)">{{ paymentStatusLabel(r) }}</span></td>
+              <td><span class="status-dot" [class.dot-done]="returnStatus(r) === 'done'" [class.dot-pending]="returnStatus(r) === 'pending'"></span></td>
               <td class="td-amount">{{ (r.montantPaye || 0) | number:'1.0-0' }} MAD</td>
               <td class="td-remaining" [class.td-remaining-zero]="remaining(r) === 0">{{ remaining(r) | number:'1.0-0' }} MAD</td>
               <td class="actions-cell">
                 <button class="btn-icon" (click)="openView(r)" [title]="t('view')">👁</button>
                 <button class="btn-icon" (click)="openEdit(r)" [title]="t('edit')">✏️</button>
+                <button class="btn-sm btn-dossier" (click)="goToDossier(r)" title="Ouvrir le dossier">Dossier</button>
+                <button class="btn-icon" (click)="generateInvoice(r)" title="Télécharger Facture">🧾</button>
                 <button class="btn-icon btn-del" (click)="openDelete(r.id)" [title]="t('delete')">🗑</button>
               </td>
             </tr>
@@ -123,7 +131,9 @@
               <th>{{ t('accessories') }}</th>
               <th>{{ t('montant') }}</th>
               <th>{{ t('status') }}</th>
+              <th>Départ</th>
               <th>{{ t('paymentStatus') }}</th>
+              <th>Retour</th>
               <th>{{ t('amountPaid') }}</th>
               <th>{{ t('remaining') }}</th>
               <th>{{ t('actions') }}</th>
@@ -133,8 +143,8 @@
             <tr *ngFor="let r of historicalRecords">
               <td>{{ r.client?.nom || r.clientId }}</td>
               <td>{{ r.voiture?.marque || r.voitureId }} {{ r.voiture?.modele || '' }}</td>
-              <td>{{ r.dateDebut | date:'dd/MM/yy' }}</td>
-              <td>{{ r.dateFin | date:'dd/MM/yy' }}</td>
+              <td>{{ r.dateDebut | date:'dd/MM/yy HH:mm' }}</td>
+              <td>{{ r.dateFin | date:'dd/MM/yy HH:mm' }}</td>
               <td class="td-accessories">{{ getAccessoireLabels(r) }}</td>
               <td class="td-amount">{{ (r.total || r.montant || 0) | number:'1.0-0' }} MAD</td>
               <td>
@@ -144,12 +154,16 @@
                   {{ statusLabel(r) }}
                 </span>
               </td>
+              <td><span class="status-dot" [class.dot-done]="deliveryStatus(r) === 'done'" [class.dot-pending]="deliveryStatus(r) === 'pending'"></span></td>
               <td><span class="status-chip" [ngClass]="paymentStatusClass(r)">{{ paymentStatusLabel(r) }}</span></td>
+              <td><span class="status-dot" [class.dot-done]="returnStatus(r) === 'done'" [class.dot-pending]="returnStatus(r) === 'pending'"></span></td>
               <td class="td-amount">{{ (r.montantPaye || 0) | number:'1.0-0' }} MAD</td>
               <td class="td-remaining" [class.td-remaining-zero]="remaining(r) === 0">{{ remaining(r) | number:'1.0-0' }} MAD</td>
               <td class="actions-cell">
                 <button class="btn-icon" (click)="openView(r)" [title]="t('view')">👁</button>
                 <button class="btn-icon" (click)="openEdit(r)" [title]="t('edit')">✏️</button>
+                <button class="btn-sm btn-dossier" (click)="goToDossier(r)" title="Ouvrir le dossier">Dossier</button>
+                <button class="btn-icon" (click)="generateInvoice(r)" title="Télécharger Facture">🧾</button>
                 <button class="btn-icon btn-del" (click)="openDelete(r.id)" [title]="t('delete')">🗑</button>
               </td>
             </tr>
@@ -164,6 +178,10 @@
       <p>{{ t('noData') }}</p>
       <a routerLink="/reservation/create" class="btn-new">{{ t('createBooking') }}</a>
     </div>
+
+    <app-paginator [page]="page" [limit]="limit" [total]="total"
+      (pageChange)="onPageChange($event)">
+    </app-paginator>
 
   </ng-container>
 
@@ -183,6 +201,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" (click)="closeModal()">{{ t('close') }}</button>
+        <button class="btn-export-pdf" (click)="exportReceipt(selected)">⬇ PDF Receipt</button>
         <button class="btn-primary" (click)="openEdit(selected)">{{ t('edit') }}</button>
       </div>
     </ng-container>
@@ -208,8 +227,8 @@
             </div>
           </div>
           <div class="form-row">
-            <div class="form-group"><label>{{ t('dateDebut') }}</label><input type="date" formControlName="dateDebut" /></div>
-            <div class="form-group"><label>{{ t('dateFin') }}</label><input type="date" formControlName="dateFin" /></div>
+            <div class="form-group"><label>{{ t('dateDebut') }}</label><input type="datetime-local" formControlName="dateDebut" /></div>
+            <div class="form-group"><label>{{ t('dateFin') }}</label><input type="datetime-local" formControlName="dateFin" /></div>
           </div>
           <div class="form-row">
             <div class="form-group">

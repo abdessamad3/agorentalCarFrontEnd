@@ -1,0 +1,103 @@
+<div class="rp-page" [dir]="dir">
+
+  <!-- Header -->
+  <div class="rp-header">
+    <div class="rp-header-left">
+      <div class="rp-header-icon">🏦</div>
+      <div>
+        <div class="rp-title">Vehicle Financing Contracts</div>
+        <div class="rp-subtitle">Track all financed vehicles, installment schedules and remaining debt</div>
+      </div>
+    </div>
+    <div class="rp-actions">
+      <button class="btn-export btn-print" onclick="window.print()">🖨️ Print</button>
+      <button class="btn-export btn-csv" (click)="load()">↻ Refresh</button>
+      <a routerLink="/vehicle-financing/create" class="btn-export btn-excel" style="text-decoration:none">＋ New Contract</a>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="rp-toolbar">
+    <div class="rp-search-wrap" style="flex:1;min-width:200px">
+      <span class="rp-search-icon">🔍</span>
+      <input class="rp-search" [(ngModel)]="search" placeholder="Search vehicle, plate, contract, bank…" />
+    </div>
+    <select class="rp-select" [(ngModel)]="filterStatus" (ngModelChange)="load()">
+      <option *ngFor="let s of statuses" [value]="s.value">{{ s.label }}</option>
+    </select>
+    <span class="rp-count">{{ filtered.length }} contracts</span>
+  </div>
+
+  <div *ngIf="loading" class="rp-loading">
+    <span class="rp-loading-spinner"></span> Loading contracts…
+  </div>
+
+  <!-- Cards grid -->
+  <div *ngIf="!loading" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:1rem">
+
+    <div *ngFor="let vc of filtered"
+      style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:1.25rem;cursor:pointer;transition:box-shadow .15s"
+      (click)="goDetail(vc.id)"
+      (mouseenter)="$any($event.currentTarget).style.boxShadow='0 4px 16px rgba(0,0,0,.1)'"
+      (mouseleave)="$any($event.currentTarget).style.boxShadow='none'">
+
+      <!-- Card header -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem">
+        <div>
+          <div style="font-weight:700;font-size:.95rem;color:#1a202c">{{ vc.voiture }}</div>
+          <div style="font-size:.75rem;color:#718096;font-family:monospace">{{ vc.immatriculation || '—' }}</div>
+        </div>
+        <span class="status-pill" [ngClass]="statusClass(vc.status)">{{ statusLabel(vc.status) }}</span>
+      </div>
+
+      <!-- Institution -->
+      <div style="font-size:.8rem;color:#4a5568;margin-bottom:.5rem">
+        🏦 {{ vc.financialInstitution || 'No institution' }}
+        <span *ngIf="vc.contractNumber" style="margin-left:.5rem;color:#a0aec0">#{{ vc.contractNumber }}</span>
+      </div>
+
+      <!-- Amounts row -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-bottom:.9rem">
+        <div style="background:#f7fafc;border-radius:8px;padding:.5rem;text-align:center">
+          <div style="font-size:.68rem;color:#718096">Financed</div>
+          <div style="font-weight:700;font-size:.82rem;color:#2b6cb0">{{ fmt(vc.financedAmount) }}</div>
+        </div>
+        <div style="background:#f7fafc;border-radius:8px;padding:.5rem;text-align:center">
+          <div style="font-size:.68rem;color:#718096">Remaining</div>
+          <div style="font-weight:700;font-size:.82rem" [style.color]="vc.remainingBalance > 0 ? '#c53030' : '#276749'">{{ fmt(vc.remainingBalance) }}</div>
+        </div>
+        <div style="background:#f7fafc;border-radius:8px;padding:.5rem;text-align:center">
+          <div style="font-size:.68rem;color:#718096">Monthly</div>
+          <div style="font-weight:700;font-size:.82rem;color:#553c9a">{{ fmt(vc.monthlyInstallment) }}</div>
+        </div>
+      </div>
+
+      <!-- Progress bar -->
+      <div style="margin-bottom:.6rem">
+        <div style="display:flex;justify-content:space-between;font-size:.72rem;color:#718096;margin-bottom:.3rem">
+          <span>Progress</span>
+          <span style="font-weight:600" [style.color]="progressColor(vc.progressPct)">{{ vc.progressPct }}%</span>
+        </div>
+        <div style="height:6px;background:#edf2f7;border-radius:3px;overflow:hidden">
+          <div style="height:100%;border-radius:3px;transition:width .4s"
+            [style.width]="vc.progressPct + '%'"
+            [style.background]="progressColor(vc.progressPct)"></div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div style="display:flex;justify-content:space-between;font-size:.72rem;color:#718096">
+        <span>{{ vc.paidInstallments ?? 0 }}/{{ vc.installmentCount ?? vc.durationMonths }} installments</span>
+        <span *ngIf="(vc.overdueInstallments ?? 0) > 0" style="color:#c53030;font-weight:600">
+          ⚠ {{ vc.overdueInstallments }} overdue
+        </span>
+        <span>{{ vc.durationMonths }} months &#64; {{ vc.interestRate }}%</span>
+      </div>
+    </div>
+
+    <div *ngIf="filtered.length === 0" style="grid-column:1/-1" class="rp-empty">
+      No financing contracts found
+    </div>
+  </div>
+
+</div>

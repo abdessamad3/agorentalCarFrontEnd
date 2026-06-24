@@ -3,50 +3,56 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { TranslationService } from '../../services/translation.service';
 import { CrudService } from '../../services/crud.service';
-import { catchError } from 'rxjs/operators';
-import { of } from 'rxjs';
+import { PaginatorComponent } from '../../shared/paginator/paginator.component';
+import { UploadBtnComponent } from '../../shared/btn/upload-btn.component';
 
 export interface Installment {
-  id: string;
+  id: number;
   achatId: number;
   num: number;
   dueDate: string;
   amount: number;
   balance: number;
+  /** Component-level status — 'overdue' from API is mapped to 'late' for template compatibility */
   status: 'pending' | 'paid' | 'late' | 'partial';
   paidDate?: string;
+  /** DataURL — kept in component memory, not persisted as binary on server */
   invoiceFile?: string;
   invoiceName?: string;
   notes?: string;
-  // enriched from purchase
   voitureName?: string;
+  immatriculation?: string;
   fournisseurName?: string;
 }
 
 @Component({
   selector: 'app-mensualite-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, PaginatorComponent, UploadBtnComponent],
   templateUrl: './mensualite-list.component.html',
   styleUrls: ['../../shared/styles/crud-list.css', './mensualite-list.component.css']
 })
 export class MensualiteListComponent implements OnInit {
-  achats: any[]        = [];
-  voitures: any[]      = [];
-  fournisseurs: any[]  = [];
+  achats: any[]            = [];
   allInstallments: Installment[] = [];
-  loading = true; error = ''; dir = 'ltr';
-  filterStatus = ''; filterAchat = ''; search = '';
+  loading  = true;
+  error    = '';
+  dir      = 'ltr';
+  filterStatus = '';
+  filterAchat  = '';
+  search       = '';
+  page  = 1;
+  limit = 20;
+  total = 0;
 
   modalMode: 'pay' | 'invoice-preview' | null = null;
   selectedInstallment: Installment | null = null;
   payForm: FormGroup;
   isSubmitting = false;
-  uploadingFile = false;
   previewUrl: string | null = null;
 
-  // local payment state (keyed by installment id)
-  private paymentState: Record<string, Partial<Installment>> = {};
+  /** Local DataURL store: installment.id → dataURL (not uploaded to server) */
+  private invoiceFiles: Record<number, string> = {};
 
   constructor(
     private crud: CrudService,
@@ -54,9 +60,10 @@ export class MensualiteListComponent implements OnInit {
     private fb: FormBuilder
   ) {
     this.payForm = this.fb.group({
-      paidDate: [new Date().toISOString().split('T')[0]],
-      notes:    [''],
-      status:   ['paid']
+      paidDate:    [new Date().toISOString().split('T')[0]],
+      notes:       [''],
+      status:      ['paid'],
+      amountPaid:  [null]
     });
   }
 
@@ -66,88 +73,57 @@ export class MensualiteListComponent implements OnInit {
   }
 
   loadAll() {
-    this.loading = true; this.error = '';
-    const voitures$    = this.crud.getAll('voiture',      { limit: 1000 }).pipe(catchError(() => of([])));
-    const fournisseurs$ = this.crud.getAll('fournisseur', { limit: 1000 }).pipe(catchError(() => of([])));
-    const achats$      = this.crud.getAll('achat-voiture').pipe(catchError(() => of([])));
-
-    voitures$.subscribe(r => { this.voitures = Array.isArray(r) ? r : (r as any)?.data ?? []; });
-    fournisseurs$.subscribe(r => { this.fournisseurs = Array.isArray(r) ? r : (r as any)?.data ?? []; });
-    achats$.subscribe({
-      next: r => {
-        this.achats = Array.isArray(r) ? r : (r as any)?.data ?? [];
-        this.buildInstallments();
+    this.loading = true;
+    this.error   = '';
+    const params: Record<string, any> = { page: this.page, limit: this.limit };
+    if (this.search.trim()) params['search'] = this.search;
+    if (this.filterStatus) params['status'] = this.filterStatus;
+    if (this.filterAchat) params['achatId'] = this.filterAchat;
+    this.crud.getPage('achat-installment', params).subscribe({
+      next: (r: any) => {
+        const list: any[] = r.data ?? [];
+        this.total = r.meta?.total ?? 0;
+        this.allInstallments = list.map(item => this.fromApi(item));
+        // Rebuild unique achat options for the filter
+        const seen = new Set<number>();
+        this.achats = [];
+        for (const i of this.allInstallments) {
+          if (!seen.has(i.achatId)) {
+            seen.add(i.achatId);
+            this.achats.push({ id: i.achatId, label: i.voitureName || String(i.achatId) });
+          }
+        }
         this.loading = false;
       },
       error: () => {
-        this.error = this.ts.translate('loadError');
+        this.error   = this.ts.translate('loadError');
         this.loading = false;
       }
     });
   }
 
-  buildInstallments() {
-    this.allInstallments = [];
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-
-    for (const achat of this.achats) {
-      if (achat.typeFinancement === 'comptant') continue;
-      const rest = Math.max(0, (achat.prixAchat || 0) - (achat.apport || 0));
-      const mensualite = achat.mensualite || 0;
-      if (mensualite <= 0 || rest <= 0) continue;
-
-      const months  = Math.floor(rest / mensualite);
-      const lastAmt = +(rest - months * mensualite).toFixed(2);
-      const base    = achat.dateDebutCredit ? new Date(achat.dateDebutCredit) : new Date(achat.dateAchat || Date.now());
-      let balance   = rest;
-      const vName   = this.getVoitureName(achat.voitureId);
-      const fName   = this.getFournisseurName(achat.fournisseurId);
-
-      for (let i = 1; i <= months; i++) {
-        const d = new Date(base);
-        d.setMonth(d.getMonth() + i);
-        balance = +(balance - mensualite).toFixed(2);
-        const due = new Date(d); due.setHours(0, 0, 0, 0);
-        const id  = `${achat.id}-${i}`;
-        const saved = this.paymentState[id];
-        let status: Installment['status'] = saved?.status ?? (due < today ? 'late' : 'pending');
-        this.allInstallments.push({
-          id, achatId: achat.id, num: i,
-          dueDate: d.toISOString().split('T')[0],
-          amount: mensualite,
-          balance: Math.max(0, balance),
-          status,
-          paidDate:    saved?.paidDate,
-          invoiceFile: saved?.invoiceFile,
-          invoiceName: saved?.invoiceName,
-          notes:       saved?.notes,
-          voitureName: vName,
-          fournisseurName: fName
-        });
-      }
-
-      if (lastAmt > 0) {
-        const d = new Date(base);
-        d.setMonth(d.getMonth() + months + 1);
-        const due = new Date(d); due.setHours(0, 0, 0, 0);
-        const id  = `${achat.id}-${months + 1}`;
-        const saved = this.paymentState[id];
-        this.allInstallments.push({
-          id, achatId: achat.id, num: months + 1,
-          dueDate: d.toISOString().split('T')[0],
-          amount: lastAmt,
-          balance: 0,
-          status: saved?.status ?? (due < today ? 'late' : 'pending'),
-          paidDate:    saved?.paidDate,
-          invoiceFile: saved?.invoiceFile,
-          invoiceName: saved?.invoiceName,
-          notes:       saved?.notes,
-          voitureName: vName,
-          fournisseurName: fName
-        });
-      }
-    }
+  private fromApi(item: any): Installment {
+    const rawStatus = item.status ?? 'pending';
+    const status: Installment['status'] = rawStatus === 'overdue' ? 'late' : rawStatus;
+    return {
+      id:              item.id,
+      achatId:         item.achatId,
+      num:             item.num,
+      dueDate:         item.dueDate,
+      amount:          item.amount,
+      balance:         item.balance ?? item.amount,
+      status,
+      paidDate:        item.paidDate  ?? undefined,
+      invoiceName:     item.invoiceName ?? undefined,
+      invoiceFile:     this.invoiceFiles[item.id] ?? undefined,
+      notes:           item.notes    ?? undefined,
+      voitureName:     item.voitureName    ?? '',
+      immatriculation: item.immatriculation ?? '',
+      fournisseurName: item.fournisseurName ?? ''
+    };
   }
+
+  // ── Filters & pagination ─────────────────────────────────────────────────────
 
   get filtered(): Installment[] {
     let res = this.allInstallments;
@@ -161,18 +137,31 @@ export class MensualiteListComponent implements OnInit {
         i.dueDate.includes(q)
       );
     }
-    return res.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+    return [...res].sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
   }
 
-  // Stats
-  get totalPending()  { return this.allInstallments.filter(i => i.status === 'pending').length; }
-  get totalLate()     { return this.allInstallments.filter(i => i.status === 'late').length; }
-  get totalPaid()     { return this.allInstallments.filter(i => i.status === 'paid').length; }
-  get amountDue()     { return this.allInstallments.filter(i => i.status !== 'paid').reduce((s, i) => s + i.amount, 0); }
+  get paged(): Installment[] { return this.filtered; }
+
+  onSearch(): void { this.page = 1; this.loadAll(); }
+  onPageChange(p: number): void { this.page = p; this.loadAll(); }
+
+  // ── Stats ─────────────────────────────────────────────────────────────────────
+
+  get totalPending() { return this.allInstallments.filter(i => i.status === 'pending').length; }
+  get totalLate()    { return this.allInstallments.filter(i => i.status === 'late').length; }
+  get totalPaid()    { return this.allInstallments.filter(i => i.status === 'paid').length; }
+  get amountDue()    { return this.allInstallments.filter(i => i.status !== 'paid').reduce((s, i) => s + i.amount, 0); }
+
+  // ── Modals ────────────────────────────────────────────────────────────────────
 
   openPay(inst: Installment) {
     this.selectedInstallment = inst;
-    this.payForm.reset({ paidDate: new Date().toISOString().split('T')[0], status: 'paid', notes: inst.notes || '' });
+    this.payForm.reset({
+      paidDate:   new Date().toISOString().split('T')[0],
+      status:     'paid',
+      notes:      inst.notes || '',
+      amountPaid: inst.amount
+    });
     this.modalMode = 'pay';
   }
 
@@ -184,10 +173,10 @@ export class MensualiteListComponent implements OnInit {
   }
 
   closeModal() {
-    this.modalMode = null;
-    this.selectedInstallment = null;
-    this.previewUrl = null;
-    this.isSubmitting = false;
+    this.modalMode              = null;
+    this.selectedInstallment    = null;
+    this.previewUrl             = null;
+    this.isSubmitting           = false;
   }
 
   @HostListener('document:keydown.escape') onEscape() { this.closeModal(); }
@@ -196,39 +185,41 @@ export class MensualiteListComponent implements OnInit {
     if (!this.selectedInstallment) return;
     this.isSubmitting = true;
     const val = this.payForm.value;
-    this.paymentState[this.selectedInstallment.id] = {
-      ...this.paymentState[this.selectedInstallment.id],
-      status:   val.status,
-      paidDate: val.paidDate,
-      notes:    val.notes
-    };
-    this.buildInstallments();
-    this.closeModal();
+    this.crud.create(`achat-installment/${this.selectedInstallment.id}/pay`, {
+      amountPaid:  parseFloat(val.amountPaid ?? this.selectedInstallment.amount),
+      paidDate:    val.paidDate,
+      notes:       val.notes || null,
+      invoiceName: this.selectedInstallment.invoiceName ?? null
+    }).subscribe({
+      next: () => {
+        this.closeModal();
+        this.loadAll();
+      },
+      error: () => { this.isSubmitting = false; }
+    });
   }
 
-  onFileSelected(event: Event, inst: Installment) {
-    const input = event.target as HTMLInputElement;
-    if (!input.files?.length) return;
-    const file = input.files[0];
+  // ── Invoice file handling (DataURL, kept in memory only) ─────────────────────
+
+  onFileSelected(file: File, inst: Installment) {
     const reader = new FileReader();
     reader.onload = (e) => {
       const dataUrl = e.target?.result as string;
-      this.paymentState[inst.id] = {
-        ...this.paymentState[inst.id],
-        invoiceFile: dataUrl,
-        invoiceName: file.name
-      };
-      this.buildInstallments();
+      this.invoiceFiles[inst.id] = dataUrl;
+      // Persist invoiceName to backend
+      this.crud.update('achat-installment', inst.id, { invoiceName: file.name }).subscribe();
+      // Update in-memory list
+      const found = this.allInstallments.find(i => i.id === inst.id);
+      if (found) { found.invoiceFile = dataUrl; found.invoiceName = file.name; }
     };
     reader.readAsDataURL(file);
   }
 
   removeInvoice(inst: Installment) {
-    if (this.paymentState[inst.id]) {
-      delete this.paymentState[inst.id].invoiceFile;
-      delete this.paymentState[inst.id].invoiceName;
-    }
-    this.buildInstallments();
+    delete this.invoiceFiles[inst.id];
+    this.crud.update('achat-installment', inst.id, { invoiceName: null }).subscribe();
+    const found = this.allInstallments.find(i => i.id === inst.id);
+    if (found) { found.invoiceFile = undefined; found.invoiceName = undefined; }
   }
 
   downloadInvoice(inst: Installment) {
@@ -244,25 +235,12 @@ export class MensualiteListComponent implements OnInit {
     return /\.(jpg|jpeg|png|webp)$/i.test(name);
   }
 
-  getVoitureName(id: any): string {
-    const v = this.voitures.find(x => x.id == id);
-    return v ? `${v.marque} ${v.modele}` : (id || '-');
-  }
-  getFournisseurName(id: any): string {
-    const f = this.fournisseurs.find(x => x.id == id);
-    return f ? (f.raisonSociale || f.nom || '-') : (id || '-');
-  }
+  // ── Helpers ───────────────────────────────────────────────────────────────────
+
+  get achatOptions() { return this.achats; }
+
   payStatusClass(s: string): string {
     return { pending: 'pay-pending', paid: 'pay-paid', late: 'pay-late', partial: 'pay-partial' }[s] ?? '';
-  }
-  t(key: string): string { return this.ts.translate(key); }
-  fmt(n: number): string { return (n ?? 0).toLocaleString('fr-MA') + ' MAD'; }
-
-  get achatOptions() {
-    return this.achats.filter(a => a.typeFinancement !== 'comptant').map(a => ({
-      id: String(a.id),
-      label: this.getVoitureName(a.voitureId)
-    }));
   }
 
   isOverdue(dueDate: string, status: string): boolean {
@@ -276,4 +254,7 @@ export class MensualiteListComponent implements OnInit {
     const due   = new Date(dueDate); due.setHours(0, 0, 0, 0);
     return Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
   }
+
+  t(key: string): string { return this.ts.translate(key); }
+  fmt(n: number): string { return (n ?? 0).toLocaleString('fr-MA') + ' MAD'; }
 }

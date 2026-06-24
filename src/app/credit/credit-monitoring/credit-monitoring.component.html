@@ -1,0 +1,200 @@
+<div class="cm-page">
+
+  <div class="cm-header">
+    <h1 class="cm-title">💳 Credit Monitoring</h1>
+    <a routerLink="/credit" class="cm-header-link">Manage Credits →</a>
+  </div>
+
+  <div *ngIf="loading" class="cm-loading">
+    <div class="cm-spinner"></div>
+    <span>Loading credit data…</span>
+  </div>
+
+  <ng-container *ngIf="!loading">
+
+    <!-- ── Step 1: KPI Cards ── -->
+    <div class="cm-kpi-row">
+      <div class="cm-kpi cm-kpi-blue">
+        <div class="cm-kpi-icon">📈</div>
+        <div class="cm-kpi-body">
+          <div class="cm-kpi-val">{{ activeCount }}</div>
+          <div class="cm-kpi-lbl">Credits Active</div>
+        </div>
+      </div>
+
+      <div class="cm-kpi cm-kpi-orange">
+        <div class="cm-kpi-icon">📆</div>
+        <div class="cm-kpi-body">
+          <div class="cm-kpi-val">{{ dueThisMonth | number:'1.0-0' }} <span class="cm-kpi-curr">MAD</span></div>
+          <div class="cm-kpi-lbl">Due This Month</div>
+        </div>
+      </div>
+
+      <div class="cm-kpi" [class.cm-kpi-red]="overdueCount > 0" [class.cm-kpi-green]="overdueCount === 0">
+        <div class="cm-kpi-icon">{{ overdueCount > 0 ? '⚠️' : '✅' }}</div>
+        <div class="cm-kpi-body">
+          <div class="cm-kpi-val">{{ overdueCount }}</div>
+          <div class="cm-kpi-lbl">Credits Overdue</div>
+        </div>
+      </div>
+
+      <div class="cm-kpi cm-kpi-purple">
+        <div class="cm-kpi-icon">💰</div>
+        <div class="cm-kpi-body">
+          <div class="cm-kpi-val">{{ fmt(totalRemaining) }} <span class="cm-kpi-curr">MAD</span></div>
+          <div class="cm-kpi-lbl">Total Remaining Debt</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Step 3: Alerts — payment due ≤7 days ── -->
+    <div class="cm-section cm-section-alerts" *ngIf="alerts.length > 0">
+      <div class="cm-section-head">
+        <span class="cm-sec-title">🔔 Payment Due Soon</span>
+        <span class="cm-alert-badge">{{ alerts.length }}</span>
+      </div>
+      <div class="cm-alert-list">
+        <div class="cm-alert-item"
+             *ngFor="let a of alerts"
+             [class.cm-alert-urgent]="a.daysUntilPayment <= 3"
+             [class.cm-alert-overdue]="a.credit.statut === 'en_retard'">
+          <div class="cm-alert-car">
+            <a [routerLink]="'/voiture/' + a.credit.voitureId" class="cm-alert-link">
+              {{ a.credit.voiture || 'Car #' + a.credit.voitureId }}
+            </a>
+            <span class="cm-status-badge"
+                  [class.badge-en-cours]="a.credit.statut === 'en_cours'"
+                  [class.badge-retard]="a.credit.statut === 'en_retard'">
+              {{ a.credit.statut }}
+            </span>
+          </div>
+          <div class="cm-alert-meta">
+            <span>Monthly: <strong>{{ a.credit.mensualite | number:'1.0-0' }} MAD</strong></span>
+            <span class="cm-alert-day">Day {{ a.paymentDay }} of each month</span>
+          </div>
+          <div class="cm-alert-when" [class.when-today]="a.daysUntilPayment === 0">
+            {{ daysLabel(a.daysUntilPayment) }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Step 2: Monthly Forecast — next 12 months ── -->
+    <div class="cm-section">
+      <div class="cm-section-head">
+        <span class="cm-sec-title">📅 Monthly Payment Forecast</span>
+        <span class="cm-sec-subtitle">Next 12 months</span>
+      </div>
+
+      <div class="cm-forecast-wrap">
+
+        <!-- Bar chart -->
+        <div class="cm-bar-chart">
+          <div class="cm-bar-col" *ngFor="let m of forecast">
+            <div class="cm-bar-top">
+              <span class="cm-bar-val" *ngIf="m.total > 0">{{ fmt(m.total) }}</span>
+            </div>
+            <div class="cm-bar-fill" [style.height.%]="m.barH" [class.cm-bar-zero]="m.total === 0"
+                 [title]="(m.total | number:'1.0-0') + ' MAD — ' + m.count + ' credit(s)'"></div>
+            <div class="cm-bar-lbl">{{ m.label }}</div>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="cm-forecast-table-wrap">
+          <table class="cm-table">
+            <thead>
+              <tr>
+                <th>Month</th>
+                <th class="cm-th-c">Active Credits</th>
+                <th class="cm-th-r">Expected (MAD)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let m of forecast" [class.cm-row-zero]="m.total === 0">
+                <td>{{ m.label }}</td>
+                <td class="cm-td-c">{{ m.count }}</td>
+                <td class="cm-td-r cm-td-amount">{{ m.total | number:'1.0-0' }}</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td class="cm-tfoot-lbl">12-month total</td>
+                <td class="cm-td-c">—</td>
+                <td class="cm-td-r cm-td-amount cm-tfoot-amt">
+                  {{ forecastTotal | number:'1.0-0' }}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Step 4: Supplier Financing Report ── -->
+    <div class="cm-section">
+      <div class="cm-section-head">
+        <span class="cm-sec-title">🏭 Supplier Financing Report</span>
+        <a routerLink="/fournisseur" class="cm-sec-link">Manage Suppliers →</a>
+      </div>
+
+      <div class="cm-empty" *ngIf="supplierDebts.length === 0">
+        No active supplier financing found.
+      </div>
+
+      <div class="cm-supplier-grid" *ngIf="supplierDebts.length > 0">
+        <div class="cm-supplier-card" *ngFor="let s of supplierDebts">
+
+          <div class="cm-sup-header">
+            <div class="cm-sup-avatar">{{ s.supplierName.charAt(0).toUpperCase() }}</div>
+            <div class="cm-sup-info">
+              <div class="cm-sup-name">{{ s.supplierName }}</div>
+              <div class="cm-sup-sub">{{ s.creditRows.length }} credit{{ s.creditRows.length === 1 ? '' : 's' }}</div>
+            </div>
+          </div>
+
+          <div class="cm-sup-amounts">
+            <div class="cm-sa-item">
+              <div class="cm-sa-lbl">Total Financed</div>
+              <div class="cm-sa-val">{{ s.totalDebt | number:'1.0-0' }} <span class="cm-sa-curr">MAD</span></div>
+            </div>
+            <div class="cm-sa-item cm-sa-paid">
+              <div class="cm-sa-lbl">Paid</div>
+              <div class="cm-sa-val cm-val-green">{{ s.paid | number:'1.0-0' }} <span class="cm-sa-curr">MAD</span></div>
+            </div>
+            <div class="cm-sa-item cm-sa-remaining">
+              <div class="cm-sa-lbl">Remaining</div>
+              <div class="cm-sa-val cm-val-red">{{ s.remaining | number:'1.0-0' }} <span class="cm-sa-curr">MAD</span></div>
+            </div>
+          </div>
+
+          <div class="cm-sup-progress">
+            <div class="cm-prog-bg">
+              <div class="cm-prog-fill" [style.width.%]="s.paidPct"></div>
+            </div>
+            <span class="cm-prog-pct">{{ s.paidPct }}% paid</span>
+          </div>
+
+          <div class="cm-credit-rows">
+            <div class="cm-credit-row" *ngFor="let cr of s.creditRows">
+              <a [routerLink]="'/voiture/' + cr.raw.voitureId" class="cm-cr-car">
+                {{ cr.voitureLabel }}
+              </a>
+              <span class="cm-cr-mensualite">{{ cr.raw.mensualite | number:'1.0-0' }} MAD/mo</span>
+              <span class="cm-cr-remaining">{{ cr.remaining | number:'1.0-0' }} left</span>
+              <span class="cm-status-badge"
+                    [class.badge-en-cours]="cr.raw.statut === 'en_cours'"
+                    [class.badge-retard]="cr.raw.statut === 'en_retard'"
+                    [class.badge-termine]="cr.raw.statut === 'termine'">
+                {{ cr.raw.statut }}
+              </span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </ng-container>
+</div>

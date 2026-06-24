@@ -6,7 +6,7 @@
       <h1>{{ 'bureaus' | translate }}</h1>
       <p class="subtitle">{{ 'manageOffices' | translate }}</p>
     </div>
-    <button class="btn-add" (click)="router.navigate(['/bureau/create'])">+ {{ 'addBureau' | translate }}</button>
+    <app-btn *ngIf="isAdmin" variant="primary" (click)="openCreate()">+ {{ 'addBureau' | translate }}</app-btn>
   </div>
 
   <!-- Search & Filter -->
@@ -29,7 +29,10 @@
     <button (click)="loadBureaus()" class="btn-retry">{{ 'retry' | translate }}</button>
   </div>
   <div *ngIf="!loading && bureaus.length === 0 && !error" class="empty-state">
-    <p>{{ 'noBureaus' | translate }}</p>
+    <span class="empty-icon">🏢</span>
+    <div class="empty-title">No offices yet</div>
+    <div class="empty-message">Add your first office to start organising your fleet by location.</div>
+    <a *ngIf="isAdmin" routerLink="/bureau/create" class="empty-action">+ Add Office</a>
   </div>
 
   <!-- Table -->
@@ -38,6 +41,8 @@
       <thead>
         <tr>
           <th>{{ 'name' | translate }}</th>
+          <th>Company</th>
+          <th>Manager</th>
           <th>{{ 'address' | translate }}</th>
           <th>{{ 'status' | translate }}</th>
           <th>{{ 'created' | translate }}</th>
@@ -47,21 +52,23 @@
       <tbody>
         <tr *ngFor="let bureau of bureaus" class="bureau-row">
           <td><strong>{{ bureau.nom }}</strong></td>
+          <td>
+            <span *ngIf="bureau.companyNom" class="status-badge status-actif">{{ bureau.companyNom }}</span>
+            <span *ngIf="!bureau.companyNom" style="color:#aaa">—</span>
+          </td>
+          <td>
+            <span *ngIf="bureau.managerNom">{{ bureau.managerNom }}</span>
+            <span *ngIf="!bureau.managerNom" style="color:#aaa">—</span>
+          </td>
           <td>{{ bureau.adresse || '-' }}</td>
           <td>
             <span class="status-badge" [ngClass]="'status-' + bureau.statut">{{ bureau.statut | translate }}</span>
           </td>
           <td class="date-cell">{{ bureau.creeAu | date:'shortDate' }}</td>
           <td class="actions-cell">
-            <button (click)="openView(bureau)" class="btn-action btn-view" [title]="'view' | translate">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            </button>
-            <button (click)="openEdit(bureau)" class="btn-action btn-edit" [title]="'edit' | translate">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            </button>
-            <button (click)="openDelete(bureau.id)" class="btn-action btn-delete" [title]="'delete' | translate">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-            </button>
+            <app-btn variant="icon-view" (click)="openView(bureau)" [title]="'view' | translate"></app-btn>
+            <app-btn *ngIf="isAdmin" variant="icon-edit" (click)="openEdit(bureau)" [title]="'edit' | translate"></app-btn>
+            <app-btn *ngIf="isAdmin" variant="icon-delete" (click)="openDelete(bureau.id)" [title]="'delete' | translate"></app-btn>
           </td>
         </tr>
       </tbody>
@@ -80,26 +87,53 @@
 <div *ngIf="modalMode" class="modal-overlay" (click)="closeModal()">
   <div class="modal" (click)="$event.stopPropagation()">
 
-    <!-- ── VIEW modal ── -->
-    <ng-container *ngIf="modalMode === 'view' && selectedBureau">
+    <!-- ── CREATE modal ── -->
+    <ng-container *ngIf="modalMode === 'create'">
       <div class="modal-header">
-        <h2>{{ 'bureauDetails' | translate }}</h2>
+        <h2>{{ 'addBureau' | translate }}</h2>
         <button class="modal-close" (click)="closeModal()">&times;</button>
       </div>
-      <div class="modal-body">
-        <div class="detail-row"><span class="detail-label">{{ 'name' | translate }}</span><span class="detail-value">{{ selectedBureau.nom }}</span></div>
-        <div class="detail-row"><span class="detail-label">{{ 'address' | translate }}</span><span class="detail-value">{{ selectedBureau.adresse || '-' }}</span></div>
-        <div class="detail-row">
-          <span class="detail-label">{{ 'status' | translate }}</span>
-          <span class="status-badge" [ngClass]="'status-' + selectedBureau.statut">{{ selectedBureau.statut | translate }}</span>
+      <form [formGroup]="createForm" (ngSubmit)="submitCreate()">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>{{ 'name' | translate }} <span class="required">*</span></label>
+            <input type="text" formControlName="nom" [placeholder]="'name' | translate"
+              [class.invalid]="createForm.get('nom')?.invalid && createForm.get('nom')?.touched" />
+            <span *ngIf="createForm.get('nom')?.invalid && createForm.get('nom')?.touched" class="field-error">{{ 'nameRequired' | translate }}</span>
+          </div>
+          <div class="form-group">
+            <label>{{ 'address' | translate }}</label>
+            <input type="text" formControlName="adresse" [placeholder]="'address' | translate" />
+          </div>
+          <div class="form-group">
+            <label>{{ 'status' | translate }} <span class="required">*</span></label>
+            <select formControlName="statut">
+              <option value="actif">{{ 'active' | translate }}</option>
+              <option value="inactif">{{ 'inactive' | translate }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Company</label>
+            <select formControlName="companyId">
+              <option [ngValue]="null">— None —</option>
+              <option *ngFor="let c of companies" [ngValue]="c.id">{{ c.nom }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Manager</label>
+            <select formControlName="managerId">
+              <option [ngValue]="null">— None —</option>
+              <option *ngFor="let u of managers" [ngValue]="u.id">{{ getManagerLabel(u) }}</option>
+            </select>
+          </div>
         </div>
-        <div class="detail-row"><span class="detail-label">{{ 'created' | translate }}</span><span class="detail-value">{{ selectedBureau.creeAu | date:'medium' }}</span></div>
-        <div class="detail-row"><span class="detail-label">{{ 'updated' | translate }}</span><span class="detail-value">{{ selectedBureau.editAu | date:'medium' }}</span></div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-secondary" (click)="closeModal()">{{ 'close' | translate }}</button>
-        <button class="btn-primary"   (click)="openEdit(selectedBureau)">{{ 'edit' | translate }}</button>
-      </div>
+        <div class="modal-footer">
+          <app-btn variant="secondary" (click)="closeModal()">{{ 'cancel' | translate }}</app-btn>
+          <app-btn variant="primary" type="submit" [disabled]="createForm.invalid || isSubmitting">
+            {{ (isSubmitting ? 'saving' : 'create') | translate }}
+          </app-btn>
+        </div>
+      </form>
     </ng-container>
 
     <!-- ── EDIT modal ── -->
@@ -127,12 +161,26 @@
               <option value="inactif">{{ 'inactive' | translate }}</option>
             </select>
           </div>
+          <div class="form-group">
+            <label>Company</label>
+            <select formControlName="companyId">
+              <option [ngValue]="null">— None —</option>
+              <option *ngFor="let c of companies" [ngValue]="c.id">{{ c.nom }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Manager</label>
+            <select formControlName="managerId">
+              <option [ngValue]="null">— None —</option>
+              <option *ngFor="let u of managers" [ngValue]="u.id">{{ getManagerLabel(u) }}</option>
+            </select>
+          </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn-secondary" (click)="closeModal()">{{ 'cancel' | translate }}</button>
-          <button type="submit" class="btn-primary" [disabled]="editForm.invalid || isSubmitting">
+          <app-btn variant="secondary" (click)="closeModal()">{{ 'cancel' | translate }}</app-btn>
+          <app-btn variant="primary" type="submit" [disabled]="editForm.invalid || isSubmitting">
             {{ (isSubmitting ? 'saving' : 'save') | translate }}
-          </button>
+          </app-btn>
         </div>
       </form>
     </ng-container>
@@ -147,10 +195,42 @@
         <p class="delete-warning">{{ 'deleteWarning' | translate }}</p>
       </div>
       <div class="modal-footer">
-        <button class="btn-secondary" (click)="closeModal()">{{ 'cancel' | translate }}</button>
-        <button class="btn-danger"    (click)="confirmDelete()">{{ 'delete' | translate }}</button>
+        <app-btn variant="secondary" (click)="closeModal()">{{ 'cancel' | translate }}</app-btn>
+        <app-btn variant="danger" (click)="confirmDelete()">{{ 'delete' | translate }}</app-btn>
       </div>
     </ng-container>
 
   </div>
+</div>
+
+<!-- DRAWER: View -->
+<div class="drawer-backdrop" [class.visible]="drawerOpen" (click)="closeDrawer()"></div>
+<div class="drawer" [class.open]="drawerOpen">
+  <ng-container *ngIf="drawerItem">
+    <div class="drawer-header">
+      <span class="drawer-title">Details</span>
+      <button class="drawer-close" (click)="closeDrawer()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="drawer-body">
+      <div class="drawer-section">
+        <div class="drawer-section-head">Information</div>
+        <div class="drawer-row" *ngFor="let e of objectEntries(drawerItem)">
+          <span class="drawer-lbl">{{ e[0] }}</span>
+          <span class="drawer-val">{{ displayValue(e[1]) }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="drawer-footer" *ngIf="isAdmin">
+      <button class="btn-outline-danger" (click)="openDelete(drawerItem.id); closeDrawer()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+        Delete
+      </button>
+      <button class="btn-primary-sm" (click)="openEdit(drawerItem); closeDrawer()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Edit
+      </button>
+    </div>
+  </ng-container>
 </div>

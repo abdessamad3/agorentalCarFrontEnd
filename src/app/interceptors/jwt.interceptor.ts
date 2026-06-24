@@ -1,43 +1,87 @@
-import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
+import {
+  HttpInterceptorFn, HttpErrorResponse,
+  HttpContextToken, HttpContext,
+  HttpRequest, HttpHandlerFn
+} from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, throwError } from 'rxjs';
+import { catchError, switchMap, tap, throwError, filter, take } from 'rxjs';
 import { AuthService } from '../services/auth.service';
+
+export const SKIP_AUTH_REDIRECT = new HttpContextToken<boolean>(() => false);
+
+const isAuthRoute = (url: string) =>
+  url.includes('/auth/login') ||
+  url.includes('/auth/register') ||
+  url.includes('/auth/refresh') ||
+  url.includes('/auth/logout');
+
+function cloneWithToken(request: HttpRequest<unknown>, token: string): HttpRequest<unknown> {
+  return request.clone({ setHeaders: { Authorization: `Bearer ${token}` } });
+}
 
 export const jwtInterceptor: HttpInterceptorFn = (request, next) => {
   const authService = inject(AuthService);
-  const router = inject(Router);
+  const router      = inject(Router);
 
-  // Get token from auth service
-  const token = authService.getToken();
+  const isAuth = isAuthRoute(request.url);
 
-  // Clone request and add token if available
-  if (token) {
-
-    request = request.clone({
-      setHeaders: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-
-  } else {
+  if (!isAuth && authService.getToken() && authService.isSessionExpired()) {
+    authService.logout();
+    router.navigate(['/login']);
+    return throwError(() => new Error('Session expired due to inactivity'));
   }
 
-  // Handle response
-  return next(request).pipe(
-    catchError((error: HttpErrorResponse) => {
-      console.error('❌ HTTP Error:');
-      console.error('   Status:', error.status);
-      console.error('   Message:', error.message);
-      console.error('   Body:', error.error);
+  const token = authService.getToken();
+  if (token) {
+    request = cloneWithToken(request, token);
+  }
 
-      // Handle 401 only for protected routes (not auth endpoints)
-      const isAuthRoute = request.url.includes('/auth/login') || request.url.includes('/auth/register');
-      if (error.status === 401 && !isAuthRoute) {
+  return next(request).pipe(
+    tap(() => {
+      if (!isAuth && authService.getToken()) {
+        authService.updateActivity();
+      }
+    }),
+    catchError((error: HttpErrorResponse) => {
+      if (error.status === 401 && !isAuth && !request.context.get(SKIP_AUTH_REDIRECT)) {
+        const refreshToken = authService.getRefreshToken();
+
+        if (refreshToken && !authService.refreshing$.getValue()) {
+          // Start refresh
+          authService.refreshing$.next(true);
+
+          return authService.refreshAccessToken().pipe(
+            switchMap((newToken: string) => {
+              authService.refreshing$.next(false);
+              return next(cloneWithToken(request, newToken));
+            }),
+            catchError((refreshError) => {
+              authService.refreshing$.next(false);
+              authService.logout();
+              router.navigate(['/login']);
+              return throwError(() => refreshError);
+            })
+          );
+        }
+
+        if (authService.refreshing$.getValue()) {
+          // Another request already started refresh — wait for it to finish
+          return authService.refreshing$.pipe(
+            filter(isRefreshing => !isRefreshing),
+            take(1),
+            switchMap(() => {
+              const newToken = authService.getToken();
+              return newToken
+                ? next(cloneWithToken(request, newToken))
+                : throwError(() => error);
+            })
+          );
+        }
+
         authService.logout();
         router.navigate(['/login']);
       }
-
       return throwError(() => error);
     })
   );

@@ -1,0 +1,139 @@
+<div class="list-container" [attr.dir]="dir">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1>✏️ {{ t('editReservation') }}</h1>
+      <p class="subtitle" *ngIf="reservation">
+        #{{ reservation.id }} — {{ reservation.voiture?.marque || '' }} {{ reservation.voiture?.modele || '' }}
+      </p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-secondary" (click)="cancel()">← {{ t('back') }}</button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-state" *ngIf="loading"><p>{{ t('loading') }}</p></div>
+  <div class="error-state"   *ngIf="error && !loading"><p>{{ error }}</p></div>
+
+  <ng-container *ngIf="!loading && !error && reservation">
+
+    <!-- Conflict banner -->
+    <div class="alert-error" *ngIf="conflictError">
+      ⚠️ {{ conflictError }}
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="save()" class="edit-form">
+
+      <!-- Section: Booking Info -->
+      <div class="form-section">
+        <div class="section-title">{{ t('bookingInfo') }}</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t('client') }} <span class="required">*</span></label>
+            <select formControlName="clientId" [class.invalid]="form.get('clientId')?.invalid && form.get('clientId')?.touched">
+              <option value="">— {{ t('selectClient') }} —</option>
+              <option *ngFor="let c of clients" [value]="c.id">
+                {{ c.prenom }} {{ c.nom }} ({{ c.cin || c.passeport || '—' }})
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>{{ t('vehicle') }} <span class="required">*</span></label>
+            <select formControlName="voitureId" [class.invalid]="form.get('voitureId')?.invalid && form.get('voitureId')?.touched">
+              <option value="">— {{ t('selectVehicle') }} —</option>
+              <option *ngFor="let v of voitures" [value]="v.id">
+                {{ v.marque }} {{ v.modele }} ({{ v.immatriculation }}) — {{ v.prixJour }} MAD/j
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t('startDate') }} <span class="required">*</span></label>
+            <input type="date" formControlName="dateDebut"
+              [class.invalid]="form.get('dateDebut')?.invalid && form.get('dateDebut')?.touched" />
+          </div>
+          <div class="form-group">
+            <label>{{ t('endDate') }} <span class="required">*</span></label>
+            <input type="date" formControlName="dateFin"
+              [class.invalid]="form.get('dateFin')?.invalid && form.get('dateFin')?.touched" />
+          </div>
+        </div>
+
+        <div class="duration-chip" *ngIf="days > 0">
+          {{ days }} {{ t('days') }}
+        </div>
+      </div>
+
+      <!-- Section: Payment & Status -->
+      <div class="form-section">
+        <div class="section-title">{{ t('paymentInfo') }}</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t('status') }}</label>
+            <select formControlName="reservationStatus">
+              <option value="confirmed">{{ t('confirmed') }}</option>
+              <option value="en_attente">{{ t('pending') }}</option>
+              <option value="en_cours">{{ t('inProgress') }}</option>
+              <option value="terminee">{{ t('done') }}</option>
+              <option value="annulee">{{ t('cancelled') }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>{{ t('paymentMethod') }}</label>
+            <select formControlName="modePaiement">
+              <option value="especes">{{ t('cash') }}</option>
+              <option value="virement">{{ t('transfer') }}</option>
+              <option value="cheque">{{ t('cheque') }}</option>
+              <option value="carte">{{ t('card') }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t('totalAmount') }} (MAD)</label>
+            <input type="number" min="0" formControlName="total" />
+            <span class="field-hint" *ngIf="days > 0">Auto-calculated: {{ days }} days</span>
+          </div>
+          <div class="form-group">
+            <label>{{ t('amountPaid') }} (MAD)</label>
+            <input type="number" min="0" formControlName="montantPaye" />
+          </div>
+        </div>
+
+        <div class="payment-summary" *ngIf="form.get('total')?.value > 0">
+          <span class="pay-label">{{ t('remaining') }}:</span>
+          <span class="pay-amount" [class.overdue]="remaining > 0">{{ remaining | number:'1.0-0' }} MAD</span>
+        </div>
+      </div>
+
+      <!-- Section: Accessories -->
+      <div class="form-section" *ngIf="accessoires.length">
+        <div class="section-title">{{ t('accessories') }}</div>
+        <div class="accessoire-grid">
+          <label class="accessoire-chip"
+            *ngFor="let a of accessoires"
+            [class.selected]="isAccessoireSelected(a.id)"
+            (click)="toggleAccessoire(a.id)">
+            {{ a.nom || a.name }}
+            <span *ngIf="a.prixJour"> +{{ a.prixJour }} MAD/j</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="form-actions">
+        <app-btn variant="secondary" type="button" (click)="cancel()">{{ t('cancel') }}</app-btn>
+        <app-btn variant="primary" type="submit" [isLoading]="saving">{{ t('save') }}</app-btn>
+      </div>
+
+    </form>
+  </ng-container>
+</div>

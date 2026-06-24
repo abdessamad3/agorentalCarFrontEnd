@@ -1,0 +1,42 @@
+<div class="vp-root">
+
+  <div class="vp-error" *ngIf="error">{{ error }}</div>
+
+  <div class="vp-toolbar">
+    <span class="vp-count">{{ gallery.length }} photo{{ gallery.length !== 1 ? 's' : '' }}</span>
+    <app-upload-btn label="Add Photos" accept="image/jpeg,image/png,image/webp" [multiple]="true"
+      [loading]="isUploading" [disabled]="isUploading" (filesSelected)="onFilesPicked($event)"></app-upload-btn>
+  </div>
+
+  <div class="vp-grid">
+
+    <!-- Main image (read-only, managed via Edit modal) -->
+    <div class="vp-item vp-item-main" *ngIf="mainImage">
+      <img [src]="mainImage" alt="Main photo" class="vp-img"
+           (error)="$any($event.target).src = placeholder" />
+      <div class="vp-badge">Main</div>
+    </div>
+
+    <!-- Gallery photos -->
+    <div class="vp-item" *ngFor="let item of gallery">
+      <img [src]="item.path" alt="photo" class="vp-img"
+           (error)="$any($event.target).src = placeholder" />
+      <div class="vp-overlay">
+        <app-btn variant="icon-delete" (click)="delete(item)" title="Delete"></app-btn>
+      </div>
+    </div>
+
+    <!-- Upload slot -->
+    <label class="vp-item vp-add-slot" [class.vp-uploading]="isUploading">
+      <input type="file" hidden multiple accept="image/jpeg,image/png,image/webp"
+             (change)="onFilesSelected($event)" [disabled]="isUploading" />
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      <span>Add photos</span>
+    </label>
+
+  </div>
+
+</div>

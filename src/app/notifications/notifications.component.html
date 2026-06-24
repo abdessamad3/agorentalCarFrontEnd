@@ -1,0 +1,389 @@
+<div class="notif-page" [attr.dir]="dir">
+
+  <!-- ── Header ── -->
+  <div class="notif-header">
+    <div>
+      <div class="notif-title">⚖️ Compliance Center</div>
+      <div class="notif-subtitle">Expired &amp; upcoming — insurance · vignette · inspection · contracts</div>
+    </div>
+    <div class="notif-actions">
+      <button class="btn-export btn-csv" (click)="exportCSV()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        CSV
+      </button>
+      <button class="btn-export btn-pdf-red" (click)="exportPDF()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        PDF Report
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="notif-loading">
+    <span class="cc-spin-lg"></span> Loading compliance data…
+  </div>
+
+  <ng-container *ngIf="!loading">
+
+    <!-- ── Summary cards ── -->
+    <div class="notif-summary">
+      <div class="ns-card ns-expired"
+           (click)="setStatusFilter(statusFilter === 'expired' ? '' : 'expired')"
+           [class.ns-active]="statusFilter === 'expired'">
+        <div class="ns-num">{{ counts.expired }}</div>
+        <div class="ns-lbl">Expired</div>
+      </div>
+      <div class="ns-card ns-critical"
+           (click)="setStatusFilter(statusFilter === 'critical' ? '' : 'critical')"
+           [class.ns-active]="statusFilter === 'critical'">
+        <div class="ns-num">{{ counts.critical }}</div>
+        <div class="ns-lbl">Critical (≤7d)</div>
+      </div>
+      <div class="ns-card ns-warning"
+           (click)="setStatusFilter(statusFilter === 'warning' ? '' : 'warning')"
+           [class.ns-active]="statusFilter === 'warning'">
+        <div class="ns-num">{{ counts.warning }}</div>
+        <div class="ns-lbl">Due Soon (≤30d)</div>
+      </div>
+      <div class="ns-card ns-ok"
+           (click)="setStatusFilter(statusFilter === 'ok' ? '' : 'ok')"
+           [class.ns-active]="statusFilter === 'ok'">
+        <div class="ns-num">{{ counts.ok }}</div>
+        <div class="ns-lbl">OK</div>
+      </div>
+      <div class="ns-card ns-total"
+           (click)="setStatusFilter('')"
+           [class.ns-active]="statusFilter === ''">
+        <div class="ns-num">{{ counts.total }}</div>
+        <div class="ns-lbl">Total</div>
+      </div>
+    </div>
+
+    <!-- ── Filters toolbar ── -->
+    <div class="notif-toolbar">
+      <input class="notif-search" type="text" [(ngModel)]="search"
+             placeholder="Search vehicle or detail…" />
+
+      <select class="notif-select" [(ngModel)]="sourceFilter">
+        <option value="">All Types</option>
+        <option value="assurance">🛡️ Insurance</option>
+        <option value="vignette">📄 Vignette</option>
+        <option value="visite">🔬 Inspection</option>
+        <option value="contrat">📋 Contract</option>
+        <option value="vidange">🛢️ Oil Change</option>
+      </select>
+
+      <select class="notif-select" [(ngModel)]="bureauFilter" *ngIf="bureaux.length > 0">
+        <option value="">All Bureaux</option>
+        <option *ngFor="let b of bureaux" [value]="b.id">🏢 {{ b.nom }}</option>
+      </select>
+
+      <select class="notif-select cc-vehicle-select" [(ngModel)]="vehicleFilter">
+        <option value="">All Vehicles</option>
+        <option *ngFor="let v of vehicles" [value]="v.id">{{ v.label }}</option>
+      </select>
+    </div>
+
+    <!-- ── No results ── -->
+    <div *ngIf="!hasAnyResult" class="notif-empty">
+      <div class="notif-empty-icon">✅</div>
+      <div>No compliance alerts match your current filters</div>
+    </div>
+
+    <!-- ══════════════════════════════ SECTION: EXPIRED -->
+    <div class="cc-section cc-section-expired" *ngIf="expired.length > 0">
+      <div class="cc-section-header" (click)="toggleSection('expired')">
+        <div class="cc-section-title">
+          <span class="cc-section-dot cc-dot-expired"></span>
+          Expired
+          <span class="cc-section-count cc-count-expired">{{ expired.length }}</span>
+        </div>
+        <button class="cc-toggle-btn" type="button">
+          {{ collapsed['expired'] ? '▶ Show' : '▼ Hide' }}
+        </button>
+      </div>
+
+      <div class="cc-section-body" *ngIf="!collapsed['expired']">
+        <div class="cc-item cc-item-expired" *ngFor="let n of expired">
+          <span class="source-badge source-{{ n.source }}">
+            {{ sourceIcon(n.source) }} {{ sourceLabel(n.source) }}
+          </span>
+          <div class="cc-item-car">
+            <a [routerLink]="'/voiture/' + n.vehicleId" class="cc-car-link">{{ n.vehicleLabel }}</a>
+          </div>
+          <div class="cc-item-detail">{{ n.detail }}</div>
+          <div class="cc-item-expiry">
+            <span class="cc-date" *ngIf="!n.isKmBased">{{ n.expiryDate | date:'dd/MM/yyyy' }}</span>
+            <span class="days-pill days-expired" *ngIf="!n.isKmBased">{{ daysLabel(n.daysLeft) }}</span>
+            <span class="days-pill days-expired" *ngIf="n.isKmBased">
+              {{ (n.kmLeft! * -1) | number:'1.0-0' }} km overdue
+            </span>
+          </div>
+          <div class="cc-item-actions">
+            <button *ngIf="canRenew(n.source)"
+                    class="cc-action-btn" [ngClass]="actionClass(n.source)"
+                    (click)="openRenewModal(n)">
+              {{ actionLabel(n.source) }}
+            </button>
+            <a *ngIf="!canRenew(n.source)"
+               [routerLink]="vehicleRoute(n)"
+               class="cc-action-btn cc-btn-view">
+              {{ actionLabel(n.source) }}
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════ SECTION: CRITICAL -->
+    <div class="cc-section cc-section-critical" *ngIf="critical.length > 0">
+      <div class="cc-section-header" (click)="toggleSection('critical')">
+        <div class="cc-section-title">
+          <span class="cc-section-dot cc-dot-critical"></span>
+          Critical — expires within 7 days
+          <span class="cc-section-count cc-count-critical">{{ critical.length }}</span>
+        </div>
+        <button class="cc-toggle-btn" type="button">
+          {{ collapsed['critical'] ? '▶ Show' : '▼ Hide' }}
+        </button>
+      </div>
+
+      <div class="cc-section-body" *ngIf="!collapsed['critical']">
+        <div class="cc-item cc-item-critical" *ngFor="let n of critical">
+          <span class="source-badge source-{{ n.source }}">
+            {{ sourceIcon(n.source) }} {{ sourceLabel(n.source) }}
+          </span>
+          <div class="cc-item-car">
+            <a [routerLink]="'/voiture/' + n.vehicleId" class="cc-car-link">{{ n.vehicleLabel }}</a>
+          </div>
+          <div class="cc-item-detail">{{ n.detail }}</div>
+          <div class="cc-item-expiry">
+            <span class="cc-date" *ngIf="!n.isKmBased">{{ n.expiryDate | date:'dd/MM/yyyy' }}</span>
+            <span class="days-pill days-critical" *ngIf="!n.isKmBased">{{ daysLabel(n.daysLeft) }}</span>
+            <span class="days-pill days-critical" *ngIf="n.isKmBased">
+              {{ n.kmLeft! | number:'1.0-0' }} km left
+            </span>
+          </div>
+          <div class="cc-item-actions">
+            <button *ngIf="canRenew(n.source)"
+                    class="cc-action-btn" [ngClass]="actionClass(n.source)"
+                    (click)="openRenewModal(n)">
+              {{ actionLabel(n.source) }}
+            </button>
+            <a *ngIf="!canRenew(n.source)"
+               [routerLink]="vehicleRoute(n)"
+               class="cc-action-btn cc-btn-view">
+              {{ actionLabel(n.source) }}
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════ SECTION: WARNING -->
+    <div class="cc-section cc-section-warning" *ngIf="warning.length > 0">
+      <div class="cc-section-header" (click)="toggleSection('warning')">
+        <div class="cc-section-title">
+          <span class="cc-section-dot cc-dot-warning"></span>
+          Warning — expires within 30 days
+          <span class="cc-section-count cc-count-warning">{{ warning.length }}</span>
+        </div>
+        <button class="cc-toggle-btn" type="button">
+          {{ collapsed['warning'] ? '▶ Show' : '▼ Hide' }}
+        </button>
+      </div>
+
+      <div class="cc-section-body" *ngIf="!collapsed['warning']">
+        <div class="cc-item cc-item-warning" *ngFor="let n of warning">
+          <span class="source-badge source-{{ n.source }}">
+            {{ sourceIcon(n.source) }} {{ sourceLabel(n.source) }}
+          </span>
+          <div class="cc-item-car">
+            <a [routerLink]="'/voiture/' + n.vehicleId" class="cc-car-link">{{ n.vehicleLabel }}</a>
+          </div>
+          <div class="cc-item-detail">{{ n.detail }}</div>
+          <div class="cc-item-expiry">
+            <span class="cc-date" *ngIf="!n.isKmBased">{{ n.expiryDate | date:'dd/MM/yyyy' }}</span>
+            <span class="days-pill days-warning">{{ daysLabel(n.daysLeft) }}</span>
+          </div>
+          <div class="cc-item-actions">
+            <button *ngIf="canRenew(n.source)"
+                    class="cc-action-btn" [ngClass]="actionClass(n.source)"
+                    (click)="openRenewModal(n)">
+              {{ actionLabel(n.source) }}
+            </button>
+            <a *ngIf="!canRenew(n.source)"
+               [routerLink]="vehicleRoute(n)"
+               class="cc-action-btn cc-btn-view">
+              {{ actionLabel(n.source) }}
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════ SECTION: OK (only when filter active) -->
+    <div class="cc-section cc-section-ok" *ngIf="ok.length > 0 && statusFilter === 'ok'">
+      <div class="cc-section-header" (click)="toggleSection('ok')">
+        <div class="cc-section-title">
+          <span class="cc-section-dot cc-dot-ok"></span>
+          All Clear
+          <span class="cc-section-count cc-count-ok">{{ ok.length }}</span>
+        </div>
+        <button class="cc-toggle-btn" type="button">
+          {{ collapsed['ok'] ? '▶ Show' : '▼ Hide' }}
+        </button>
+      </div>
+
+      <div class="cc-section-body" *ngIf="!collapsed['ok']">
+        <div class="cc-item cc-item-ok" *ngFor="let n of ok">
+          <span class="source-badge source-{{ n.source }}">
+            {{ sourceIcon(n.source) }} {{ sourceLabel(n.source) }}
+          </span>
+          <div class="cc-item-car">
+            <a [routerLink]="'/voiture/' + n.vehicleId" class="cc-car-link">{{ n.vehicleLabel }}</a>
+          </div>
+          <div class="cc-item-detail">{{ n.detail }}</div>
+          <div class="cc-item-expiry">
+            <span class="cc-date">{{ n.expiryDate | date:'dd/MM/yyyy' }}</span>
+            <span class="days-pill days-ok">{{ daysLabel(n.daysLeft) }}</span>
+          </div>
+          <div class="cc-item-actions">
+            <a [routerLink]="sourceRoute(n.source)" class="cc-action-btn cc-btn-view">View</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </ng-container>
+</div>
+
+<!-- ══════════════════════════════════════════════ RENEW / PAY MODAL -->
+<div *ngIf="renewNotif" class="rn-backdrop" (click)="closeRenewModal()">
+  <div class="rn-modal" (click)="$event.stopPropagation()" [formGroup]="renewForm">
+
+    <div class="rn-header">
+      <div class="rn-title">
+        <span class="rn-type-icon">
+          <ng-container [ngSwitch]="renewNotif.source">
+            <span *ngSwitchCase="'assurance'">🛡️</span>
+            <span *ngSwitchCase="'vignette'">📄</span>
+            <span *ngSwitchCase="'visite'">🔬</span>
+          </ng-container>
+        </span>
+        {{ sourceLabel(renewNotif.source) }} — {{ renewNotif.vehicleLabel }}
+      </div>
+      <button class="rn-close" type="button" (click)="closeRenewModal()">✕</button>
+    </div>
+
+    <div class="rn-body">
+
+      <!-- INSURANCE -->
+      <ng-container *ngIf="renewNotif.source === 'assurance'">
+        <div class="rn-grid">
+          <div class="rn-field">
+            <label>Company</label>
+            <select formControlName="compagnie" class="rn-select" (change)="onRenewCompagnieChange()">
+              <option value="">— select —</option>
+              <option *ngFor="let c of MOROCCAN_INSURERS" [value]="c">{{ c }}</option>
+              <option value="Autre">Other…</option>
+            </select>
+          </div>
+          <div class="rn-field" *ngIf="renewCompagnieIsOther">
+            <label>Company name</label>
+            <input formControlName="compagnieOther" class="rn-input" placeholder="Enter company name…" />
+          </div>
+          <div class="rn-field">
+            <label>Coverage</label>
+            <select formControlName="typeAssurance" class="rn-select">
+              <option value="">— select —</option>
+              <option *ngFor="let ct of COVERAGE_TYPES" [value]="ct">{{ ct }}</option>
+            </select>
+          </div>
+          <div class="rn-field">
+            <label>Contract №</label>
+            <input formControlName="numeroContrat" class="rn-input" placeholder="N° contrat…" />
+          </div>
+          <div class="rn-field">
+            <label>Start date</label>
+            <input type="date" formControlName="dateDebut" class="rn-input" />
+          </div>
+          <div class="rn-field">
+            <label>Expiry date *</label>
+            <input type="date" formControlName="dateFin" class="rn-input"
+              [class.rn-invalid]="renewForm.get('dateFin')?.invalid && renewForm.get('dateFin')?.touched" />
+          </div>
+          <div class="rn-field">
+            <label>Amount (MAD)</label>
+            <input type="number" min="0" formControlName="montant" class="rn-input" placeholder="0" />
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- VIGNETTE -->
+      <ng-container *ngIf="renewNotif.source === 'vignette'">
+        <div class="rn-grid">
+          <div class="rn-field">
+            <label>Year</label>
+            <input type="number" formControlName="annee" class="rn-input" min="2000" max="2100" />
+          </div>
+          <div class="rn-field">
+            <label>Expiry date *</label>
+            <input type="date" formControlName="dateLimite" class="rn-input"
+              [class.rn-invalid]="renewForm.get('dateLimite')?.invalid && renewForm.get('dateLimite')?.touched" />
+          </div>
+          <div class="rn-field">
+            <label>Amount (MAD)</label>
+            <input type="number" min="0" formControlName="montant" class="rn-input" placeholder="0" />
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- INSPECTION -->
+      <ng-container *ngIf="renewNotif.source === 'visite'">
+        <div class="rn-grid">
+          <div class="rn-field">
+            <label>Visit date</label>
+            <input type="date" formControlName="dateDebut" class="rn-input" />
+          </div>
+          <div class="rn-field">
+            <label>Valid until *</label>
+            <input type="date" formControlName="dateFin" class="rn-input"
+              [class.rn-invalid]="renewForm.get('dateFin')?.invalid && renewForm.get('dateFin')?.touched" />
+          </div>
+          <div class="rn-field">
+            <label>Adjustment date</label>
+            <input type="date" formControlName="dateReglages" class="rn-input" />
+          </div>
+          <div class="rn-field">
+            <label>Amount (MAD)</label>
+            <input type="number" min="0" formControlName="montant" class="rn-input" placeholder="0" />
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Upload -->
+      <div class="rn-upload-row">
+        <app-upload-btn variant="block" accept="image/*,.pdf"
+          [label]="renewFile ? renewFile.name : 'Upload document (photo / PDF)'"
+          (fileSelected)="onRenewFileSelect($event)"></app-upload-btn>
+        <button *ngIf="renewFile" class="rn-upload-clear" type="button"
+                (click)="renewFile=null; renewFilePreview=null">✕</button>
+      </div>
+      <div *ngIf="renewFilePreview" class="rn-preview-wrap">
+        <img [src]="renewFilePreview" class="rn-preview-img" alt="preview" />
+      </div>
+
+    </div>
+
+    <div class="rn-footer">
+      <button class="rn-btn-cancel" type="button"
+              (click)="closeRenewModal()" [disabled]="renewSubmitting">Cancel</button>
+      <button class="rn-btn-save" type="button"
+              (click)="saveRenewDoc()" [disabled]="renewForm.invalid || renewSubmitting">
+        <span *ngIf="renewSubmitting" class="rn-spin"></span>
+        {{ renewSubmitting ? 'Saving…' : 'Save & Renew' }}
+      </button>
+    </div>
+
+  </div>
+</div>

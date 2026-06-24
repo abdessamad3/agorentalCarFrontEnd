@@ -12,27 +12,37 @@
     </div>
   </div>
 
-  <!-- Section Stepper -->
-  <div class="section-stepper">
-    <button *ngFor="let sec of SECTIONS; let i = index"
-      type="button"
-      class="step-btn"
-      [class.active]="activeSection === i"
-      [class.done]="i < activeSection"
-      (click)="activeSection = i">
-      <span class="step-icon">{{ sec.icon }}</span>
-      <span class="step-label">{{ t(sec.labelKey) }}</span>
-    </button>
+  <!-- Wizard Stepper -->
+  <div class="wizard-stepper">
+    <ng-container *ngFor="let step of effectiveSteps; let i = index; let last = last">
+      <div class="wz-step"
+        [class.wz-done]="i < currentStep"
+        [class.wz-active]="i === currentStep"
+        [class.wz-future]="i > currentStep"
+        (click)="goTo(i)">
+        <div class="wz-node">
+          <ng-container *ngIf="i < currentStep">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+          </ng-container>
+          <ng-container *ngIf="i >= currentStep">{{ i + 1 }}</ng-container>
+        </div>
+        <div class="wz-label">{{ t(step.labelKey) }}</div>
+      </div>
+      <div *ngIf="!last" class="wz-connector" [class.wz-conn-done]="i < currentStep"></div>
+    </ng-container>
   </div>
 
   <form [formGroup]="form" (ngSubmit)="onSubmit()">
     <div class="form-card">
 
-      <!-- ══ SECTION 0: Technical ══════════════════════════════════════ -->
-      <div *ngIf="activeSection === 0" class="form-section">
+      <!-- ══ STEP: Vehicle Info ═════════════════════════════════════════════ -->
+      <div *ngIf="currentStepKey === 'vehicleInfo'" class="form-section">
         <div class="section-title">
-          <span class="section-icon">⚙️</span>
-          <h2>{{ t('technicalInfo') }}</h2>
+          <div class="step-num-badge">1</div>
+          <div>
+            <h2>{{ t('vehicleInfo') }}</h2>
+            <p class="section-desc">{{ t('brand') }}, {{ t('model') }}, {{ t('year') }}, {{ t('licensePlate') }}</p>
+          </div>
         </div>
 
         <div class="form-grid">
@@ -83,53 +93,211 @@
             </select>
           </div>
           <div class="fg">
-            <label>{{ t('vehicleCategory') }}</label>
-            <select formControlName="categorie">
-              <option value="">— {{ t('select') }} —</option>
-              <option *ngFor="let c of CAT_OPTIONS" [value]="c">{{ c }}</option>
-            </select>
-          </div>
-          <div class="fg">
-            <label>{{ t('color') }}</label>
-            <input formControlName="couleur" placeholder="ex: Blanc, Noir…" />
-          </div>
-          <div class="fg">
-            <label>{{ t('places') }}</label>
-            <input type="number" formControlName="places" min="1" max="20" />
-          </div>
-          <div class="fg">
-            <label>{{ t('portes') }}</label>
-            <input type="number" formControlName="portes" min="2" max="6" />
-          </div>
-          <div class="fg">
-            <label>{{ t('puissanceCv') }}</label>
-            <input type="number" formControlName="puissanceCv" min="0" placeholder="ex: 90" />
-          </div>
-          <div class="fg">
             <label>{{ t('mileage') }} (km)</label>
             <input type="number" formControlName="kilometrageActuel" min="0" />
           </div>
+        </div>
+      </div>
+
+      <!-- ══ STEP: Purchase Details ════════════════════════════════════════ -->
+      <div *ngIf="currentStepKey === 'purchase'" class="form-section">
+        <div class="section-title">
+          <div class="step-num-badge">2</div>
+          <div>
+            <h2>{{ t('purchaseDetails') }}</h2>
+            <p class="section-desc">{{ t('purchasePrice') }}, {{ t('purchaseDate') }}, {{ t('supplier') }}, {{ t('financingType') }}</p>
+          </div>
+        </div>
+
+        <div class="form-grid form-grid-2">
+          <div class="fg req">
+            <label>{{ t('purchasePrice') }} (MAD)</label>
+            <input type="number" formControlName="prixAchat" min="0" placeholder="0" />
+          </div>
+          <div class="fg req">
+            <label>{{ t('purchaseDate') }}</label>
+            <input type="date" formControlName="dateAchat" />
+          </div>
+        </div>
+
+        <div class="form-grid form-grid-2">
           <div class="fg">
-            <label>{{ t('status') }}</label>
-            <select formControlName="voitureStatus">
-              <option *ngFor="let s of STATUS_OPTIONS" [value]="s">{{ t(s) }}</option>
+            <label>{{ t('supplier') }}</label>
+            <div class="supplier-row">
+              <select formControlName="fournisseurId" class="supplier-select">
+                <option [ngValue]="null">— {{ t('select') }} —</option>
+                <option *ngFor="let f of fournisseurs" [ngValue]="f.id">
+                  {{ f.raisonSociale || f.nom || f.name }}
+                </option>
+              </select>
+              <button type="button" class="btn-add-supplier" (click)="openSupplierModal()" title="Create new supplier">
+                <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="fg">
+            <label>{{ t('financingType') }}</label>
+            <select formControlName="typeFinancement">
+              <option value="comptant">{{ t('comptant') }}</option>
+              <option value="credit">{{ t('creditFinancing') }}</option>
+              <option value="leasing">{{ t('leasing') }}</option>
             </select>
           </div>
         </div>
 
-        <div class="check-row">
-          <label class="check-label">
-            <input type="checkbox" formControlName="climatisation" />
-            <span class="check-text">{{ t('ac') }}</span>
-          </label>
+        <div *ngIf="isCreditType" class="form-grid form-grid-2">
+          <div class="fg">
+            <label>{{ t('apport') }} (MAD)</label>
+            <input type="number" formControlName="apport" min="0" placeholder="0" />
+          </div>
+          <div class="fg">
+            <label>{{ t('mensualite') }} (MAD)</label>
+            <input type="number" formControlName="mensualite" min="0" placeholder="0" />
+          </div>
+        </div>
+
+        <div class="step-note">
+          <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+          Le véhicule sera créé en statut <strong>Brouillon</strong>. Renseignez les documents ci-après pour accélérer l'activation.
         </div>
       </div>
 
-      <!-- ══ SECTION 1: Financial ══════════════════════════════════════ -->
-      <div *ngIf="activeSection === 1" class="form-section">
+      <!-- ══ STEP: Assurance ════════════════════════════════════════════════ -->
+      <div *ngIf="currentStepKey === 'assurance'" class="form-section">
         <div class="section-title">
-          <span class="section-icon">💰</span>
-          <h2>{{ t('financialInfo') }}</h2>
+          <div class="step-num-badge">3</div>
+          <div>
+            <h2>Assurance</h2>
+            <p class="section-desc">Couverture d'assurance du véhicule</p>
+          </div>
+        </div>
+
+        <div class="comp-step-banner comp-banner-required">
+          <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15"><path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+          <span><strong>Requis pour l'activation.</strong> L'assurance doit être valide pour passer en statut Disponible.</span>
+        </div>
+
+        <div class="form-grid form-grid-2" [formGroup]="assuranceForm">
+          <div class="fg">
+            <label>Compagnie d'assurance</label>
+            <input formControlName="compagnie" placeholder="ex: Wafa Assurance, AXA…" />
+          </div>
+          <div class="fg">
+            <label>Type de couverture</label>
+            <select formControlName="typeAssurance">
+              <option value="Tous Risques">Tous Risques</option>
+              <option value="RC">Responsabilité Civile</option>
+              <option value="Tiers Étendu">Tiers Étendu</option>
+              <option value="Tiers Simple">Tiers Simple</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label>N° de contrat</label>
+            <input formControlName="numeroContrat" placeholder="ex: ASS-2024-00123" />
+          </div>
+          <div class="fg">
+            <label>Montant (MAD)</label>
+            <input type="number" formControlName="montant" min="0" placeholder="0" />
+          </div>
+          <div class="fg">
+            <label>Date de début</label>
+            <input type="date" formControlName="dateDebut" />
+          </div>
+          <div class="fg">
+            <label>Date d'expiration</label>
+            <input type="date" formControlName="dateFin" />
+          </div>
+        </div>
+
+        <div class="comp-step-skip-row">
+          <button type="button" class="btn-skip-comp" (click)="skipComplianceStep()">
+            Passer cette étape — ajouter plus tard
+          </button>
+        </div>
+      </div>
+
+      <!-- ══ STEP: Vignette ═════════════════════════════════════════════════ -->
+      <div *ngIf="currentStepKey === 'vignette'" class="form-section">
+        <div class="section-title">
+          <div class="step-num-badge">4</div>
+          <div>
+            <h2>Vignette</h2>
+            <p class="section-desc">Vignette annuelle du véhicule</p>
+          </div>
+        </div>
+
+        <div class="comp-step-banner comp-banner-required">
+          <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15"><path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+          <span><strong>Requis pour l'activation.</strong> La vignette doit être valide pour passer en statut Disponible.</span>
+        </div>
+
+        <div class="form-grid form-grid-2" [formGroup]="vignetteForm">
+          <div class="fg">
+            <label>Année</label>
+            <input type="number" formControlName="annee" min="2000" max="2099" />
+          </div>
+          <div class="fg">
+            <label>Date limite de validité</label>
+            <input type="date" formControlName="dateLimite" />
+          </div>
+          <div class="fg">
+            <label>Montant (MAD)</label>
+            <input type="number" formControlName="montant" min="0" placeholder="0" />
+          </div>
+        </div>
+
+        <div class="comp-step-skip-row">
+          <button type="button" class="btn-skip-comp" (click)="skipComplianceStep()">
+            Passer cette étape — ajouter plus tard
+          </button>
+        </div>
+      </div>
+
+      <!-- ══ STEP: Inspection technique (conditionnelle) ═══════════════════ -->
+      <div *ngIf="currentStepKey === 'inspection'" class="form-section">
+        <div class="section-title">
+          <div class="step-num-badge">5</div>
+          <div>
+            <h2>Visite technique</h2>
+            <p class="section-desc">Inspection technique obligatoire (véhicule ≥ 3 ans)</p>
+          </div>
+        </div>
+
+        <div class="comp-step-banner comp-banner-required">
+          <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15"><path fill-rule="evenodd" d="M10 2a1 1 0 00-1 1v1a1 1 0 002 0V3a1 1 0 00-1-1zM4 4h3a3 3 0 000 6H4a3 3 0 000-6zm0 8h16v2H0v-2h4z" clip-rule="evenodd"/></svg>
+          <span><strong>Requis pour l'activation</strong> — ce véhicule a {{ form.value.annee ? (2026 - form.value.annee) : '?' }} ans et nécessite une visite technique valide.</span>
+        </div>
+
+        <div class="form-grid form-grid-2" [formGroup]="inspectionForm">
+          <div class="fg">
+            <label>Date de visite</label>
+            <input type="date" formControlName="dateReglages" />
+          </div>
+          <div class="fg">
+            <label>Date d'expiration</label>
+            <input type="date" formControlName="dateFin" />
+          </div>
+          <div class="fg">
+            <label>Montant (MAD)</label>
+            <input type="number" formControlName="montant" min="0" placeholder="0" />
+          </div>
+        </div>
+
+        <div class="comp-step-skip-row">
+          <button type="button" class="btn-skip-comp" (click)="skipComplianceStep()">
+            Passer cette étape — ajouter plus tard
+          </button>
+        </div>
+      </div>
+
+      <!-- ══ STEP: Pricing ═══════════════════════════════════════════════════ -->
+      <div *ngIf="currentStepKey === 'pricing'" class="form-section">
+        <div class="section-title">
+          <div class="step-num-badge">6</div>
+          <div>
+            <h2>{{ t('financialInfo') }}</h2>
+            <p class="section-desc">{{ t('pricePerDay') }}, {{ t('deposit') }}</p>
+          </div>
         </div>
 
         <div class="pricing-cards">
@@ -156,71 +324,24 @@
           </div>
         </div>
 
-        <div class="form-grid mt-1">
-          <div class="fg">
-            <label>{{ t('purchasePrice') }} (MAD)</label>
-            <input type="number" formControlName="prixAchat" min="0" />
-          </div>
+        <div class="form-grid form-grid-2 mt-1">
           <div class="fg">
             <label>{{ t('deposit') }} (MAD)</label>
             <input type="number" formControlName="caution" min="0" />
           </div>
-          <div class="fg">
-            <label>{{ t('purchaseDate') }}</label>
-            <input type="date" formControlName="dateAchat" />
-          </div>
         </div>
       </div>
 
-      <!-- ══ SECTION 2: Administrative ════════════════════════════════ -->
-      <div *ngIf="activeSection === 2" class="form-section">
+      <!-- ══ STEP: Images / Documents ════════════════════════════════════════ -->
+      <div *ngIf="currentStepKey === 'documents'" class="form-section">
         <div class="section-title">
-          <span class="section-icon">📋</span>
-          <h2>{{ t('adminInfo') }}</h2>
-        </div>
-
-        <div class="doc-cards">
-          <div class="doc-card">
-            <div class="doc-icon doc-insurance">🛡️</div>
-            <div class="doc-info">
-              <div class="doc-name">{{ t('insuranceDoc') }}</div>
-              <div class="doc-desc">{{ t('insuranceExpiry') }}</div>
-            </div>
-            <div class="doc-input">
-              <input type="date" formControlName="dateExpirationAssurance" />
-            </div>
-          </div>
-          <div class="doc-card">
-            <div class="doc-icon doc-vignette">📄</div>
-            <div class="doc-info">
-              <div class="doc-name">{{ t('vignetteDoc') }}</div>
-              <div class="doc-desc">{{ t('vignetteExpiry') }}</div>
-            </div>
-            <div class="doc-input">
-              <input type="date" formControlName="dateExpirationVignette" />
-            </div>
-          </div>
-          <div class="doc-card">
-            <div class="doc-icon doc-tech">🔬</div>
-            <div class="doc-info">
-              <div class="doc-name">{{ t('technicalDoc') }}</div>
-              <div class="doc-desc">{{ t('technicalExpiry') }}</div>
-            </div>
-            <div class="doc-input">
-              <input type="date" formControlName="dateExpirationVisite" />
-            </div>
+          <div class="step-num-badge">7</div>
+          <div>
+            <h2>{{ t('vehicleImages') }}</h2>
+            <p class="section-desc">{{ t('dropImages') }}</p>
           </div>
         </div>
-      </div>
 
-      <!-- ══ SECTION 3: Images ═════════════════════════════════════════ -->
-      <div *ngIf="activeSection === 3" class="form-section">
-        <div class="section-title">
-          <span class="section-icon">📸</span>
-          <h2>{{ t('vehicleImages') }}</h2>
-        </div>
-
-        <!-- Drop Zone -->
         <div class="drop-zone"
           [class.dragging]="isDragging"
           (dragover)="onDragOver($event)"
@@ -234,7 +355,6 @@
           <button type="button" class="btn-pick">{{ t('addImages') }}</button>
         </div>
 
-        <!-- Image Previews -->
         <div *ngIf="imagePreviews.length > 0" class="image-grid">
           <div *ngFor="let img of imagePreviews; let i = index"
             class="img-item"
@@ -253,31 +373,276 @@
         </div>
 
         <div *ngIf="imagePreviews.length === 0" class="no-images-hint">
-          <span>{{ t('noImages') }}</span> — {{ t('dropImages') }}
+          {{ t('noImages') }} — {{ t('dropImages') }}
+        </div>
+      </div>
+
+      <!-- ══ STEP: Accessories ═══════════════════════════════════════════════ -->
+      <div *ngIf="currentStepKey === 'accessories'" class="form-section">
+        <div class="section-title">
+          <div class="step-num-badge">8</div>
+          <div>
+            <h2>{{ t('accessories') }}</h2>
+            <p class="section-desc">{{ t('color') }}, {{ t('places') }}, {{ t('vehicleCategory') }}</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="fg">
+            <label>{{ t('vehicleCategory') }}</label>
+            <select formControlName="categorie">
+              <option value="">— {{ t('select') }} —</option>
+              <option *ngFor="let c of CAT_OPTIONS" [value]="c">{{ c }}</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label>{{ t('color') }}</label>
+            <input formControlName="couleur" placeholder="ex: Blanc, Noir…" />
+          </div>
+          <div class="fg">
+            <label>{{ t('places') }}</label>
+            <input type="number" formControlName="places" min="1" max="20" />
+          </div>
+          <div class="fg">
+            <label>{{ t('portes') }}</label>
+            <input type="number" formControlName="portes" min="2" max="6" />
+          </div>
+          <div class="fg">
+            <label>{{ t('puissanceCv') }}</label>
+            <input type="number" formControlName="puissanceCv" min="0" placeholder="ex: 90" />
+          </div>
+        </div>
+
+        <div class="check-row">
+          <label class="check-label">
+            <input type="checkbox" formControlName="climatisation" />
+            <span>{{ t('ac') }}</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- ══ STEP: Review ════════════════════════════════════════════════════ -->
+      <div *ngIf="currentStepKey === 'review'" class="form-section">
+        <div class="section-title">
+          <div class="step-num-badge step-num-green">✓</div>
+          <div>
+            <h2>{{ t('review') }}</h2>
+            <p class="section-desc">Vérification avant enregistrement</p>
+          </div>
+        </div>
+
+        <div class="review-grid">
+
+          <div class="review-card">
+            <div class="rc-head">
+              <span class="rc-title">{{ t('vehicleInfo') }}</span>
+              <button type="button" class="rc-edit" (click)="currentStep = 0">{{ t('edit') }}</button>
+            </div>
+            <div class="rc-row"><span class="rc-label">{{ t('brand') }}</span><span class="rc-val">{{ form.value.marque || '—' }}</span></div>
+            <div class="rc-row"><span class="rc-label">{{ t('model') }}</span><span class="rc-val">{{ form.value.modele || '—' }}</span></div>
+            <div class="rc-row"><span class="rc-label">{{ t('year') }}</span><span class="rc-val">{{ form.value.annee }}</span></div>
+            <div class="rc-row"><span class="rc-label">{{ t('licensePlate') }}</span><span class="rc-val rc-mono">{{ plate }}</span></div>
+            <div class="rc-row"><span class="rc-label">{{ t('fuel') }}</span><span class="rc-val">{{ form.value.typeCarburant }}</span></div>
+            <div class="rc-row"><span class="rc-label">{{ t('transmission') }}</span><span class="rc-val">{{ form.value.transmission }}</span></div>
+            <div class="rc-row"><span class="rc-label">{{ t('mileage') }}</span><span class="rc-val">{{ form.value.kilometrageActuel }} km</span></div>
+          </div>
+
+          <div class="review-card">
+            <div class="rc-head">
+              <span class="rc-title">{{ t('purchaseDetails') }}</span>
+              <button type="button" class="rc-edit" (click)="goTo(stepIndex('purchase'))">{{ t('edit') }}</button>
+            </div>
+            <div class="rc-row">
+              <span class="rc-label">{{ t('purchasePrice') }}</span>
+              <span class="rc-val">{{ form.value.prixAchat || '—' }} MAD</span>
+            </div>
+            <div class="rc-row">
+              <span class="rc-label">{{ t('purchaseDate') }}</span>
+              <span class="rc-val">{{ form.value.dateAchat || '—' }}</span>
+            </div>
+            <div class="rc-row" *ngIf="form.value.fournisseurId">
+              <span class="rc-label">{{ t('supplier') }}</span>
+              <span class="rc-val">{{ fournisseurName(form.value.fournisseurId) }}</span>
+            </div>
+            <div class="rc-row">
+              <span class="rc-label">{{ t('financingType') }}</span>
+              <span class="rc-val">{{ t(form.value.typeFinancement === 'credit' ? 'creditFinancing' : form.value.typeFinancement) }}</span>
+            </div>
+          </div>
+
+          <!-- Compliance summary -->
+          <div class="review-card">
+            <div class="rc-head">
+              <span class="rc-title">Documents légaux</span>
+              <button type="button" class="rc-edit" (click)="goTo(stepIndex('assurance'))">{{ t('edit') }}</button>
+            </div>
+            <div class="rc-row">
+              <span class="rc-label">Assurance</span>
+              <span class="rc-val">
+                <ng-container *ngIf="assuranceForm.value.compagnie || assuranceForm.value.dateFin; else skippedTpl">
+                  {{ assuranceForm.value.compagnie || '—' }}
+                  <span *ngIf="assuranceForm.value.dateFin" class="rc-date-hint"> · exp. {{ assuranceForm.value.dateFin | date:'dd/MM/yyyy' }}</span>
+                </ng-container>
+                <ng-template #skippedTpl><span class="rc-warn">À compléter après création</span></ng-template>
+              </span>
+            </div>
+            <div class="rc-row">
+              <span class="rc-label">Vignette</span>
+              <span class="rc-val">
+                <ng-container *ngIf="vignetteForm.value.dateLimite; else skipVig">
+                  {{ vignetteForm.value.annee }} · exp. {{ vignetteForm.value.dateLimite | date:'dd/MM/yyyy' }}
+                </ng-container>
+                <ng-template #skipVig><span class="rc-warn">À compléter après création</span></ng-template>
+              </span>
+            </div>
+            <div class="rc-row" *ngIf="needsInspection">
+              <span class="rc-label">Visite technique</span>
+              <span class="rc-val">
+                <ng-container *ngIf="inspectionForm.value.dateFin; else skipInsp">
+                  exp. {{ inspectionForm.value.dateFin | date:'dd/MM/yyyy' }}
+                </ng-container>
+                <ng-template #skipInsp><span class="rc-warn">À compléter après création</span></ng-template>
+              </span>
+            </div>
+          </div>
+
+          <div class="review-card">
+            <div class="rc-head">
+              <span class="rc-title">{{ t('financialInfo') }}</span>
+              <button type="button" class="rc-edit" (click)="goTo(stepIndex('pricing'))">{{ t('edit') }}</button>
+            </div>
+            <div class="rc-row"><span class="rc-label">{{ t('pricePerDay') }}</span><span class="rc-val rc-primary">{{ form.value.prixJour }} MAD</span></div>
+            <div class="rc-row" *ngIf="form.value.prixSemaine"><span class="rc-label">{{ t('weeklyRate') }}</span><span class="rc-val">{{ form.value.prixSemaine }} MAD</span></div>
+            <div class="rc-row" *ngIf="form.value.prixMois"><span class="rc-label">{{ t('monthlyRate') }}</span><span class="rc-val">{{ form.value.prixMois }} MAD</span></div>
+            <div class="rc-row"><span class="rc-label">{{ t('deposit') }}</span><span class="rc-val">{{ form.value.caution || 0 }} MAD</span></div>
+          </div>
+
+          <div class="review-card">
+            <div class="rc-head">
+              <span class="rc-title">{{ t('vehicleImages') }}</span>
+              <button type="button" class="rc-edit" (click)="goTo(stepIndex('documents'))">{{ t('edit') }}</button>
+            </div>
+            <div class="rc-row">
+              <span class="rc-label">Photos</span>
+              <span class="rc-val">{{ imagePreviews.length > 0 ? imagePreviews.length + ' image(s)' : '—' }}</span>
+            </div>
+          </div>
+
+          <div class="review-card">
+            <div class="rc-head">
+              <span class="rc-title">{{ t('accessories') }}</span>
+              <button type="button" class="rc-edit" (click)="goTo(stepIndex('accessories'))">{{ t('edit') }}</button>
+            </div>
+            <div class="rc-row" *ngIf="form.value.categorie"><span class="rc-label">{{ t('vehicleCategory') }}</span><span class="rc-val">{{ form.value.categorie }}</span></div>
+            <div class="rc-row" *ngIf="form.value.couleur"><span class="rc-label">{{ t('color') }}</span><span class="rc-val">{{ form.value.couleur }}</span></div>
+            <div class="rc-row"><span class="rc-label">{{ t('places') }}</span><span class="rc-val">{{ form.value.places }}</span></div>
+            <div class="rc-row"><span class="rc-label">{{ t('portes') }}</span><span class="rc-val">{{ form.value.portes }}</span></div>
+            <div class="rc-row" *ngIf="form.value.puissanceCv"><span class="rc-label">{{ t('puissanceCv') }}</span><span class="rc-val">{{ form.value.puissanceCv }} HP</span></div>
+            <div class="rc-row"><span class="rc-label">{{ t('ac') }}</span><span class="rc-val">{{ form.value.climatisation ? '✓' : '—' }}</span></div>
+          </div>
+
+        </div>
+
+        <div class="step-note review-note">
+          <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+          Le véhicule sera enregistré en statut <strong>Brouillon</strong>. Complétez les documents manquants dans la page véhicule pour l'activer dans la flotte.
         </div>
       </div>
 
     </div><!-- /.form-card -->
 
-    <!-- ── Form Navigation ─────────────────────────────────────────────────── -->
+    <!-- ── Form Navigation ────────────────────────────────────────────────── -->
     <div class="form-nav">
-      <button *ngIf="activeSection > 0" type="button" class="btn-nav btn-prev" (click)="activeSection = activeSection - 1">
-        ‹ {{ t('previous') }}
+      <button *ngIf="currentStep > 0" type="button" class="btn-nav btn-prev" (click)="prev()">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+        {{ t('previous') }}
       </button>
+      <div *ngIf="currentStep === 0" class="nav-spacer"></div>
+
       <div class="form-nav-dots">
-        <span *ngFor="let sec of SECTIONS; let i = index"
+        <span *ngFor="let step of effectiveSteps; let i = index"
           class="dot"
-          [class.dot-active]="i === activeSection"
-          (click)="activeSection = i">
+          [class.dot-active]="i === currentStep"
+          [class.dot-done]="i < currentStep"
+          (click)="goTo(i)">
         </span>
       </div>
-      <button *ngIf="activeSection < SECTIONS.length - 1" type="button" class="btn-nav btn-next" (click)="activeSection = activeSection + 1">
-        {{ t('next') }} ›
+
+      <button *ngIf="currentStep < totalSteps - 1" type="button" class="btn-nav btn-next"
+        [disabled]="!canProceed()"
+        (click)="next()">
+        {{ t('next') }}
+        <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
       </button>
-      <button *ngIf="activeSection === SECTIONS.length - 1" type="submit" class="btn-nav btn-submit" [disabled]="isSubmitting">
+      <button *ngIf="currentStep === totalSteps - 1" type="submit" class="btn-nav btn-submit"
+        [disabled]="isSubmitting || form.invalid">
         {{ t(isSubmitting ? 'saving' : 'save') }}
       </button>
     </div>
 
   </form>
+</div>
+
+<!-- ══ SUPPLIER CREATION MODAL ════════════════════════════════════════════════ -->
+<div *ngIf="showSupplierModal" class="sup-modal-backdrop" (click)="closeSupplierModal()">
+  <div class="sup-modal-box" (click)="$event.stopPropagation()">
+
+    <div class="sup-modal-head">
+      <div>
+        <h2 class="sup-modal-title">New Supplier</h2>
+        <p class="sup-modal-sub">Fill in the supplier details. Required fields are marked *.</p>
+      </div>
+      <button class="sup-modal-close" (click)="closeSupplierModal()" [disabled]="isCreatingSupplier">✕</button>
+    </div>
+
+    <form [formGroup]="supplierForm" (ngSubmit)="createSupplier()" class="sup-modal-body">
+
+      <div class="sup-form-grid">
+        <div class="sup-fg sup-req sup-col-2">
+          <label>Company Name *</label>
+          <input formControlName="raisonSociale" placeholder="e.g. Auto Maroc SARL" />
+          <span *ngIf="supplierForm.get('raisonSociale')?.invalid && supplierForm.get('raisonSociale')?.touched"
+                class="sup-field-err">Required</span>
+        </div>
+        <div class="sup-fg">
+          <label>Contact Person</label>
+          <input formControlName="nom" placeholder="Full name" />
+        </div>
+        <div class="sup-fg">
+          <label>Phone</label>
+          <input formControlName="telephone" placeholder="+212 6…" />
+        </div>
+        <div class="sup-fg">
+          <label>Email</label>
+          <input formControlName="email" type="email" placeholder="contact@example.com" />
+          <span *ngIf="supplierForm.get('email')?.invalid && supplierForm.get('email')?.touched"
+                class="sup-field-err">Invalid email</span>
+        </div>
+        <div class="sup-fg sup-col-2">
+          <label>Address</label>
+          <input formControlName="adresse" placeholder="Street, City" />
+        </div>
+        <div class="sup-fg">
+          <label>ICE / Tax ID</label>
+          <input formControlName="ice" placeholder="e.g. 001234567000056" />
+        </div>
+      </div>
+
+      <div *ngIf="supplierError" class="sup-error">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+        {{ supplierError }}
+      </div>
+
+      <div class="sup-modal-foot">
+        <button type="button" class="sup-btn-cancel" (click)="closeSupplierModal()" [disabled]="isCreatingSupplier">
+          Cancel
+        </button>
+        <button type="submit" class="sup-btn-save" [disabled]="isCreatingSupplier || supplierForm.invalid">
+          <span *ngIf="isCreatingSupplier" class="sup-spin"></span>
+          {{ isCreatingSupplier ? 'Saving…' : 'Create Supplier' }}
+        </button>
+      </div>
+
+    </form>
+  </div>
 </div>

@@ -75,6 +75,75 @@
 .kpi-blue    { background: linear-gradient(135deg, #4299e1, #2b6cb0); }
 .kpi-darkblue{ background: linear-gradient(135deg, #3182ce, #1a365d); }
 .kpi-purple  { background: linear-gradient(135deg, #9f7aea, #553c9a); }
+.kpi-yellow  { background: linear-gradient(135deg, #ecc94b, #b7791f); }
+.kpi-orange  { background: linear-gradient(135deg, #ed8936, #c05621); }
+
+.compliance-kpi-grid { margin-top: 0; }
+
+/* ===== CREDIT KPI STRIP ===== */
+.credit-strip {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  margin-bottom: 1.25rem;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.cs-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  flex: 1;
+  border-right: 1px solid #e2e8f0;
+}
+
+.cs-icon { font-size: 1.5rem; flex-shrink: 0; }
+
+.cs-val {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1a202c;
+  line-height: 1.2;
+}
+
+.cs-curr {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #718096;
+}
+
+.cs-lbl {
+  font-size: 0.75rem;
+  color: #718096;
+  font-weight: 500;
+}
+
+.cs-active  { border-left: 4px solid #4299e1; }
+.cs-due     { border-left: 4px solid #ed8936; }
+.cs-overdue { border-left: 4px solid #e53e3e; }
+.cs-ok      { border-left: 4px solid #48bb78; }
+.cs-debt    { border-left: 4px solid #9f7aea; }
+
+.cs-overdue .cs-val { color: #c53030; }
+
+.cs-details-link {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  color: #3182ce;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  border-left: 1px solid #e2e8f0;
+  background: #f7fafc;
+}
+.cs-details-link:hover { background: #ebf8ff; color: #1a365d; }
 
 .kpi-top {
   display: flex;
@@ -400,8 +469,6 @@
   margin-bottom: 1.25rem;
 }
 
-.chart-card { }
-
 .chart-legend {
   display: flex;
   gap: 0.75rem;
@@ -668,4 +735,152 @@
 
 @media (max-width: 480px) {
   .kpi-grid { grid-template-columns: 1fr; }
+}
+
+/* ══ Oil Change Reminder Widgets ═══════════════════════════════════════ */
+.oil-reminders-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+.oil-card { border-top: 3px solid transparent; }
+.oil-card-overdue  { border-top-color: #dc2626; }
+.oil-card-due-soon { border-top-color: #ea580c; }
+
+.oil-count-badge {
+  display: inline-block; padding: 1px 8px; border-radius: 20px;
+  font-size: 0.75rem; font-weight: 700; margin-left: 6px;
+}
+.oil-count-red    { background: #fef2f2; color: #dc2626; }
+.oil-count-orange { background: #fff7ed; color: #ea580c; }
+
+.oil-list { display: flex; flex-direction: column; gap: 6px; padding: 0 4px 4px; }
+.oil-item {
+  display: grid; grid-template-columns: 32px 1fr auto auto;
+  align-items: center; gap: 8px;
+  padding: 7px 10px; border-radius: 8px; border: 1px solid #f1f5f9;
+  background: #fafafa; text-decoration: none; color: inherit;
+  transition: background 0.15s;
+}
+.oil-item:hover { background: #f0f4f8; }
+
+.oil-car-icon { font-size: 1.3rem; text-align: center; }
+.oil-icon-red    { filter: hue-rotate(0deg); }
+.oil-icon-orange { filter: hue-rotate(20deg); }
+
+.oil-car-info { display: flex; flex-direction: column; min-width: 0; }
+.oil-car-name  { font-size: 0.82rem; font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.oil-car-plate { font-size: 0.72rem; color: #64748b; }
+
+.oil-km-info { display: flex; align-items: center; gap: 4px; font-size: 0.75rem; color: #64748b; white-space: nowrap; }
+.oil-current { font-weight: 500; color: #334155; }
+.oil-next    { font-weight: 500; color: #64748b; }
+.oil-arrow   { color: #94a3b8; }
+
+.oil-overdue-badge {
+  padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 700;
+  background: #fef2f2; color: #dc2626; white-space: nowrap;
+}
+.oil-due-soon-badge {
+  padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 700;
+  background: #fff7ed; color: #ea580c; white-space: nowrap;
+}
+
+/* ===== PROFITABILITY RANKING ===== */
+.profit-rank-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.profit-rank-card { padding: 1.1rem; }
+.profit-rank-top    { border-top: 3px solid #48bb78; }
+.profit-rank-bottom { border-top: 3px solid #e53e3e; }
+
+.pr-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.pr-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid #f1f5f9;
+  background: #fafcff;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.pr-item:hover { background: #f0f4f8; }
+
+.pr-rank {
+  font-size: 0.7rem;
+  font-weight: 800;
+  min-width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.pr-rank-top    { background: #f0fff4; color: #276749; }
+.pr-rank-bottom { background: #fff5f5; color: #c53030; }
+
+.pr-car {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.pr-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #2d3748;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pr-plate {
+  font-size: 0.7rem;
+  color: #718096;
+  font-family: monospace;
+}
+
+.pr-numbers {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  flex-shrink: 0;
+}
+.pr-rev {
+  font-size: 0.7rem;
+  color: #718096;
+}
+.pr-net {
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.pr-net-pos { color: #276749; }
+.pr-net-neg { color: #c53030; }
+
+.pr-margin {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #276749;
+  min-width: 38px;
+  text-align: right;
+  flex-shrink: 0;
+}
+.pr-margin-neg { color: #c53030; }
+
+@media (max-width: 768px) {
+  .profit-rank-row { grid-template-columns: 1fr; }
 }

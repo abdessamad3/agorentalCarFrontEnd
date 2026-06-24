@@ -49,6 +49,56 @@
             <button type="button" class="btn-clear" (click)="clearClient()">×</button>
           </div>
 
+          <!-- Expired client document warning — soft/dismissible, does not block submission -->
+          <div *ngIf="showExpiryWarning" class="expiry-warning-alert">
+            <button type="button" class="ewa-dismiss" (click)="dismissExpiryWarning()">×</button>
+            <span class="ewa-icon">⚠️</span>
+            <div class="ewa-body">
+              <strong>{{ t('expiredDocsWarning') }}</strong>
+              <div class="ewa-doc-block" *ngFor="let doc of expiredClientDocs; trackBy: trackByDocType">
+                <div class="ewa-doc-row">
+                  <span class="ewa-doc-label">{{ doc.label }}</span>
+                  <span *ngIf="uploadedDocTypes.has(doc.type)" class="ewa-uploaded">✓ {{ t('expiredDocUploaded') }}</span>
+                  <app-upload-btn *ngIf="!uploadedDocTypes.has(doc.type)" label="+ {{ t('uploadNewPhoto') }}"
+                    accept=".jpg,.jpeg,.png,.webp,.pdf" [multiple]="true"
+                    (filesSelected)="onExpiredDocFiles($event, doc.type)"></app-upload-btn>
+                </div>
+                <div class="ewa-existing-docs" *ngIf="docsOf(doc.type).length > 0">
+                  <a class="ewa-doc-link" *ngFor="let d of docsOf(doc.type); trackBy: trackByDocId" (click)="openClientDoc(d)">
+                    <span>{{ isImageDoc(d) ? '🖼️' : '📄' }}</span> {{ d.originalName }}
+                  </a>
+                </div>
+                <div class="ewa-dates-row">
+                  <div class="ewa-date-field">
+                    <label>{{ t('newExpirationDate') }}</label>
+                    <input type="date" [(ngModel)]="expiredDocUpdates[doc.type].expiration" [ngModelOptions]="{standalone: true}" />
+                  </div>
+                  <div class="ewa-date-field">
+                    <label>{{ t('newIssueDate') }}</label>
+                    <input type="date" [(ngModel)]="expiredDocUpdates[doc.type].issueDate" [ngModelOptions]="{standalone: true}" />
+                  </div>
+                  <button type="button" class="ewa-save-dates-btn"
+                    [disabled]="savingDocType === doc.type || (!expiredDocUpdates[doc.type].expiration && !expiredDocUpdates[doc.type].issueDate)"
+                    (click)="saveExpiredDocDates(doc.type)">
+                    {{ savingDocType === doc.type ? t('saving') : t('saveDates') }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Outstanding debt warning — informational here, the actual block/confirm gate is
+               enforced server-side at submit time (role + configured threshold live there). -->
+          <div *ngIf="showDebtWarning" class="expiry-warning-alert debt-warning-alert">
+            <button type="button" class="ewa-dismiss" (click)="dismissDebtWarning()">×</button>
+            <span class="ewa-icon">💰</span>
+            <div class="ewa-body">
+              <strong>{{ t('clientHasOutstandingDebt') }}</strong>
+              <span>{{ (selectedClient.outstandingDebt | number:'1.0-2') }} MAD</span>
+              <span *ngIf="!isManagerOrAdmin" class="ewa-staff-note">{{ t('debtBlocked') }}</span>
+            </div>
+          </div>
+
           <div class="field-error" *ngIf="form.get('clientId')?.invalid && form.get('clientId')?.touched">
             {{ t('required') }}
           </div>
@@ -60,11 +110,11 @@
           <div class="date-row">
             <div class="form-group">
               <label>{{ t('startDate') }}</label>
-              <input type="date" formControlName="dateDebut" (change)="onDateChange()" />
+              <input type="datetime-local" formControlName="dateDebut" (change)="onDateChange()" />
             </div>
             <div class="form-group">
               <label>{{ t('endDate') }}</label>
-              <input type="date" formControlName="dateFin" (change)="onDateChange()" />
+              <input type="datetime-local" formControlName="dateFin" (change)="onDateChange()" />
             </div>
             <div class="days-chip" *ngIf="numberOfDays > 0">
               <span class="days-num">{{ numberOfDays }}</span>
@@ -80,7 +130,7 @@
             <div *ngFor="let v of voitures"
               class="vehicle-card"
               [class.selected]="selectedVoiture?.id === v.id"
-              [class.booked]="isVoitureConflicted(v.id)"
+              [class.booked]="isVoitureConflicted(v.id) || isVignetteExpired(v)"
               (click)="selectVoiture(v)">
               <div class="vehicle-icon">🚗</div>
               <div class="vehicle-info">
@@ -89,7 +139,8 @@
                 <span class="vehicle-price">{{ v.prixJour }} MAD/{{ t('days') }}</span>
               </div>
               <div class="vehicle-booked-badge" *ngIf="isVoitureConflicted(v.id)">{{ t('booked') }}</div>
-              <div class="vehicle-check" *ngIf="selectedVoiture?.id === v.id && !isVoitureConflicted(v.id)">✓</div>
+              <div class="vehicle-booked-badge" style="background:#fee2e2;color:#b91c1c" *ngIf="!isVoitureConflicted(v.id) && isVignetteExpired(v)">Vignette expirée</div>
+              <div class="vehicle-check" *ngIf="selectedVoiture?.id === v.id && !isVoitureConflicted(v.id) && !isVignetteExpired(v)">✓</div>
             </div>
             <div *ngIf="voitures.length === 0" class="no-vehicles">
               {{ t('noData') }}
@@ -185,10 +236,23 @@
           </div>
         </div>
 
+        <!-- Compliance blocking alert -->
+        <div *ngIf="isComplianceBlocked" class="compliance-block-alert">
+          <span class="cba-icon">🚫</span>
+          <div class="cba-text">
+            <strong>{{ t('complianceBlocked') }}</strong>
+            <span>{{ complianceBlockDocs }}</span>
+          </div>
+        </div>
+
         <!-- Submit -->
         <div *ngIf="submitError" class="submit-error">{{ submitError }}</div>
-        <button type="submit" class="btn-submit"
-          [disabled]="form.invalid || !selectedVoiture || isSubmitting">
+        <button type="button" *ngIf="debtConfirmRequired" class="btn-submit debt-confirm-btn"
+          [disabled]="isSubmitting" (click)="confirmDebtOverrideAndSubmit()">
+          {{ isSubmitting ? t('saving') : t('confirmAndContinue') }}
+        </button>
+        <button type="submit" *ngIf="!debtConfirmRequired" class="btn-submit"
+          [disabled]="form.invalid || !selectedVoiture || isSubmitting || isComplianceBlocked">
           {{ isSubmitting ? t('saving') : t('createBooking') }}
         </button>
 

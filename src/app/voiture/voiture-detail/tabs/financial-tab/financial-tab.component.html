@@ -1,0 +1,194 @@
+<!-- ── Profitability Card ── -->
+<div class="prof-card">
+  <div class="prof-card-header">
+    <span class="prof-card-title">📊 Profitability · {{ profitYear === 'all' ? 'All time' : profitYear }}</span>
+    <div class="prof-card-header-right">
+      <select class="prof-year-select" [(ngModel)]="profitYear" (ngModelChange)="onProfitYearChange()">
+        <option *ngFor="let y of profitYearOptions" [ngValue]="y">{{ y }}</option>
+        <option [ngValue]="'all'">All time</option>
+      </select>
+      <span class="prof-card-badge" *ngIf="profitRow" [class.prof-badge-pos]="profitRow.net >= 0" [class.prof-badge-neg]="profitRow.net < 0">
+        {{ profitRow.net >= 0 ? 'Profitable' : 'Loss' }}
+      </span>
+    </div>
+  </div>
+
+  <div class="fin-tx-empty" *ngIf="!profitLoading && !profitRow">{{ t('noData') }}</div>
+
+  <div class="prof-metrics" *ngIf="profitRow">
+
+    <!-- Revenue -->
+    <div class="prof-metric prof-metric-rev">
+      <div class="pm-icon">💰</div>
+      <div class="pm-body">
+        <div class="pm-val">{{ profitRow.revenue | number:'1.0-0' }} <span class="pm-curr">MAD</span></div>
+        <div class="pm-lbl">Revenue</div>
+        <div class="pm-sub">{{ profitRow.rentals }} rental{{ profitRow.rentals === 1 ? '' : 's' }}</div>
+      </div>
+    </div>
+
+    <!-- Expenses breakdown (paid) -->
+    <div class="prof-metric prof-metric-exp">
+      <div class="pm-icon">📉</div>
+      <div class="pm-body">
+        <div class="pm-val">{{ profitRow.totalCost | number:'1.0-0' }} <span class="pm-curr">MAD</span></div>
+        <div class="pm-lbl">Total Expense Paid</div>
+        <div class="pm-breakdown">
+          <span *ngIf="profitRow.insuranceCost > 0">🛡️ {{ profitRow.insuranceCost | number:'1.0-0' }}</span>
+          <span *ngIf="profitRow.repairCost > 0">🔧 {{ profitRow.repairCost | number:'1.0-0' }}</span>
+          <span *ngIf="profitRow.vignetteCost > 0">📄 {{ profitRow.vignetteCost | number:'1.0-0' }}</span>
+          <span *ngIf="profitRow.otherCost > 0">📦 {{ profitRow.otherCost | number:'1.0-0' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Expenses breakdown (unpaid) -->
+    <div class="prof-metric prof-metric-unpaid">
+      <div class="pm-icon">🧾</div>
+      <div class="pm-body">
+        <div class="pm-val">{{ profitRow.unpaidCost | number:'1.0-0' }} <span class="pm-curr">MAD</span></div>
+        <div class="pm-lbl">Total Expense Unpaid</div>
+      </div>
+    </div>
+
+    <!-- Net Profit -->
+    <div class="prof-metric" [class.prof-metric-net-pos]="profitRow.net >= 0" [class.prof-metric-net-neg]="profitRow.net < 0">
+      <div class="pm-icon">{{ profitRow.net >= 0 ? '📈' : '📉' }}</div>
+      <div class="pm-body">
+        <div class="pm-val" [class.pm-pos]="profitRow.net >= 0" [class.pm-neg]="profitRow.net < 0">
+          {{ profitRow.net >= 0 ? '+' : '' }}{{ profitRow.net | number:'1.0-0' }} <span class="pm-curr">MAD</span>
+        </div>
+        <div class="pm-lbl">Net Profit</div>
+        <div class="pm-sub">Margin {{ profitRow.margin }}%</div>
+      </div>
+    </div>
+
+    <!-- ROI -->
+    <div class="prof-metric prof-metric-roi">
+      <div class="pm-icon">🎯</div>
+      <div class="pm-body">
+        <div class="pm-val" [class.pm-pos]="roi >= 0" [class.pm-neg]="roi < 0">
+          {{ roi | number:'1.1-1' }}<span class="pm-curr">%</span>
+        </div>
+        <div class="pm-lbl">ROI</div>
+        <div class="pm-sub">{{ car?.prixAchat ? 'vs. purchase price' : 'vs. total costs' }}</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div class="prof-loading" *ngIf="profitLoading">Computing profitability…</div>
+
+<!-- Rate Cards -->
+<div class="fin-rates">
+  <div class="fin-rate-card frc-day">
+    <div class="frc-period">{{ t('pricePerDay') }}</div>
+    <div class="frc-amount">{{ (car.prixJour || 0) | number:'1.0-0' }}<span class="frc-curr"> MAD</span></div>
+    <div class="frc-sub">{{ t('daily') }}</div>
+  </div>
+  <div class="fin-rate-card frc-week">
+    <div class="frc-period">{{ t('weeklyRate') }}</div>
+    <div class="frc-amount">{{ (car.prixSemaine || 0) | number:'1.0-0' }}<span class="frc-curr"> MAD</span></div>
+    <div class="frc-sub">{{ t('weekly') }}</div>
+  </div>
+  <div class="fin-rate-card frc-month">
+    <div class="frc-period">{{ t('monthlyRate') }}</div>
+    <div class="frc-amount">{{ (car.prixMois || 0) | number:'1.0-0' }}<span class="frc-curr"> MAD</span></div>
+    <div class="frc-sub">{{ t('monthly') }}</div>
+  </div>
+  <div class="fin-rate-card frc-deposit">
+    <div class="frc-period">{{ t('deposit') }}</div>
+    <div class="frc-amount">{{ (car.caution || 0) | number:'1.0-0' }}<span class="frc-curr"> MAD</span></div>
+    <div class="frc-sub">{{ t('deposit') }}</div>
+  </div>
+</div>
+
+
+<!-- Transactions -->
+<div class="fin-tx-section">
+  <div class="efb2-toolbar">
+    <!-- Type pills -->
+    <div class="efb2-type-pills">
+      <button class="efb2-tpill" [class.efb2-tpill-active]="finTxType === ''"
+              (click)="finTxType = ''; applyFilters()">📊 {{ t('allTypes') }}</button>
+      <button *ngFor="let tp of FIN_TX_TYPES"
+              class="efb2-tpill"
+              [class.efb2-tpill-active]="finTxType === tp.value"
+              [style.--tp-color]="tp.color"
+              [style.--tp-bg]="tp.bg"
+              (click)="finTxType = tp.value; applyFilters()">
+        {{ tp.icon }} {{ t(tp.labelKey) }}
+      </button>
+    </div>
+    <!-- Status pills + date range -->
+    <div class="efb2-controls">
+      <div class="efb2-status-pills">
+        <button class="efb2-pill"              [class.efb2-pill-active]="finTxStatus === ''"          (click)="finTxStatus = ''; applyFilters()">{{ t('allStatuses') }}</button>
+        <button class="efb2-pill efb2-sp-paid"    [class.efb2-pill-active]="finTxStatus === 'paid'"      (click)="finTxStatus = 'paid'; applyFilters()">✓ {{ t('paid') }}</button>
+        <button class="efb2-pill efb2-sp-partial" [class.efb2-pill-active]="finTxStatus === 'pending'"   (click)="finTxStatus = 'pending'; applyFilters()">⏳ {{ t('pending') }}</button>
+        <button class="efb2-pill efb2-sp-unpaid"  [class.efb2-pill-active]="finTxStatus === 'cancelled'" (click)="finTxStatus = 'cancelled'; applyFilters()">✕ {{ t('cancelled') }}</button>
+      </div>
+      <div class="efb2-daterange">
+        <div class="efb2-date-ctrl">
+          <svg class="efb2-ctrl-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <input class="efb2-date-inp" type="date" [(ngModel)]="finTxFrom" (ngModelChange)="applyFilters()" />
+        </div>
+        <span class="efb2-range-sep">→</span>
+        <div class="efb2-date-ctrl">
+          <svg class="efb2-ctrl-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <input class="efb2-date-inp" type="date" [(ngModel)]="finTxTo" (ngModelChange)="applyFilters()" />
+        </div>
+      </div>
+      <button *ngIf="hasActiveFilters" class="efb2-clear-btn" (click)="clearFilters()">
+        ✕ {{ t('resetFilters') }}
+      </button>
+    </div>
+  </div>
+
+  <div class="exp-loading-row" *ngIf="finLoading"><div class="exp-spinner"></div></div>
+
+  <div *ngIf="!finLoading">
+    <div *ngIf="finTransactions.length === 0" class="fin-tx-empty">{{ t('noTransactions') }}</div>
+    <table class="fin-tx-table" *ngIf="finTransactions.length > 0">
+      <thead>
+        <tr>
+          <th>{{ t('date') }}</th>
+          <th>{{ t('type') }}</th>
+          <th>{{ t('description') }}</th>
+          <th>{{ t('totalAmount') }}</th>
+          <th>{{ t('status') }}</th>
+          <th>{{ t('actions') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let tx of finTransactions">
+          <td>{{ tx.date | date:'dd/MM/yyyy' }}</td>
+          <td><span class="fin-tx-type">{{ tx.type }}</span></td>
+          <td>{{ tx.description || '—' }}</td>
+          <td [class.fin-tx-income]="tx.direction === 'income'" [class.fin-tx-expense]="tx.direction === 'expense'">
+            {{ tx.direction === 'income' ? '+' : '-' }}{{ tx.amount | number:'1.0-0' }} MAD
+          </td>
+          <td><span class="tx-badge" [ngClass]="txStatusClass(tx)">{{ tx.status || '—' }}</span></td>
+          <td class="itab-actions">
+            <a *ngIf="tx.filePath" class="ia-btn ia-download" [href]="fileUrl(tx.filePath)" [download]="downloadFileName(tx.filePath)">📎 {{ t('download') }}</a>
+            <button *ngIf="tx.depenseId" class="ia-btn ia-pay" (click)="openPayPanel(tx)">💳 {{ t('payments') }}</button>
+            <span *ngIf="!tx.filePath && !tx.depenseId" class="text-muted">—</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ PAYMENT PANEL -->
+<app-pay-dep-panel
+  *ngIf="payPanelOpen"
+  [open]="payPanelOpen"
+  [depenseId]="payRecord?.depenseId ?? null"
+  [montantTotal]="+(payRecord?.montantTotal ?? 0)"
+  [montantPaye]="+(payRecord?.montantPaye ?? 0)"
+  [title]="(payRecord?.description || t('payments')) + (payRecord?.date ? ' — ' + (payRecord.date | date:'dd/MM/yyyy') : '')"
+  [dir]="dir"
+  (closed)="closePayPanel()"
+  (paymentChanged)="onPaymentChanged()">
+</app-pay-dep-panel>

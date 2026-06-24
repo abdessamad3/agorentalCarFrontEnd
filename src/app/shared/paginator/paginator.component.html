@@ -1,0 +1,13 @@
+<div class="pg-bar" *ngIf="total > 0">
+  <span class="pg-info">{{ from }}–{{ to }} of {{ total }}</span>
+  <div class="pg-controls">
+    <div class="pg-pages">
+      <button class="pg-btn" (click)="prev()" [disabled]="page === 1">&#8249;</button>
+      <ng-container *ngFor="let p of pageNumbers">
+        <button *ngIf="p !== -1" class="pg-btn" [class.pg-active]="p === page" (click)="go(p)">{{ p }}</button>
+        <span   *ngIf="p === -1" class="pg-ellipsis">…</span>
+      </ng-container>
+      <button class="pg-btn" (click)="next()" [disabled]="page === pages">&#8250;</button>
+    </div>
+  </div>
+</div>

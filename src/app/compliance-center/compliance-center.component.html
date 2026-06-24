@@ -1,0 +1,138 @@
+<div class="rp-page" [dir]="dir">
+
+  <!-- Header -->
+  <div class="rp-header">
+    <div class="rp-header-left">
+      <div class="rp-header-icon">⚡</div>
+      <div>
+        <div class="rp-title">Automated Compliance Center</div>
+        <div class="rp-subtitle">Auto-generated tasks for all fleet compliance &amp; maintenance obligations</div>
+      </div>
+    </div>
+    <div class="rp-actions">
+      <button class="btn-export btn-print" onclick="window.print()">🖨️ Print</button>
+      <button class="btn-export btn-csv" (click)="load()">↻ Refresh</button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" style="padding:3rem;text-align:center;color:#a0aec0;">
+    <span class="rp-loading-spinner"></span> Generating compliance tasks…
+  </div>
+
+  <ng-container *ngIf="!loading">
+
+    <!-- Summary cards -->
+    <div class="rp-stats">
+      <div class="stat-card sc-red" style="cursor:pointer" (click)="filterUrgency='OVERDUE'">
+        <div class="sc-num" style="color:#c53030">{{ counts.OVERDUE }}</div>
+        <div class="sc-lbl">🔴 Overdue</div>
+      </div>
+      <div class="stat-card sc-orange" style="cursor:pointer" (click)="filterUrgency='CRITICAL'">
+        <div class="sc-num" style="color:#e53e3e">{{ counts.CRITICAL }}</div>
+        <div class="sc-lbl">🟠 Critical (≤7d)</div>
+      </div>
+      <div class="stat-card sc-orange" style="cursor:pointer" (click)="filterUrgency='WARNING'">
+        <div class="sc-num" style="color:#dd6b20">{{ counts.WARNING }}</div>
+        <div class="sc-lbl">🟡 Warning (≤30d)</div>
+      </div>
+      <div class="stat-card sc-blue" style="cursor:pointer" (click)="filterUrgency='UPCOMING'">
+        <div class="sc-num" style="color:#2b6cb0">{{ counts.UPCOMING }}</div>
+        <div class="sc-lbl">🔵 Upcoming</div>
+      </div>
+      <div class="stat-card sc-purple">
+        <div class="sc-num" style="color:#553c9a">{{ totalEstimatedCost | number:'1.0-0' }} MAD</div>
+        <div class="sc-lbl">Est. Total Cost</div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="rp-toolbar">
+      <div class="rp-search-wrap">
+        <span class="rp-search-icon">🔍</span>
+        <input class="rp-search" [(ngModel)]="search" placeholder="Search vehicle, plate, description…" />
+      </div>
+      <select class="rp-select" [(ngModel)]="filterUrgency">
+        <option value="ALL">All urgencies</option>
+        <option value="OVERDUE">🔴 Overdue</option>
+        <option value="CRITICAL">🟠 Critical</option>
+        <option value="WARNING">🟡 Warning</option>
+        <option value="UPCOMING">🔵 Upcoming</option>
+      </select>
+      <select class="rp-select" [(ngModel)]="filterCategory">
+        <option value="ALL">All categories</option>
+        <option *ngFor="let c of CATEGORIES" [value]="c.value">{{ c.label }}</option>
+      </select>
+      <label style="display:flex;align-items:center;gap:.4rem;font-size:.8rem;color:#718096;cursor:pointer">
+        <input type="checkbox" [(ngModel)]="showDone" /> Show resolved
+      </label>
+      <button *ngIf="counts.OVERDUE > 0"
+        class="btn-export" style="border-color:#48bb78;color:#276749;"
+        (click)="markAllDone('OVERDUE')">
+        ✓ Mark overdue done
+      </button>
+    </div>
+
+    <!-- Empty state -->
+    <div *ngIf="filtered.length === 0" style="text-align:center;padding:3rem;color:#a0aec0;">
+      <div style="font-size:2.5rem;margin-bottom:.5rem">✅</div>
+      <div style="font-weight:600">No compliance tasks match the current filters</div>
+    </div>
+
+    <!-- Task table -->
+    <div *ngIf="filtered.length > 0" class="rp-table-wrap">
+      <table class="rp-table">
+        <thead>
+          <tr>
+            <th style="width:32px"></th>
+            <th>Urgency</th>
+            <th>Vehicle</th>
+            <th>Plate</th>
+            <th>Category</th>
+            <th>Detail</th>
+            <th>Due</th>
+            <th class="td-right">Est. Cost</th>
+            <th class="td-center">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let t of filtered"
+            [style.opacity]="t.done ? '0.4' : '1'"
+            [style.text-decoration]="t.done ? 'line-through' : 'none'">
+            <td>
+              <input type="checkbox" [checked]="t.done" (change)="markDone(t)" style="cursor:pointer" />
+            </td>
+            <td>
+              <span class="doc-badge" [ngClass]="URGENCY_CFG[t.urgency].cls">
+                {{ URGENCY_CFG[t.urgency].icon }} {{ URGENCY_CFG[t.urgency].label }}
+              </span>
+            </td>
+            <td style="font-weight:600">{{ t.vehicleLabel || '—' }}</td>
+            <td style="font-family:monospace;font-size:.8rem">{{ t.immatriculation || '—' }}</td>
+            <td>{{ t.categoryLabel }}</td>
+            <td style="max-width:200px;white-space:normal;font-size:.82rem">{{ t.detail }}</td>
+            <td>
+              <span class="doc-badge" [ngClass]="URGENCY_CFG[t.urgency].cls">{{ daysLabel(t) }}</span>
+              <div style="font-size:.72rem;color:#a0aec0;margin-top:.15rem">{{ fmtDate(t.expiryDate) }}</div>
+            </td>
+            <td class="td-right mono" style="font-size:.82rem">
+              {{ fmtCost(t.estimatedCost) || '—' }}
+            </td>
+            <td class="td-center">
+              <button *ngIf="!t.done"
+                class="btn-export" style="border-color:#48bb78;color:#276749;font-size:.7rem;padding:.25rem .6rem"
+                (click)="markDone(t)">
+                ✓ Done
+              </button>
+              <span *ngIf="t.done" style="color:#a0aec0;font-size:.75rem">Resolved</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="rp-count" style="margin-top:.75rem">
+      Showing {{ filtered.length }} of {{ tasks.length }} tasks
+    </div>
+
+  </ng-container>
+</div>

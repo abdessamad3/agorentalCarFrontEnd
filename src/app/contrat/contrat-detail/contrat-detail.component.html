@@ -1,0 +1,356 @@
+<div class="detail-page" *ngIf="!loading && !error && pageData">
+
+  <!-- ── Header ─────────────────────────────────────────────────────────── -->
+  <div class="detail-header">
+    <button class="btn-back" (click)="back()">← Contrats</button>
+
+    <div class="header-body">
+      <div class="header-title-row">
+        <h1 class="contract-number">{{ contrat?.numero }}</h1>
+        <span class="status-badge" [ngClass]="'status-' + status">{{ statusLabel }}</span>
+      </div>
+
+      <div class="header-meta-grid">
+        <div class="meta-item">
+          <span class="meta-label">Véhicule</span>
+          <span class="meta-value">{{ reservation?.voiture?.marque }} {{ reservation?.voiture?.modele }}
+            <span class="plate">{{ reservation?.voiture?.immatriculation }}</span>
+          </span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Client</span>
+          <span class="meta-value">{{ reservation?.client?.nom }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Période</span>
+          <span class="meta-value">
+            {{ reservation?.dateDebut | date:'dd/MM/yyyy' }} → {{ reservation?.dateFin | date:'dd/MM/yyyy' }}
+            ({{ plannedDays }} j)
+          </span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Lieu</span>
+          <span class="meta-value">{{ contrat?.faitA || '—' }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Total</span>
+          <span class="meta-value amount">{{ reservation?.total | number:'1.2-2' }} MAD</span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button *ngIf="status === 'confirmed'" (click)="openDeliveryModal()" class="btn-action btn-deliver">
+          Livrer le véhicule
+        </button>
+        <button *ngIf="status === 'en_cours'" (click)="openReturnModal()" class="btn-action btn-return">
+          Enregistrer le retour
+        </button>
+        <button (click)="downloadPdf()" class="btn-action btn-pdf">
+          PDF contrat
+        </button>
+        <a [routerLink]="['/contrat', contrat?.id, 'edit']" class="btn-action btn-edit">
+          Modifier
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Timeline ───────────────────────────────────────────────────────── -->
+  <div class="timeline-card">
+    <app-contrat-timeline
+      [timeline]="timeline"
+      [status]="status"
+      (deliveryClick)="onTimelineDeliveryClick()"
+      (returnClick)="onTimelineReturnClick()">
+    </app-contrat-timeline>
+  </div>
+
+  <!-- ── Tabs ───────────────────────────────────────────────────────────── -->
+  <div class="tabs-card">
+    <nav class="tabs-nav">
+      <button *ngFor="let tab of tabs"
+              class="tab-btn"
+              [class.active]="activeTab === tab.key"
+              (click)="activeTab = tab.key">
+        {{ tab.label }}
+        <span class="tab-dot" *ngIf="tab.key === 'delivery' && delivery">●</span>
+        <span class="tab-dot" *ngIf="tab.key === 'return' && returnInspection">●</span>
+      </button>
+    </nav>
+
+    <div class="tab-body">
+
+      <!-- ── Contrat ─────────────────────────────────────── -->
+      <div *ngIf="activeTab === 'contrat'" class="tab-section">
+        <div class="info-grid">
+          <div class="info-group">
+            <h3 class="group-title">Période de location</h3>
+            <div class="info-row"><span>Début</span><span>{{ reservation?.dateDebut | date:'dd/MM/yyyy HH:mm' }}</span></div>
+            <div class="info-row"><span>Fin prévue</span><span>{{ reservation?.dateFin | date:'dd/MM/yyyy HH:mm' }}</span></div>
+            <div class="info-row"><span>Durée</span><span>{{ plannedDays }} jour(s)</span></div>
+            <div class="info-row" *ngIf="contrat?.nbJoursFactures"><span>Jours facturés</span><span>{{ contrat.nbJoursFactures }}</span></div>
+            <div class="info-row" *ngIf="contrat?.extensions?.length">
+              <span>Prolongations</span>
+              <span>{{ contrat.extensions.length }}</span>
+            </div>
+          </div>
+
+          <div class="info-group">
+            <h3 class="group-title">Finance</h3>
+            <div class="info-row"><span>Prix / jour</span><span>{{ pricePerDay | number:'1.2-2' }} MAD</span></div>
+            <div class="info-row"><span>Total réservation</span><span>{{ reservation?.total | number:'1.2-2' }} MAD</span></div>
+            <div class="info-row"><span>Montant payé</span><span class="amount-paid">{{ reservation?.montantPaye | number:'1.2-2' }} MAD</span></div>
+            <div class="info-row" *ngIf="contrat?.remise && +contrat.remise > 0"><span>Remise</span><span>{{ contrat.remise }} MAD</span></div>
+            <div class="info-row" *ngIf="contrat?.franchise"><span>Franchise</span><span>{{ contrat.franchise }} MAD</span></div>
+            <div class="info-row" *ngIf="contrat?.hasCaution"><span>Caution</span><span>{{ contrat.cautionMontant }} MAD</span></div>
+          </div>
+
+          <div class="info-group" *ngIf="reservation?.client">
+            <h3 class="group-title">Client</h3>
+            <div class="info-row"><span>Nom</span><span>{{ reservation.client.nom }}</span></div>
+            <div class="info-row" *ngIf="reservation.client.cin"><span>CIN</span><span>{{ reservation.client.cin }}</span></div>
+            <div class="info-row" *ngIf="reservation.client.passeport"><span>Passeport</span><span>{{ reservation.client.passeport }}</span></div>
+            <div class="info-row" *ngIf="reservation.client.telephone"><span>Téléphone</span><span>{{ reservation.client.telephone }}</span></div>
+            <div class="info-row" *ngIf="reservation.client.permisConduite"><span>Permis</span><span>{{ reservation.client.permisConduite }}</span></div>
+          </div>
+
+          <div class="info-group" *ngIf="pageData?.contrat?.deuxiemeChauffeur as dc">
+            <h3 class="group-title">2ème chauffeur</h3>
+            <div class="info-row"><span>Nom</span><span>{{ dc.nom }}</span></div>
+            <div class="info-row" *ngIf="dc.cin"><span>CIN</span><span>{{ dc.cin }}</span></div>
+            <div class="info-row" *ngIf="dc.permisConduite"><span>Permis</span><span>{{ dc.permisConduite }}</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Livraison ───────────────────────────────────── -->
+      <div *ngIf="activeTab === 'delivery'" class="tab-section">
+        <ng-container *ngIf="delivery; else noDelivery">
+          <div class="info-grid">
+            <div class="info-group">
+              <h3 class="group-title">Informations livraison</h3>
+              <div class="info-row"><span>Date</span><span>{{ delivery.creeAu | date:'dd/MM/yyyy HH:mm' }}</span></div>
+              <div class="info-row"><span>Kilométrage départ</span><span>{{ delivery.mileageOut | number }} km</span></div>
+              <div class="info-row"><span>Carburant</span>
+                <app-fuel-gauge [value]="delivery.fuelLevelOut" [readonly]="true"></app-fuel-gauge>
+              </div>
+              <div class="info-row" *ngIf="delivery.deliveryNotes"><span>Notes</span><span>{{ delivery.deliveryNotes }}</span></div>
+            </div>
+
+            <div class="info-group">
+              <h3 class="group-title">Accessoires livrés</h3>
+              <div class="accessories-view">
+                <div *ngFor="let acc of accessoryLabels" class="acc-item" [class.present]="delivery[acc.key]" [class.absent]="!delivery[acc.key]">
+                  <span class="acc-icon">{{ delivery[acc.key] ? '✓' : '✗' }}</span>
+                  <span>{{ acc.label }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="info-group full-width" *ngIf="delivery.signatureClientDepart || delivery.signatureSocieteDepart">
+              <h3 class="group-title">Signatures</h3>
+              <div class="signatures-row">
+                <div class="sig-block" *ngIf="delivery.signatureClientDepart">
+                  <div class="sig-label">Client</div>
+                  <img *ngIf="isSignatureUrl(delivery.signatureClientDepart)" [src]="delivery.signatureClientDepart" class="signature-img" alt="Signature client" />
+                </div>
+                <div class="sig-block" *ngIf="delivery.signatureSocieteDepart">
+                  <div class="sig-label">Agent</div>
+                  <img *ngIf="isSignatureUrl(delivery.signatureSocieteDepart)" [src]="delivery.signatureSocieteDepart" class="signature-img" alt="Signature agent" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-template #noDelivery>
+          <div class="empty-tab">
+            <div class="empty-icon-lg">⬆</div>
+            <p>Aucune livraison enregistrée.</p>
+            <button *ngIf="status === 'confirmed'" (click)="openDeliveryModal()" class="btn-action btn-deliver">
+              Livrer le véhicule
+            </button>
+          </div>
+        </ng-template>
+      </div>
+
+      <!-- ── Retour ──────────────────────────────────────── -->
+      <div *ngIf="activeTab === 'return'" class="tab-section">
+        <ng-container *ngIf="returnInspection; else noReturn">
+          <div class="info-grid">
+            <div class="info-group">
+              <h3 class="group-title">Informations retour</h3>
+              <div class="info-row"><span>Date retour</span><span>{{ returnInspection.inspectedAt | date:'dd/MM/yyyy HH:mm' }}</span></div>
+              <div class="info-row"><span>Kilométrage retour</span><span>{{ returnInspection.kilometrage | number }} km</span></div>
+              <div class="info-row" *ngIf="returnInspection.kmEffectue !== null"><span>Distance parcourue</span><span>{{ returnInspection.kmEffectue | number }} km</span></div>
+              <div class="info-row" *ngIf="returnInspection.joursFactures"><span>Jours facturés</span><span>{{ returnInspection.joursFactures }}</span></div>
+              <div class="info-row"><span>État général</span>
+                <span class="condition-badge" [ngClass]="'cond-' + returnInspection.condition">
+                  {{ conditionLabels[returnInspection.condition] || returnInspection.condition }}
+                </span>
+              </div>
+              <div class="info-row"><span>Carburant retour</span>
+                <app-fuel-gauge [value]="returnInspection.fuelLevelIn ?? 'vide'" [readonly]="true"></app-fuel-gauge>
+              </div>
+              <div class="info-row" *ngIf="returnInspection.notes"><span>Observations</span><span>{{ returnInspection.notes }}</span></div>
+            </div>
+
+            <div class="info-group" *ngIf="returnInspection.totalAdditionalCharges > 0">
+              <h3 class="group-title">Frais supplémentaires</h3>
+              <div class="info-row" *ngIf="returnInspection.fuelCharge"><span>Frais carburant</span><span>{{ returnInspection.fuelCharge | number:'1.2-2' }} MAD</span></div>
+              <div class="info-row" *ngIf="returnInspection.lateCharge"><span>Frais retard</span><span>{{ returnInspection.lateCharge | number:'1.2-2' }} MAD</span></div>
+              <div class="info-row" *ngIf="returnInspection.damageCharge"><span>Frais dommages</span><span>{{ returnInspection.damageCharge | number:'1.2-2' }} MAD</span></div>
+              <div class="info-row total-row"><span><strong>Total frais</strong></span><span><strong>{{ returnInspection.totalAdditionalCharges | number:'1.2-2' }} MAD</strong></span></div>
+            </div>
+
+            <div class="info-group" *ngIf="returnInspection.damageItems?.length">
+              <h3 class="group-title">Dommages constatés</h3>
+              <div *ngFor="let dmg of returnInspection.damageItems" class="damage-item">
+                <span class="dmg-zone">{{ dmg.zone }}</span>
+                <span class="dmg-severity" [ngClass]="'sev-' + dmg.severity">{{ dmg.severity }}</span>
+                <span *ngIf="dmg.description">— {{ dmg.description }}</span>
+              </div>
+            </div>
+
+            <div class="info-group full-width" *ngIf="returnInspection.signatureClientRetour || returnInspection.signatureSocieteRetour">
+              <h3 class="group-title">Signatures</h3>
+              <div class="signatures-row">
+                <div class="sig-block" *ngIf="returnInspection.signatureClientRetour">
+                  <div class="sig-label">Client</div>
+                  <img *ngIf="isSignatureUrl(returnInspection.signatureClientRetour)" [src]="returnInspection.signatureClientRetour" class="signature-img" alt="Signature client" />
+                </div>
+                <div class="sig-block" *ngIf="returnInspection.signatureSocieteRetour">
+                  <div class="sig-label">Agent</div>
+                  <img *ngIf="isSignatureUrl(returnInspection.signatureSocieteRetour)" [src]="returnInspection.signatureSocieteRetour" class="signature-img" alt="Signature agent" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="return-action-row" *ngIf="status === 'en_cours'">
+            <button (click)="openReturnModal()" class="btn-action btn-return">Modifier le retour</button>
+          </div>
+        </ng-container>
+
+        <ng-template #noReturn>
+          <div class="empty-tab">
+            <div class="empty-icon-lg">⬇</div>
+            <p>Aucun retour enregistré.</p>
+            <button *ngIf="status === 'en_cours'" (click)="openReturnModal()" class="btn-action btn-return">
+              Enregistrer le retour
+            </button>
+          </div>
+        </ng-template>
+      </div>
+
+      <!-- ── Finance ─────────────────────────────────────── -->
+      <div *ngIf="activeTab === 'finance'" class="tab-section">
+        <div class="finance-summary">
+          <div class="finance-row"><span>Prix / jour</span><span>{{ pricePerDay | number:'1.2-2' }} MAD</span></div>
+          <div class="finance-row"><span>Durée (jours)</span><span>{{ returnInspection?.joursFactures ?? plannedDays }}</span></div>
+          <div class="finance-row"><span>Sous-total location</span><span>{{ reservation?.total | number:'1.2-2' }} MAD</span></div>
+          <div class="finance-row" *ngIf="totalCharges > 0"><span>Frais supplémentaires</span><span>{{ totalCharges | number:'1.2-2' }} MAD</span></div>
+          <div class="finance-row" *ngIf="contrat?.remise && +contrat.remise > 0"><span>Remise</span><span>- {{ contrat.remise | number:'1.2-2' }} MAD</span></div>
+          <div class="finance-divider"></div>
+          <div class="finance-row"><span>Total payé</span><span class="paid">{{ totalPaid | number:'1.2-2' }} MAD</span></div>
+          <div class="finance-row total"><span><strong>Solde restant</strong></span><span [class.overdue]="remaining > 0"><strong>{{ remaining | number:'1.2-2' }} MAD</strong></span></div>
+        </div>
+
+        <div class="paiements-section" *ngIf="paiements.length">
+          <h3 class="group-title">Historique des paiements</h3>
+          <table class="paiements-table">
+            <thead><tr><th>Date</th><th>Montant</th><th>Mode</th><th>Note</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let p of paiements">
+                <td>{{ p.datePaiement | date:'dd/MM/yyyy' }}</td>
+                <td>{{ p.montant | number:'1.2-2' }} MAD</td>
+                <td>{{ p.modePaiement || '—' }}</td>
+                <td>{{ p.note || '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="empty-tab" *ngIf="!paiements.length">
+          <p>Aucun paiement enregistré pour ce contrat.</p>
+        </div>
+      </div>
+
+      <!-- ── Documents ───────────────────────────────────── -->
+      <div *ngIf="activeTab === 'documents'" class="tab-section">
+        <div class="doc-list">
+          <div class="doc-item" (click)="downloadPdf()">
+            <div class="doc-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
+            <div class="doc-info">
+              <div class="doc-name">Contrat de location</div>
+              <div class="doc-desc">PDF complet avec conditions générales</div>
+            </div>
+            <div class="doc-action">Télécharger</div>
+          </div>
+
+          <a [routerLink]="['/contrat', contratId, 'print']" class="doc-item doc-item-link">
+            <div class="doc-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <polyline points="6 9 6 2 18 2 18 9"/>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                <rect x="6" y="14" width="12" height="8"/>
+              </svg>
+            </div>
+            <div class="doc-info">
+              <div class="doc-name">Aperçu / Imprimer</div>
+              <div class="doc-desc">Vue imprimable A4 — contrat officiel</div>
+            </div>
+            <div class="doc-action">Ouvrir</div>
+          </a>
+
+          <div class="doc-item disabled" *ngIf="!delivery">
+            <div class="doc-icon muted">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <div class="doc-info">
+              <div class="doc-name">Fiche de livraison</div>
+              <div class="doc-desc muted">Disponible après livraison</div>
+            </div>
+          </div>
+
+          <div class="doc-item disabled" *ngIf="!returnInspection">
+            <div class="doc-icon muted">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <div class="doc-info">
+              <div class="doc-name">Rapport de retour</div>
+              <div class="doc-desc muted">Disponible après retour validé</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /tab-body -->
+  </div><!-- /tabs-card -->
+</div>
+
+<!-- Loading / Error states -->
+<div *ngIf="loading" class="loading-state"><p>Chargement…</p></div>
+<div *ngIf="error && !loading" class="error-state">
+  <p>{{ error }}</p>
+  <button (click)="load()">Réessayer</button>
+</div>
+
+<!-- ── Delivery modal ─────────────────────────────────────────────────── -->
+<app-vehicle-delivery-form
+  *ngIf="showDeliveryModal && reservation"
+  [reservation]="reservation"
+  (saved)="onDeliverySaved()"
+  (closed)="onDeliveryClosed()">
+</app-vehicle-delivery-form>
+
+<!-- ── Return modal ───────────────────────────────────────────────────── -->
+<app-vehicle-return-form
+  *ngIf="showReturnModal && reservation"
+  [reservation]="reservation"
+  [delivery]="delivery"
+  (saved)="onReturnSaved()"
+  (closed)="onReturnClosed()">
+</app-vehicle-return-form>

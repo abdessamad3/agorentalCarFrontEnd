@@ -1,0 +1,155 @@
+<div class="rp-page" [attr.dir]="dir">
+
+  <!-- Header -->
+  <div class="rp-header">
+    <div>
+      <div class="rp-title">Bureau Profitability Report</div>
+      <div class="rp-subtitle">Revenue vs expenses per office · {{ selectedYear }}</div>
+    </div>
+    <div class="rp-actions">
+      <select class="rp-select" [(ngModel)]="selectedYear" (ngModelChange)="onYearChange()">
+        <option *ngFor="let y of availableYears" [value]="y">{{ y }}</option>
+      </select>
+      <button class="btn-export btn-csv" (click)="exportCSV()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export CSV
+      </button>
+      <button class="btn-export btn-print" (click)="print()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Print / PDF
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="rp-loading">Computing bureau profitability…</div>
+
+  <ng-container *ngIf="!loading">
+
+    <!-- Summary stats -->
+    <div class="rp-stats">
+      <div class="stat-card sc-blue">
+        <div class="sc-num">{{ rows.length }}</div>
+        <div class="sc-lbl">Active Bureaux</div>
+      </div>
+      <div class="stat-card sc-teal">
+        <div class="sc-num">{{ totals.rentals }}</div>
+        <div class="sc-lbl">Total Rentals</div>
+      </div>
+      <div class="stat-card sc-green">
+        <div class="sc-num" style="font-size:1.1rem">{{ fmt(totals.revenue) }}</div>
+        <div class="sc-lbl">Total Revenue (MAD)</div>
+      </div>
+      <div class="stat-card sc-red">
+        <div class="sc-num" style="font-size:1.1rem">{{ fmt(totals.totalExpenses) }}</div>
+        <div class="sc-lbl">Total Expenses (MAD)</div>
+      </div>
+      <div class="stat-card" [ngClass]="totals.profit >= 0 ? 'sc-purple' : 'sc-orange'">
+        <div class="sc-num" [ngClass]="totals.profit >= 0 ? 'positive' : 'negative'" style="font-size:1.1rem">{{ fmt(totals.profit) }}</div>
+        <div class="sc-lbl">Net Profit (MAD)</div>
+      </div>
+    </div>
+
+    <!-- Expense breakdown totals -->
+    <div class="rp-section">Expense Breakdown — {{ selectedYear }}</div>
+    <div class="rp-stats" style="margin-bottom:1.5rem">
+      <div class="stat-card" style="border-top:3px solid #f6ad55">
+        <div class="sc-num negative" style="font-size:1.1rem">{{ fmt(totals.vehicleExpenses) }}</div>
+        <div class="sc-lbl">🚗 Vehicle Expenses</div>
+      </div>
+      <div class="stat-card" style="border-top:3px solid #9f7aea">
+        <div class="sc-num negative" style="font-size:1.1rem">{{ fmt(totals.officeExpenses) }}</div>
+        <div class="sc-lbl">🏢 Office Expenses</div>
+      </div>
+      <div class="stat-card" style="border-top:3px solid #dd6b20">
+        <div class="sc-num negative" style="font-size:1.1rem">{{ fmt(totals.creditCost) }}</div>
+        <div class="sc-lbl">🏦 Credit Payments</div>
+      </div>
+    </div>
+
+    <!-- Revenue bar chart -->
+    <div *ngIf="rows.length > 0">
+      <div class="rp-section">Revenue by Bureau — {{ selectedYear }}</div>
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:1.5rem;margin-bottom:1.5rem">
+        <div style="display:flex;flex-direction:column;gap:.75rem">
+          <div *ngFor="let r of sorted; let i = index" style="display:flex;align-items:center;gap:.75rem">
+            <div style="width:160px;font-size:.82rem;font-weight:600;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" [title]="r.name">
+              {{ r.name }}
+            </div>
+            <div style="flex:1;height:20px;background:#e2e8f0;border-radius:4px;overflow:hidden">
+              <div style="height:100%;border-radius:4px;transition:width .4s"
+                [style.width.%]="barPct(r.revenue)"
+                [style.background]="i===0?'#4299e1':i===1?'#68d391':i===2?'#f6ad55':'#a0aec0'">
+              </div>
+            </div>
+            <div style="min-width:140px;font-size:.82rem;font-weight:700;color:#2d3748;text-align:right">{{ fmt(r.revenue) }} MAD</div>
+            <div style="min-width:60px;font-size:.75rem;text-align:right"
+              [style.color]="r.margin >= 0 ? '#38a169' : '#e53e3e'">
+              {{ r.margin }}%
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Full table -->
+      <div class="rp-section">Full Bureau Breakdown — {{ selectedYear }}</div>
+      <div class="rp-table-wrap">
+        <table class="rp-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th (click)="toggleSort('name')" style="cursor:pointer">Bureau {{ sortField==='name' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</th>
+              <th>Manager</th>
+              <th class="td-right" (click)="toggleSort('vehicleCount')" style="cursor:pointer">Vehicles {{ sortField==='vehicleCount' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</th>
+              <th class="td-right" (click)="toggleSort('rentals')" style="cursor:pointer">Rentals {{ sortField==='rentals' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</th>
+              <th class="td-right" (click)="toggleSort('revenue')" style="cursor:pointer">Revenue {{ sortField==='revenue' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</th>
+              <th class="td-right" (click)="toggleSort('vehicleExpenses')" style="cursor:pointer">Vehicle Exp. {{ sortField==='vehicleExpenses' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</th>
+              <th class="td-right" (click)="toggleSort('officeExpenses')" style="cursor:pointer">Office Exp. {{ sortField==='officeExpenses' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</th>
+              <th class="td-right" (click)="toggleSort('creditCost')" style="cursor:pointer">Credit {{ sortField==='creditCost' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</th>
+              <th class="td-right" (click)="toggleSort('totalExpenses')" style="cursor:pointer">Total Exp. {{ sortField==='totalExpenses' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</th>
+              <th class="td-right" (click)="toggleSort('profit')" style="cursor:pointer">Net Profit {{ sortField==='profit' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</th>
+              <th class="td-right" (click)="toggleSort('margin')" style="cursor:pointer">Margin {{ sortField==='margin' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of sorted; let i = index">
+              <td style="color:#a0aec0;font-weight:700">{{ rankLabel(i) }}</td>
+              <td>
+                <strong>{{ r.name }}</strong>
+                <div *ngIf="r.address" style="font-size:.72rem;color:#718096">{{ r.address }}</div>
+              </td>
+              <td style="font-size:.82rem;color:#4a5568">{{ r.manager || '—' }}</td>
+              <td class="td-right">{{ r.vehicleCount }}</td>
+              <td class="td-right">{{ r.rentals }}</td>
+              <td class="td-right mono positive">{{ fmt(r.revenue) }}</td>
+              <td class="td-right mono" [ngClass]="r.vehicleExpenses > 0 ? 'negative' : 'neutral'">{{ fmt(r.vehicleExpenses) }}</td>
+              <td class="td-right mono" [ngClass]="r.officeExpenses > 0 ? 'negative' : 'neutral'">{{ fmt(r.officeExpenses) }}</td>
+              <td class="td-right mono" [ngClass]="r.creditCost > 0 ? 'negative' : 'neutral'">{{ fmt(r.creditCost) }}</td>
+              <td class="td-right mono negative">{{ fmt(r.totalExpenses) }}</td>
+              <td class="td-right mono" [ngClass]="r.profit >= 0 ? 'positive' : 'negative'">{{ fmt(r.profit) }}</td>
+              <td class="td-right" [ngClass]="r.margin >= 0 ? 'positive' : 'negative'">{{ r.margin }}%</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr style="font-weight:700;background:#f7fafc">
+              <td colspan="3">Total</td>
+              <td class="td-right">{{ totals.vehicleCount }}</td>
+              <td class="td-right">{{ totals.rentals }}</td>
+              <td class="td-right mono positive">{{ fmt(totals.revenue) }}</td>
+              <td class="td-right mono negative">{{ fmt(totals.vehicleExpenses) }}</td>
+              <td class="td-right mono negative">{{ fmt(totals.officeExpenses) }}</td>
+              <td class="td-right mono negative">{{ fmt(totals.creditCost) }}</td>
+              <td class="td-right mono negative">{{ fmt(totals.totalExpenses) }}</td>
+              <td class="td-right mono" [ngClass]="totals.profit >= 0 ? 'positive' : 'negative'">{{ fmt(totals.profit) }}</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <div *ngIf="rows.length === 0" class="rp-empty">
+      No bureau activity found for {{ selectedYear }}
+    </div>
+
+  </ng-container>
+</div>

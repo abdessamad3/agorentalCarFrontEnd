@@ -1,0 +1,182 @@
+<div class="itab-wrap">
+
+  <div class="itab-header">
+    <h2 class="itab-title">🛡️ {{ t('assurances') }}</h2>
+    <div class="itab-header-actions">
+      <button class="itab-renew-btn" [disabled]="!current" [title]="current ? '' : t('noActivePolicyToRenew')" (click)="current && openRenew(current)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        {{ t('renew') }}
+      </button>
+      <button class="itab-add-btn" [disabled]="!!current" [title]="current ? t('activePolicyExistsUseRenew') : ''" (click)="!current && openAdd()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        {{ t('add') }}
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="itab-loading"><span class="spin-sm"></span> {{ t('loading') }}</div>
+
+  <!-- ── CURRENT POLICY CARD ──────────────────────────────────────────── -->
+  <div *ngIf="!loading && !current" class="itab-empty">
+    <span style="font-size:2.5rem">🛡️</span>
+    <p>{{ t('noInsuranceOnFile') }}</p>
+    <button class="itab-add-btn" (click)="openAdd()">{{ t('add') }}</button>
+  </div>
+
+  <div *ngIf="!loading && current" class="ins-current-card">
+    <div class="ins-current-head">
+      <div class="ins-current-id">
+        <span class="ins-current-company">{{ current.compagnie || '—' }}</span>
+        <span class="ins-current-type" *ngIf="current.typeAssurance">{{ current.typeAssurance }}</span>
+      </div>
+      <span class="ins-status" [ngClass]="statusClass(current)">{{ statusLabel(current) }}</span>
+    </div>
+
+    <div class="ins-current-grid">
+      <div class="ins-current-field">
+        <span class="ins-current-lbl">{{ t('startDate') }}</span>
+        <span class="ins-current-val">{{ current.dateDebut ? (current.dateDebut | date:'dd/MM/yyyy') : '—' }}</span>
+      </div>
+      <div class="ins-current-field">
+        <span class="ins-current-lbl">{{ t('endDate') }}</span>
+        <span class="ins-current-val">
+          {{ current.dateFin ? (current.dateFin | date:'dd/MM/yyyy') : '—' }}
+          <span *ngIf="daysUntil(current.dateFin) !== null && daysUntil(current.dateFin)! >= 0 && daysUntil(current.dateFin)! <= 30" class="exp-badge exp-warn">{{ daysUntil(current.dateFin) }}d</span>
+          <span *ngIf="daysUntil(current.dateFin) !== null && daysUntil(current.dateFin)! < 0" class="exp-badge exp-danger">{{ t('expired') }}</span>
+        </span>
+      </div>
+      <div class="ins-current-field">
+        <span class="ins-current-lbl">{{ t('numeroContrat') }}</span>
+        <span class="ins-current-val">{{ current.numeroContrat || '—' }}</span>
+      </div>
+      <div class="ins-current-field">
+        <span class="ins-current-lbl">{{ t('montant') }}</span>
+        <span class="ins-current-val">{{ current.montant != null ? (current.montant | number:'1.0-0') + ' MAD' : '—' }}</span>
+      </div>
+      <div class="ins-current-field">
+        <span class="ins-current-lbl">{{ t('totalPaid') }}</span>
+        <span class="ins-current-val pay-inline-paid">{{ current.montantPaye | number:'1.0-0' }} MAD</span>
+      </div>
+      <div class="ins-current-field">
+        <span class="ins-current-lbl">{{ t('remaining') }}</span>
+        <span class="ins-current-val pay-inline-reste" [class.pay-inline-reste-zero]="current.reste <= 0">
+          {{ current.reste | number:'1.0-0' }} MAD
+        </span>
+      </div>
+    </div>
+
+    <p class="ins-current-notes" *ngIf="current.notes">📝 {{ current.notes }}</p>
+
+    <div class="ins-current-actions">
+      <button class="ia-btn ia-pay" (click)="openPayPanel(current)">💳 {{ t('payments') || 'Paiements' }}</button>
+      <button class="ia-btn ia-edit" (click)="openEdit(current)">✏️ {{ t('edit') }}</button>
+      <a *ngIf="current.filePath" class="ia-btn ia-download" [href]="fileUrl(current.filePath)" target="_blank">📎 {{ t('download') }}</a>
+      <button class="ia-btn" (click)="openCancel(current)">🚫 {{ t('cancel') }}</button>
+      <button class="ia-btn ia-del" (click)="openDelete(current)">🗑️ {{ t('delete') }}</button>
+    </div>
+  </div>
+
+  <!-- ── HISTORY (collapsible) ────────────────────────────────────────── -->
+  <div class="itab-history-wrap">
+    <button class="itab-history-toggle" (click)="toggleHistory()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12" [class.itab-history-chevron-open]="historyExpanded">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
+      {{ t('history') }}<span *ngIf="historyLoaded"> ({{ historyItems.length }})</span>
+    </button>
+
+    <div *ngIf="historyExpanded" class="itab-history-body">
+      <div *ngIf="historyLoading" class="itab-loading"><span class="spin-sm"></span> {{ t('loading') }}</div>
+
+      <p *ngIf="!historyLoading && historyLoaded && historyItems.length === 0" class="itab-history-empty">{{ t('noData') }}</p>
+
+      <div *ngIf="!historyLoading && historyItems.length > 0" class="rh-table-wrap">
+        <table class="rh-table">
+          <thead>
+            <tr>
+              <th>{{ t('compagnie') }}</th>
+              <th>{{ t('startDate') }}</th>
+              <th>{{ t('endDate') }}</th>
+              <th>{{ t('montant') }}</th>
+              <th>{{ t('totalPaid') }}</th>
+              <th>{{ t('status') }}</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of historyItems" class="rh-row">
+              <td>{{ item.compagnie || '—' }}</td>
+              <td>{{ item.dateDebut ? (item.dateDebut | date:'dd/MM/yyyy') : '—' }}</td>
+              <td>{{ item.dateFin ? (item.dateFin | date:'dd/MM/yyyy') : '—' }}</td>
+              <td>{{ item.montant != null ? (item.montant | number:'1.0-0') + ' MAD' : '—' }}</td>
+              <td><span class="pay-inline-paid">{{ item.montantPaye | number:'1.0-0' }} MAD</span></td>
+              <td><span class="ins-status" [ngClass]="statusClass(item)">{{ statusLabel(item) }}</span></td>
+              <td class="itab-actions">
+                <a *ngIf="item.filePath" class="ia-btn ia-download" [href]="fileUrl(item.filePath)" target="_blank">📎</a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════ PAYMENT PANEL -->
+<app-pay-dep-panel
+  *ngIf="payPanelOpen"
+  [open]="payPanelOpen"
+  [depenseId]="payRecord?.depenseId ?? null"
+  [montantTotal]="+(payRecord?.montantTotal ?? payRecord?.montant ?? 0)"
+  [montantPaye]="+(payRecord?.montantPaye ?? 0)"
+  [title]="t('assurances') + ' #' + (payRecord?.id || '') + ' — ' + (payRecord?.compagnie || '')"
+  [dir]="dir"
+  (closed)="closePayPanel()"
+  (paymentChanged)="load()">
+</app-pay-dep-panel>
+
+<!-- ══════════════════════════════════════════ MODALS -->
+<app-insurance-modal
+  *ngIf="modalMode === 'add' || modalMode === 'edit'"
+  [modalMode]="modalMode"
+  [editItem]="selectedItem"
+  [carName]="carTitle"
+  [isSubmitting]="isSubmitting"
+  [errorMessage]="errorMessage"
+  (saved)="onSaved($event)"
+  (cancelled)="closeModal()">
+</app-insurance-modal>
+
+<app-insurance-modal
+  *ngIf="modalMode === 'delete'"
+  modalMode="delete"
+  [editItem]="selectedItem"
+  [carName]="carTitle"
+  [isSubmitting]="isSubmitting"
+  [errorMessage]="errorMessage"
+  (deleteConfirmed)="onDeleteConfirmed()"
+  (cancelled)="closeModal()">
+</app-insurance-modal>
+
+<app-insurance-modal
+  *ngIf="modalMode === 'cancel'"
+  modalMode="cancel"
+  [editItem]="selectedItem"
+  [carName]="carTitle"
+  [isSubmitting]="isSubmitting"
+  [errorMessage]="errorMessage"
+  (cancelConfirmed)="onCancelConfirmed()"
+  (cancelled)="closeModal()">
+</app-insurance-modal>
+
+<app-insurance-modal
+  *ngIf="modalMode === 'renew'"
+  modalMode="renew"
+  [editItem]="selectedItem"
+  [carName]="carTitle"
+  [isSubmitting]="isSubmitting"
+  [errorMessage]="errorMessage"
+  (renewConfirmed)="onRenewConfirmed($event)"
+  (cancelled)="closeModal()">
+</app-insurance-modal>

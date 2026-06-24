@@ -1,0 +1,93 @@
+<div class="itab-wrap">
+
+  <div class="itab-header">
+    <h2 class="itab-title">🏷️ {{ t('vignettes') }}</h2>
+    <button class="itab-add-btn" (click)="openAdd()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      {{ t('add') }}
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="itab-loading"><span class="spin-sm"></span> {{ t('loading') }}</div>
+
+  <div *ngIf="!loading && items.length === 0" class="itab-empty">
+    <span style="font-size:2.5rem">🏷️</span>
+    <p>{{ t('noData') }}</p>
+    <button class="itab-add-btn" (click)="openAdd()">{{ t('add') }}</button>
+  </div>
+
+  <div *ngIf="!loading && items.length > 0" class="rh-table-wrap">
+    <table class="rh-table">
+      <thead>
+        <tr>
+          <th>{{ t('year') }}</th>
+          <th>{{ t('endDate') }}</th>
+          <th>{{ t('montant') }}</th>
+          <th>{{ t('totalPaid') }}</th>
+          <th>{{ t('remaining') }}</th>
+          <th>{{ t('status') }}</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of items" class="rh-row">
+          <td><strong>{{ item.annee || '—' }}</strong></td>
+          <td>
+            {{ item.dateLimite ? (item.dateLimite | date:'dd/MM/yyyy') : '—' }}
+            <span *ngIf="daysUntil(item.dateLimite) !== null && daysUntil(item.dateLimite)! >= 0 && daysUntil(item.dateLimite)! <= 30" class="exp-badge exp-warn">{{ daysUntil(item.dateLimite) }}d</span>
+            <span *ngIf="daysUntil(item.dateLimite) !== null && daysUntil(item.dateLimite)! < 0" class="exp-badge exp-danger">{{ t('expired') }}</span>
+          </td>
+          <td>{{ item.montant != null ? (item.montant | number:'1.0-0') + ' MAD' : '—' }}</td>
+          <td><span class="pay-inline-paid">{{ item.montantPaye | number:'1.0-0' }} MAD</span></td>
+          <td>
+            <span class="pay-inline-reste" [class.pay-inline-reste-zero]="item.reste <= 0">
+              {{ item.reste | number:'1.0-0' }} MAD
+            </span>
+          </td>
+          <td>
+            <span class="ps-chip" [ngClass]="'ps-' + item.paymentStatut">
+              {{ item.paymentStatut === 'paid' ? t('paid') : item.paymentStatut === 'partial' ? t('partial') : t('unpaid') }}
+            </span>
+          </td>
+          <td class="itab-actions">
+            <button class="ia-btn ia-pay"  (click)="openPayPanel(item)">💳 {{ t('payments') }}</button>
+            <a *ngIf="item.filePath" class="ia-btn ia-download" [href]="fileUrl(item.filePath)" target="_blank">📎 {{ t('download') }}</a>
+            <button class="ia-btn ia-edit"  (click)="openEdit(item)">{{ t('edit') }}</button>
+            <button class="ia-btn ia-renew" (click)="openRenew(item)">{{ t('renew') }}</button>
+            <button class="ia-btn ia-del"   (click)="openDelete(item)">{{ t('delete') }}</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════ PAYMENT PANEL -->
+<app-pay-dep-panel
+  *ngIf="payPanelOpen"
+  [open]="payPanelOpen"
+  [depenseId]="payRecord?.depenseId ?? null"
+  [montantTotal]="+(payRecord?.montantTotal ?? payRecord?.montant ?? 0)"
+  [montantPaye]="+(payRecord?.montantPaye ?? 0)"
+  [title]="t('vignettes') + ' #' + (payRecord?.id || '') + ' — ' + (payRecord?.annee || '')"
+  [dir]="dir"
+  (closed)="closePayPanel()"
+  (paymentChanged)="load()">
+</app-pay-dep-panel>
+
+<app-vignette-modal
+  *ngIf="modalMode"
+  [modalMode]="modalMode"
+  [isEditing]="isEditing"
+  [editItem]="selectedItem"
+  [isSubmitting]="isSubmitting"
+  [errorMessage]="errorMessage"
+  [showMontantPaye]="true"
+  [showFileUpload]="true"
+  [paiementCount]="selectedItem?.paiementCount ?? 0"
+  (saved)="onSaved($event)"
+  (deleteConfirmed)="onDeleteConfirmed()"
+  (renewConfirmed)="onRenewConfirmed($event)"
+  (cancelled)="closeModal()">
+</app-vignette-modal>

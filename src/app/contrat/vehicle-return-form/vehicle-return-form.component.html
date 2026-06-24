@@ -1,0 +1,131 @@
+<div class="modal-overlay" (click)="closed.emit()">
+  <div class="modal return-modal" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <h2>Retour du véhicule</h2>
+      <span class="modal-subtitle" *ngIf="reservation">
+        {{ reservation.voiture?.marque }} {{ reservation.voiture?.modele }} —
+        {{ reservation.client?.nom }}
+        <span *ngIf="delivery?.mileageOut"> | Départ : {{ delivery.mileageOut | number }} km</span>
+      </span>
+      <button class="modal-close" (click)="closed.emit()">&times;</button>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- Mileage -->
+      <div class="form-section">
+        <label class="field-label">Kilométrage au retour <span class="required">*</span></label>
+        <input type="number" [(ngModel)]="kilometrage" min="0" class="field-input" placeholder="ex: 46500" />
+        <span class="field-hint" *ngIf="delivery?.mileageOut && kilometrage">
+          Distance parcourue : {{ (+kilometrage - delivery.mileageOut) | number }} km
+        </span>
+      </div>
+
+      <!-- Fuel -->
+      <div class="form-section">
+        <label class="field-label">
+          Niveau de carburant au retour
+          <span class="compare-tag" *ngIf="delivery?.fuelLevelOut">Départ : {{ delivery.fuelLevelOut }}</span>
+        </label>
+        <app-fuel-gauge [value]="fuelLevelIn" (valueChange)="onFuelChange($event)"></app-fuel-gauge>
+      </div>
+
+      <!-- Condition -->
+      <div class="form-section">
+        <label class="field-label">État général</label>
+        <div class="condition-options">
+          <label *ngFor="let opt of conditionOptions" class="condition-option" [class.selected]="condition === opt.value">
+            <input type="radio" [(ngModel)]="condition" [value]="opt.value" />
+            {{ opt.label }}
+          </label>
+        </div>
+      </div>
+
+      <!-- Accessories (with diff highlight) -->
+      <div class="form-section">
+        <label class="field-label">Accessoires au retour</label>
+        <div class="accessories-grid">
+          <label class="check-item" [class.changed]="delivery && hasExtincteur !== delivery.hasExtincteur">
+            <input type="checkbox" [(ngModel)]="hasExtincteur" /> Extincteur
+            <span class="diff-tag" *ngIf="delivery && hasExtincteur !== delivery.hasExtincteur">⚠</span>
+          </label>
+          <label class="check-item" [class.changed]="delivery && hasCric !== delivery.hasCric">
+            <input type="checkbox" [(ngModel)]="hasCric" /> Cric
+            <span class="diff-tag" *ngIf="delivery && hasCric !== delivery.hasCric">⚠</span>
+          </label>
+          <label class="check-item" [class.changed]="delivery && hasGilet !== delivery.hasGilet">
+            <input type="checkbox" [(ngModel)]="hasGilet" /> Gilet
+            <span class="diff-tag" *ngIf="delivery && hasGilet !== delivery.hasGilet">⚠</span>
+          </label>
+          <label class="check-item" [class.changed]="delivery && hasRoueSecours !== delivery.hasRoueSecours">
+            <input type="checkbox" [(ngModel)]="hasRoueSecours" /> Roue de secours
+            <span class="diff-tag" *ngIf="delivery && hasRoueSecours !== delivery.hasRoueSecours">⚠</span>
+          </label>
+          <label class="check-item" [class.changed]="delivery && hasPlaqueDepannage !== delivery.hasPlaqueDepannage">
+            <input type="checkbox" [(ngModel)]="hasPlaqueDepannage" /> Plaque dépannage
+            <span class="diff-tag" *ngIf="delivery && hasPlaqueDepannage !== delivery.hasPlaqueDepannage">⚠</span>
+          </label>
+          <label class="check-item" [class.changed]="delivery && hasLavage !== delivery.hasLavage">
+            <input type="checkbox" [(ngModel)]="hasLavage" /> Lavage
+            <span class="diff-tag" *ngIf="delivery && hasLavage !== delivery.hasLavage">⚠</span>
+          </label>
+          <label class="check-item" [class.changed]="delivery && hasSiegeBebe !== delivery.hasSiegeBebe">
+            <input type="checkbox" [(ngModel)]="hasSiegeBebe" /> Siège bébé
+            <span class="diff-tag" *ngIf="delivery && hasSiegeBebe !== delivery.hasSiegeBebe">⚠</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="form-section">
+        <label class="field-label">Observations / Dommages constatés</label>
+        <textarea [(ngModel)]="notes" class="field-textarea" rows="3" placeholder="Description des dommages constatés au retour…"></textarea>
+      </div>
+
+      <!-- Charges -->
+      <div class="charges-section">
+        <h3 class="section-title">Frais supplémentaires</h3>
+        <div class="charges-grid">
+          <div class="charge-item">
+            <label class="field-label">Frais carburant (MAD)</label>
+            <input type="number" [(ngModel)]="fuelCharge" min="0" class="field-input" placeholder="0" />
+          </div>
+          <div class="charge-item">
+            <label class="field-label">Frais retard (MAD)</label>
+            <input type="number" [(ngModel)]="lateCharge" min="0" class="field-input" placeholder="0" />
+          </div>
+          <div class="charge-item">
+            <label class="field-label">Frais dommages (MAD)</label>
+            <input type="number" [(ngModel)]="damageCharge" min="0" class="field-input" placeholder="0" />
+          </div>
+        </div>
+        <div class="total-charges" *ngIf="totalCharges > 0">
+          Total supplémentaire : <strong>{{ totalCharges | number:'1.2-2' }} MAD</strong>
+        </div>
+      </div>
+
+      <!-- Signatures -->
+      <div class="signatures-row">
+        <div class="sig-block">
+          <app-signature-pad label="Signature client" (signatureChange)="onSignatureClient($event)"></app-signature-pad>
+        </div>
+        <div class="sig-block">
+          <app-signature-pad label="Signature agent" (signatureChange)="onSignatureAgent($event)"></app-signature-pad>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="modal-footer">
+      <app-btn variant="secondary" (click)="closed.emit()">Annuler</app-btn>
+      <app-btn variant="secondary" (click)="save()" [disabled]="!isValid || isSubmitting">
+        {{ isSubmitting ? 'En cours…' : 'Enregistrer' }}
+      </app-btn>
+      <app-btn variant="danger" (click)="validateReturn()" [disabled]="!isValid || isSubmitting">
+        {{ isSubmitting ? 'En cours…' : 'Valider le retour' }}
+      </app-btn>
+    </div>
+
+  </div>
+</div>

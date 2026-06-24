@@ -1,0 +1,224 @@
+<div class="contrat-page" [attr.dir]="dir">
+
+  <!-- Header -->
+  <div class="contrat-header">
+    <h2>{{ isEditing ? 'Modifier le contrat' : 'Nouveau contrat' }}</h2>
+    <div class="contrat-actions">
+      <button *ngIf="isEditing" type="button" class="btn-pdf" (click)="downloadPdf()">
+        ⬇ Télécharger PDF
+      </button>
+      <button type="button" class="btn-save" (click)="save()" [disabled]="saving">
+        {{ saving ? 'Enregistrement...' : 'Enregistrer' }}
+      </button>
+      <a routerLink="/contrat" class="btn-back">Retour</a>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="state-msg">Chargement...</div>
+  <div *ngIf="error && !loading" class="state-error">{{ error }}</div>
+
+  <ng-container *ngIf="!loading && !error">
+
+    <!-- Section: Informations du contrat -->
+    <div class="contrat-section">
+      <div class="section-title">Informations du contrat</div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Numéro de contrat</label>
+          <input [(ngModel)]="numero" readonly placeholder="Généré automatiquement" />
+        </div>
+        <div class="field">
+          <label>Véhicule</label>
+          <input [value]="vehiculeLabel" readonly />
+        </div>
+        <div class="field">
+          <label>Lieu de livraison</label>
+          <input [(ngModel)]="lieuLivraison" placeholder="Ex: Casablanca – Aéroport" />
+        </div>
+        <div class="field">
+          <label>Lieu de retour</label>
+          <input [(ngModel)]="lieuRetour" placeholder="Ex: Casablanca – Agence" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Section: Kilométrage & Carburant -->
+    <div class="contrat-section">
+      <div class="section-title">Kilométrage &amp; Carburant</div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Kilométrage départ</label>
+          <input type="number" [(ngModel)]="kilometrageDepart" min="0" placeholder="0" />
+        </div>
+        <div class="field">
+          <label>Kilométrage retour</label>
+          <input type="number" [(ngModel)]="kilometrageRetour" min="0" placeholder="0" />
+        </div>
+        <div class="field">
+          <label>Carburant départ</label>
+          <app-fuel-gauge [(value)]="niveauCarburantDepart"></app-fuel-gauge>
+        </div>
+        <div class="field">
+          <label>Carburant retour</label>
+          <app-fuel-gauge [(value)]="niveauCarburantRetour"></app-fuel-gauge>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section: Informations du client -->
+    <div class="contrat-section">
+      <div class="section-title">Informations du client</div>
+      <div class="grid-3">
+        <div class="field">
+          <label>Nom complet <span class="req">*</span></label>
+          <input [(ngModel)]="clientNom" />
+        </div>
+        <div class="field">
+          <label>Date de naissance</label>
+          <input type="date" [(ngModel)]="clientDateNaissance" />
+        </div>
+        <div class="field">
+          <label>Nationalité</label>
+          <input [(ngModel)]="clientNationalite" />
+        </div>
+        <div class="field">
+          <label>Adresse Maroc <span class="req">*</span></label>
+          <input [(ngModel)]="clientAdresseMaroc" />
+        </div>
+        <div class="field">
+          <label>Adresse étranger</label>
+          <input [(ngModel)]="clientAdresseEtranger" />
+        </div>
+        <div class="field">
+          <label>Téléphone</label>
+          <input [(ngModel)]="clientTelephone" />
+        </div>
+        <div class="field">
+          <label>CIN</label>
+          <input [(ngModel)]="clientCin" />
+        </div>
+        <div class="field">
+          <label>Passeport</label>
+          <input [(ngModel)]="clientPasseport" />
+        </div>
+        <div class="field">
+          <label>Permis de conduire</label>
+          <input [(ngModel)]="clientPermis" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Section: Deuxième chauffeur -->
+    <div class="contrat-section">
+      <div class="section-title-row">
+        <span class="section-title" style="border:none; margin:0; padding:0">Deuxième chauffeur</span>
+        <label class="toggle-label">
+          <input type="checkbox" [(ngModel)]="hasSecondDriver" />
+          Ajouter un deuxième chauffeur
+        </label>
+      </div>
+      <div *ngIf="hasSecondDriver" class="grid-2" style="margin-top:12px">
+        <div class="field">
+          <label>Nom complet</label>
+          <input [(ngModel)]="secondNom" />
+        </div>
+        <div class="field">
+          <label>Date de naissance</label>
+          <input type="date" [(ngModel)]="secondDateNaissance" />
+        </div>
+        <div class="field">
+          <label>CIN</label>
+          <input [(ngModel)]="secondCin" />
+        </div>
+        <div class="field">
+          <label>Permis de conduire</label>
+          <input [(ngModel)]="secondPermis" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Section: Récapitulatif financier -->
+    <div class="contrat-section">
+      <div class="section-title">Récapitulatif financier</div>
+      <div class="grid-3">
+        <div class="field readonly-field">
+          <label>Total réservation</label>
+          <span>{{ reservationTotal | number:'1.2-2' }} MAD</span>
+        </div>
+        <div class="field readonly-field">
+          <label>Avance versée</label>
+          <span>{{ reservationMontantPaye | number:'1.2-2' }} MAD</span>
+        </div>
+        <div class="field readonly-field">
+          <label>Reste à payer</label>
+          <span>{{ montantRestant | number:'1.2-2' }} MAD</span>
+        </div>
+        <div class="field">
+          <label>Caution (MAD)</label>
+          <input type="number" [(ngModel)]="cautionMontant" min="0" placeholder="0.00" />
+        </div>
+        <div class="field">
+          <label>Franchise (MAD)</label>
+          <input type="number" [(ngModel)]="franchise" min="0" placeholder="0.00" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Section: Équipements -->
+    <div class="contrat-section">
+      <div class="section-title">Équipements</div>
+      <div class="equip-grid">
+        <label *ngFor="let item of equipementItems" class="equip-item">
+          <input type="checkbox"
+                 [checked]="equipements.includes(item.key)"
+                 (change)="toggleEquipement(item.key)" />
+          {{ item.label }}
+        </label>
+      </div>
+    </div>
+
+    <!-- Section: Dommages -->
+    <div class="contrat-section">
+      <div class="section-title">Diagramme de dommages</div>
+      <p class="hint-text">Cliquez sur une zone du véhicule pour enregistrer un dommage.</p>
+      <app-damage-diagram
+        [damages]="dommages"
+        (damagesChange)="dommages = $event">
+      </app-damage-diagram>
+    </div>
+
+    <!-- Section: Signatures -->
+    <div class="contrat-section">
+      <div class="section-title">Signatures</div>
+      <div class="signatures-row">
+        <app-signature-pad
+          label="Signature du client"
+          [existingSignature]="signatureClient"
+          (signatureChange)="signatureClient = $event">
+        </app-signature-pad>
+        <app-signature-pad *ngIf="hasSecondDriver"
+          label="Signature 2ème chauffeur"
+          [existingSignature]="signatureDeuxiemeChauffeur"
+          (signatureChange)="signatureDeuxiemeChauffeur = $event">
+        </app-signature-pad>
+        <app-signature-pad
+          label="Cachet / Signature société"
+          [existingSignature]="signatureSociete"
+          (signatureChange)="signatureSociete = $event">
+        </app-signature-pad>
+      </div>
+    </div>
+
+    <!-- Bottom actions -->
+    <div class="bottom-actions">
+      <button *ngIf="isEditing" type="button" class="btn-pdf" (click)="downloadPdf()">
+        ⬇ Télécharger PDF
+      </button>
+      <button type="button" class="btn-save" (click)="save()" [disabled]="saving">
+        {{ saving ? 'Enregistrement...' : 'Enregistrer le contrat' }}
+      </button>
+      <a routerLink="/contrat" class="btn-back">Annuler</a>
+    </div>
+
+  </ng-container>
+</div>

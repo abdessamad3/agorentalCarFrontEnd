@@ -70,8 +70,23 @@ export class PrintContratComponent implements OnChanges, OnDestroy {
     return this.v(this.contractData?.numeroContrat) || this.v(this.contractData?.id);
   }
 
-  get client(): any { return this.contractData?.client || {}; }
-  get voiture(): any { return this.contractData?.voiture || {}; }
+  get client(): any    { return this.contractData?.client || {}; }
+  get voiture(): any   { return this.contractData?.voiture || {}; }
+  get delivery(): any  { return this.contractData?.vehicleDelivery ?? null; }
+  get returnData(): any { return this.contractData?.vehicleReturnInspection ?? null; }
+  get d2(): any        { return this.contractData?.deuxiemeChauffeur ?? {}; }
+
+  get avance(): string {
+    const p = this.contractData?.montantPaye;
+    return p != null && p !== '' ? (+p).toLocaleString('fr-FR') + ' DH' : '';
+  }
+
+  get reste(): string {
+    const t = this.contractData?.montantTotal;
+    const p = this.contractData?.montantPaye;
+    if (t == null) return '';
+    return ((+t) - (+(p ?? 0))).toLocaleString('fr-FR') + ' DH';
+  }
 
   get today(): string {
     return new Date().toLocaleDateString('fr-FR');

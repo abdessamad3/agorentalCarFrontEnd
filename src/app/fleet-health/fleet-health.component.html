@@ -1,0 +1,175 @@
+<div class="rp-page" [dir]="dir">
+
+  <!-- Header -->
+  <div class="rp-header">
+    <div class="rp-header-left">
+      <div class="rp-header-icon">❤️</div>
+      <div>
+        <div class="rp-title">Vehicle Health Score</div>
+        <div class="rp-subtitle">Composite health analysis of every vehicle in the fleet</div>
+      </div>
+    </div>
+    <div class="rp-actions">
+      <button class="btn-export btn-print" onclick="window.print()">🖨️ Print</button>
+      <button class="btn-export btn-csv" (click)="load()">↻ Refresh</button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" style="padding:3rem;text-align:center;color:#a0aec0;">
+    <span class="rp-loading-spinner"></span> Computing health scores…
+  </div>
+
+  <ng-container *ngIf="!loading">
+
+    <!-- Fleet health gauge + grade distribution -->
+    <div style="display:grid;grid-template-columns:220px 1fr;gap:1.5rem;margin-bottom:1.5rem;flex-wrap:wrap">
+
+      <!-- Overall gauge -->
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:1.5rem;text-align:center">
+        <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#a0aec0;margin-bottom:.75rem">Fleet Health Score</div>
+        <div style="position:relative;width:120px;height:120px;margin:0 auto;">
+          <svg viewBox="0 0 36 36" style="transform:rotate(-90deg);width:120px;height:120px;">
+            <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e2e8f0" stroke-width="3"/>
+            <circle cx="18" cy="18" r="15.9" fill="none"
+              [attr.stroke]="scoreColor(fleetScore)" stroke-width="3" stroke-linecap="round"
+              [attr.stroke-dasharray]="fleetScore + ' 100'"
+              stroke-dashoffset="0"/>
+          </svg>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px">
+            <span style="font-size:1.6rem;font-weight:800;line-height:1" [style.color]="scoreColor(fleetScore)">{{ fleetScore }}</span>
+            <span style="font-size:.65rem;color:#a0aec0">/ 100</span>
+          </div>
+        </div>
+        <div style="margin-top:.75rem;font-size:.85rem;font-weight:600" [style.color]="scoreColor(fleetScore)">
+          {{ fleetScore >= 75 ? 'Good' : fleetScore >= 60 ? 'Fair' : fleetScore >= 40 ? 'Poor' : 'Critical' }}
+        </div>
+        <div style="font-size:.75rem;color:#718096;margin-top:.25rem">{{ criticalCount }} vehicle(s) need attention</div>
+      </div>
+
+      <!-- Grade distribution -->
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:1.5rem">
+        <div class="rp-section" style="margin-top:0">Grade Distribution</div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1rem">
+          <div *ngFor="let g of ['A','B','C','D','F']" style="text-align:center">
+            <div style="font-size:1.4rem;font-weight:800;margin-bottom:.25rem"
+              [style.color]="gradeColor(g)">{{ gradeDist(g) }}</div>
+            <div style="font-size:.75rem;font-weight:700;color:#718096">Grade {{ g }}</div>
+            <div style="height:4px;border-radius:2px;margin-top:.4rem;background:#f0f0f0">
+              <div style="height:100%;border-radius:2px;transition:width .4s"
+                [style.width]="barPct(gradeDist(g), rows.length) + '%'"
+                [style.background]="gradeColor(g)"></div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:1rem;display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem">
+          <div style="background:#f0fff4;border-radius:10px;padding:.75rem;text-align:center">
+            <div style="font-weight:700;color:#276749">Score Breakdown</div>
+            <div style="font-size:.75rem;color:#718096;margin-top:.4rem">Compliance: 40 pts</div>
+            <div style="font-size:.75rem;color:#718096">Maintenance: 30 pts</div>
+            <div style="font-size:.75rem;color:#718096">Availability: 30 pts</div>
+          </div>
+          <div style="background:#ebf8ff;border-radius:10px;padding:.75rem;text-align:center">
+            <div style="font-weight:700;color:#2b6cb0">A–B (75+)</div>
+            <div style="font-size:.75rem;color:#718096;margin-top:.25rem">Excellent</div>
+            <div style="font-size:1.3rem;font-weight:800;color:#2b6cb0">{{ gradeDistribution['A'] + gradeDistribution['B'] }}</div>
+          </div>
+          <div style="background:#fff5f5;border-radius:10px;padding:.75rem;text-align:center">
+            <div style="font-weight:700;color:#c53030">D–F (&lt;60)</div>
+            <div style="font-size:.75rem;color:#718096;margin-top:.25rem">Need action</div>
+            <div style="font-size:1.3rem;font-weight:800;color:#c53030">{{ gradeDistribution['D'] + gradeDistribution['F'] }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="rp-toolbar">
+      <div class="rp-search-wrap">
+        <span class="rp-search-icon">🔍</span>
+        <input class="rp-search" [(ngModel)]="search" placeholder="Search vehicle or plate…" />
+      </div>
+      <div style="font-size:.8rem;color:#718096">{{ filtered.length }} vehicles</div>
+    </div>
+
+    <!-- Table -->
+    <div class="rp-table-wrap">
+      <table class="rp-table">
+        <thead>
+          <tr>
+            <th>Vehicle</th>
+            <th>Plate</th>
+            <th>Status</th>
+            <th class="td-center" style="cursor:pointer" (click)="toggleSort('score')">
+              Score {{ sortField==='score' ? (sortDir==='asc' ? '↑' : '↓') : '' }}
+            </th>
+            <th class="td-center">Grade</th>
+            <th>Compliance</th>
+            <th>Maintenance</th>
+            <th>Availability</th>
+            <th>Issues</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of filtered">
+            <td style="font-weight:600">{{ r.label }}</td>
+            <td style="font-family:monospace;font-size:.8rem">{{ r.immatriculation || '—' }}</td>
+            <td>
+              <span class="status-pill"
+                [ngClass]="{'sp-available': r.status==='disponible','sp-rented': r.status==='louee','sp-maintenance': r.status==='maintenance','sp-other': !['disponible','louee','maintenance'].includes(r.status)}">
+                {{ r.status || '—' }}
+              </span>
+            </td>
+            <td class="td-center">
+              <div style="display:inline-flex;align-items:center;gap:.5rem">
+                <div style="width:48px;height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden">
+                  <div style="height:100%;border-radius:3px;transition:width .3s"
+                    [style.width]="r.score+'%'" [style.background]="scoreColor(r.score)"></div>
+                </div>
+                <span style="font-weight:700;font-size:.9rem" [style.color]="scoreColor(r.score)">{{ r.score }}</span>
+              </div>
+            </td>
+            <td class="td-center">
+              <span style="display:inline-block;font-weight:800;font-size:1rem;width:28px;height:28px;line-height:28px;border-radius:6px;text-align:center"
+                [style.color]="gradeColor(r.grade)"
+                [style.background]="scoreBg(r.score)">{{ r.grade }}</span>
+            </td>
+            <td>
+              <div style="display:flex;align-items:center;gap:.4rem">
+                <div style="width:60px;height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden">
+                  <div style="height:100%;background:#4299e1;border-radius:3px"
+                    [style.width]="barPct(r.complianceScore, 40)+'%'"></div>
+                </div>
+                <span style="font-size:.78rem;color:#4a5568">{{ r.complianceScore }}/40</span>
+              </div>
+            </td>
+            <td>
+              <div style="display:flex;align-items:center;gap:.4rem">
+                <div style="width:60px;height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden">
+                  <div style="height:100%;background:#48bb78;border-radius:3px"
+                    [style.width]="barPct(r.maintenanceScore, 30)+'%'"></div>
+                </div>
+                <span style="font-size:.78rem;color:#4a5568">{{ r.maintenanceScore }}/30</span>
+              </div>
+            </td>
+            <td>
+              <div style="display:flex;align-items:center;gap:.4rem">
+                <div style="width:60px;height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden">
+                  <div style="height:100%;background:#9f7aea;border-radius:3px"
+                    [style.width]="barPct(r.availabilityScore, 30)+'%'"></div>
+                </div>
+                <span style="font-size:.78rem;color:#4a5568">{{ r.availabilityScore }}/30</span>
+              </div>
+            </td>
+            <td style="max-width:200px">
+              <div *ngIf="r.issues.length === 0" style="color:#276749;font-size:.8rem">✓ No issues</div>
+              <ul *ngIf="r.issues.length > 0" style="margin:0;padding-left:1rem;font-size:.75rem;color:#c53030">
+                <li *ngFor="let issue of r.issues">{{ issue }}</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </ng-container>
+</div>

@@ -1,0 +1,38 @@
+.logo-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.logo-preview {
+  width: 120px;
+  height: 80px;
+  object-fit: contain;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #f9fafb;
+}
+
+.logo-placeholder {
+  width: 120px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed #d1d5db;
+  border-radius: 6px;
+  color: #9ca3af;
+  font-size: 0.78rem;
+}
+
+.logo-upload {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  justify-content: center;
+}
+
+.upload-hint {
+  font-size: 0.72rem;
+  color: #9ca3af;
+}

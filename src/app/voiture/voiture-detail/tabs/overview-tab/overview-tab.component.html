@@ -1,0 +1,100 @@
+<!-- Performance KPI Strip -->
+<div class="kpi-perf-strip">
+  <div class="kpi-perf-card">
+    <div class="kpi-perf-lbl">{{ t('revenue') }}</div>
+    <div class="kpi-perf-val">{{ kpiRevenue | number:'1.0-0' }} <span class="kpi-curr">MAD</span></div>
+    <div class="kpi-perf-trend"
+      *ngIf="!kpiLoading"
+      [class.kpi-perf-trend-up]="yoyChange(kpiRevenue, kpiRevenueLastYear) !== null && yoyChange(kpiRevenue, kpiRevenueLastYear)! >= 0"
+      [class.kpi-perf-trend-down]="yoyChange(kpiRevenue, kpiRevenueLastYear) !== null && yoyChange(kpiRevenue, kpiRevenueLastYear)! < 0"
+      [class.kpi-perf-trend-flat]="yoyChange(kpiRevenue, kpiRevenueLastYear) === null">
+      <ng-container *ngIf="yoyChange(kpiRevenue, kpiRevenueLastYear) !== null; else noRevLastYear">
+        {{ yoyChange(kpiRevenue, kpiRevenueLastYear)! >= 0 ? '▲' : '▼' }} {{ Math.abs(yoyChange(kpiRevenue, kpiRevenueLastYear)!) }}% {{ t('vsLastYear') }}
+      </ng-container>
+      <ng-template #noRevLastYear>{{ t('noDataLastYear') }}</ng-template>
+    </div>
+  </div>
+
+  <div class="kpi-perf-card">
+    <div class="kpi-perf-lbl">{{ t('expenses') }}</div>
+    <div class="kpi-perf-val">{{ kpiExpenses | number:'1.0-0' }} <span class="kpi-curr">MAD</span></div>
+    <div class="kpi-perf-trend"
+      *ngIf="!kpiLoading"
+      [class.kpi-perf-trend-down]="yoyChange(kpiExpenses, kpiExpensesLastYear) !== null && yoyChange(kpiExpenses, kpiExpensesLastYear)! >= 0"
+      [class.kpi-perf-trend-up]="yoyChange(kpiExpenses, kpiExpensesLastYear) !== null && yoyChange(kpiExpenses, kpiExpensesLastYear)! < 0"
+      [class.kpi-perf-trend-flat]="yoyChange(kpiExpenses, kpiExpensesLastYear) === null">
+      <ng-container *ngIf="yoyChange(kpiExpenses, kpiExpensesLastYear) !== null; else noExpLastYear">
+        {{ yoyChange(kpiExpenses, kpiExpensesLastYear)! >= 0 ? '▲' : '▼' }} {{ Math.abs(yoyChange(kpiExpenses, kpiExpensesLastYear)!) }}% {{ t('vsLastYear') }}
+      </ng-container>
+      <ng-template #noExpLastYear>{{ t('noDataLastYear') }}</ng-template>
+    </div>
+  </div>
+
+  <div class="kpi-perf-card">
+    <div class="kpi-perf-lbl">{{ t('profit') }}</div>
+    <div class="kpi-perf-val">{{ kpiProfit | number:'1.0-0' }} <span class="kpi-curr">MAD</span></div>
+    <div class="kpi-perf-trend"
+      *ngIf="!kpiLoading"
+      [class.kpi-perf-trend-up]="yoyChange(kpiProfit, kpiProfitLastYear) !== null && yoyChange(kpiProfit, kpiProfitLastYear)! >= 0"
+      [class.kpi-perf-trend-down]="yoyChange(kpiProfit, kpiProfitLastYear) !== null && yoyChange(kpiProfit, kpiProfitLastYear)! < 0"
+      [class.kpi-perf-trend-flat]="yoyChange(kpiProfit, kpiProfitLastYear) === null">
+      <ng-container *ngIf="yoyChange(kpiProfit, kpiProfitLastYear) !== null; else noProfitLastYear">
+        {{ yoyChange(kpiProfit, kpiProfitLastYear)! >= 0 ? '▲' : '▼' }} {{ Math.abs(yoyChange(kpiProfit, kpiProfitLastYear)!) }}% {{ t('vsLastYear') }}
+      </ng-container>
+      <ng-template #noProfitLastYear>{{ t('noDataLastYear') }}</ng-template>
+    </div>
+  </div>
+
+  <div class="kpi-perf-card">
+    <div class="kpi-perf-lbl">{{ t('occupancyRate') }}</div>
+    <div class="kpi-perf-val">{{ kpiOccupancy | number:'1.0-2' }}%</div>
+  </div>
+
+  <div class="kpi-perf-card">
+    <div class="kpi-perf-lbl">{{ t('complianceScore') }}</div>
+    <div class="kpi-perf-val">{{ kpiCompliance }}%</div>
+  </div>
+
+  <div class="kpi-perf-card">
+    <div class="kpi-perf-lbl">{{ t('status') }}</div>
+    <div class="kpi-perf-val"><span class="status-chip-sm" [ngClass]="statusClass(effectiveStatusVal)">{{ t(effectiveStatusVal) }}</span></div>
+  </div>
+</div>
+
+<!-- Fleet Stats -->
+<div class="ov-stats-mini">
+  <div class="osm-item">
+    <div class="osm-val">{{ reservations.length }}</div>
+    <div class="osm-lbl">{{ t('totalRentals') }}</div>
+  </div>
+  <div class="osm-item">
+    <div class="osm-val">{{ vehicleRevenue | number:'1.0-0' }}</div>
+    <div class="osm-lbl">{{ t('revenueGenerated') }} (MAD)</div>
+  </div>
+  <div class="osm-item">
+    <div class="osm-val">{{ kpiOccupancy | number:'1.0-2' }}%</div>
+    <div class="osm-lbl">{{ t('occupancyEst') }}</div>
+  </div>
+</div>
+
+<!-- Document Status Mini -->
+<div class="ov-section">
+  <div class="ov-section-head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+    {{ t('docStatus') }}
+  </div>
+  <div class="doc-mini-list">
+    <div *ngFor="let doc of docAlerts" class="doc-mini"
+      [class.dm-ok]="doc.level===''"
+      [class.dm-warn]="doc.level==='warning'"
+      [class.dm-danger]="doc.level==='danger'">
+      <span class="dm-icon">{{ doc.icon }}</span>
+      <span class="dm-name">{{ t(doc.name) }}</span>
+      <span class="dm-badge">
+        <ng-container *ngIf="doc.level==='danger'">{{ t('alertExpired') }}</ng-container>
+        <ng-container *ngIf="doc.level==='warning'">{{ t('alertExpiring') }}</ng-container>
+        <ng-container *ngIf="doc.level===''">OK</ng-container>
+      </span>
+    </div>
+  </div>
+</div>

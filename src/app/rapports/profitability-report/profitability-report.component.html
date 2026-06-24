@@ -1,0 +1,234 @@
+<div class="rp-page" [attr.dir]="dir">
+
+  <!-- Header -->
+  <div class="rp-header">
+    <div>
+      <div class="rp-title">Vehicle Profitability Report</div>
+      <div class="rp-subtitle">Revenue vs all operational costs per vehicle · {{ selectedYear }}</div>
+    </div>
+    <div class="rp-actions">
+      <select class="rp-select" [(ngModel)]="selectedYear" (ngModelChange)="onYearChange()">
+        <option *ngFor="let y of availableYears" [value]="y">{{ y }}</option>
+      </select>
+      <button class="btn-export btn-csv" (click)="exportCSV()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export CSV
+      </button>
+      <button class="btn-export btn-print" (click)="print()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Print / PDF
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="rp-loading">Computing profitability data…</div>
+
+  <ng-container *ngIf="!loading">
+
+    <!-- Summary stats -->
+    <div class="rp-stats">
+      <div class="stat-card sc-blue">
+        <div class="sc-num">{{ filtered.length }}</div>
+        <div class="sc-lbl">Active Vehicles</div>
+      </div>
+      <div class="stat-card sc-teal">
+        <div class="sc-num">{{ totals.rentals }}</div>
+        <div class="sc-lbl">Total Rentals</div>
+      </div>
+      <div class="stat-card sc-green">
+        <div class="sc-num" style="font-size:1.1rem">{{ fmt(totals.revenue) }}</div>
+        <div class="sc-lbl">Total Revenue (MAD)</div>
+      </div>
+      <div class="stat-card sc-red">
+        <div class="sc-num" style="font-size:1.1rem">{{ fmt(totals.totalCost) }}</div>
+        <div class="sc-lbl">Total Costs (MAD)</div>
+      </div>
+      <div class="stat-card" [ngClass]="totals.net >= 0 ? 'sc-purple' : 'sc-orange'">
+        <div class="sc-num" [ngClass]="totals.net >= 0 ? 'positive' : 'negative'" style="font-size:1.1rem">{{ fmt(totals.net) }}</div>
+        <div class="sc-lbl">Net Profit (MAD)</div>
+      </div>
+    </div>
+
+    <!-- Cost breakdown summary -->
+    <div class="rp-section">Cost Breakdown — {{ selectedYear }}</div>
+    <div class="rp-stats" style="margin-bottom:1.5rem">
+      <div class="stat-card" style="border-top:3px solid #e53e3e">
+        <div class="sc-num negative" style="font-size:1.1rem">{{ fmt(totals.insuranceCost) }}</div>
+        <div class="sc-lbl">🛡️ Insurance</div>
+      </div>
+      <div class="stat-card" style="border-top:3px solid #f6ad55">
+        <div class="sc-num negative" style="font-size:1.1rem">{{ fmt(totals.repairCost) }}</div>
+        <div class="sc-lbl">🔧 Repairs</div>
+      </div>
+      <div class="stat-card" style="border-top:3px solid #9f7aea">
+        <div class="sc-num negative" style="font-size:1.1rem">{{ fmt(totals.vignetteCost) }}</div>
+        <div class="sc-lbl">📄 Vignette</div>
+      </div>
+      <div class="stat-card" style="border-top:3px solid #38a169">
+        <div class="sc-num negative" style="font-size:1.1rem">{{ fmt(totals.vidangeCost) }}</div>
+        <div class="sc-lbl">🛢️ Vidange</div>
+      </div>
+      <div class="stat-card" style="border-top:3px solid #00b5d8">
+        <div class="sc-num negative" style="font-size:1.1rem">{{ fmt(totals.adblueCost) }}</div>
+        <div class="sc-lbl">💧 AdBlue</div>
+      </div>
+      <div class="stat-card" style="border-top:3px solid #805ad5">
+        <div class="sc-num negative" style="font-size:1.1rem">{{ fmt(totals.suiviCost) }}</div>
+        <div class="sc-lbl">🔍 Suivi Technique</div>
+      </div>
+      <div class="stat-card" style="border-top:3px solid #dd6b20">
+        <div class="sc-num negative" style="font-size:1.1rem">{{ fmt(totals.creditCost) }}</div>
+        <div class="sc-lbl">🏦 Credit Payments</div>
+      </div>
+      <div class="stat-card" style="border-top:3px solid #4299e1">
+        <div class="sc-num negative" style="font-size:1.1rem">{{ fmt(totals.otherCost) }}</div>
+        <div class="sc-lbl">📦 Other</div>
+      </div>
+    </div>
+
+    <!-- ── Executive Leaderboard ── -->
+    <div class="rp-section">Fleet Performance — {{ selectedYear }}</div>
+    <div class="exec-grid" *ngIf="rows.length > 0">
+
+      <!-- Most Utilized -->
+      <div class="exec-card">
+        <div class="exec-card-title">🏆 Most Utilized</div>
+        <div class="exec-card-sub">Top vehicles by rental count</div>
+        <div class="exec-rank-list">
+          <div *ngFor="let row of top10ByRentals; let i = index" class="exec-rank-row">
+            <span class="exec-rank-medal">{{ rankLabel(i) }}</span>
+            <div class="exec-rank-info">
+              <span class="exec-rank-name">{{ row.label }}</span>
+              <span class="exec-rank-plate">{{ row.immatriculation }}</span>
+            </div>
+            <div class="exec-rank-bar-wrap">
+              <div class="exec-rank-bar exec-bar-blue"
+                [style.width.%]="barPct(row.rentals, top10ByRentals[0].rentals)"></div>
+            </div>
+            <span class="exec-rank-val">{{ row.rentals }} rentals</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Least Utilized -->
+      <div class="exec-card">
+        <div class="exec-card-title">📉 Least Utilized</div>
+        <div class="exec-card-sub">Vehicles with lowest activity</div>
+        <div class="exec-rank-list">
+          <div *ngFor="let row of bottom10ByRentals; let i = index" class="exec-rank-row">
+            <span class="exec-rank-medal exec-medal-low">#{{ i + 1 }}</span>
+            <div class="exec-rank-info">
+              <span class="exec-rank-name">{{ row.label }}</span>
+              <span class="exec-rank-plate">{{ row.immatriculation }}</span>
+            </div>
+            <div class="exec-rank-bar-wrap">
+              <div class="exec-rank-bar exec-bar-orange"
+                [style.width.%]="barPct(row.rentals, bottom10ByRentals[bottom10ByRentals.length-1].rentals)"></div>
+            </div>
+            <span class="exec-rank-val">{{ row.rentals }} rentals</span>
+          </div>
+          <div *ngIf="bottom10ByRentals.length === 0" class="exec-empty">All vehicles active</div>
+        </div>
+      </div>
+
+      <!-- Top Revenue -->
+      <div class="exec-card exec-card-full">
+        <div class="exec-card-title">💰 Top Revenue Generators</div>
+        <div class="exec-card-sub">Top vehicles by rental revenue — {{ selectedYear }}</div>
+        <div class="exec-rank-list exec-rank-list-row">
+          <div *ngFor="let row of top10ByRevenue; let i = index" class="exec-rank-row">
+            <span class="exec-rank-medal">{{ rankLabel(i) }}</span>
+            <div class="exec-rank-info">
+              <span class="exec-rank-name">{{ row.label }}</span>
+              <span class="exec-rank-plate">{{ row.immatriculation }}</span>
+            </div>
+            <div class="exec-rank-bar-wrap">
+              <div class="exec-rank-bar exec-bar-green"
+                [style.width.%]="barPct(row.revenue, top10ByRevenue[0].revenue)"></div>
+            </div>
+            <div class="exec-rank-stats">
+              <span class="exec-rank-val positive">{{ fmt(row.revenue) }} MAD</span>
+              <span class="exec-rank-margin" [ngClass]="row.margin >= 0 ? 'positive' : 'negative'">
+                {{ row.margin }}% margin
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Toolbar -->
+    <div class="rp-section">Full Vehicle Breakdown — {{ selectedYear }}</div>
+    <div class="rp-toolbar">
+      <input class="rp-search" type="text" [(ngModel)]="search" placeholder="Search by vehicle or plate…" />
+    </div>
+
+    <!-- Table -->
+    <div class="rp-table-wrap" *ngIf="filtered.length > 0">
+      <table class="rp-table">
+        <thead>
+          <tr>
+            <th (click)="sort('label')" style="cursor:pointer">Vehicle ↕</th>
+            <th>Plate</th>
+            <th class="td-right" (click)="sort('rentals')" style="cursor:pointer"># Rentals ↕</th>
+            <th class="td-right" (click)="sort('revenue')" style="cursor:pointer">Revenue ↕</th>
+            <th class="td-right" (click)="sort('insuranceCost')" style="cursor:pointer">Insurance ↕</th>
+            <th class="td-right" (click)="sort('repairCost')" style="cursor:pointer">Repairs ↕</th>
+            <th class="td-right" (click)="sort('vignetteCost')" style="cursor:pointer">Vignette ↕</th>
+            <th class="td-right" (click)="sort('vidangeCost')" style="cursor:pointer">Vidange ↕</th>
+            <th class="td-right" (click)="sort('adblueCost')" style="cursor:pointer">AdBlue ↕</th>
+            <th class="td-right" (click)="sort('suiviCost')" style="cursor:pointer">Suivi ↕</th>
+            <th class="td-right" (click)="sort('creditCost')" style="cursor:pointer">Credit ↕</th>
+            <th class="td-right" (click)="sort('otherCost')" style="cursor:pointer">Other ↕</th>
+            <th class="td-right" (click)="sort('totalCost')" style="cursor:pointer">Total Cost ↕</th>
+            <th class="td-right" (click)="sort('net')" style="cursor:pointer">Net Profit ↕</th>
+            <th class="td-right" (click)="sort('margin')" style="cursor:pointer">Margin ↕</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of filtered">
+            <td><strong>{{ row.label }}</strong></td>
+            <td class="mono">{{ row.immatriculation }}</td>
+            <td class="td-right">{{ row.rentals }}</td>
+            <td class="td-right mono positive">{{ fmt(row.revenue) }}</td>
+            <td class="td-right mono" [ngClass]="row.insuranceCost > 0 ? 'negative' : 'neutral'">{{ fmt(row.insuranceCost) }}</td>
+            <td class="td-right mono" [ngClass]="row.repairCost > 0 ? 'negative' : 'neutral'">{{ fmt(row.repairCost) }}</td>
+            <td class="td-right mono" [ngClass]="row.vignetteCost > 0 ? 'negative' : 'neutral'">{{ fmt(row.vignetteCost) }}</td>
+            <td class="td-right mono" [ngClass]="row.vidangeCost > 0 ? 'negative' : 'neutral'">{{ fmt(row.vidangeCost) }}</td>
+            <td class="td-right mono" [ngClass]="row.adblueCost > 0 ? 'negative' : 'neutral'">{{ fmt(row.adblueCost) }}</td>
+            <td class="td-right mono" [ngClass]="row.suiviCost > 0 ? 'negative' : 'neutral'">{{ fmt(row.suiviCost) }}</td>
+            <td class="td-right mono" [ngClass]="row.creditCost > 0 ? 'negative' : 'neutral'">{{ fmt(row.creditCost) }}</td>
+            <td class="td-right mono" [ngClass]="row.otherCost > 0 ? 'negative' : 'neutral'">{{ fmt(row.otherCost) }}</td>
+            <td class="td-right mono negative">{{ fmt(row.totalCost) }}</td>
+            <td class="td-right mono" [ngClass]="row.net >= 0 ? 'positive' : 'negative'">{{ fmt(row.net) }}</td>
+            <td class="td-right" [ngClass]="row.margin >= 0 ? 'positive' : 'negative'">{{ row.margin }}%</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr style="font-weight:700; background:#f7fafc;">
+            <td colspan="2">Total</td>
+            <td class="td-right">{{ totals.rentals }}</td>
+            <td class="td-right mono positive">{{ fmt(totals.revenue) }}</td>
+            <td class="td-right mono negative">{{ fmt(totals.insuranceCost) }}</td>
+            <td class="td-right mono negative">{{ fmt(totals.repairCost) }}</td>
+            <td class="td-right mono negative">{{ fmt(totals.vignetteCost) }}</td>
+            <td class="td-right mono negative">{{ fmt(totals.vidangeCost) }}</td>
+            <td class="td-right mono negative">{{ fmt(totals.adblueCost) }}</td>
+            <td class="td-right mono negative">{{ fmt(totals.suiviCost) }}</td>
+            <td class="td-right mono negative">{{ fmt(totals.creditCost) }}</td>
+            <td class="td-right mono negative">{{ fmt(totals.otherCost) }}</td>
+            <td class="td-right mono negative">{{ fmt(totals.totalCost) }}</td>
+            <td class="td-right mono" [ngClass]="totals.net >= 0 ? 'positive' : 'negative'">{{ fmt(totals.net) }}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div *ngIf="filtered.length === 0" class="rp-empty">
+      No vehicle activity found for {{ selectedYear }}
+    </div>
+
+  </ng-container>
+</div>

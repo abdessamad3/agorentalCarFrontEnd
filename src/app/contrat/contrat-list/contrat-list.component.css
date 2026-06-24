@@ -1,0 +1,55 @@
+.btn-new-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  background: #1a3a5c;
+  color: #fff;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.btn-new-link:hover { background: #15304d; }
+
+.btn-edit-form {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 3px 5px;
+  border-radius: 3px;
+}
+
+.btn-edit-form:hover { background: #f3f4f6; }
+
+.status-badge {
+  display: inline-block; padding: 2px 8px; border-radius: 12px;
+  font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .03em;
+}
+.status-confirmed   { background: #dbeafe; color: #1d4ed8; }
+.status-en_cours    { background: #dcfce7; color: #15803d; }
+.status-terminee    { background: #f3f4f6; color: #6b7280; }
+.status-annulee     { background: #fee2e2; color: #dc2626; }
+
+.btn-deliver {
+  background: #1d4ed8; color: #fff; border: none; border-radius: 5px;
+  padding: 4px 10px; font-size: .78rem; font-weight: 600; cursor: pointer;
+  transition: background .15s;
+}
+.btn-deliver:hover { background: #1e40af; }
+
+.btn-return {
+  background: #15803d; color: #fff; border: none; border-radius: 5px;
+  padding: 4px 10px; font-size: .78rem; font-weight: 600; cursor: pointer;
+  transition: background .15s;
+}
+.btn-return:hover { background: #166534; }
+
+.btn-view {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb;
+  border-radius: 5px; padding: 4px 7px; text-decoration: none;
+  transition: background .15s;
+}
+.btn-view:hover { background: #e5e7eb; }

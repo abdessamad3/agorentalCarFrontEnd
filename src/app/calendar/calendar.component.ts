@@ -13,6 +13,7 @@ interface DayCell {
   isToday: boolean;
   isWeekend: boolean;
   bookings: any[];
+  availableCars: any[];
 }
 
 interface AgendaGroup {
@@ -45,7 +46,6 @@ export class CalendarComponent implements OnInit {
   upcomingCount = 0;
   availableFleet = 0;
 
-  // Mobile
   isMobile = false;
   mobileView: 'month' | 'week' | 'day' | 'agenda' = 'month';
   weekCells: DayCell[] = [];
@@ -222,12 +222,24 @@ export class CalendarComponent implements OnInit {
       ? this.reservations
       : this.reservations.filter(r => this.bookingStatusClass(r) === this.filterStatus);
 
-    const bookings = source.filter(r => {
+    const probe = new Date(date); probe.setHours(12,0,0,0);
+    const overlapsDay = (r: any) => {
       const s = new Date(r.dateDebut); s.setHours(0,0,0,0);
       const e = new Date(r.dateFin);   e.setHours(23,59,59,999);
-      const d = new Date(date);        d.setHours(12,0,0,0);
-      return d >= s && d <= e;
-    });
+      return probe >= s && probe <= e;
+    };
+
+    const bookings = source.filter(overlapsDay);
+
+    const bookedIds = new Set(
+      this.reservations
+        .filter(r => this.bookingStatusClass(r) !== 'cancelled')
+        .filter(overlapsDay)
+        .map(r => r.voitureId || r.voiture?.id)
+    );
+    const availableCars = this.voitures.filter(v =>
+      !bookedIds.has(v.id) && (v.voitureStatus === 'available' || v.voitureStatus === 'disponible')
+    );
 
     const day = date.getDay();
     return {
@@ -235,6 +247,7 @@ export class CalendarComponent implements OnInit {
       isToday:   date.toDateString() === today.toDateString(),
       isWeekend: day === 0 || day === 6,
       bookings,
+      availableCars,
     };
   }
 
@@ -371,13 +384,17 @@ export class CalendarComponent implements OnInit {
     }
   }
 
+  private dayHasContent(day: DayCell): boolean {
+    return this.filterStatus === 'available' ? day.availableCars.length > 0 : day.bookings.length > 0;
+  }
+
   selectDay(day: DayCell) {
-    if (!day.bookings.length) return;
+    if (!this.dayHasContent(day)) return;
     this.selectedDay = this.selectedDay?.date.toDateString() === day.date.toDateString() ? null : day;
   }
 
   selectMobileDay(day: DayCell) {
-    if (day.bookings.length > 0) {
+    if (this.dayHasContent(day)) {
       this.bottomSheetDay = day;
     } else {
       this.selectedDayView = new Date(day.date);
@@ -412,6 +429,10 @@ export class CalendarComponent implements OnInit {
   getVoitureLabel(r: any): string {
     const v = this.voitures.find(v => v.id === (r.voitureId || r.voiture?.id));
     return v ? `${v.marque} ${v.modele}` : `#${r.voitureId || '?'}`;
+  }
+
+  carLabel(v: any): string {
+    return `${v.marque} ${v.modele}`;
   }
 
   getClientName(r: any): string {

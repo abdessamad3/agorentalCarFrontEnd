@@ -1,54 +1,575 @@
-<div class="list-container" [attr.dir]="dir">
-  <div class="header"><div class="header-left"><h1>{{ 'utilisateurs' | translate }}</h1></div></div>
-  <div class="search-filter-bar"><div class="search-input"><input type="text" [(ngModel)]="search" [placeholder]="'search' | translate" /></div></div>
-  <div *ngIf="loading" class="loading-state"><p>{{ 'loading' | translate }}</p></div>
-  <div *ngIf="error && !loading" class="error-state"><p>{{ error }}</p><button (click)="load()" class="btn-retry">{{ 'retry' | translate }}</button></div>
-  <div *ngIf="!loading && !error && filtered.length === 0" class="empty-state"><p>{{ 'noData' | translate }}</p></div>
-  <div *ngIf="!loading && !error && filtered.length > 0" class="table-container">
-    <table class="bureaus-table">
-      <thead><tr><th>{{ 'name' | translate }}</th><th>{{ 'prenom' | translate }}</th><th>{{ 'actif' | translate }}</th><th>{{ 'actions' | translate }}</th></tr></thead>
-      <tbody>
-        <tr *ngFor="let item of filtered" class="bureau-row">
-          <td>{{ item.nom }}</td>
-          <td>{{ item.prenom }}</td>
-          <td><span class="status-badge" [ngClass]="item.actif ? 'status-actif' : 'status-inactif'">{{ (item.actif ? 'actif' : 'inactif') | translate }}</span></td>
-          <td class="actions-cell">
-            <button (click)="openView(item)" class="btn-action btn-view" [title]="'view'|translate"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
-            <button (click)="openEdit(item)" class="btn-action btn-edit" [title]="'edit'|translate"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-            <button (click)="openDelete(item.id)" class="btn-action btn-delete" [title]="'delete'|translate"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+<div class="um-page" [attr.dir]="dir">
+
+  <!-- ══ HEADER ══════════════════════════════════════════════════════════════ -->
+  <div class="um-header">
+    <div class="um-header-left">
+      <h1 class="um-title">User Management</h1>
+      <p class="um-subtitle">Manage employees, administrators, permissions, and bureau access.</p>
+    </div>
+    <div class="um-header-actions">
+      <button class="btn-primary-sm" (click)="openCreate()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add User
+      </button>
+    </div>
   </div>
+
+  <!-- ══ STATS ════════════════════════════════════════════════════════════════ -->
+  <div class="um-stats" *ngIf="!loading">
+    <div class="stat-card">
+      <div class="stat-icon-wrap stat-icon-blue">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
+      <div class="stat-body">
+        <div class="stat-num">{{ stats.total }}</div>
+        <div class="stat-lbl">Total Users</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon-wrap stat-icon-green">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <div class="stat-body">
+        <div class="stat-num">{{ stats.active }}</div>
+        <div class="stat-lbl">Active</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon-wrap stat-icon-purple">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div class="stat-body">
+        <div class="stat-num">{{ stats.admins }}</div>
+        <div class="stat-lbl">Administrators</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon-wrap stat-icon-orange">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+      </div>
+      <div class="stat-body">
+        <div class="stat-num">{{ stats.managers }}</div>
+        <div class="stat-lbl">Managers</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon-wrap stat-icon-red">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+      </div>
+      <div class="stat-body">
+        <div class="stat-num">{{ stats.disabled }}</div>
+        <div class="stat-lbl">Disabled</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TOOLBAR ══════════════════════════════════════════════════════════════ -->
+  <div class="um-toolbar">
+    <div class="um-search-wrap">
+      <svg class="search-ico" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="um-search" type="text" [(ngModel)]="search" (ngModelChange)="page = 1"
+        placeholder="Search by name, email, phone…" />
+      <button *ngIf="search" class="search-clear" (click)="search = ''; page = 1">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="um-filters">
+      <select class="um-select" [(ngModel)]="filterRole" (ngModelChange)="page = 1">
+        <option value="">All Roles</option>
+        <option value="ROLE_ADMIN">Admin</option>
+        <option value="ROLE_MANAGER">Manager</option>
+        <option value="ROLE_STAFF">Staff</option>
+      </select>
+      <select class="um-select" [(ngModel)]="filterBureau" (ngModelChange)="page = 1">
+        <option value="">All Bureaus</option>
+        <option *ngFor="let b of bureaux" [value]="b.id">{{ b.nom }}</option>
+      </select>
+      <select class="um-select" [(ngModel)]="filterStatus" (ngModelChange)="page = 1">
+        <option value="">All Status</option>
+        <option value="actif">Active</option>
+        <option value="inactif">Disabled</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Active filter chips -->
+  <div class="chips-bar" *ngIf="activeFilters.length">
+    <span class="chips-label">Filters:</span>
+    <span *ngFor="let chip of activeFilters" class="filter-chip">
+      {{ chip.label }}
+      <button class="chip-rm" (click)="removeFilter(chip.key)">×</button>
+    </span>
+    <button class="chip-clear-all" (click)="resetFilters()">Clear all</button>
+  </div>
+
+  <!-- Bulk bar -->
+  <div class="bulk-bar" *ngIf="someSelected">
+    <span class="bulk-count">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      {{ selectedIds.size }} selected
+    </span>
+    <button class="btn-bulk-action" (click)="clearSelection()">Clear</button>
+  </div>
+
+  <!-- ══ LOADING SKELETON ══════════════════════════════════════════════════════ -->
+  <div *ngIf="loading" class="um-card">
+    <div class="skeleton-row" *ngFor="let i of [1,2,3,4,5]">
+      <div class="sk-avatar"></div>
+      <div class="sk-lines">
+        <div class="sk-line sk-line-lg"></div>
+        <div class="sk-line sk-line-sm"></div>
+      </div>
+      <div class="sk-badge"></div>
+      <div class="sk-badge"></div>
+      <div class="sk-actions"></div>
+    </div>
+  </div>
+
+  <!-- ══ ERROR ════════════════════════════════════════════════════════════════ -->
+  <div *ngIf="error && !loading" class="um-state">
+    <div class="state-icon state-icon-error">
+      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+    </div>
+    <h3 class="state-title">Failed to load</h3>
+    <p class="state-desc">{{ error }}</p>
+    <button class="btn-primary-sm" (click)="load()">Try Again</button>
+  </div>
+
+  <!-- ══ EMPTY ═════════════════════════════════════════════════════════════════ -->
+  <div *ngIf="!loading && !error && filtered.length === 0" class="um-state">
+    <div class="state-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </div>
+    <h3 class="state-title">No users found</h3>
+    <p class="state-desc">
+      {{ (search || filterRole || filterBureau || filterStatus)
+          ? 'Try adjusting your search or filters.'
+          : 'Get started by adding your first team member.' }}
+    </p>
+    <button *ngIf="!search && !filterRole && !filterBureau && !filterStatus"
+      class="btn-primary-sm" (click)="openCreate()">Add First User</button>
+  </div>
+
+  <!-- ══ TABLE ═════════════════════════════════════════════════════════════════ -->
+  <div *ngIf="!loading && !error && filtered.length > 0" class="um-card">
+    <div class="um-table-wrap">
+      <table class="um-table">
+        <thead>
+          <tr>
+            <th class="th-check">
+              <input type="checkbox" [checked]="allSelected" (change)="toggleAll()" />
+            </th>
+            <th class="th-user sortable" (click)="sort('nom')">
+              User
+              <svg class="sort-ico" [class.sort-asc]="sortField==='nom' && sortDir==='asc'"
+                [class.sort-active]="sortField==='nom'"
+                xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="18 15 12 9 6 15"/>
+              </svg>
+            </th>
+            <th class="th-phone">Phone</th>
+            <th class="th-role">Role</th>
+            <th class="th-bureau sortable" (click)="sort('bureauNom')">
+              Bureau
+              <svg class="sort-ico" [class.sort-asc]="sortField==='bureauNom' && sortDir==='asc'"
+                [class.sort-active]="sortField==='bureauNom'"
+                xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="18 15 12 9 6 15"/>
+              </svg>
+            </th>
+            <th class="th-company">Company</th>
+            <th class="th-status">Status</th>
+            <th class="th-actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of paginated"
+              class="um-row"
+              [class.row-selected]="selectedIds.has(item.id)">
+            <td class="td-check">
+              <input type="checkbox" [checked]="selectedIds.has(item.id)" (change)="toggleSelect(item.id)" />
+            </td>
+            <td class="td-user">
+              <div class="user-cell">
+                <div class="u-avatar" [style.background-color]="getAvatarColor(item)">
+                  {{ getInitials(item) }}
+                </div>
+                <div class="u-info">
+                  <span class="u-name">{{ item.prenom }} {{ item.nom }}</span>
+                  <span class="u-email">{{ item.email }}</span>
+                </div>
+              </div>
+            </td>
+            <td class="td-phone td-muted">{{ item.telephone || '—' }}</td>
+            <td class="td-role">
+              <ng-container *ngFor="let r of visibleRoles(item.roles)">
+                <span class="role-badge" [ngClass]="getRoleClass([r])">{{ getRoleLabel(r) }}</span>
+              </ng-container>
+            </td>
+            <td class="td-bureau td-muted">{{ item.bureauNom || '—' }}</td>
+            <td class="td-company">
+              <span *ngIf="item.companyNom" class="role-badge badge-manager" style="font-size:11px;">{{ item.companyNom }}</span>
+              <span *ngIf="!item.companyNom" class="td-muted">—</span>
+            </td>
+            <td class="td-status">
+              <span class="status-pill" [ngClass]="item.actif ? 'pill-active' : 'pill-disabled'">
+                <span class="pill-dot"></span>
+                {{ item.actif ? 'Active' : 'Disabled' }}
+              </span>
+            </td>
+            <td class="td-actions">
+              <div class="actions-cell">
+                <app-btn variant="icon-view" title="View profile" (click)="openDrawer(item)"></app-btn>
+                <app-btn variant="icon-edit" title="Edit user" (click)="openEdit(item)"></app-btn>
+                <div class="ia-dropdown" (click)="$event.stopPropagation()">
+                  <button class="btn-action btn-delete" (click)="toggleDropdown(item.id, $event)" title="More options">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                  </button>
+                  <div class="dd-menu" *ngIf="openDropdownId === item.id">
+                    <button class="dd-item" (click)="openResetPw(item)">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                      Reset Password
+                    </button>
+                    <button class="dd-item dd-danger" (click)="openDelete(item.id)">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                      Delete User
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── Pagination ── -->
+    <div class="um-pagination" *ngIf="totalPages > 1">
+      <span class="pg-info">
+        {{ (page - 1) * pageSize + 1 }}–{{ paginationEnd() }} of {{ filtered.length }} users
+      </span>
+      <div class="pg-controls">
+        <button class="pg-btn" [disabled]="page === 1" (click)="page = page - 1">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          Prev
+        </button>
+        <button *ngFor="let p of getPagesArray()"
+          class="pg-num" [class.pg-active]="p === page" (click)="page = p">
+          {{ p }}
+        </button>
+        <button class="pg-btn" [disabled]="page === totalPages" (click)="page = page + 1">
+          Next
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
 </div>
-<div *ngIf="modalMode" class="modal-overlay" (click)="closeModal()">
-  <div class="modal" (click)="$event.stopPropagation()">
-    <ng-container *ngIf="modalMode === 'view' && selected">
-      <div class="modal-header"><h2>{{ 'utilisateur' | translate }}</h2><button class="modal-close" (click)="closeModal()">&times;</button></div>
-      <div class="modal-body"><div class="detail-row" *ngFor="let e of objectEntries(selected)"><span class="detail-label">{{ e[0] }}</span><span class="detail-value">{{ displayValue(e[1]) }}</span></div></div>
-      <div class="modal-footer"><button class="btn-secondary" (click)="closeModal()">{{ 'close' | translate }}</button><button class="btn-primary" (click)="openEdit(selected)">{{ 'edit' | translate }}</button></div>
-    </ng-container>
-    <ng-container *ngIf="modalMode === 'form'">
-      <div class="modal-header"><h2>{{ 'edit' | translate }} {{ 'utilisateur' | translate }}</h2><button class="modal-close" (click)="closeModal()">&times;</button></div>
-      <form [formGroup]="form" (ngSubmit)="save()">
-        <div class="modal-body">
-          <div class="form-row">
-            <div class="form-group"><label>{{ 'name' | translate }}</label><input type="text" formControlName="nom" /></div>
-            <div class="form-group"><label>{{ 'prenom' | translate }}</label><input type="text" formControlName="prenom" /></div>
-          </div>
-          <div class="form-group">
-            <label>{{ 'actif' | translate }}</label>
-            <select formControlName="actif"><option [ngValue]="true">{{ 'actif' | translate }}</option><option [ngValue]="false">{{ 'inactif' | translate }}</option></select>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     DRAWER
+══════════════════════════════════════════════════════════════════════════ -->
+<div class="drawer-backdrop" [class.visible]="drawerOpen" (click)="closeDrawer()"></div>
+<div class="drawer" [class.open]="drawerOpen">
+  <ng-container *ngIf="drawerUser">
+    <div class="drawer-header">
+      <span class="drawer-title">User Profile</span>
+      <button class="drawer-close" (click)="closeDrawer()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="drawer-body">
+
+      <!-- Profile hero -->
+      <div class="drawer-hero">
+        <div class="drawer-avatar" [style.background-color]="getAvatarColor(drawerUser)">
+          {{ getInitials(drawerUser) }}
+        </div>
+        <div class="drawer-hero-info">
+          <div class="drawer-full-name">{{ drawerUser.prenom }} {{ drawerUser.nom }}</div>
+          <div class="drawer-email-val">{{ drawerUser.email }}</div>
+          <div class="drawer-badges">
+            <ng-container *ngFor="let r of visibleRoles(drawerUser.roles)">
+              <span class="role-badge" [ngClass]="getRoleClass([r])">{{ getRoleLabel(r) }}</span>
+            </ng-container>
+            <span class="status-pill" [ngClass]="drawerUser.actif ? 'pill-active' : 'pill-disabled'">
+              <span class="pill-dot"></span>{{ drawerUser.actif ? 'Active' : 'Disabled' }}
+            </span>
           </div>
         </div>
-        <div class="modal-footer"><button type="button" class="btn-secondary" (click)="closeModal()">{{ 'cancel' | translate }}</button><button type="submit" class="btn-primary" [disabled]="form.invalid || isSubmitting">{{ (isSubmitting ? 'saving' : 'save') | translate }}</button></div>
-      </form>
-    </ng-container>
-    <ng-container *ngIf="modalMode === 'delete'">
-      <div class="modal-header"><h2>{{ 'confirmDelete' | translate }}</h2><button class="modal-close" (click)="closeModal()">&times;</button></div>
-      <div class="modal-body"><p class="delete-warning">{{ 'deleteWarning' | translate }}</p></div>
-      <div class="modal-footer"><button class="btn-secondary" (click)="closeModal()">{{ 'cancel' | translate }}</button><button class="btn-danger" (click)="confirmDelete()">{{ 'delete' | translate }}</button></div>
-    </ng-container>
+      </div>
+
+      <!-- Contact -->
+      <div class="drawer-section">
+        <div class="drawer-section-head">Contact</div>
+        <div class="drawer-row">
+          <span class="drawer-lbl">Email</span>
+          <span class="drawer-val">{{ drawerUser.email || '—' }}</span>
+        </div>
+        <div class="drawer-row">
+          <span class="drawer-lbl">Phone</span>
+          <span class="drawer-val">{{ drawerUser.telephone || '—' }}</span>
+        </div>
+      </div>
+
+      <!-- Organization -->
+      <div class="drawer-section">
+        <div class="drawer-section-head">Organization</div>
+        <div class="drawer-row">
+          <span class="drawer-lbl">Bureau</span>
+          <span class="drawer-val">{{ drawerUser.bureauNom || '—' }}</span>
+        </div>
+        <div class="drawer-row">
+          <span class="drawer-lbl">Roles</span>
+          <span class="drawer-val">{{ displayRoles(drawerUser.roles) }}</span>
+        </div>
+      </div>
+
+      <!-- Timestamps -->
+      <div class="drawer-section">
+        <div class="drawer-section-head">Timestamps</div>
+        <div class="drawer-row">
+          <span class="drawer-lbl">Created</span>
+          <span class="drawer-val">{{ drawerUser.creeAu | date:'mediumDate' }}</span>
+        </div>
+        <div class="drawer-row">
+          <span class="drawer-lbl">Updated</span>
+          <span class="drawer-val">{{ drawerUser.editAu ? (drawerUser.editAu | date:'mediumDate') : '—' }}</span>
+        </div>
+      </div>
+
+      <!-- Signature -->
+      <div class="drawer-section">
+        <div class="drawer-section-head" style="display:flex;justify-content:space-between;align-items:center">
+          <span>Signature</span>
+          <ng-container *ngIf="drawerSignature && signatureMode === 'preview'">
+            <button style="font-size:.72rem;color:#3b82f6;background:none;border:none;cursor:pointer;padding:0"
+              (click)="signatureMode = 'draw'">Replace</button>
+          </ng-container>
+        </div>
+
+        <!-- Preview mode: show existing or empty state -->
+        <ng-container *ngIf="signatureMode === 'preview'">
+          <div *ngIf="drawerSignature" style="border:1px solid #e2e8f0;border-radius:8px;padding:8px;background:#fafafa;margin-bottom:8px">
+            <img [src]="drawerSignature" alt="Signature" style="max-width:100%;max-height:80px;display:block;margin:0 auto" />
+          </div>
+          <div *ngIf="!drawerSignature" style="border:1px dashed #cbd5e0;border-radius:8px;padding:16px;text-align:center;color:#a0aec0;font-size:.8rem;margin-bottom:8px">
+            No signature set
+          </div>
+          <div style="display:flex;gap:8px">
+            <button *ngIf="!drawerSignature" class="btn-primary-sm" style="flex:1" (click)="signatureMode='draw'">
+              + Draw Signature
+            </button>
+            <button *ngIf="drawerSignature" class="btn-outline-danger" style="font-size:.75rem" (click)="clearSignature()">
+              Remove
+            </button>
+          </div>
+        </ng-container>
+
+        <!-- Draw mode -->
+        <ng-container *ngIf="signatureMode === 'draw'">
+          <app-signature-pad
+            label="Draw your signature"
+            [existingSignature]="null"
+            (signatureChange)="onSignatureDraw($event)">
+          </app-signature-pad>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn-outline-danger" style="flex:1;font-size:.78rem" (click)="signatureMode='preview'; signatureDrawing=null">
+              Cancel
+            </button>
+            <button class="btn-primary-sm" style="flex:1" [disabled]="!signatureDrawing || signatureSaving"
+              (click)="saveSignature()">
+              {{ signatureSaving ? 'Saving…' : 'Save Signature' }}
+            </button>
+          </div>
+        </ng-container>
+      </div>
+
+    </div>
+    <div class="drawer-footer">
+      <button class="btn-outline-danger" (click)="deleteFromDrawer()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+        Delete
+      </button>
+      <button class="btn-primary-sm" (click)="editFromDrawer()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Edit User
+      </button>
+    </div>
+  </ng-container>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODAL: CREATE / EDIT
+══════════════════════════════════════════════════════════════════════════ -->
+<div *ngIf="modalMode === 'form'" class="modal-overlay" (click)="closeModal()">
+  <div class="modal modal-wide" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ isCreateMode ? 'Add New User' : 'Edit User' }}</h2>
+      <button class="modal-close" (click)="closeModal()">×</button>
+    </div>
+    <form [formGroup]="form" (ngSubmit)="save()">
+      <div class="modal-body">
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>First Name</label>
+            <input type="text" formControlName="prenom" placeholder="First name" />
+          </div>
+          <div class="form-group">
+            <label>Last Name <span class="required">*</span></label>
+            <input type="text" formControlName="nom" placeholder="Last name"
+              [class.invalid]="form.get('nom')?.invalid && form.get('nom')?.touched" />
+            <span *ngIf="form.get('nom')?.invalid && form.get('nom')?.touched" class="field-error">Last name is required.</span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Email <span class="required">*</span></label>
+            <input type="email" formControlName="email" placeholder="user@example.com"
+              [class.invalid]="form.get('email')?.invalid && form.get('email')?.touched" />
+            <span *ngIf="form.get('email')?.invalid && form.get('email')?.touched" class="field-error">Valid email required.</span>
+          </div>
+          <div class="form-group">
+            <label>Phone</label>
+            <input type="tel" formControlName="telephone" placeholder="+212 6XX XXX XXX" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Bureau</label>
+            <select formControlName="bureauId">
+              <option [ngValue]="null">— None —</option>
+              <option *ngFor="let b of bureaux" [ngValue]="b.id">{{ b.nom }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Company</label>
+            <select formControlName="companyId">
+              <option [ngValue]="null">— None —</option>
+              <option *ngFor="let c of companies" [ngValue]="c.id">{{ c.nom }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Status</label>
+            <select formControlName="actif">
+              <option [ngValue]="true">Active</option>
+              <option [ngValue]="false">Disabled</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Roles</label>
+          <div class="roles-grid">
+            <label *ngFor="let role of availableRoles" class="role-checkbox">
+              <input type="checkbox" [checked]="hasRole(role)" (change)="toggleRole(role)" />
+              <span>{{ getRoleLabel(role) }}</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>
+            Password
+            <span *ngIf="!isCreateMode" class="field-hint"> — leave blank to keep current</span>
+            <span *ngIf="isCreateMode" class="required"> *</span>
+          </label>
+          <input type="password" formControlName="password"
+            [placeholder]="isCreateMode ? 'Min. 8 characters' : 'Leave blank to keep current'" />
+          <span *ngIf="form.get('password')?.invalid && form.get('password')?.touched" class="field-error">
+            Minimum 8 characters required.
+          </span>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <app-btn variant="secondary" (click)="closeModal()">Cancel</app-btn>
+        <app-btn variant="primary" type="submit" [disabled]="form.invalid || isSubmitting">
+          {{ isSubmitting ? 'Saving…' : (isCreateMode ? 'Create User' : 'Save Changes') }}
+        </app-btn>
+      </div>
+    </form>
   </div>
 </div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODAL: DELETE
+══════════════════════════════════════════════════════════════════════════ -->
+<div *ngIf="modalMode === 'delete'" class="modal-overlay" (click)="closeModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Delete User</h2>
+      <button class="modal-close" (click)="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="delete-warning">This action cannot be undone. The user account will be permanently deleted.</p>
+    </div>
+    <div class="modal-footer">
+      <app-btn variant="secondary" (click)="closeModal()">Cancel</app-btn>
+      <app-btn variant="danger" (click)="confirmDelete()">Delete User</app-btn>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     RESET PASSWORD MODAL
+══════════════════════════════════════════════════════════════════════════ -->
+<ng-container *ngIf="resetPwModal">
+<div class="modal-overlay" (click)="closeResetPw()"></div>
+<div class="modal">
+  <div class="modal-header">
+    <h2>Reset Password</h2>
+    <button class="modal-close" (click)="closeResetPw()">×</button>
+  </div>
+  <div class="modal-body" *ngIf="resetPwUser">
+    <p style="color:#718096;font-size:.875rem;margin-bottom:16px">
+      Set a new password for <strong>{{ resetPwUser.prenom }} {{ resetPwUser.nom }}</strong> ({{ resetPwUser.email }})
+    </p>
+
+    <div class="rp-alert-error" *ngIf="resetPwError" style="color:#c53030;background:#fff5f5;border:1px solid #fed7d7;padding:8px 12px;border-radius:6px;font-size:.85rem;margin-bottom:12px">
+      {{ resetPwError }}
+    </div>
+
+    <form [formGroup]="resetPwForm" (ngSubmit)="submitResetPw()" novalidate>
+      <div class="form-group">
+        <label>New Password</label>
+        <div style="position:relative">
+          <input class="form-control"
+            [type]="resetPwShowPw ? 'text' : 'password'"
+            formControlName="newPassword"
+            placeholder="Minimum 8 characters, uppercase, number, special" />
+          <button type="button"
+            style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1rem"
+            (click)="resetPwShowPw = !resetPwShowPw" tabindex="-1">
+            {{ resetPwShowPw ? '🙈' : '👁' }}
+          </button>
+        </div>
+        <small style="color:#c53030" *ngIf="resetPwForm.get('newPassword')?.invalid && resetPwForm.get('newPassword')?.touched">
+          Password must be at least 8 characters
+        </small>
+      </div>
+
+      <div class="form-group" style="display:flex;align-items:center;gap:8px">
+        <input type="checkbox" id="forceChange" formControlName="forceChange" />
+        <label for="forceChange" style="font-weight:400;margin:0;cursor:pointer">
+          Require user to change password on next login
+        </label>
+      </div>
+
+      <div class="modal-footer" style="margin-top:0;padding:0">
+        <app-btn variant="secondary" (click)="closeResetPw()">Cancel</app-btn>
+        <app-btn variant="primary" type="submit" [disabled]="resetPwSubmitting">
+          {{ resetPwSubmitting ? 'Saving…' : 'Reset Password' }}
+        </app-btn>
+      </div>
+    </form>
+  </div>
+</div>
+</ng-container>

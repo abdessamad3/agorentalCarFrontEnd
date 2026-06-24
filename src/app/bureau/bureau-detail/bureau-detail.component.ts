@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BureauService } from '../../services/bureauservice.service';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-bureau-detail',
@@ -18,7 +19,8 @@ export class BureauDetailComponent implements OnInit {
   constructor(
     private bureauService: BureauService,
     private route: ActivatedRoute,
-    public router: Router
+    public router: Router,
+    private toast: ToastService,
   ) {}
 
   ngOnInit(): void {
@@ -36,7 +38,6 @@ export class BureauDetailComponent implements OnInit {
         this.loading = false;
       },
       error: (err) => {
-        console.error('❌ Error:', err);
         this.error = 'Failed to load bureau';
         this.loading = false;
       }
@@ -51,12 +52,11 @@ export class BureauDetailComponent implements OnInit {
     if (confirm('Are you sure you want to delete this bureau?')) {
       this.bureauService.deleteBureau(this.bureau.id).subscribe({
         next: () => {
-          alert('Bureau deleted successfully!');
+          this.toast.show('Bureau deleted successfully!', 'success');
           this.router.navigate(['/bureau']);
         },
         error: (err) => {
-          console.error('❌ Error:', err);
-          alert('Error: ' + (err.error?.message || 'Failed to delete bureau'));
+          this.toast.show(err.error?.message || 'Failed to delete bureau', 'error');
         }
       });
     }

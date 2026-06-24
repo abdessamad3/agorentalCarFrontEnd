@@ -1,0 +1,190 @@
+<div class="detail-page" [attr.dir]="dir">
+
+  <!-- Loading / Error -->
+  <div *ngIf="loading" class="loading-state"><p>Loading client profile…</p></div>
+  <div *ngIf="error && !loading" class="error-state"><p>{{ error }}</p></div>
+
+  <ng-container *ngIf="!loading && !error && client">
+
+    <!-- Back link -->
+    <div class="back-bar">
+      <a routerLink="/client" class="back-link">← Back to Clients</a>
+    </div>
+
+    <!-- Profile header -->
+    <div class="profile-header">
+      <div class="avatar">{{ (client.nom || '?')[0].toUpperCase() }}</div>
+      <div class="profile-info">
+        <h1 class="profile-name">{{ clientName }}</h1>
+        <div class="profile-meta">
+          <span *ngIf="client.telephone">📞 {{ client.telephone }}</span>
+          <span *ngIf="client.cin">🪪 CIN: {{ client.cin }}</span>
+          <span *ngIf="client.passeport">🛂 Passeport: {{ client.passeport }}</span>
+          <span *ngIf="client.permisConduite">🚗 Permis: {{ client.permisConduite }}</span>
+          <span *ngIf="client.nationalite">🌍 {{ client.nationalite }}</span>
+        </div>
+      </div>
+      <div class="profile-actions">
+        <app-btn variant="secondary" [routerLink]="['/client']">← Clients</app-btn>
+      </div>
+    </div>
+
+    <!-- Stats row -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-value">{{ reservations.length }}</div>
+        <div class="stat-label">Total Reservations</div>
+      </div>
+      <div class="stat-card stat-card-active">
+        <div class="stat-value">{{ activeCount }}</div>
+        <div class="stat-label">Active</div>
+      </div>
+      <div class="stat-card stat-card-billed">
+        <div class="stat-value">{{ totalBilled | number:'1.0-0' }} MAD</div>
+        <div class="stat-label">Total Billed</div>
+      </div>
+      <div class="stat-card stat-card-paid">
+        <div class="stat-value">{{ totalSpent | number:'1.0-0' }} MAD</div>
+        <div class="stat-label">Total Paid</div>
+      </div>
+      <div class="stat-card stat-card-remaining" *ngIf="totalBilled - totalSpent > 0">
+        <div class="stat-value">{{ (totalBilled - totalSpent) | number:'1.0-0' }} MAD</div>
+        <div class="stat-label">Outstanding</div>
+      </div>
+    </div>
+
+    <!-- Financial Summary (closed reservations only — authoritative debt figure) -->
+    <div class="financial-summary" *ngIf="financialSummary">
+      <h3 class="fs-title">Financial Summary</h3>
+      <div class="fs-grid">
+        <div class="fs-item">
+          <span class="fs-label">Total Rentals</span>
+          <span class="fs-value">{{ financialSummary.totalRentals }}</span>
+        </div>
+        <div class="fs-item">
+          <span class="fs-label">Total Revenue</span>
+          <span class="fs-value">{{ financialSummary.totalRevenue | number:'1.0-2' }} MAD</span>
+        </div>
+        <div class="fs-item">
+          <span class="fs-label">Total Paid</span>
+          <span class="fs-value">{{ financialSummary.totalPaid | number:'1.0-2' }} MAD</span>
+        </div>
+        <div class="fs-item">
+          <span class="fs-label">Outstanding Debt</span>
+          <span class="fs-value debt-badge" [ngClass]="debtRiskClass(financialSummary.outstandingDebt)"
+                *ngIf="financialSummary.outstandingDebt > 0">
+            {{ financialSummary.outstandingDebt | number:'1.0-2' }} MAD
+          </span>
+          <span class="fs-value" *ngIf="!financialSummary.outstandingDebt">0 MAD</span>
+        </div>
+        <div class="fs-item" *ngIf="financialSummary.overpayments > 0">
+          <span class="fs-label">Overpayments</span>
+          <span class="fs-value text-green">{{ financialSummary.overpayments | number:'1.0-2' }} MAD</span>
+        </div>
+        <div class="fs-item">
+          <span class="fs-label">Last Payment</span>
+          <span class="fs-value">{{ (financialSummary.lastPaymentDate | date:'dd/MM/yyyy') || '—' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn" [class.active]="activeTab === 'reservations'" (click)="setTab('reservations')">
+        Reservations <span class="tab-count">{{ reservations.length }}</span>
+      </button>
+      <button class="tab-btn" [class.active]="activeTab === 'contrats'" (click)="setTab('contrats')">
+        Contracts <span class="tab-count">{{ contrats.length }}</span>
+      </button>
+    </div>
+
+    <!-- Reservations tab -->
+    <div *ngIf="activeTab === 'reservations'">
+      <div *ngIf="reservations.length === 0" class="empty-section">
+        <span class="empty-icon">📅</span>
+        <p>No reservations found for this client.</p>
+      </div>
+      <div *ngIf="reservations.length > 0" class="table-container">
+        <table class="detail-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Vehicle</th>
+              <th>Start</th>
+              <th>End</th>
+              <th>Total</th>
+              <th>Paid</th>
+              <th>Remaining</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of reservations">
+              <td class="id-cell">{{ r.id }}</td>
+              <td>
+                <span class="vehicle-name">{{ r.voiture?.marque }} {{ r.voiture?.modele }}</span>
+              </td>
+              <td class="date-cell">{{ r.dateDebut | date:'dd/MM/yyyy' }}</td>
+              <td class="date-cell">{{ r.dateFin | date:'dd/MM/yyyy' }}</td>
+              <td class="amount-cell">{{ r.total | number:'1.0-0' }} MAD</td>
+              <td class="amount-cell paid">{{ (r.montantPaye || 0) | number:'1.0-0' }} MAD</td>
+              <td class="amount-cell remaining"
+                  [class.zero]="(+r.total - +r.montantPaye) <= 0">
+                {{ (+r.total - +r.montantPaye) | number:'1.0-0' }} MAD
+              </td>
+              <td>
+                <span class="status-chip" [ngClass]="statusClass(r.reservationStatus)">
+                  {{ statusLabel(r.reservationStatus) }}
+                </span>
+              </td>
+              <td class="actions-cell">
+                <button class="btn-act" (click)="downloadInvoice(r)" title="Download Invoice">🧾</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Contracts tab -->
+    <div *ngIf="activeTab === 'contrats'">
+      <div *ngIf="contrats.length === 0" class="empty-section">
+        <span class="empty-icon">📄</span>
+        <p>No contracts found for this client.</p>
+      </div>
+      <div *ngIf="contrats.length > 0" class="table-container">
+        <table class="detail-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Vehicle</th>
+              <th>Start</th>
+              <th>End</th>
+              <th>Amount</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let c of contrats">
+              <td class="id-cell">{{ c.id }}</td>
+              <td>{{ c.voitureLabel || c.voiture?.marque }}</td>
+              <td class="date-cell">{{ c.dateDebut | date:'dd/MM/yyyy' }}</td>
+              <td class="date-cell">{{ c.dateFin | date:'dd/MM/yyyy' }}</td>
+              <td class="amount-cell">{{ c.montantTotal | number:'1.0-0' }} MAD</td>
+              <td class="date-cell">{{ c.creeAu | date:'dd/MM/yyyy' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </ng-container>
+
+  <!-- No client found -->
+  <div *ngIf="!loading && !error && !client" class="error-state">
+    <p>Client not found.</p>
+    <a routerLink="/client" class="back-link">← Back to Clients</a>
+  </div>
+
+</div>

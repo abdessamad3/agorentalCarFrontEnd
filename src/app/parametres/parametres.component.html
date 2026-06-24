@@ -1,0 +1,529 @@
+<div class="list-container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1>⚙️ {{ 'companySettings' | translate }}</h1>
+      <p class="subtitle">{{ 'companySettingsDesc' | translate }}</p>
+    </div>
+    <div class="header-actions">
+      <select class="form-control bureau-select" (change)="onBureauChange($event)" [disabled]="isLoading">
+        <option *ngFor="let b of bureaux" [value]="b.id" [selected]="b.id === selectedBureauId">{{ b.nom }}</option>
+      </select>
+      <button class="btn-add" (click)="save()" [disabled]="isSaving || !selectedBureauId">
+        <span *ngIf="!isSaving">💾 {{ 'saveChanges' | translate }}</span>
+        <span *ngIf="isSaving">⏳ {{ 'saving' | translate }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Success Banner -->
+  <div *ngIf="saveSuccess" class="success-banner">
+    ✅ {{ 'settingsSaved' | translate }}
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs-bar">
+    <button
+      *ngFor="let tab of tabs"
+      class="tab-btn"
+      [class.active]="activeTab === tab.key"
+      (click)="setTab(tab.key)"
+      type="button"
+    >
+      {{ tab.icon }} {{ tab.labelKey | translate }}
+    </button>
+  </div>
+
+  <!-- Form -->
+  <form [formGroup]="form">
+
+    <!-- ==================== GENERAL TAB ==================== -->
+    <div *ngIf="activeTab === 'general'">
+
+      <!-- Logo -->
+      <div class="settings-card">
+        <div class="card-header">
+          <h3>{{ 'companyLogo' | translate }}</h3>
+        </div>
+        <div class="logo-upload-area">
+          <div class="logo-preview-box">
+            <img *ngIf="logoPreview" [src]="logoPreview" alt="Company Logo" class="logo-img" />
+            <div *ngIf="!logoPreview" class="logo-placeholder">🏢</div>
+          </div>
+          <div class="logo-upload-actions">
+            <app-upload-btn [label]="'📎 ' + ('uploadLogo' | translate)" accept="image/*" (fileSelected)="onLogoChange($event)"></app-upload-btn>
+            <button *ngIf="logoPreview" class="btn-danger btn-sm" type="button" (click)="removeLogo()">{{ 'remove' | translate }}</button>
+            <p class="upload-hint">{{ 'logoHint' | translate }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Company Info -->
+      <div class="settings-card">
+        <div class="card-header">
+          <h3>{{ 'companyInformation' | translate }}</h3>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ 'companyName' | translate }} <span class="required">*</span></label>
+            <input formControlName="companyName" type="text" placeholder="AGOCAR" />
+          </div>
+          <div class="form-group">
+            <label>{{ 'tradeName' | translate }}</label>
+            <input formControlName="tradeName" type="text" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ 'iceNumber' | translate }}</label>
+            <input formControlName="ice" type="text" placeholder="000000000000000" />
+          </div>
+          <div class="form-group">
+            <label>{{ 'rcNumber' | translate }}</label>
+            <input formControlName="rc" type="text" placeholder="12345" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ 'cnssNumber' | translate }}</label>
+            <input formControlName="cnss" type="text" />
+          </div>
+          <div class="form-group">
+            <label>{{ 'taxIdIF' | translate }}</label>
+            <input formControlName="taxId" type="text" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Contact & Address -->
+      <div class="settings-card">
+        <div class="card-header">
+          <h3>{{ 'contactAddress' | translate }}</h3>
+        </div>
+        <div class="form-group">
+          <label>{{ 'address' | translate }}</label>
+          <input formControlName="address" type="text" placeholder="123 Rue Mohammed V" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ 'city' | translate }}</label>
+            <input formControlName="city" type="text" placeholder="Casablanca" />
+          </div>
+          <div class="form-group">
+            <label>{{ 'region' | translate }}</label>
+            <input formControlName="region" type="text" placeholder="Grand Casablanca" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ 'postalCode' | translate }}</label>
+            <input formControlName="postalCode" type="text" placeholder="20000" />
+          </div>
+          <div class="form-group">
+            <label>{{ 'phone' | translate }}</label>
+            <input formControlName="phone" type="tel" placeholder="+212 5XX XXX XXX" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ 'emailLabel' | translate }}</label>
+            <input formControlName="email" type="email" placeholder="contact@company.ma" />
+          </div>
+          <div class="form-group">
+            <label>{{ 'website' | translate }}</label>
+            <input formControlName="website" type="url" placeholder="https://company.ma" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ 'whatsapp' | translate }}</label>
+            <input formControlName="whatsapp" type="tel" placeholder="+212 6XX XXX XXX" />
+          </div>
+          <div class="form-group"></div>
+        </div>
+      </div>
+
+      <!-- Danger Zone -->
+      <div class="settings-card danger-card">
+        <div class="card-header danger-header">
+          <h3>⚠️ {{ 'dangerZone' | translate }}</h3>
+        </div>
+        <div class="danger-item">
+          <div class="danger-text">
+            <strong>{{ 'deleteCompanyAccount' | translate }}</strong>
+            <p>{{ 'deleteCompanyAccountDesc' | translate }}</p>
+          </div>
+          <button class="btn-danger" type="button" (click)="confirmDelete()">{{ 'deleteAccount' | translate }}</button>
+        </div>
+      </div>
+
+      <!-- Delete Confirm Modal -->
+      <div *ngIf="showDeleteConfirm" class="modal-overlay" (click)="cancelDelete()">
+        <div class="modal" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h2>{{ 'confirmAccountDeletion' | translate }}</h2>
+            <button class="modal-close" (click)="cancelDelete()">&times;</button>
+          </div>
+          <div class="modal-body">
+            <p class="delete-warning">{{ 'deleteAccountWarning' | translate }}</p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-secondary" type="button" (click)="cancelDelete()">{{ 'cancel' | translate }}</button>
+            <button class="btn-danger" type="button">{{ 'yesDeleteEverything' | translate }}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== LOCALIZATION TAB ==================== -->
+    <div *ngIf="activeTab === 'localization'">
+
+      <div class="settings-card">
+        <div class="card-header">
+          <h3>{{ 'currencyLanguage' | translate }}</h3>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ 'currency' | translate }}</label>
+            <select formControlName="currency">
+              <option value="MAD">MAD — Moroccan Dirham</option>
+              <option value="EUR">EUR — Euro</option>
+              <option value="USD">USD — US Dollar</option>
+              <option value="GBP">GBP — British Pound</option>
+              <option value="SAR">SAR — Saudi Riyal</option>
+              <option value="AED">AED — UAE Dirham</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>{{ 'defaultLanguage' | translate }}</label>
+            <select formControlName="language">
+              <option value="fr">French (Français)</option>
+              <option value="en">English</option>
+              <option value="ar">Arabic (العربية)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ 'dateFormat' | translate }}</label>
+            <select formControlName="dateFormat">
+              <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+              <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+              <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>{{ 'timezone' | translate }}</label>
+            <select formControlName="timezone">
+              <option value="Africa/Casablanca">Africa/Casablanca (GMT+1)</option>
+              <option value="Europe/Paris">Europe/Paris (GMT+2)</option>
+              <option value="Europe/London">Europe/London (GMT+1)</option>
+              <option value="Asia/Riyadh">Asia/Riyadh (GMT+3)</option>
+              <option value="Asia/Dubai">Asia/Dubai (GMT+4)</option>
+              <option value="America/New_York">America/New_York (EST)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ 'distanceUnit' | translate }}</label>
+            <select formControlName="distanceUnit">
+              <option value="km">Kilometers (km)</option>
+              <option value="mi">Miles (mi)</option>
+            </select>
+          </div>
+          <div class="form-group"></div>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <div class="card-header">
+          <h3>{{ 'vatTaxSettings' | translate }}</h3>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ 'vatRate' | translate }}</label>
+            <input formControlName="vatRate" type="number" min="0" max="100" step="0.5" />
+          </div>
+          <div class="form-group">
+            <label>{{ 'vatLabel' | translate }}</label>
+            <input formControlName="vatLabel" type="text" placeholder="TVA" />
+          </div>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <strong>{{ 'showVatBreakdownLabel' | translate }}</strong>
+            <span>{{ 'showVatBreakdownDesc' | translate }}</span>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" formControlName="showVatBreakdown" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== RENTAL RULES TAB ==================== -->
+    <div *ngIf="activeTab === 'rental'">
+
+      <div class="settings-card">
+        <div class="card-header">
+          <h3>{{ 'durationBookingLimits' | translate }}</h3>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ 'minDurationLabel' | translate }}</label>
+            <input formControlName="minDuration" type="number" min="1" />
+          </div>
+          <div class="form-group">
+            <label>{{ 'maxDurationLabel' | translate }}</label>
+            <input formControlName="maxDuration" type="number" min="1" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ 'advanceBookingLimitLabel' | translate }}</label>
+            <input formControlName="advanceBookingLimit" type="number" min="0" />
+          </div>
+          <div class="form-group"></div>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <div class="card-header">
+          <h3>{{ 'pickupReturn' | translate }}</h3>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ 'defaultPickupTimeLabel' | translate }}</label>
+            <input formControlName="defaultPickupTime" type="time" />
+          </div>
+          <div class="form-group">
+            <label>{{ 'defaultReturnTimeLabel' | translate }}</label>
+            <input formControlName="defaultReturnTime" type="time" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ 'gracePeriodLabel' | translate }}</label>
+            <input formControlName="gracePeriod" type="number" min="0" step="0.5" />
+          </div>
+          <div class="form-group"></div>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <div class="card-header">
+          <h3>{{ 'depositFees' | translate }}</h3>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ 'defaultDepositLabel' | translate }}</label>
+            <input formControlName="defaultDeposit" type="number" min="0" />
+          </div>
+          <div class="form-group">
+            <label>{{ 'lateReturnFeeLabel' | translate }}</label>
+            <input formControlName="lateReturnFee" type="number" min="0" />
+          </div>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <strong>{{ 'requireDepositLabel' | translate }}</strong>
+            <span>{{ 'requireDepositDesc' | translate }}</span>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" formControlName="requireDeposit" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <strong>{{ 'allowPartialPaymentsLabel' | translate }}</strong>
+            <span>{{ 'allowPartialPaymentsDesc' | translate }}</span>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" formControlName="allowPartialPayments" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <div class="card-header">
+          <h3>{{ 'documentsContracts' | translate }}</h3>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <strong>{{ 'autoGenerateContractLabel' | translate }}</strong>
+            <span>{{ 'autoGenerateContractDesc' | translate }}</span>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" formControlName="autoGenerateContract" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <strong>{{ 'autoGenerateInvoiceLabel' | translate }}</strong>
+            <span>{{ 'autoGenerateInvoiceDesc' | translate }}</span>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" formControlName="autoGenerateInvoice" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <strong>{{ 'requireSignatureLabel' | translate }}</strong>
+            <span>{{ 'requireSignatureDesc' | translate }}</span>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" formControlName="requireSignature" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="form-group footer-note">
+          <label>{{ 'contractFooterNoteLabel' | translate }}</label>
+          <textarea
+            formControlName="contractFooterNote"
+            rows="4"
+          ></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== NOTIFICATIONS TAB ==================== -->
+    <div *ngIf="activeTab === 'notifications'">
+
+      <div class="settings-card">
+        <div class="card-header">
+          <h3>{{ 'notificationEvents' | translate }}</h3>
+          <span class="card-hint">{{ 'notificationEventsHint' | translate }}</span>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <strong>{{ 'notifNewReservationLabel' | translate }}</strong>
+            <span>{{ 'notifNewReservationDesc' | translate }}</span>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" formControlName="notifNewReservation" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <strong>{{ 'notifContractActivatedLabel' | translate }}</strong>
+            <span>{{ 'notifContractActivatedDesc' | translate }}</span>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" formControlName="notifContractActivated" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <strong>{{ 'notifReturnOverdueLabel' | translate }}</strong>
+            <span>{{ 'notifReturnOverdueDesc' | translate }}</span>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" formControlName="notifReturnOverdue" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <strong>{{ 'notifPaymentReceivedLabel' | translate }}</strong>
+            <span>{{ 'notifPaymentReceivedDesc' | translate }}</span>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" formControlName="notifPaymentReceived" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <strong>{{ 'notifMaintenanceDueLabel' | translate }}</strong>
+            <span>{{ 'notifMaintenanceDueDesc' | translate }}</span>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" formControlName="notifMaintenanceDue" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <strong>{{ 'notifInsuranceExpiryLabel' | translate }}</strong>
+            <span>{{ 'notifInsuranceExpiryDesc' | translate }}</span>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" formControlName="notifInsuranceExpiry" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <strong>{{ 'notifInspectionDueLabel' | translate }}</strong>
+            <span>{{ 'notifInspectionDueDesc' | translate }}</span>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" formControlName="notifInspectionDue" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Test email card -->
+      <div class="settings-card">
+        <div class="card-header">
+          <h3>📧 Daily Report Email</h3>
+          <span class="card-hint">Sends a test version of the daily alert report to abdessamadjibrane2&#64;gmail.com</span>
+        </div>
+        <div class="test-email-row">
+          <div class="test-email-info">
+            <strong>Test email delivery</strong>
+            <span>Sends the current compliance, oil change, and credit alerts immediately to verify SMTP is working.</span>
+          </div>
+          <button
+            class="btn-test-email"
+            type="button"
+            [disabled]="testEmailStatus === 'sending'"
+            (click)="sendTestEmail()"
+          >
+            <span *ngIf="testEmailStatus === ''">📤 Send Test Email</span>
+            <span *ngIf="testEmailStatus === 'sending'">⏳ Sending…</span>
+            <span *ngIf="testEmailStatus === 'sent'">✅ Email Sent!</span>
+            <span *ngIf="testEmailStatus === 'error'">❌ Failed — check SMTP</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <div class="card-header">
+          <h3>{{ 'alertRecipients' | translate }}</h3>
+          <span class="card-hint">{{ 'alertRecipientsHint' | translate }}</span>
+        </div>
+        <div class="form-group">
+          <label>{{ 'adminAlertEmailLabel' | translate }}</label>
+          <input formControlName="adminAlertEmail" type="email" placeholder="admin@company.ma" />
+        </div>
+        <div class="form-group">
+          <label>{{ 'operationsEmailLabel' | translate }}</label>
+          <input formControlName="operationsEmail" type="email" placeholder="ops@company.ma" />
+        </div>
+        <div class="form-group">
+          <label>{{ 'financeAlertEmailLabel' | translate }}</label>
+          <input formControlName="financeAlertEmail" type="email" placeholder="finance@company.ma" />
+        </div>
+      </div>
+    </div>
+
+  </form>
+</div>

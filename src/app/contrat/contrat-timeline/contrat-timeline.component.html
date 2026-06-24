@@ -1,0 +1,25 @@
+<div class="timeline-track">
+  <ng-container *ngFor="let step of timeline; let i = index; let last = last">
+    <div class="timeline-step"
+         [class.completed]="step.completed"
+         [class.current]="isCurrent(step)"
+         [class.pending]="!step.completed">
+
+      <div class="step-circle"
+           [class.clickable]="isClickable(step)"
+           (click)="onStepClick(step)"
+           [title]="isClickable(step) ? 'Voir les détails' : ''">
+        <span class="step-icon">{{ stageIcons[step.stage] }}</span>
+      </div>
+
+      <div class="step-info">
+        <div class="step-label">{{ step.label }}</div>
+        <div class="step-date" *ngIf="step.date">{{ step.date | date:'dd/MM/yy HH:mm' }}</div>
+        <div class="step-agent" *ngIf="step.agent">{{ step.agent }}</div>
+        <div class="step-date" *ngIf="!step.date && !step.completed">—</div>
+      </div>
+    </div>
+
+    <div class="timeline-connector" *ngIf="!last" [class.filled]="step.completed && timeline[i+1]?.completed"></div>
+  </ng-container>
+</div>

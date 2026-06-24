@@ -1,0 +1,153 @@
+<div class="list-container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1>🏢 Companies</h1>
+      <p class="subtitle">Manage companies, their managers and staff.</p>
+    </div>
+    <app-btn *ngIf="isAdmin" variant="primary" (click)="openCreate()">+ Add Company</app-btn>
+  </div>
+
+  <!-- States -->
+  <div *ngIf="loading" class="loading-state"><p>Loading companies…</p></div>
+  <div *ngIf="error && !loading" class="error-state">
+    <p>{{ error }}</p>
+    <button (click)="load()" class="btn-retry">Retry</button>
+  </div>
+  <div *ngIf="!loading && companies.length === 0 && !error" class="empty-state">
+    <span class="empty-icon">🏛️</span>
+    <div class="empty-title">No companies yet</div>
+    <div class="empty-message">Add companies to manage multi-tenant access and branding.</div>
+  </div>
+
+  <!-- Table -->
+  <div *ngIf="!loading && companies.length > 0" class="table-container">
+    <table class="bureaus-table">
+      <thead>
+        <tr>
+          <th>Logo</th>
+          <th>Company Name</th>
+          <th>Manager</th>
+          <th>Staff</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let c of companies">
+          <td>
+            <img *ngIf="c.logo" [src]="imgUrl(c.logo)" alt="logo"
+              style="width:40px;height:40px;object-fit:cover;border-radius:6px;" />
+            <span *ngIf="!c.logo" style="color:#aaa">—</span>
+          </td>
+          <td><strong>{{ c.nom }}</strong></td>
+          <td>
+            <span *ngIf="c.manager">{{ userName(c.manager) }}</span>
+            <span *ngIf="!c.manager" style="color:#aaa">—</span>
+          </td>
+          <td>
+            <span *ngIf="c.staff?.length" class="status-badge status-actif">{{ c.staff.length }} member(s)</span>
+            <span *ngIf="!c.staff?.length" style="color:#aaa">—</span>
+          </td>
+          <td class="date-cell">{{ c.creeAu | date:'shortDate' }}</td>
+          <td class="actions-cell">
+            <span *ngIf="!isAdmin" style="color:#aaa">—</span>
+            <ng-container *ngIf="isAdmin">
+              <app-btn variant="icon-edit" (click)="openEdit(c)" title="Edit"></app-btn>
+              <app-btn variant="icon-delete" (click)="openDelete(c)" title="Delete"></app-btn>
+            </ng-container>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ MODAL ═══ -->
+<div *ngIf="modalMode" class="modal-overlay" (click)="closeModal()">
+  <div class="modal" style="max-width:520px" (click)="$event.stopPropagation()">
+
+    <!-- CREATE / EDIT -->
+    <ng-container *ngIf="modalMode === 'create' || modalMode === 'edit'">
+      <div class="modal-header">
+        <h2>{{ modalMode === 'create' ? 'Add Company' : 'Edit Company' }}</h2>
+        <button class="modal-close" (click)="closeModal()">&times;</button>
+      </div>
+      <form [formGroup]="form" (ngSubmit)="save()">
+        <div class="modal-body" style="display:flex;flex-direction:column;gap:14px;">
+
+          <!-- Logo -->
+          <div class="form-group">
+            <label>Logo <span style="color:#aaa;font-weight:400">(optional)</span></label>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <img *ngIf="logoPreview" [src]="logoPreview" alt="logo"
+                style="width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;" />
+              <div *ngIf="!logoPreview" style="width:56px;height:56px;background:#f1f5f9;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;">🏢</div>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <app-upload-btn label="Upload" accept="image/*" (fileSelected)="onLogoChange($event)"></app-upload-btn>
+                <button *ngIf="logoPreview" type="button" class="btn-danger" style="font-size:12px;padding:4px 10px;" (click)="removeLogo()">Remove</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Name -->
+          <div class="form-group">
+            <label>Company Name <span class="required">*</span></label>
+            <input type="text" formControlName="nom" placeholder="Company name"
+              [class.invalid]="form.get('nom')?.invalid && form.get('nom')?.touched" />
+            <span *ngIf="form.get('nom')?.invalid && form.get('nom')?.touched" class="field-error">Name is required</span>
+          </div>
+
+          <!-- Manager -->
+          <div class="form-group">
+            <label>Manager <span class="required">*</span></label>
+            <select formControlName="managerId"
+              [class.invalid]="form.get('managerId')?.invalid && form.get('managerId')?.touched">
+              <option [ngValue]="null">— Select a manager —</option>
+              <option *ngFor="let u of managers" [ngValue]="u.id">{{ userName(u) }} ({{ u.email }})</option>
+            </select>
+            <span *ngIf="form.get('managerId')?.invalid && form.get('managerId')?.touched" class="field-error">Manager is required</span>
+            <small *ngIf="managers.length === 0" style="color:#f59e0b;">No users with Manager role found. Assign ROLE_MANAGER to a user first.</small>
+          </div>
+
+          <!-- Staff -->
+          <div class="form-group">
+            <label>Staff <span style="color:#aaa;font-weight:400">(optional)</span></label>
+            <div style="max-height:140px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:6px;padding:8px;">
+              <div *ngIf="staffOptions.length === 0" style="color:#aaa;font-size:13px;">No users available</div>
+              <label *ngFor="let u of staffOptions"
+                style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-size:13px;">
+                <input type="checkbox" [checked]="hasStaff(u.id)" (change)="toggleStaff(u.id)" />
+                {{ userName(u) }} — <span style="color:#6b7280;">{{ u.email }}</span>
+              </label>
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <app-btn variant="secondary" (click)="closeModal()">Cancel</app-btn>
+          <app-btn variant="primary" type="submit" [disabled]="form.invalid || isSubmitting">
+            {{ isSubmitting ? 'Saving…' : (modalMode === 'create' ? 'Create' : 'Save') }}
+          </app-btn>
+        </div>
+      </form>
+    </ng-container>
+
+    <!-- DELETE -->
+    <ng-container *ngIf="modalMode === 'delete'">
+      <div class="modal-header">
+        <h2>Delete Company</h2>
+        <button class="modal-close" (click)="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="delete-warning">Delete <strong>{{ selected?.nom }}</strong>? This cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <app-btn variant="secondary" (click)="closeModal()">Cancel</app-btn>
+        <app-btn variant="danger" (click)="confirmDelete()">Delete</app-btn>
+      </div>
+    </ng-container>
+
+  </div>
+</div>

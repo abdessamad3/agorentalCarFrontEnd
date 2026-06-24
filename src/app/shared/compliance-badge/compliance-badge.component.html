@@ -1,0 +1,4 @@
+<span class="compliance-badge" [class]="'badge-' + status.toLowerCase()" [title]="tooltip">
+  <span class="badge-icon">{{ icon }}</span>
+  <span class="badge-days" *ngIf="daysRemaining !== null && status !== 'EXPIRED'">{{ daysRemaining }}j</span>
+</span>

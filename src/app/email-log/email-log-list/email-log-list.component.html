@@ -1,0 +1,123 @@
+<div class="el-page">
+
+  <!-- Header -->
+  <div class="el-header">
+    <div class="el-title">
+      <span class="el-icon">📧</span>
+      <div>
+        <h1>Email History</h1>
+        <p>{{ total }} email(s) sent</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="el-filters">
+    <select [(ngModel)]="statusFilter" class="el-select">
+      <option value="">All statuses</option>
+      <option value="sent">Sent</option>
+      <option value="failed">Failed</option>
+    </select>
+
+    <div class="el-date-range">
+      <input type="date" [(ngModel)]="dateFrom" class="el-input" placeholder="From">
+      <span class="el-dash">→</span>
+      <input type="date" [(ngModel)]="dateTo" class="el-input" placeholder="To">
+    </div>
+
+    <button class="btn-primary" (click)="applyFilters()">Filter</button>
+    <button class="btn-ghost"   (click)="resetFilters()">Reset</button>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error" class="el-error">{{ error }}</div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="el-loading">
+    <div class="spinner"></div> Loading…
+  </div>
+
+  <!-- Table -->
+  <div *ngIf="!loading" class="el-table-wrap">
+    <table class="el-table">
+      <thead>
+        <tr>
+          <th>Date &amp; Time</th>
+          <th>Recipient</th>
+          <th>Subject</th>
+          <th>Total Alerts</th>
+          <th>Breakdown</th>
+          <th>Status</th>
+          <th>Triggered By</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let log of logs">
+          <tr [class.el-row-expanded]="expandedId === log.id">
+            <td class="el-cell-date">{{ log.sentAt | date:'dd/MM/yyyy HH:mm' }}</td>
+            <td class="el-cell-email">{{ log.recipientEmail }}</td>
+            <td class="el-cell-subject">{{ log.subject }}</td>
+            <td class="el-cell-alerts">
+              <span class="alerts-num" [class.alerts-zero]="log.totalAlerts === 0">{{ log.totalAlerts }}</span>
+            </td>
+            <td class="el-cell-breakdown">
+              <span class="breakdown-chip chip-compliance" *ngIf="log.complianceCount > 0">
+                🛡️ {{ log.complianceCount }}
+              </span>
+              <span class="breakdown-chip chip-oil" *ngIf="log.oilCount > 0">
+                🛢️ {{ log.oilCount }}
+              </span>
+              <span class="breakdown-chip chip-credit" *ngIf="log.creditCount > 0">
+                💳 {{ log.creditCount }}
+              </span>
+              <span class="el-none" *ngIf="log.complianceCount === 0 && log.oilCount === 0 && log.creditCount === 0">—</span>
+            </td>
+            <td>
+              <span class="el-badge" [ngClass]="statusClass(log.status)">
+                {{ log.status === 'sent' ? '✓ Sent' : '✗ Failed' }}
+              </span>
+            </td>
+            <td>
+              <span class="el-badge" [ngClass]="triggeredClass(log.triggeredBy)">
+                {{ log.triggeredBy === 'manual' ? '👤 Manual' : '⏰ Auto' }}
+              </span>
+            </td>
+            <td>
+              <button class="btn-expand" (click)="toggleExpand(log.id)"
+                      *ngIf="log.status === 'failed' && log.errorMessage">
+                {{ expandedId === log.id ? '▲' : '▼' }}
+              </button>
+            </td>
+          </tr>
+
+          <!-- Error detail row -->
+          <tr *ngIf="expandedId === log.id && log.errorMessage" class="el-error-row">
+            <td colspan="8">
+              <div class="el-error-detail">
+                <strong>Error:</strong> {{ log.errorMessage }}
+              </div>
+            </td>
+          </tr>
+        </ng-container>
+
+        <tr *ngIf="logs.length === 0">
+          <td colspan="8" class="el-empty">No emails sent yet.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div *ngIf="pages > 1" class="el-pagination">
+    <button (click)="goToPage(1)"        [disabled]="page === 1">«</button>
+    <button (click)="goToPage(page - 1)" [disabled]="page === 1">‹</button>
+    <button *ngFor="let p of pagesArray()"
+            (click)="goToPage(p)"
+            [class.active]="p === page">{{ p }}</button>
+    <button (click)="goToPage(page + 1)" [disabled]="page === pages">›</button>
+    <button (click)="goToPage(pages)"    [disabled]="page === pages">»</button>
+    <span class="el-page-info">Page {{ page }} / {{ pages }}</span>
+  </div>
+
+</div>

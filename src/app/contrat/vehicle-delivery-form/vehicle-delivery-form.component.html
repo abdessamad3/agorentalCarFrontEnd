@@ -1,0 +1,71 @@
+<div class="modal-overlay" (click)="closed.emit()">
+  <div class="modal delivery-modal" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <h2>Livraison du véhicule</h2>
+      <span class="modal-subtitle" *ngIf="reservation">
+        {{ reservation.voiture?.marque }} {{ reservation.voiture?.modele }} —
+        {{ reservation.client?.nom }}
+      </span>
+      <button class="modal-close" (click)="closed.emit()">&times;</button>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- Mileage -->
+      <div class="form-section">
+        <label class="field-label">Kilométrage au départ <span class="required">*</span></label>
+        <input type="number" [(ngModel)]="mileageOut" min="0" class="field-input" placeholder="ex: 45000" />
+      </div>
+
+      <!-- Fuel -->
+      <div class="form-section">
+        <label class="field-label">Niveau de carburant</label>
+        <app-fuel-gauge [value]="fuelLevel" (valueChange)="onFuelChange($event)"></app-fuel-gauge>
+      </div>
+
+      <!-- Accessories -->
+      <div class="form-section">
+        <label class="field-label">Accessoires</label>
+        <div class="accessories-grid">
+          <label class="check-item"><input type="checkbox" [(ngModel)]="hasExtincteur" /> Extincteur</label>
+          <label class="check-item"><input type="checkbox" [(ngModel)]="hasCric" /> Cric</label>
+          <label class="check-item"><input type="checkbox" [(ngModel)]="hasGilet" /> Gilet</label>
+          <label class="check-item"><input type="checkbox" [(ngModel)]="hasRoueSecours" /> Roue de secours</label>
+          <label class="check-item"><input type="checkbox" [(ngModel)]="hasPlaqueDepannage" /> Plaque dépannage</label>
+          <label class="check-item"><input type="checkbox" [(ngModel)]="hasLavage" /> Lavage</label>
+          <label class="check-item"><input type="checkbox" [(ngModel)]="hasSiegeBebe" /> Siège bébé</label>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="form-section">
+        <label class="field-label">Observations équipement</label>
+        <textarea [(ngModel)]="equipementNotes" class="field-textarea" rows="2" placeholder="Remarques sur l'état des équipements…"></textarea>
+      </div>
+      <div class="form-section">
+        <label class="field-label">Notes de livraison</label>
+        <textarea [(ngModel)]="deliveryNotes" class="field-textarea" rows="2" placeholder="État général du véhicule à la livraison…"></textarea>
+      </div>
+
+      <!-- Signatures -->
+      <div class="signatures-row">
+        <div class="sig-block">
+          <app-signature-pad label="Signature client" (signatureChange)="onSignatureClient($event)"></app-signature-pad>
+        </div>
+        <div class="sig-block">
+          <app-signature-pad label="Signature agent" (signatureChange)="onSignatureAgent($event)"></app-signature-pad>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="modal-footer">
+      <app-btn variant="secondary" (click)="closed.emit()">Annuler</app-btn>
+      <app-btn variant="primary" (click)="submit()" [disabled]="!isValid || isSubmitting">
+        {{ isSubmitting ? 'En cours…' : 'Confirmer la livraison' }}
+      </app-btn>
+    </div>
+
+  </div>
+</div>

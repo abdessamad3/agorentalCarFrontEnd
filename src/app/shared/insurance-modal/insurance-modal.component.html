@@ -1,0 +1,246 @@
+<div *ngIf="modalMode" class="im-backdrop" (click)="cancelled.emit()">
+  <div class="im-modal" (click)="$event.stopPropagation()">
+
+    <!-- ═══════════════ ADD / EDIT ═══════════════ -->
+    <ng-container *ngIf="isFormMode">
+      <div class="im-header">
+        <div class="im-title-group">
+          <div class="im-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+          <h2 class="im-title">{{ 'assurances' | translate }}<span *ngIf="carName"> — {{ carName }}</span></h2>
+        </div>
+        <button class="im-close" type="button" (click)="cancelled.emit()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="onSave()">
+        <div class="im-body">
+          <div *ngIf="errorMessage" class="im-error">{{ errorMessage }}</div>
+
+          <!-- Vehicle selector (only when voitures list is provided) -->
+          <div *ngIf="voitures.length > 0" class="im-field" style="margin-bottom:0.875rem">
+            <label class="im-label">{{ 'vehicle' | translate }}</label>
+            <select class="im-select" formControlName="voitureId">
+              <option [ngValue]="null">— {{ 'vehicle' | translate }} —</option>
+              <option *ngFor="let v of voitures" [ngValue]="v.id">
+                {{ v.marque }} {{ v.modele }} — {{ v.immatriculation }}
+              </option>
+            </select>
+          </div>
+
+          <div class="im-grid">
+            <!-- Company -->
+            <div class="im-field">
+              <label class="im-label">{{ 'compagnie' | translate }}</label>
+              <select class="im-select" [(ngModel)]="compagnieSelectValue"
+                      [ngModelOptions]="{standalone: true}"
+                      (ngModelChange)="onCompagnieChange($event)">
+                <option value="">— {{ 'search' | translate }} —</option>
+                <option *ngFor="let c of MOROCCAN_INSURERS" [value]="c">{{ c }}</option>
+                <option value="__other__">{{ 'other' | translate }}…</option>
+              </select>
+              <input *ngIf="compagnieIsOther" type="text" class="im-input"
+                     formControlName="compagnie" [placeholder]="('compagnie' | translate) + '…'"
+                     style="margin-top:0.5rem" />
+            </div>
+
+            <!-- Coverage Type -->
+            <div class="im-field">
+              <label class="im-label">{{ 'typeAssurance' | translate }}</label>
+              <select class="im-select" formControlName="typeAssurance">
+                <option value="">— {{ 'search' | translate }} —</option>
+                <option *ngFor="let ct of COVERAGE_TYPES" [value]="ct">{{ ct }}</option>
+              </select>
+            </div>
+
+            <!-- Contract No. -->
+            <div class="im-field">
+              <label class="im-label">{{ 'numeroContrat' | translate }}</label>
+              <input class="im-input" type="text" formControlName="numeroContrat" />
+            </div>
+
+            <!-- Start Date -->
+            <div class="im-field">
+              <label class="im-label">{{ 'startDate' | translate }}</label>
+              <input class="im-input" type="date" formControlName="dateDebut" />
+            </div>
+
+            <!-- End Date -->
+            <div class="im-field">
+              <label class="im-label">
+                {{ 'endDate' | translate }} <span class="im-req">*</span>
+              </label>
+              <input class="im-input" type="date" formControlName="dateFin"
+                     [class.im-invalid]="form.get('dateFin')?.invalid && form.get('dateFin')?.touched" />
+              <span class="im-field-error"
+                    *ngIf="form.get('dateFin')?.invalid && form.get('dateFin')?.touched">
+                {{ 'required' | translate }}
+              </span>
+            </div>
+
+            <!-- Invoice Date -->
+            <div class="im-field">
+              <label class="im-label">{{ 'invoiceDate' | translate }}</label>
+              <input class="im-input" type="date" formControlName="dateFacture" />
+            </div>
+
+            <!-- Amount -->
+            <div class="im-field">
+              <label class="im-label">{{ 'montant' | translate }} (MAD)</label>
+              <input class="im-input" type="number" min="0" formControlName="montant" placeholder="0" />
+            </div>
+
+            <!-- Amount Paid -->
+            <div class="im-field">
+              <label class="im-label">{{ 'montantPaye' | translate }} (MAD)</label>
+              <input class="im-input" type="number" min="0" formControlName="montantPaye" placeholder="0" />
+              <span class="im-field-error" *ngIf="form.errors?.['exceedsTotal']">
+                {{ 'exceedsTotal' | translate }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div class="im-field" style="margin-top:0.875rem">
+            <label class="im-label">{{ 'notes' | translate }}</label>
+            <textarea class="im-input" rows="2" formControlName="notes"></textarea>
+          </div>
+
+          <!-- Upload -->
+          <div class="im-upload-wrap">
+            <app-upload-btn variant="block" accept="image/*,.pdf"
+              [label]="selectedFile ? selectedFile.name : (('uploadDoc' | translate) + ' (photo / PDF)')"
+              (fileSelected)="onFileSelect($event)"></app-upload-btn>
+            <button *ngIf="selectedFile" class="im-upload-clear" type="button" (click)="clearFile()">✕</button>
+          </div>
+          <div *ngIf="filePreview" class="im-preview-wrap">
+            <img [src]="filePreview" class="im-preview" alt="preview" />
+          </div>
+        </div>
+
+        <div class="im-footer">
+          <button type="button" class="im-btn-cancel" (click)="cancelled.emit()"
+                  [disabled]="isSubmitting">{{ 'cancel' | translate }}</button>
+          <button type="submit" class="im-btn-save" [disabled]="form.invalid || isSubmitting">
+            <span *ngIf="isSubmitting" class="im-spin"></span>
+            {{ (isSubmitting ? 'saving' : 'save') | translate }}
+          </button>
+        </div>
+      </form>
+    </ng-container>
+
+    <!-- ═══════════════ RENEW ═══════════════ -->
+    <ng-container *ngIf="modalMode === 'renew'">
+      <div class="im-header">
+        <div class="im-title-group">
+          <div class="im-icon-wrap im-icon-green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <polyline points="23,4 23,10 17,10"/>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+            </svg>
+          </div>
+          <h2 class="im-title">{{ 'renewInsurance' | translate }}<span *ngIf="carName"> — {{ carName }}</span></h2>
+        </div>
+        <button class="im-close" type="button" (click)="cancelled.emit()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <form [formGroup]="renewForm" (ngSubmit)="onRenew()">
+        <div class="im-body">
+          <div class="im-renew-info" *ngIf="editItem?.dateFin">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+              <circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/>
+            </svg>
+            {{ 'currentExpiry' | translate }}: <strong>{{ editItem.dateFin | date:'dd/MM/yyyy' }}</strong>
+          </div>
+          <div class="im-grid">
+            <div class="im-field">
+              <label class="im-label">{{ 'startDate' | translate }} <span class="im-req">*</span></label>
+              <input class="im-input" type="date" formControlName="dateDebut"
+                     [class.im-invalid]="renewForm.get('dateDebut')?.invalid && renewForm.get('dateDebut')?.touched" />
+            </div>
+            <div class="im-field">
+              <label class="im-label">{{ 'endDate' | translate }} <span class="im-req">*</span></label>
+              <input class="im-input" type="date" formControlName="dateFin"
+                     [class.im-invalid]="renewForm.get('dateFin')?.invalid && renewForm.get('dateFin')?.touched" />
+            </div>
+          </div>
+          <div class="im-field">
+            <label class="im-label">{{ 'montant' | translate }} (MAD)</label>
+            <input class="im-input" type="number" min="0" formControlName="montant" placeholder="0" />
+          </div>
+          <div class="im-field">
+            <label class="im-label">{{ 'montantPaye' | translate }} (MAD)</label>
+            <input class="im-input" type="number" min="0" formControlName="montantPaye" placeholder="0" />
+            <span class="im-field-error" *ngIf="renewForm.errors?.['exceedsTotal']">
+              {{ 'exceedsTotal' | translate }}
+            </span>
+          </div>
+        </div>
+        <div class="im-footer">
+          <button type="button" class="im-btn-cancel" (click)="cancelled.emit()"
+                  [disabled]="isSubmitting">{{ 'cancel' | translate }}</button>
+          <button type="submit" class="im-btn-renew" [disabled]="renewForm.invalid || isSubmitting">
+            <span *ngIf="isSubmitting" class="im-spin"></span>
+            {{ isSubmitting ? ('saving' | translate) : ('confirmRenew' | translate) }}
+          </button>
+        </div>
+      </form>
+    </ng-container>
+
+    <!-- ═══════════════ DELETE ═══════════════ -->
+    <ng-container *ngIf="modalMode === 'delete'">
+      <div class="im-header">
+        <h2 class="im-title">{{ 'confirmDelete' | translate }}</h2>
+        <button class="im-close" type="button" (click)="cancelled.emit()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="im-body">
+        <div *ngIf="errorMessage" class="im-error">{{ errorMessage }}</div>
+        <p class="im-delete-warn">{{ 'deleteWarning' | translate }}</p>
+      </div>
+      <div class="im-footer">
+        <button class="im-btn-cancel" (click)="cancelled.emit()">{{ 'cancel' | translate }}</button>
+        <button class="im-btn-danger" (click)="deleteConfirmed.emit()" [disabled]="isSubmitting">
+          {{ 'delete' | translate }}
+        </button>
+      </div>
+    </ng-container>
+
+    <!-- ═══════════════ CANCEL ═══════════════ -->
+    <ng-container *ngIf="modalMode === 'cancel'">
+      <div class="im-header">
+        <h2 class="im-title">{{ 'cancel' | translate }} — {{ 'assurances' | translate }}</h2>
+        <button class="im-close" type="button" (click)="cancelled.emit()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="im-body">
+        <div *ngIf="errorMessage" class="im-error">{{ errorMessage }}</div>
+        <p class="im-delete-warn">{{ 'cancelInsuranceWarning' | translate }}</p>
+      </div>
+      <div class="im-footer">
+        <button class="im-btn-cancel" (click)="cancelled.emit()">{{ 'cancel' | translate }}</button>
+        <button class="im-btn-danger" (click)="cancelConfirmed.emit()" [disabled]="isSubmitting">
+          <span *ngIf="isSubmitting" class="im-spin"></span>
+          {{ 'confirm' | translate }}
+        </button>
+      </div>
+    </ng-container>
+
+  </div>
+</div>

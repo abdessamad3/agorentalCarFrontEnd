@@ -1,0 +1,123 @@
+<div class="itab-wrap">
+
+  <div class="itab-header">
+    <h2 class="itab-title">🔬 {{ t('suiviTechnique') }}</h2>
+    <button class="itab-add-btn" (click)="openAdd()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      {{ t('add') }}
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="itab-loading"><span class="spin-sm"></span> {{ t('loading') }}</div>
+
+  <div *ngIf="!loading && items.length === 0" class="itab-empty">
+    <span style="font-size:2.5rem">🔬</span>
+    <p>{{ t('noData') }}</p>
+    <button class="itab-add-btn" (click)="openAdd()">{{ t('add') }}</button>
+  </div>
+
+  <div *ngIf="!loading && items.length > 0" class="rh-table-wrap">
+    <table class="rh-table">
+      <thead>
+        <tr>
+          <th>{{ t('endDate') }}</th>
+          <th>{{ t('settingsDate') }}</th>
+          <th>{{ t('inspectionResult') }}</th>
+          <th>{{ t('montant') }}</th>
+          <th>{{ t('document') }}</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of items" class="rh-row">
+          <td>
+            {{ item.dateFin ? (item.dateFin | date:'dd/MM/yyyy') : '—' }}
+            <ng-container *ngIf="daysUntil(item.dateFin) !== null">
+              <span *ngIf="daysUntil(item.dateFin)! >= 0 && daysUntil(item.dateFin)! <= 30" class="exp-badge exp-warn">{{ daysUntil(item.dateFin) }}d</span>
+              <span *ngIf="daysUntil(item.dateFin)! < 0" class="exp-badge exp-danger">{{ t('expired') }}</span>
+            </ng-container>
+          </td>
+          <td>{{ item.dateReglages ? (item.dateReglages | date:'dd/MM/yyyy') : '—' }}</td>
+          <td><span class="res-badge" [ngClass]="resultatClass(item.resultat)">{{ resultatLabel(item.resultat) }}</span></td>
+          <td>{{ item.montantTotal != null ? (item.montantTotal | number:'1.0-0') + ' MAD' : '—' }}</td>
+          <td>
+            <a *ngIf="item.filePath" class="ia-btn ia-download" [href]="fileUrl(item.filePath)" target="_blank">📎 {{ t('download') }}</a>
+            <span *ngIf="!item.filePath" style="color:#aaa">—</span>
+          </td>
+          <td class="itab-actions">
+            <button class="ia-btn ia-edit" (click)="openEdit(item)">{{ t('edit') }}</button>
+            <button class="ia-btn ia-del"  (click)="openDelete(item)">{{ t('delete') }}</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<div *ngIf="modalMode === 'form'" class="modal-backdrop" (click)="closeModal()">
+  <div class="modal-box" (click)="$event.stopPropagation()" [attr.dir]="dir">
+    <div class="modal-head">
+      <h2 class="modal-title">{{ isEditing ? t('edit') : t('add') }} — {{ t('suiviTechnique') }}</h2>
+      <button class="modal-close" (click)="closeModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" [formGroup]="form">
+      <div class="edit-grid">
+        <div class="edit-field">
+          <label>{{ t('endDate') }} *</label>
+          <input type="date" formControlName="dateFin" />
+        </div>
+        <div class="edit-field">
+          <label>{{ t('settingsDate') }}</label>
+          <input type="date" formControlName="dateReglages" />
+        </div>
+        <div class="edit-field">
+          <label>{{ t('inspectionResult') }}</label>
+          <select formControlName="resultat">
+            <option [ngValue]="null">{{ t('pending') }}</option>
+            <option *ngFor="let r of RESULTATS" [value]="r.value">{{ r.label }}</option>
+          </select>
+        </div>
+        <div class="edit-field">
+          <label>{{ isEditing && selectedItem?.filePath ? t('replaceDoc') : t('uploadDoc') }}</label>
+          <app-upload-btn label="+ Upload" accept="image/*,.pdf" (fileSelected)="onFileSelect($event)"></app-upload-btn>
+          <small *ngIf="selectedFile" style="display:block;margin-top:0.25rem;color:#6b7280">{{ selectedFile.name }}
+            <a (click)="clearFile()" style="cursor:pointer;color:var(--red,#e53e3e)">✕</a>
+          </small>
+          <a *ngIf="isEditing && selectedItem?.filePath && !selectedFile" [href]="fileUrl(selectedItem.filePath)" target="_blank" style="display:block;margin-top:0.25rem;font-size:0.8rem">
+            {{ t('currentDoc') }} →
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel" (click)="closeModal()" [disabled]="isSubmitting">{{ t('cancel') }}</button>
+      <button class="btn-save" (click)="save()" [disabled]="isSubmitting || form.invalid">
+        <span *ngIf="isSubmitting" class="spin-sm"></span>
+        {{ isSubmitting ? t('saving') : t('save') }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="modalMode === 'delete'" class="modal-backdrop" (click)="closeModal()">
+  <div class="modal-box modal-box-sm" (click)="$event.stopPropagation()">
+    <div class="modal-head">
+      <h2 class="modal-title">{{ t('delete') }}</h2>
+      <button class="modal-close" (click)="closeModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p>{{ t('confirmDelete') || 'Confirm delete?' }}</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel" (click)="closeModal()" [disabled]="isSubmitting">{{ t('cancel') }}</button>
+      <button class="btn-save" style="background:var(--red,#e53e3e)" (click)="confirmDelete()" [disabled]="isSubmitting">
+        {{ t('delete') }}
+      </button>
+    </div>
+  </div>
+</div>

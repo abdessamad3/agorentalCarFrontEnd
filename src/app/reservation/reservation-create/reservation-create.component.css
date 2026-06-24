@@ -256,8 +256,6 @@
 .acc-price { font-size: 0.72rem; color: #718096; }
 
 /* Summary */
-.summary-section { }
-
 .summary-rows { display: flex; flex-direction: column; gap: 0.6rem; }
 
 .summary-row {
@@ -331,6 +329,74 @@
   color: #e53e3e;
   margin-top: 0.25rem;
 }
+
+/* Compliance block alert */
+.compliance-block-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #fff1f2;
+  border: 1px solid #fda4af;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+.cba-icon { font-size: 18px; flex-shrink: 0; }
+.cba-text  { display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: #9f1239; }
+.cba-text strong { font-weight: 600; }
+
+/* Expired client document warning — soft/dismissible, amber not red (doesn't block submission) */
+.expiry-warning-alert {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  padding: 12px 36px 12px 14px;
+  margin-bottom: 12px;
+}
+.ewa-icon { font-size: 18px; flex-shrink: 0; }
+.ewa-body { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #92400e; flex: 1; }
+.ewa-body strong { font-weight: 600; }
+.ewa-doc-block { display: flex; flex-direction: column; gap: 6px; padding-bottom: 8px; border-bottom: 1px dashed #fcd34d; }
+.ewa-doc-block:last-child { border-bottom: none; padding-bottom: 0; }
+.ewa-doc-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ewa-doc-label { font-weight: 600; min-width: 80px; }
+.ewa-uploaded { color: #15803d; font-weight: 600; font-size: 12px; }
+.ewa-existing-docs { display: flex; flex-direction: column; gap: 4px; }
+.ewa-doc-link {
+  display: inline-flex; align-items: center; gap: 5px; width: fit-content;
+  font-size: 12px; color: #92400e; text-decoration: underline; cursor: pointer;
+}
+.ewa-doc-link:hover { color: #78350f; }
+.ewa-dates-row { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
+.ewa-date-field { display: flex; flex-direction: column; gap: 2px; }
+.ewa-date-field label { font-size: 11px; font-weight: 600; color: #92400e; }
+.ewa-date-field input[type="date"] {
+  padding: 5px 8px; border: 1px solid #fcd34d; border-radius: 6px;
+  font-size: 12px; background: #fff; color: #1f2937;
+}
+.ewa-save-dates-btn {
+  padding: 6px 12px; border: none; border-radius: 6px;
+  background: #d97706; color: #fff; font-size: 12px; font-weight: 600;
+  cursor: pointer;
+}
+.ewa-save-dates-btn:hover:not(:disabled) { background: #b45309; }
+.ewa-save-dates-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.ewa-dismiss {
+  position: absolute; top: 8px; right: 10px;
+  background: none; border: none; cursor: pointer;
+  font-size: 16px; line-height: 1; color: #92400e; opacity: 0.6;
+}
+.ewa-dismiss:hover { opacity: 1; }
+
+/* Debt warning — same alert shell as the doc-expiry banner, distinct icon/note color */
+.debt-warning-alert { background: #fff7ed; border-color: #fdba74; }
+.ewa-staff-note { font-size: 12px; font-weight: 600; color: #9a3412; }
+.debt-confirm-btn { background: #d97706; }
+.debt-confirm-btn:hover:not(:disabled) { background: #b45309; }
 
 /* Submit */
 .submit-error {
@@ -446,3 +512,4 @@
   .date-row { flex-wrap: wrap; }
   .form-row { flex-direction: column; }
 }
+

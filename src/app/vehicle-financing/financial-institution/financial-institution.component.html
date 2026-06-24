@@ -1,0 +1,149 @@
+<div class="rp-page" [dir]="dir">
+
+  <!-- Header -->
+  <div class="rp-header">
+    <div class="rp-header-left">
+      <div class="rp-header-icon">🏦</div>
+      <div>
+        <div class="rp-title">Financial Institutions</div>
+        <div class="rp-subtitle">Banks, leasing companies and financing partners</div>
+      </div>
+    </div>
+    <div class="rp-actions">
+      <button class="btn-export btn-csv" (click)="load()">↻ Refresh</button>
+      <button class="btn-export btn-excel" (click)="openCreate()">＋ Add Institution</button>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="rp-toolbar">
+    <div class="rp-search-wrap" style="flex:1">
+      <span class="rp-search-icon">🔍</span>
+      <input class="rp-search" [(ngModel)]="search" placeholder="Search by name, contact, email…" />
+    </div>
+    <span class="rp-count">{{ filtered.length }} institutions</span>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="rp-loading">
+    <span class="rp-loading-spinner"></span> Loading…
+  </div>
+
+  <!-- Table -->
+  <div class="rp-table-wrap" *ngIf="!loading">
+    <table class="rp-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Contact</th>
+          <th>Phone</th>
+          <th>Email</th>
+          <th>Status</th>
+          <th class="td-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of filtered">
+          <td style="font-weight:600">{{ item.name }}</td>
+          <td>
+            <span class="doc-badge" [ngClass]="typeBadgeClass(item.type)">
+              {{ typeLabel(item.type) }}
+            </span>
+          </td>
+          <td>{{ item.contactPerson || '—' }}</td>
+          <td style="font-family:monospace;font-size:.8rem">{{ item.phone || '—' }}</td>
+          <td style="font-size:.8rem">{{ item.email || '—' }}</td>
+          <td>
+            <span class="status-pill" [ngClass]="item.status === 'active' ? 'sp-available' : 'sp-other'">
+              {{ item.status === 'active' ? '● Active' : '○ Inactive' }}
+            </span>
+          </td>
+          <td class="td-center">
+            <button style="background:none;border:none;cursor:pointer;font-size:1.1rem;margin:0 2px" title="Edit" (click)="openEdit(item)">✏️</button>
+            <button style="background:none;border:none;cursor:pointer;font-size:1.1rem;margin:0 2px"
+              [title]="item.status==='active' ? 'Deactivate' : 'Activate'"
+              (click)="toggleStatus(item)">
+              {{ item.status === 'active' ? '🔴' : '🟢' }}
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="filtered.length === 0">
+          <td colspan="7" class="rp-empty">No institutions found</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- Modal -->
+<div *ngIf="showModal" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem">
+  <div style="background:#fff;border-radius:16px;padding:2rem;width:100%;max-width:540px;max-height:90vh;overflow-y:auto">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+      <h3 style="margin:0;font-size:1.1rem;font-weight:700">
+        {{ editId ? 'Edit Institution' : 'Add Financial Institution' }}
+      </h3>
+      <button (click)="closeModal()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#718096">✕</button>
+    </div>
+
+    <div style="display:grid;gap:1rem">
+      <div>
+        <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.35rem;color:#4a5568">Name *</label>
+        <input [(ngModel)]="form.name" class="rp-search" style="width:100%;box-sizing:border-box" placeholder="e.g. Attijariwafa Bank" />
+      </div>
+
+      <div>
+        <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.35rem;color:#4a5568">Type *</label>
+        <select [(ngModel)]="form.type" class="rp-select" style="width:100%">
+          <option *ngFor="let t of types" [value]="t.value">{{ t.label }}</option>
+        </select>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div>
+          <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.35rem;color:#4a5568">Contact Person</label>
+          <input [(ngModel)]="form.contactPerson" class="rp-search" style="width:100%;box-sizing:border-box" placeholder="Name" />
+        </div>
+        <div>
+          <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.35rem;color:#4a5568">Phone</label>
+          <input [(ngModel)]="form.phone" class="rp-search" style="width:100%;box-sizing:border-box" placeholder="+212 6xx xxx xxx" />
+        </div>
+      </div>
+
+      <div>
+        <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.35rem;color:#4a5568">Email</label>
+        <input [(ngModel)]="form.email" type="email" class="rp-search" style="width:100%;box-sizing:border-box" placeholder="contact@bank.ma" />
+      </div>
+
+      <div>
+        <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.35rem;color:#4a5568">Address</label>
+        <textarea [(ngModel)]="form.address" class="rp-search" style="width:100%;box-sizing:border-box;height:60px;resize:vertical" placeholder="Street, city…"></textarea>
+      </div>
+
+      <div>
+        <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.35rem;color:#4a5568">Notes</label>
+        <textarea [(ngModel)]="form.notes" class="rp-search" style="width:100%;box-sizing:border-box;height:60px;resize:vertical"></textarea>
+      </div>
+
+      <div>
+        <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.35rem;color:#4a5568">Status</label>
+        <select [(ngModel)]="form.status" class="rp-select" style="width:100%">
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:.75rem;margin-top:1.5rem">
+      <button (click)="closeModal()" style="padding:.5rem 1.25rem;border:1px solid #e2e8f0;background:#fff;border-radius:8px;cursor:pointer;font-size:.875rem">Cancel</button>
+      <button (click)="save()" [disabled]="saving || !form.name"
+        style="padding:.5rem 1.5rem;background:#4299e1;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:.875rem;font-weight:600;opacity:1"
+        [style.opacity]="saving ? '.6' : '1'">
+        {{ saving ? 'Saving…' : (editId ? 'Update' : 'Create') }}
+      </button>
+    </div>
+
+  </div>
+</div>

@@ -1,0 +1,159 @@
+<div class="rp-page" [dir]="dir">
+
+  <!-- Header -->
+  <div class="rp-header">
+    <div class="rp-header-left">
+      <div class="rp-header-icon">🔮</div>
+      <div>
+        <div class="rp-title">Profitability Forecast</div>
+        <div class="rp-subtitle">Linear-trend revenue & expense forecast for the next 6 months</div>
+      </div>
+    </div>
+    <div class="rp-actions">
+      <select class="rp-select" [(ngModel)]="forecastMonths" (ngModelChange)="load()">
+        <option [value]="3">3-month forecast</option>
+        <option [value]="6">6-month forecast</option>
+        <option [value]="12">12-month forecast</option>
+      </select>
+      <select class="rp-select" [(ngModel)]="historyMonths" (ngModelChange)="load()">
+        <option [value]="6">6-month history</option>
+        <option [value]="12">12-month history</option>
+        <option [value]="24">24-month history</option>
+      </select>
+      <button class="btn-export btn-print" onclick="window.print()">🖨️ Print</button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" style="padding:3rem;text-align:center;color:#a0aec0;">
+    <span class="rp-loading-spinner"></span> Computing forecast…
+  </div>
+
+  <ng-container *ngIf="!loading">
+
+    <!-- Forecast KPI cards -->
+    <div class="rp-stats" style="margin-bottom:1.5rem">
+      <div class="stat-card sc-green">
+        <div class="sc-num positive">{{ fmt(totalForecastRevenue) }}</div>
+        <div class="sc-lbl">Forecast Revenue ({{ forecastMonths }}mo)</div>
+      </div>
+      <div class="stat-card sc-red">
+        <div class="sc-num negative">{{ fmt(totalForecastExpenses) }}</div>
+        <div class="sc-lbl">Forecast Expenses</div>
+      </div>
+      <div class="stat-card" [ngClass]="totalForecastProfit>=0 ? 'sc-green' : 'sc-red'">
+        <div class="sc-num" [ngClass]="totalForecastProfit>=0 ? 'positive' : 'negative'">
+          {{ fmt(totalForecastProfit) }}
+        </div>
+        <div class="sc-lbl">Forecast Profit</div>
+      </div>
+      <div class="stat-card sc-blue">
+        <div class="sc-num" [style.color]="forecastGrowthPct>=0?'#276749':'#c53030'">
+          {{ forecastGrowthPct >= 0 ? '+' : '' }}{{ forecastGrowthPct }}%
+        </div>
+        <div class="sc-lbl">Expected Growth (next mo)</div>
+      </div>
+    </div>
+
+    <!-- Chart -->
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:1.5rem;margin-bottom:1.5rem;overflow-x:auto">
+      <div class="rp-section" style="margin-top:0">Revenue vs Expenses (History + Forecast)</div>
+
+      <!-- Legend -->
+      <div style="display:flex;gap:1.5rem;margin-bottom:1rem;font-size:.78rem">
+        <span style="display:flex;align-items:center;gap:.4rem">
+          <span style="display:inline-block;width:12px;height:12px;background:#4299e1;border-radius:2px"></span> Revenue
+        </span>
+        <span style="display:flex;align-items:center;gap:.4rem">
+          <span style="display:inline-block;width:12px;height:12px;background:#fc8181;border-radius:2px"></span> Expenses
+        </span>
+        <span style="display:flex;align-items:center;gap:.4rem">
+          <span style="display:inline-block;width:16px;height:3px;background:#9f7aea;border-top:2px dashed #9f7aea"></span> Forecast
+        </span>
+      </div>
+
+      <div style="display:flex;align-items:flex-end;gap:4px;height:180px;padding-bottom:1.5rem;border-bottom:1px solid #e2e8f0;overflow-x:auto;min-width:600px">
+        <ng-container *ngFor="let p of points">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:44px"
+            [style.opacity]="p.isForecast ? '0.7' : '1'">
+            <div style="display:flex;align-items:flex-end;gap:2px;height:160px">
+              <!-- Revenue bar -->
+              <div style="width:16px;border-radius:3px 3px 0 0;transition:height .4s;position:relative"
+                [style.height]="barH(p.revenue)+'px'"
+                [style.background]="p.isForecast ? '#bee3f8' : '#4299e1'"
+                [style.border]="p.isForecast ? '2px dashed #4299e1' : 'none'"
+                [attr.title]="p.label + ' Revenue: ' + (p.revenue | number:'1.0-0') + ' MAD'">
+              </div>
+              <!-- Expense bar -->
+              <div style="width:16px;border-radius:3px 3px 0 0;transition:height .4s"
+                [style.height]="barH(p.expenses)+'px'"
+                [style.background]="p.isForecast ? '#fed7d7' : '#fc8181'"
+                [style.border]="p.isForecast ? '2px dashed #fc8181' : 'none'"
+                [attr.title]="p.label + ' Expenses: ' + (p.expenses | number:'1.0-0') + ' MAD'">
+              </div>
+            </div>
+            <div style="font-size:.6rem;color:#718096;white-space:nowrap;transform:rotate(-35deg);transform-origin:top left;margin-top:.25rem;margin-left:.25rem">
+              {{ p.label }}
+            </div>
+            <div *ngIf="p.isForecast" style="font-size:.55rem;color:#9f7aea;font-weight:700">FC</div>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="rp-table-wrap">
+      <table class="rp-table">
+        <thead>
+          <tr>
+            <th>Month</th>
+            <th class="td-right">Revenue</th>
+            <th class="td-right">Expenses</th>
+            <th class="td-right">Profit</th>
+            <th class="td-center">Margin %</th>
+            <th class="td-center">Type</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of points"
+            [style.background]="p.isForecast ? '#faf5ff' : 'transparent'"
+            [style.font-style]="p.isForecast ? 'italic' : 'normal'">
+            <td style="font-weight:600">{{ p.label }}</td>
+            <td class="td-right positive">{{ p.revenue | number:'1.0-0' }} MAD</td>
+            <td class="td-right negative">{{ p.expenses | number:'1.0-0' }} MAD</td>
+            <td class="td-right" [ngClass]="p.profit>=0?'positive':'negative'">
+              {{ p.profit | number:'1.0-0' }} MAD
+            </td>
+            <td class="td-center">
+              <span *ngIf="p.revenue > 0" class="exec-rank-stats"
+                [ngClass]="(p.revenue > 0 ? ((p.profit/p.revenue)*100) : 0) >= 0 ? 'td-margin-positive' : 'td-margin-negative'">
+                {{ p.revenue > 0 ? ((p.profit/p.revenue)*100 | number:'1.0-0') : 0 }}%
+              </span>
+              <span *ngIf="p.revenue === 0" style="color:#a0aec0">—</span>
+            </td>
+            <td class="td-center">
+              <span *ngIf="!p.isForecast" class="doc-badge doc-ok">Historical</span>
+              <span *ngIf="p.isForecast"  class="doc-badge" style="background:#f5f0ff;color:#553c9a">Forecast</span>
+            </td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr style="background:#f7fafc;font-weight:700">
+            <td>Forecast Total ({{ forecastMonths }}mo)</td>
+            <td class="td-right positive">{{ fmt(totalForecastRevenue) }}</td>
+            <td class="td-right negative">{{ fmt(totalForecastExpenses) }}</td>
+            <td class="td-right" [ngClass]="totalForecastProfit>=0?'positive':'negative'">{{ fmt(totalForecastProfit) }}</td>
+            <td class="td-center" [ngClass]="totalForecastRevenue>0 ? (totalForecastProfit/totalForecastRevenue*100 >= 0 ? 'td-margin-positive' : 'td-margin-negative') : ''">
+              {{ totalForecastRevenue > 0 ? (totalForecastProfit/totalForecastRevenue*100 | number:'1.0-0') + '%' : '—' }}
+            </td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div style="margin-top:1rem;padding:1rem;background:#fffaf0;border:1px solid #fbd38d;border-radius:10px;font-size:.78rem;color:#744210">
+      ⚠️ Forecast is based on linear trend + seasonal factors from historical data. Actual results may vary based on market conditions, fleet changes, and operational factors.
+    </div>
+
+  </ng-container>
+</div>

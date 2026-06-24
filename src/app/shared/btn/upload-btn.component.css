@@ -1,0 +1,109 @@
+:host { display: contents; }
+
+.upload-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid #b794f4;
+  background: #faf5ff;
+  color: #6b46c1;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s, color 0.18s, box-shadow 0.18s, transform 0.1s;
+  flex-shrink: 0;
+}
+
+.upload-btn:hover:not(.is-loading):not(.is-disabled) {
+  background: #6b46c1;
+  border-color: #553c9a;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(107, 70, 193, 0.35);
+  transform: translateY(-1px);
+}
+
+.upload-btn:active:not(.is-loading):not(.is-disabled) {
+  transform: scale(0.95);
+  box-shadow: none;
+}
+
+.upload-btn.is-loading {
+  opacity: 0.75;
+  cursor: default;
+  pointer-events: none;
+}
+
+.upload-btn.is-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.upload-btn.upload-btn-pill {
+  width: auto;
+  height: auto;
+  padding: 4px 10px;
+  gap: 4px;
+  border-radius: 6px;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #2563eb;
+}
+.upload-btn.upload-btn-pill:hover:not(.is-loading):not(.is-disabled) {
+  background: #dbeafe;
+  border-color: #2563eb;
+  color: #2563eb;
+  box-shadow: none;
+  transform: none;
+}
+.upload-btn-label {
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.upload-btn.upload-btn-tile {
+  width: 80px;
+  height: 60px;
+  border: 2px dashed #cbd5e0;
+  border-radius: 6px;
+  background: transparent;
+  color: #a0aec0;
+}
+.upload-btn.upload-btn-tile:hover:not(.is-loading):not(.is-disabled) {
+  border-color: #3182ce;
+  color: #3182ce;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+}
+.upload-btn-plus { font-size: 1.5rem; line-height: 1; }
+
+.upload-btn.upload-btn-block {
+  flex: 1;
+  width: auto;
+  height: auto;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1rem;
+  border: 1.5px dashed #cbd5e1;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+.upload-btn.upload-btn-block:hover:not(.is-loading):not(.is-disabled) {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #2563eb;
+  box-shadow: none;
+  transform: none;
+}
+.upload-btn-block .upload-btn-label { font-size: 0.875rem; font-weight: 400; white-space: normal; }
+
+.spinner-svg {
+  animation: upload-spin 0.8s linear infinite;
+}
+
+@keyframes upload-spin { to { transform: rotate(360deg); } }

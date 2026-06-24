@@ -1,0 +1,40 @@
+.gauge-row {
+  display: flex;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  overflow: hidden;
+  width: fit-content;
+}
+
+.gauge-seg {
+  width: 38px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: #f3f4f6;
+  color: #4b5563;
+  border-right: 1px solid #d1d5db;
+  transition: background 0.15s;
+  user-select: none;
+}
+
+.gauge-seg:last-child {
+  border-right: none;
+}
+
+.gauge-seg:hover:not(.gauge-readonly) {
+  background: #fde68a;
+}
+
+.gauge-seg.gauge-active {
+  background: #f97316;
+  color: #fff;
+}
+
+.gauge-seg.gauge-readonly {
+  cursor: default;
+}

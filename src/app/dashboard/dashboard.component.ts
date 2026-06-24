@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { CrudService } from '../services/crud.service';
 import { TranslationService } from '../services/translation.service';
-import { forkJoin, of } from 'rxjs';
+import { of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 interface MonthBar { label: string; revenue: number; expenses: number; revenueH: number; expensesH: number; }
@@ -56,14 +56,34 @@ export class DashboardComponent implements OnInit {
   expiredAlerts: DocAlert[] = [];
   dueThisMonthAlerts: DocAlert[] = [];
 
+  // Compliance KPIs (derived from car.compliance)
+  compliantCount  = 0;
+  warningCount    = 0;
+  criticalCount   = 0;
+  blockedCount    = 0;
+  expiringSoon30: { car: any; doc: string; days: number }[] = [];
+  critical7Days:  { car: any; doc: string; days: number }[] = [];
+
   carsInRepair: { car: any; repair: any }[] = [];
+  oilDueSoon: any[] = [];
+  oilOverdue: any[] = [];
+
+  topCars: any[]    = [];
+  bottomCars: any[] = [];
+  profitLoading = true;
+  readonly currentYear = new Date().getFullYear();
+
+  creditsActive    = 0;
+  creditsDue       = 0;
+  creditsOverdue   = 0;
+  creditDebtTotal  = 0;
 
   private allClients: any[] = [];
   private allVoitures: any[] = [];
 
-  private cachedPayments: any[] = [];
-  private cachedExpenses: any[] = [];
-  private cachedReservations: any[] = [];
+  private cachedRevenueByMonth: any[] = [];
+  private cachedExpensesByMonth: any[] = [];
+  private cachedBookingsByMonth: any[] = [];
 
   dir = 'ltr';
 
@@ -75,93 +95,102 @@ export class DashboardComponent implements OnInit {
 
   constructor(
     private crud: CrudService,
-    private ts: TranslationService
+    private ts: TranslationService,
   ) {}
 
   ngOnInit() {
     this.ts.direction$.subscribe(d => this.dir = d);
     this.ts.currentLang$.subscribe(() => {
-      if (this.cachedPayments.length || this.cachedExpenses.length || this.cachedReservations.length) {
-        this.monthBars = this.buildMonthBars(this.cachedReservations, this.cachedExpenses);
-        this.bookingMonthBars = this.buildBookingBars(this.cachedReservations);
+      if (this.cachedRevenueByMonth.length || this.cachedBookingsByMonth.length) {
+        this.monthBars        = this.buildMonthBarsFromAgg(this.cachedRevenueByMonth, this.cachedExpensesByMonth);
+        this.bookingMonthBars = this.buildBookingBarsFromAgg(this.cachedBookingsByMonth);
       }
     });
     this.loadAll();
+    this.loadProfitability();
+  }
+
+  loadProfitability() {
+    this.profitLoading = true;
+    this.crud.getAll('profitability/vehicles', { year: this.currentYear })
+      .pipe(catchError(() => of(null)))
+      .subscribe({
+        next: (res: any) => {
+          const rows: any[] = res?.rows ?? [];
+          this.topCars    = rows.slice(0, 5);
+          this.bottomCars = [...rows].reverse().slice(0, 5);
+          this.profitLoading = false;
+        },
+        error: () => { this.profitLoading = false; },
+      });
+  }
+
+  fmt(n: number): string {
+    if (Math.abs(n) >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+    if (Math.abs(n) >= 1_000)     return (n / 1_000).toFixed(0) + 'k';
+    return n.toFixed(0);
   }
 
   loadAll() {
     this.loading = true;
-    const safe = (obs: any) => obs.pipe(catchError(() => of([])));
+    this.crud.getAll('dashboard/aggregate').pipe(catchError(() => of(null))).subscribe({
+      next: (agg: any) => {
+        if (!agg) { this.loading = false; return; }
 
-    forkJoin({
-      voitures:     safe(this.crud.getAll('voiture', { limit: 1000 })),
-      clients:      safe(this.crud.getAll('client')),
-      reservations: safe(this.crud.getAll('reservation')),
-      paiements:    safe(this.crud.getAll('paiement')),
-      depenses:     safe(this.crud.getAll('depense')),
-      contrats:     safe(this.crud.getAll('contrat')),
-      reparations:  safe(this.crud.getAll('reparation')),
-    }).subscribe({
-      next: ({ voitures, clients, reservations, paiements, depenses, contrats, reparations }) => {
-        const cars = this.toArray(voitures);
-        const clientList = this.toArray(clients);
-        const resList = this.toArray(reservations);
-        const payments = this.toArray(paiements);
-        const expenses = this.toArray(depenses);
-        const contracts = this.toArray(contrats);
-
-        // KPI
-        this.totalCars = cars.length;
-        this.totalClients = clientList.length;
-        this.availableCars = cars.filter((c: any) => c.voitureStatus === 'available' || c.voitureStatus === 'disponible').length;
-        this.bookedCars = cars.filter((c: any) => c.voitureStatus === 'rented' || c.voitureStatus === 'louee').length;
-        this.maintenanceCars = cars.filter((c: any) => c.voitureStatus === 'maintenance').length;
-        this.occupancyRate = this.totalCars > 0 ? Math.round((this.bookedCars / this.totalCars) * 100) : 0;
-        this.buildDocAlerts(cars);
-        this.buildCarsInRepair(cars, this.toArray(reparations));
-
-        const today = new Date();
-        this.activeBookings = resList.filter((r: any) => {
-          const start = new Date(r.dateDebut);
-          const end = new Date(r.dateFin);
-          return start <= today && end >= today;
-        }).length;
-
-        const revenueStatuses = ['confirmed', 'confirmee', 'active', 'en_cours', 'encours', 'completed', 'terminee', 'done', 'termine'];
-        this.totalRevenue = resList
-          .filter((r: any) => revenueStatuses.includes((r.reservationStatus || r.statut || '').toLowerCase()))
-          .reduce((s: number, r: any) => s + (parseFloat(r.total || r.montant || 0)), 0);
-
-        this.totalExpenses = expenses
-          .reduce((s: number, d: any) => s + (parseFloat(d.montant) || 0), 0);
+        // KPIs from backend
+        const kpi = agg.kpi ?? {};
+        this.totalCars       = kpi.totalCars       ?? 0;
+        this.totalClients    = kpi.totalClients     ?? 0;
+        this.availableCars   = kpi.availableCars    ?? 0;
+        this.bookedCars      = kpi.bookedCars       ?? 0;
+        this.maintenanceCars = kpi.maintenanceCars  ?? 0;
+        this.occupancyRate   = kpi.occupancyRate    ?? 0;
+        this.activeBookings  = kpi.activeBookings   ?? 0;
+        this.totalRevenue    = kpi.totalRevenue     ?? 0;
+        this.totalExpenses   = kpi.totalExpenses    ?? 0;
 
         // Payment distribution
-        this.paidCount    = payments.filter((p: any) => p.statut === 'paye').length;
-        this.unpaidCount  = payments.filter((p: any) => p.statut === 'non_paye' || p.statut === 'impaye').length;
-        this.partialCount = payments.filter((p: any) => p.statut === 'partiel').length;
+        const pd = agg.paymentDistribution ?? {};
+        this.paidCount    = pd.paidCount    ?? 0;
+        this.partialCount = pd.partialCount ?? 0;
+        this.unpaidCount  = pd.unpaidCount  ?? 0;
+
+        // Recent
+        this.recentReservations = agg.recentReservations ?? [];
+        this.recentContracts    = agg.recentContracts    ?? [];
 
         // Cache for language-change rebuilds
-        this.cachedPayments = payments;
-        this.cachedExpenses = expenses;
-        this.cachedReservations = resList;
+        this.cachedRevenueByMonth  = agg.revenueByMonth  ?? [];
+        this.cachedExpensesByMonth = agg.expensesByMonth ?? [];
+        this.cachedBookingsByMonth = agg.bookingsByMonth ?? [];
 
-        // 6-month bars
-        this.monthBars = this.buildMonthBars(resList, expenses);
-        this.bookingMonthBars = this.buildBookingBars(resList);
+        // Month bars from pre-computed data
+        this.monthBars        = this.buildMonthBarsFromAgg(this.cachedRevenueByMonth, this.cachedExpensesByMonth);
+        this.bookingMonthBars = this.buildBookingBarsFromAgg(this.cachedBookingsByMonth);
 
-        // Lookup maps for reservations table
-        this.allClients = clientList;
-        this.allVoitures = cars;
+        // Credits
+        const cr = agg.credits ?? {};
+        this.creditsActive   = cr.active      ?? 0;
+        this.creditsOverdue  = cr.overdue     ?? 0;
+        this.creditsDue      = cr.monthlyDue  ?? 0;
+        this.creditDebtTotal = cr.debtTotal   ?? 0;
 
-        // Recent contracts (last 5)
-        this.recentContracts = contracts
-          .sort((a: any, b: any) => new Date(b.dateDebut || b.createdAt || 0).getTime() - new Date(a.dateDebut || a.createdAt || 0).getTime())
-          .slice(0, 5);
+        // Compliance
+        const comp = agg.compliance ?? {};
+        this.compliantCount   = comp.compliant    ?? 0;
+        this.warningCount     = comp.warning      ?? 0;
+        this.criticalCount    = comp.critical     ?? 0;
+        this.blockedCount     = comp.blocked      ?? 0;
+        this.expiringSoon30   = comp.expiringSoon30 ?? [];
+        this.critical7Days    = comp.critical7Days  ?? [];
 
-        // Last 10 reservations
-        this.recentReservations = [...resList]
-          .sort((a: any, b: any) => new Date(b.dateDebut || b.createdAt || 0).getTime() - new Date(a.dateDebut || a.createdAt || 0).getTime())
-          .slice(0, 10);
+        // Cars in repair + oil
+        this.carsInRepair = (agg.carsInRepair ?? []).map((r: any) => ({
+          car: { id: r.carId, marque: r.marque, modele: r.modele },
+          repair: { description: r.description, dateFin: r.dateFin }
+        }));
+        this.oilDueSoon = agg.oilReminders?.dueSoon ?? [];
+        this.oilOverdue = agg.oilReminders?.overdue ?? [];
 
         this.loading = false;
       },
@@ -173,34 +202,25 @@ export class DashboardComponent implements OnInit {
     return Array.isArray(r) ? r : (r?.data ?? r?.['hydra:member'] ?? []);
   }
 
-  private buildMonthBars(reservations: any[], expenses: any[]): MonthBar[] {
-    const lang = this.ts.getCurrentLanguage();
+  private buildMonthBarsFromAgg(revenueRows: any[], expenseRows: any[]): MonthBar[] {
+    const lang   = this.ts.getCurrentLanguage();
     const labels = this.monthNames[lang] || this.monthNames['en'];
-    const today = new Date();
+    const today  = new Date();
     const bars: MonthBar[] = [];
-    const revenueStatuses = ['confirmed', 'confirmee', 'active', 'en_cours', 'encours', 'completed', 'terminee', 'done', 'termine'];
 
     for (let i = 11; i >= 0; i--) {
       const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-      const y = d.getFullYear();
-      const m = d.getMonth();
+      const y = d.getFullYear(); const m = d.getMonth() + 1; // SQL months are 1-based
 
-      const rev = reservations
-        .filter((r: any) => {
-          const rd = new Date(r.dateDebut || r.createdAt || 0);
-          return rd.getFullYear() === y && rd.getMonth() === m
-            && revenueStatuses.includes((r.reservationStatus || r.statut || '').toLowerCase());
-        })
-        .reduce((s: number, r: any) => s + (parseFloat(r.total || r.montant || 0)), 0);
+      const rev = revenueRows.find((r: any) => +r.yr === y && +r.mo === m);
+      const exp = expenseRows.find((e: any) => +e.yr === y && +e.mo === m);
 
-      const exp = expenses
-        .filter((e: any) => {
-          const ed = new Date(e.dateDepense || e.date || e.createdAt || 0);
-          return ed.getFullYear() === y && ed.getMonth() === m;
-        })
-        .reduce((s: number, e: any) => s + (parseFloat(e.montant) || 0), 0);
-
-      bars.push({ label: labels[m], revenue: rev, expenses: exp, revenueH: 0, expensesH: 0 });
+      bars.push({
+        label:    labels[m - 1],
+        revenue:  parseFloat(rev?.revenue ?? 0),
+        expenses: parseFloat(exp?.expenses ?? 0),
+        revenueH: 0, expensesH: 0,
+      });
     }
 
     const maxVal = Math.max(...bars.map(b => Math.max(b.revenue, b.expenses)), 1);
@@ -208,34 +228,31 @@ export class DashboardComponent implements OnInit {
       b.revenueH  = Math.round((b.revenue  / maxVal) * 100);
       b.expensesH = Math.round((b.expenses / maxVal) * 100);
     });
-
     return bars;
   }
 
-  private buildBookingBars(reservations: any[]) {
-    const lang = this.ts.getCurrentLanguage();
+  private buildBookingBarsFromAgg(bookingRows: any[]) {
+    const lang   = this.ts.getCurrentLanguage();
     const labels = this.monthNames[lang] || this.monthNames['en'];
-    const today = new Date();
+    const today  = new Date();
     const bars: { label: string; count: number; h: number }[] = [];
 
     for (let i = 11; i >= 0; i--) {
       const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-      const y = d.getFullYear();
-      const m = d.getMonth();
+      const y = d.getFullYear(); const m = d.getMonth() + 1;
 
-      const count = reservations.filter((r: any) => {
-        const rd = new Date(r.dateDebut || r.createdAt || 0);
-        return rd.getFullYear() === y && rd.getMonth() === m;
-      }).length;
-
-      bars.push({ label: labels[m], count, h: 0 });
+      const row   = bookingRows.find((r: any) => +r.yr === y && +r.mo === m);
+      const count = +(row?.count ?? 0);
+      bars.push({ label: labels[m - 1], count, h: 0 });
     }
 
     const maxCount = Math.max(...bars.map(b => b.count), 1);
     bars.forEach(b => b.h = Math.round((b.count / maxCount) * 100));
-
     return bars;
   }
+
+  private buildMonthBars(_r: any[], _e: any[]): MonthBar[] { return []; }
+  private buildBookingBars(_r: any[]): { label: string; count: number; h: number }[] { return []; }
 
   get paymentTotal() { return Math.max(this.paidCount + this.unpaidCount + this.partialCount, 1); }
   get paidPct()    { return Math.round((this.paidCount    / this.paymentTotal) * 100); }
@@ -269,34 +286,44 @@ export class DashboardComponent implements OnInit {
     const thisYear = today.getFullYear();
     const thisMonth = today.getMonth();
 
-    const docFields: { field: string; type: DocAlert['docType'] }[] = [
-      { field: 'dateExpirationAssurance', type: 'assurance' },
-      { field: 'dateExpirationVignette',  type: 'vignette' },
-      { field: 'dateExpirationVisite',    type: 'visite' },
-    ];
-
     const expired: DocAlert[] = [];
     const dueThisMonth: DocAlert[] = [];
 
+    // Compliance KPI reset
+    this.compliantCount = 0; this.warningCount = 0; this.criticalCount = 0; this.blockedCount = 0;
+    this.expiringSoon30 = []; this.critical7Days = [];
+    const docLabels: Record<string, string> = { vignette: 'Vignette', assurance: 'Assurance', visite: 'Visite tech.' };
+
     for (const car of cars) {
       const label = `${car.marque || ''} ${car.modele || ''}`.trim();
-      for (const { field, type } of docFields) {
-        if (!car[field]) continue;
-        const d = new Date(car[field]);
-        if (isNaN(d.getTime())) continue;
-        d.setHours(0, 0, 0, 0);
-        const days = Math.round((d.getTime() - today.getTime()) / 86400000);
-        const alert: DocAlert = { carId: car.id, carLabel: label, immatriculation: car.immatriculation || '', docType: type, date: d, daysOverOrLeft: days };
-        if (days < 0) {
-          expired.push(alert);
-        } else if (d.getFullYear() === thisYear && d.getMonth() === thisMonth) {
-          dueThisMonth.push(alert);
+
+      // Compliance KPIs from car.compliance
+      if (car.compliance) {
+        const overall = car.compliance.overall;
+        if (overall === 'VALID')         this.compliantCount++;
+        else if (overall === 'WARNING')  this.warningCount++;
+        else if (overall === 'CRITICAL') this.criticalCount++;
+        else if (overall !== 'NOT_REQUIRED') this.blockedCount++;
+
+        for (const key of ['vignette', 'assurance', 'visite'] as const) {
+          const info = car.compliance[key];
+          if (!info || info.daysRemaining === null) continue;
+          if (info.status === 'NOT_REQUIRED') continue;
+          if (info.daysRemaining >= 0 && info.daysRemaining <= 30) {
+            this.expiringSoon30.push({ car, doc: docLabels[key], days: info.daysRemaining });
+          }
+          if (info.daysRemaining >= 0 && info.daysRemaining <= 7) {
+            this.critical7Days.push({ car, doc: docLabels[key], days: info.daysRemaining });
+          }
         }
       }
+
     }
 
     this.expiredAlerts = expired.sort((a, b) => a.daysOverOrLeft - b.daysOverOrLeft);
     this.dueThisMonthAlerts = dueThisMonth.sort((a, b) => a.daysOverOrLeft - b.daysOverOrLeft);
+    this.expiringSoon30.sort((a, b) => a.days - b.days);
+    this.critical7Days.sort((a, b) => a.days - b.days);
   }
 
   private buildCarsInRepair(cars: any[], reparations: any[]): void {

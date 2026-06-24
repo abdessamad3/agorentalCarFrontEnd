@@ -1,0 +1,108 @@
+<div class="nc-shell" [attr.dir]="dir">
+
+  <!-- ── Header ── -->
+  <div class="nc-header">
+    <div class="nc-header-left">
+      <h1 class="nc-title">🔔 Notification Center</h1>
+      <span class="nc-unread-badge" *ngIf="unreadCount > 0">{{ unreadCount }} unread</span>
+    </div>
+    <button class="nc-mark-all" (click)="markAllRead()" *ngIf="unreadCount > 0">
+      ✓ Mark all as read
+    </button>
+  </div>
+
+  <!-- ── Main layout ── -->
+  <div class="nc-layout">
+
+    <!-- Left: Category sidebar -->
+    <aside class="nc-sidebar">
+      <button
+        *ngFor="let cat of categories"
+        class="nc-cat-btn"
+        [class.nc-cat-active]="activeCategory === cat.key"
+        (click)="setCategory(cat.key)"
+      >
+        <span class="nc-cat-icon">{{ cat.icon }}</span>
+        <span class="nc-cat-label">{{ cat.label }}</span>
+        <span class="nc-cat-badge" *ngIf="categoryCounts[cat.key] > 0">
+          {{ categoryCounts[cat.key] }}
+        </span>
+      </button>
+    </aside>
+
+    <!-- Right: Notification panel -->
+    <div class="nc-panel">
+
+      <!-- Status filter tabs -->
+      <div class="nc-filter-bar">
+        <button
+          *ngFor="let sf of statusFilters"
+          class="nc-filter-btn"
+          [class.nc-filter-active]="statusFilter === sf.key"
+          (click)="setStatusFilter(sf.key)"
+        >
+          {{ sf.label }}
+          <span class="nc-filter-count" *ngIf="statusCounts[sf.key] > 0">
+            {{ statusCounts[sf.key] }}
+          </span>
+        </button>
+      </div>
+
+      <!-- Loading -->
+      <div class="nc-loading" *ngIf="loading">
+        <span class="nc-spinner"></span> Loading notifications…
+      </div>
+
+      <!-- Empty state -->
+      <div class="nc-empty" *ngIf="!loading && filteredNotifs.length === 0">
+        <div class="nc-empty-icon">✅</div>
+        <div class="nc-empty-title">All clear</div>
+        <div class="nc-empty-msg">No notifications match this filter.</div>
+      </div>
+
+      <!-- Notification cards -->
+      <div class="nc-list" *ngIf="!loading && filteredNotifs.length > 0">
+        <div
+          *ngFor="let n of filteredNotifs"
+          class="nc-card"
+          [class.nc-card-unread]="!n.isRead"
+          [class.nc-card-critical]="n.priority === 'CRITICAL'"
+          [class.nc-card-high]="n.priority === 'HIGH'"
+        >
+          <!-- Icon -->
+          <div class="nc-card-icon-wrap" [ngClass]="'nc-icon-' + categoryOf(n.type)">
+            {{ typeIcon(n.type) }}
+          </div>
+
+          <!-- Body -->
+          <div class="nc-card-body">
+            <div class="nc-card-title" [class.nc-card-title-bold]="!n.isRead">
+              {{ n.title }}
+            </div>
+            <div class="nc-card-msg">{{ n.message }}</div>
+            <div class="nc-card-actions" *ngIf="actionButtonsFor(n).length > 0">
+              <button
+                *ngFor="let btn of actionButtonsFor(n)"
+                class="nc-action-btn"
+                [ngClass]="btn.cls"
+                (click)="act(n, btn.route); $event.stopPropagation()"
+              >
+                {{ btn.icon }} {{ btn.label }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Meta -->
+          <div class="nc-card-meta">
+            <span class="nc-priority-badge" [ngClass]="priorityClass(n.priority)">
+              {{ priorityLabel(n.priority) }}
+            </span>
+            <span class="nc-card-time">{{ n.createdAt | date:'d MMM, HH:mm' }}</span>
+            <span class="nc-unread-dot" *ngIf="!n.isRead"></span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

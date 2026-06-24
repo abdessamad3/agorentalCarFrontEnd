@@ -1,8 +1,8 @@
-/* App Shell Layout */
+/* ── App Shell Layout ─────────────────────────────────────────────────────── */
 .app-layout {
   display: flex;
   min-height: 100vh;
-  background: #f7fafc;
+  background: var(--clr-bg, #f0f4f8);
 }
 
 .main-content {
@@ -31,6 +31,7 @@
   }
 }
 
+/* ── Page content area ────────────────────────────────────────────────────── */
 .page-content {
   flex: 1;
   overflow-y: auto;
@@ -38,25 +39,47 @@
   padding: 1.5rem;
 }
 
-@media (max-width: 768px) {
-  .page-content { padding: 0.75rem; }
+/* Route-transition: fade+slide on every page load */
+.page-content > * {
+  animation: slideUp 0.22s ease;
 }
 
-@media (max-width: 480px) {
-  .page-content { padding: 0.5rem; }
+@media (max-width: 768px) { .page-content { padding: 1rem; } }
+@media (max-width: 480px) { .page-content { padding: 0.75rem; } }
+
+/* ── Global loading overlay (route change) ────────────────────────────────── */
+.global-loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(240, 244, 248, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9000;
+  backdrop-filter: blur(2px);
+  animation: fadeIn 0.15s ease;
 }
 
-/* Overlay for mobile sidebar */
+.global-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e2e8f0;
+  border-top-color: var(--clr-primary, #3182ce);
+  border-radius: 50%;
+  animation: g-spin 0.65s linear infinite;
+}
+
+/* ── Mobile sidebar overlay ───────────────────────────────────────────────── */
 .sidebar-overlay {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(15, 23, 42, 0.5);
   z-index: 999;
+  backdrop-filter: blur(1px);
+  animation: fadeIn 0.18s ease;
 }
 
 @media (max-width: 768px) {
-  .sidebar-overlay {
-    display: block;
-  }
+  .sidebar-overlay { display: block; }
 }

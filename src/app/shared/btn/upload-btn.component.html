@@ -1,0 +1,23 @@
+<label class="upload-btn"
+       [class.upload-btn-pill]="label && variant === 'icon'"
+       [class.upload-btn-tile]="variant === 'tile'"
+       [class.upload-btn-block]="variant === 'block'"
+       [class.is-loading]="loading"
+       [class.is-disabled]="disabled"
+       [attr.title]="title"
+       (click)="$event.stopPropagation()">
+  <span *ngIf="!label && variant === 'tile' && !loading" class="upload-btn-plus">+</span>
+  <svg *ngIf="!loading && variant !== 'tile'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+       stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+    <polyline points="17 8 12 3 7 8"/>
+    <line x1="12" y1="3" x2="12" y2="15"/>
+  </svg>
+  <svg *ngIf="loading" class="spinner-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+       stroke-width="2.5" width="13" height="13">
+    <path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" stroke-dasharray="28" stroke-dashoffset="10"/>
+  </svg>
+  <span *ngIf="label" class="upload-btn-label">{{ loading ? (title || label) : label }}</span>
+  <input type="file" [accept]="accept" [multiple]="multiple" [disabled]="disabled || loading"
+         style="display:none" (change)="onFileChange($event)" />
+</label>

@@ -14,7 +14,12 @@
       (menuToggle)="toggleSidebar()"
     ></app-top-header>
 
+    <app-breadcrumb *ngIf="showShell"></app-breadcrumb>
+
     <div class="page-content">
+      <div *ngIf="routerLoading" class="global-loading-overlay">
+        <div class="global-spinner"></div>
+      </div>
       <router-outlet></router-outlet>
     </div>
   </div>
@@ -24,4 +29,6 @@
     class="sidebar-overlay"
     (click)="closeSidebar()"
   ></div>
+
+  <app-toast></app-toast>
 </div>

@@ -1,0 +1,163 @@
+<div class="rp-page" [dir]="dir" style="max-width:860px">
+
+  <div class="rp-header">
+    <div class="rp-header-left">
+      <div class="rp-header-icon">➕</div>
+      <div>
+        <div class="rp-title">New Financing Contract</div>
+        <div class="rp-subtitle">Create a vehicle financing contract with installment schedule</div>
+      </div>
+    </div>
+    <a routerLink="/vehicle-financing" class="btn-export btn-print" style="text-decoration:none">← Back</a>
+  </div>
+
+  <div *ngIf="loading" class="rp-loading"><span class="rp-loading-spinner"></span> Loading…</div>
+
+  <form *ngIf="!loading" (ngSubmit)="submit()" style="display:grid;gap:1.25rem">
+
+    <!-- Vehicle & Supplier -->
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:1.5rem">
+      <div class="rp-section" style="margin-top:0">1. Vehicle & Supplier</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div style="grid-column:1/-1">
+          <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.35rem;color:#4a5568">Vehicle *</label>
+          <select [(ngModel)]="form.voitureId" name="voitureId" class="rp-select" style="width:100%">
+            <option [ngValue]="null">— Select vehicle —</option>
+            <option *ngFor="let v of voitures" [ngValue]="v.id">{{ voitureLabel(v) }}</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.35rem;color:#4a5568">Supplier / Dealer</label>
+          <select [(ngModel)]="form.supplierId" name="supplierId" class="rp-select" style="width:100%">
+            <option [ngValue]="null">— Select supplier —</option>
+            <option *ngFor="let s of suppliers" [ngValue]="s.id">{{ s.raisonSociale || s.nom || s.name }}</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.35rem;color:#4a5568">Purchase Date</label>
+          <input [(ngModel)]="form.purchaseDate" name="purchaseDate" type="date" class="rp-search" style="width:100%;box-sizing:border-box" />
+        </div>
+        <div>
+          <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.35rem;color:#4a5568">Invoice Number</label>
+          <input [(ngModel)]="form.purchaseInvoiceNumber" name="purchaseInvoiceNumber" class="rp-search" style="width:100%;box-sizing:border-box" placeholder="FAC-2026-001" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Amounts -->
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:1.5rem">
+      <div class="rp-section" style="margin-top:0">2. Amounts</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div>
+          <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.35rem;color:#4a5568">Vehicle Price (MAD) *</label>
+          <input [(ngModel)]="form.vehiclePrice" name="vehiclePrice" type="number" min="0" class="rp-search"
+            style="width:100%;box-sizing:border-box" (ngModelChange)="recalculate()" />
+        </div>
+        <div>
+          <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.35rem;color:#4a5568">Down Payment (MAD)</label>
+          <input [(ngModel)]="form.downPayment" name="downPayment" type="number" min="0" class="rp-search"
+            style="width:100%;box-sizing:border-box" (ngModelChange)="recalculate()" />
+        </div>
+      </div>
+
+      <!-- Computed preview -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-top:1rem;background:#f7fafc;border-radius:10px;padding:1rem">
+        <div style="text-align:center">
+          <div style="font-size:.72rem;color:#718096">Financed Amount</div>
+          <div style="font-weight:800;color:#2b6cb0;font-size:1.05rem">{{ fmt(financedAmount) }}</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:.72rem;color:#718096">Monthly Installment</div>
+          <div style="font-weight:800;color:#553c9a;font-size:1.05rem">{{ fmt(monthlyInstallment) }}</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:.72rem;color:#718096">Total to Repay</div>
+          <div style="font-weight:800;color:#276749;font-size:1.05rem">{{ fmt(totalCost) }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Financing terms -->
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:1.5rem">
+      <div class="rp-section" style="margin-top:0">3. Financing Terms</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div>
+          <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.35rem;color:#4a5568">Financial Institution</label>
+          <select [(ngModel)]="form.financialInstitutionId" name="financialInstitutionId" class="rp-select" style="width:100%">
+            <option [ngValue]="null">— Select institution —</option>
+            <option *ngFor="let fi of institutions" [ngValue]="fi.id">{{ fi.name }}</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.35rem;color:#4a5568">Contract Number</label>
+          <input [(ngModel)]="form.contractNumber" name="contractNumber" class="rp-search" style="width:100%;box-sizing:border-box" placeholder="CTR-2026-001" />
+        </div>
+        <div>
+          <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.35rem;color:#4a5568">Interest Rate (% / year)</label>
+          <input [(ngModel)]="form.interestRate" name="interestRate" type="number" min="0" step="0.01" class="rp-search"
+            style="width:100%;box-sizing:border-box" (ngModelChange)="recalculate()" />
+        </div>
+        <div>
+          <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.35rem;color:#4a5568">Duration *</label>
+          <select [(ngModel)]="form.durationMonths" name="durationMonths" class="rp-select" style="width:100%" (ngModelChange)="recalculate()">
+            <option *ngFor="let d of durationOptions" [ngValue]="d">{{ d }} months</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.35rem;color:#4a5568">Start Date *</label>
+          <input [(ngModel)]="form.startDate" name="startDate" type="date" class="rp-search"
+            style="width:100%;box-sizing:border-box" (ngModelChange)="recalculate()" />
+        </div>
+        <div>
+          <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.35rem;color:#4a5568">End Date (computed)</label>
+          <input [value]="endDate" type="date" class="rp-search" style="width:100%;box-sizing:border-box;background:#f7fafc" readonly />
+        </div>
+        <div>
+          <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.35rem;color:#4a5568">Payment Due Day (of month)</label>
+          <input [(ngModel)]="form.dueDay" name="dueDay" type="number" min="1" max="28" class="rp-search" style="width:100%;box-sizing:border-box" />
+        </div>
+        <div>
+          <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.35rem;color:#4a5568">First Payment Date</label>
+          <input [(ngModel)]="form.firstPaymentDate" name="firstPaymentDate" type="date" class="rp-search" style="width:100%;box-sizing:border-box" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Status & Notes -->
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:1.5rem">
+      <div class="rp-section" style="margin-top:0">4. Status & Notes</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div>
+          <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.35rem;color:#4a5568">Status</label>
+          <select [(ngModel)]="form.status" name="status" class="rp-select" style="width:100%">
+            <option *ngFor="let s of statusOptions" [value]="s.value">{{ s.label }}</option>
+          </select>
+          <div style="font-size:.72rem;color:#a0aec0;margin-top:.3rem">
+            Setting status to "Active" automatically generates the full installment schedule.
+          </div>
+        </div>
+        <div>
+          <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.35rem;color:#4a5568">Notes</label>
+          <textarea [(ngModel)]="form.notes" name="notes" class="rp-search"
+            style="width:100%;box-sizing:border-box;height:68px;resize:vertical"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="errorMsg" style="background:#fff5f5;border:1px solid #fc8181;border-radius:10px;padding:.75rem 1rem;color:#c53030;font-size:.85rem">
+      ⚠ {{ errorMsg }}
+    </div>
+
+    <!-- Actions -->
+    <div style="display:flex;justify-content:flex-end;gap:1rem">
+      <a routerLink="/vehicle-financing" style="padding:.6rem 1.5rem;border:1px solid #e2e8f0;background:#fff;border-radius:10px;cursor:pointer;font-size:.9rem;text-decoration:none;color:#4a5568">Cancel</a>
+      <button type="submit" [disabled]="saving"
+        style="padding:.6rem 2rem;background:#4299e1;color:#fff;border:none;border-radius:10px;cursor:pointer;font-size:.9rem;font-weight:600"
+        [style.opacity]="saving ? '.6' : '1'">
+        {{ saving ? 'Creating…' : 'Create Contract' }}
+      </button>
+    </div>
+
+  </form>
+</div>

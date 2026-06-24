@@ -44,6 +44,15 @@
         </div>
       </div>
 
+      <!-- Manager -->
+      <div class="form-group">
+        <label for="managerId">Manager</label>
+        <select id="managerId" formControlName="managerId" class="form-input">
+          <option [ngValue]="null">— No manager —</option>
+          <option *ngFor="let m of managers" [ngValue]="m.id">{{ m.prenom }} {{ m.nom }}</option>
+        </select>
+      </div>
+
       <!-- Buttons -->
       <div class="form-buttons">
         <button type="button" (click)="onCancel()" class="btn-cancel">

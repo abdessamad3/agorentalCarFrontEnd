@@ -1,44 +1,86 @@
 <div class="list-container" [attr.dir]="dir">
   <div class="header">
     <div class="header-left"><h1>{{ 'contrats' | translate }}</h1></div>
-    <button class="btn-add" (click)="openAdd()">+ {{ 'add' | translate }}</button>
+    <a routerLink="/contrat/new" class="btn-new-link">+ Nouveau contrat</a>
   </div>
-  <div class="search-filter-bar"><div class="search-input"><input type="text" [(ngModel)]="search" [placeholder]="'search' | translate" /></div></div>
+  <div class="search-filter-bar"><div class="search-input"><input type="text" [(ngModel)]="search" (ngModelChange)="onSearch()" [placeholder]="'search' | translate" /></div></div>
   <div *ngIf="loading" class="loading-state"><p>{{ 'loading' | translate }}</p></div>
   <div *ngIf="error && !loading" class="error-state"><p>{{ error }}</p><button (click)="load()" class="btn-retry">{{ 'retry' | translate }}</button></div>
-  <div *ngIf="!loading && !error && filtered.length === 0" class="empty-state"><p>{{ 'noData' | translate }}</p></div>
+  <div *ngIf="!loading && !error && filtered.length === 0" class="empty-state">
+    <span class="empty-icon">📄</span>
+    <div class="empty-title">No contracts</div>
+    <div class="empty-message">Contracts are automatically generated from confirmed reservations.</div>
+  </div>
   <div *ngIf="!loading && !error && filtered.length > 0" class="table-container">
     <table class="bureaus-table">
       <thead><tr>
         <th>{{ 'client' | translate }}</th><th>{{ 'car' | translate }}</th>
         <th>{{ 'dateDebut' | translate }}</th><th>{{ 'dateFin' | translate }}</th>
-        <th>{{ 'montant' | translate }}</th><th>{{ 'actions' | translate }}</th>
+        <th>{{ 'montant' | translate }}</th><th>Statut</th><th>{{ 'actions' | translate }}</th>
       </tr></thead>
       <tbody>
-        <tr *ngFor="let item of filtered" class="bureau-row">
-          <td>{{ item.client?.nom || item.clientId }}</td>
-          <td>{{ item.voiture?.marque || item.voitureId }}</td>
-          <td class="date-cell">{{ item.dateDebut | date:'shortDate' }}</td>
-          <td class="date-cell">{{ item.dateFin | date:'shortDate' }}</td>
-          <td>{{ item.montantTotal }} MAD</td>
+        <tr *ngFor="let item of paged" class="bureau-row">
+          <td>{{ item.reservation?.client?.nom || item.client?.nom || item.clientId }}</td>
+          <td>{{ item.reservation?.voiture?.marque || item.voiture?.marque || item.voitureId }}</td>
+          <td class="date-cell">{{ item.reservation?.dateDebut | date:'shortDate' }}</td>
+          <td class="date-cell">{{ item.reservation?.dateFin | date:'shortDate' }}</td>
+          <td>{{ item.reservation?.total }} MAD</td>
+          <td>
+            <span class="status-badge" [ngClass]="'status-' + reservationStatus(item)">
+              {{ reservationStatus(item) }}
+            </span>
+          </td>
           <td class="actions-cell">
-            <button (click)="openView(item)" class="btn-action btn-view" [title]="'view'|translate"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
-            <button (click)="openPrint(item)" class="btn-action btn-print" title="Imprimer / Télécharger"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
-            <button (click)="openDelete(item.id)" class="btn-action btn-delete" [title]="'delete'|translate"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
+            <button *ngIf="reservationStatus(item) === 'confirmed'"
+              (click)="openDelivery(item)" class="btn-action btn-deliver"
+              title="Livrer le véhicule">
+              Livrer
+            </button>
+            <button *ngIf="reservationStatus(item) === 'en_cours'"
+              (click)="openReturn(item)" class="btn-action btn-return"
+              title="Enregistrer le retour">
+              Retour
+            </button>
+            <a [routerLink]="['/contrat', item.id]" class="btn-action btn-view" title="Voir le détail">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </a>
+            <button (click)="openEdit(item)" class="btn-action btn-edit-form" title="Modifier le contrat">✏️</button>
+            <button (click)="downloadPdf(item)" class="btn-action btn-pdf" title="Télécharger PDF contrat">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </button>
+            <button (click)="generateInvoice(item)" class="btn-action btn-invoice" title="Télécharger Facture">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            </button>
+            <app-btn variant="icon-delete" (click)="openDelete(item.id)" [title]="'delete'|translate"></app-btn>
           </td>
         </tr>
       </tbody>
     </table>
+    <app-paginator [page]="page" [limit]="limit" [total]="total"
+      (pageChange)="onPageChange($event)">
+    </app-paginator>
   </div>
 </div>
 
+<!-- Delivery form modal -->
+<app-vehicle-delivery-form
+  *ngIf="deliveryItem"
+  [reservation]="deliveryItem"
+  (saved)="onDeliverySaved()"
+  (closed)="onDeliveryClosed()">
+</app-vehicle-delivery-form>
+
+<!-- Return inspection form modal -->
+<app-vehicle-return-form
+  *ngIf="returnItem"
+  [reservation]="returnItem"
+  [delivery]="deliveryData"
+  (saved)="onReturnSaved()"
+  (closed)="onReturnClosed()">
+</app-vehicle-return-form>
+
 <div *ngIf="modalMode" class="modal-overlay" (click)="closeModal()">
   <div class="modal" (click)="$event.stopPropagation()">
-    <ng-container *ngIf="modalMode === 'view' && selected">
-      <div class="modal-header"><h2>{{ 'contrat' | translate }}</h2><button class="modal-close" (click)="closeModal()">&times;</button></div>
-      <div class="modal-body"><div class="detail-row" *ngFor="let e of objectEntries(selected)"><span class="detail-label">{{ e[0] }}</span><span class="detail-value">{{ displayValue(e[1]) }}</span></div></div>
-      <div class="modal-footer"><button class="btn-secondary" (click)="closeModal()">{{ 'close' | translate }}</button></div>
-    </ng-container>
     <ng-container *ngIf="modalMode === 'form'">
       <div class="modal-header"><h2>{{ 'add' | translate }} {{ 'contrat' | translate }}</h2><button class="modal-close" (click)="closeModal()">&times;</button></div>
       <form [formGroup]="form" (ngSubmit)="save()">
@@ -53,13 +95,13 @@
           </div>
           <div class="form-group"><label>{{ 'montant' | translate }}</label><input type="number" formControlName="montantTotal" min="0" /></div>
         </div>
-        <div class="modal-footer"><button type="button" class="btn-secondary" (click)="closeModal()">{{ 'cancel' | translate }}</button><button type="submit" class="btn-primary" [disabled]="form.invalid || isSubmitting">{{ (isSubmitting ? 'saving' : 'save') | translate }}</button></div>
+        <div class="modal-footer"><app-btn variant="secondary" (click)="closeModal()">{{ 'cancel' | translate }}</app-btn><app-btn variant="primary" type="submit" [disabled]="form.invalid || isSubmitting">{{ (isSubmitting ? 'saving' : 'save') | translate }}</app-btn></div>
       </form>
     </ng-container>
     <ng-container *ngIf="modalMode === 'delete'">
       <div class="modal-header"><h2>{{ 'confirmDelete' | translate }}</h2><button class="modal-close" (click)="closeModal()">&times;</button></div>
       <div class="modal-body"><p class="delete-warning">{{ 'deleteWarning' | translate }}</p></div>
-      <div class="modal-footer"><button class="btn-secondary" (click)="closeModal()">{{ 'cancel' | translate }}</button><button class="btn-danger" (click)="confirmDelete()">{{ 'delete' | translate }}</button></div>
+      <div class="modal-footer"><app-btn variant="secondary" (click)="closeModal()">{{ 'cancel' | translate }}</app-btn><app-btn variant="danger" (click)="confirmDelete()">{{ 'delete' | translate }}</app-btn></div>
     </ng-container>
   </div>
 </div>
@@ -70,3 +112,32 @@
   [contractData]="printItem"
   (closed)="printItem = null">
 </app-print-contrat>
+
+<!-- DRAWER: View -->
+<div class="drawer-backdrop" [class.visible]="drawerOpen" (click)="closeDrawer()"></div>
+<div class="drawer" [class.open]="drawerOpen">
+  <ng-container *ngIf="drawerItem">
+    <div class="drawer-header">
+      <span class="drawer-title">Details</span>
+      <button class="drawer-close" (click)="closeDrawer()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="drawer-body">
+      <div class="drawer-section">
+        <div class="drawer-section-head">Information</div>
+        <div class="drawer-row" *ngFor="let e of objectEntries(drawerItem)">
+          <span class="drawer-lbl">{{ e[0] }}</span>
+          <span class="drawer-val">{{ displayValue(e[1]) }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <button class="btn-outline-danger" (click)="openDelete(drawerItem.id); closeDrawer()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+        Delete
+      </button>
+      <button class="btn-primary-sm" (click)="closeDrawer()">Close</button>
+    </div>
+  </ng-container>
+</div>

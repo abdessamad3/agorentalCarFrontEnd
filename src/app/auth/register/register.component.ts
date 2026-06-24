@@ -30,7 +30,6 @@ export class RegisterComponent {
     }, { validators: this.passwordMatchValidator });
   }
 
-  // Custom validator to check if passwords match
   passwordMatchValidator(g: FormGroup) {
     return g.get('password')?.value === g.get('confirmPassword')?.value
       ? null : { mismatch: true };

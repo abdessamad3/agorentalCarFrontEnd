@@ -5,6 +5,8 @@ import { TranslationService } from '../../services/translation.service';
 import { CrudService } from '../../services/crud.service';
 import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
+import { BtnComponent } from '../../shared/btn/btn.component';
+import { PaginatorComponent } from '../../shared/paginator/paginator.component';
 
 export interface PaymentRow {
   num: number;
@@ -20,7 +22,7 @@ export interface PaymentRow {
 @Component({
   selector: 'app-achat-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, BtnComponent, PaginatorComponent],
   templateUrl: './achat-list.component.html',
   styleUrls: ['../../shared/styles/crud-list.css', './achat-list.component.css']
 })
@@ -29,22 +31,24 @@ export class AchatListComponent implements OnInit {
   voitures: any[] = [];
   fournisseurs: any[] = [];
   loading = true; error = ''; dir = 'ltr'; search = '';
+  page = 1; limit = 20; total = 0;
   filterStatus = ''; filterType = '';
-  modalMode: 'view' | 'form' | 'delete' | 'schedule' | null = null;
+  modalMode: 'form' | 'delete' | 'schedule' | null = null;
   selected: any = null; form: FormGroup; isSubmitting = false;
   deleteId: number | null = null; isEditing = false;
   readonly endpoint = 'achat-voiture';
 
-  // Financing calculator state
+  drawerOpen = false;
+  drawerItem: any = null;
+  readonly objectEntries = Object.entries;
+
   resteAFinancer = 0;
   dureeMoisCalc = 0;
   dernierMensualiteCalc = 0;
 
-  // Schedule modal
   scheduleAchat: any = null;
   scheduleRows: PaymentRow[] = [];
 
-  // Stats
   get totalFinancedVehicles() { return this.items.filter(i => i.typeFinancement !== 'comptant').length; }
   get totalRemainingDebt() {
     return this.items
@@ -97,10 +101,10 @@ export class AchatListComponent implements OnInit {
 
   ngOnInit() {
     this.ts.direction$.subscribe(d => this.dir = d);
-    this.crud.getAll('voiture', { limit: 1000 }).pipe(catchError(() => of([]))).subscribe(r => {
+    this.crud.getAll('voiture').pipe(catchError(() => of([]))).subscribe(r => {
       this.voitures = Array.isArray(r) ? r : (r as any)?.data ?? [];
     });
-    this.crud.getAll('fournisseur', { limit: 1000 }).pipe(catchError(() => of([]))).subscribe(r => {
+    this.crud.getAll('fournisseur').pipe(catchError(() => of([]))).subscribe(r => {
       this.fournisseurs = Array.isArray(r) ? r : (r as any)?.data ?? [];
     });
     this.load();
@@ -119,13 +123,13 @@ export class AchatListComponent implements OnInit {
 
   load() {
     this.loading = true; this.error = '';
-    this.crud.getAll(this.endpoint).subscribe({
-      next: r  => { this.items = Array.isArray(r) ? r : (r?.data ?? []); this.loading = false; },
+    this.crud.getPage(this.endpoint, { page: this.page, limit: this.limit, search: this.search, status: this.filterStatus, type: this.filterType }).subscribe({
+      next: r => { this.items = r.data ?? []; this.total = r.meta?.total ?? 0; this.loading = false; },
       error: () => { this.error = this.ts.translate('loadError'); this.loading = false; }
     });
   }
 
-  get filtered() {
+  get filtered(): any[] {
     let res = this.items;
     if (this.search.trim()) {
       const q = this.search.toLowerCase();
@@ -136,7 +140,12 @@ export class AchatListComponent implements OnInit {
     return res;
   }
 
-  openView(item: any)     { this.selected = item; this.modalMode = 'view'; }
+  get paged(): any[] { return this.items; }
+
+  onSearch(): void { this.page = 1; this.load(); }
+  onPageChange(p: number): void { this.page = p; this.load(); }
+
+  openView(item: any)     { this.drawerItem = item; this.drawerOpen = true; }
   openSchedule(item: any) {
     this.scheduleAchat = item;
     this.scheduleRows  = this.generateSchedule(item);
@@ -159,8 +168,15 @@ export class AchatListComponent implements OnInit {
     this.modalMode = null; this.selected = null; this.deleteId = null;
     this.isSubmitting = false; this.isEditing = false; this.scheduleAchat = null;
   }
+  closeDrawer()           { this.drawerOpen = false; this.drawerItem = null; }
 
-  @HostListener('document:keydown.escape') onEscape() { this.closeModal(); }
+  @HostListener('document:keydown.escape') onEscape() { this.closeModal(); this.closeDrawer(); }
+
+  displayValue(val: any): string {
+    if (val === null || val === undefined) return '—';
+    if (typeof val === 'object') return val.nom || val.name || val.libelle || val.marque || val.titre || JSON.stringify(val);
+    return String(val);
+  }
 
   save() {
     if (this.form.invalid) return;

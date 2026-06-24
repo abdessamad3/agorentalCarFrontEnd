@@ -1,0 +1,44 @@
+<div class="cd-root">
+
+  <div class="cd-error" *ngIf="error">{{ error }}</div>
+  <div class="cd-loading" *ngIf="loading">Loading documents…</div>
+
+  <div class="cd-sections" *ngIf="!loading">
+    <div class="cd-section" *ngFor="let dt of docTypes">
+      <div class="cd-section-header">
+        <span class="cd-section-title">{{ dt.label }}</span>
+        <app-upload-btn
+          label="+ Upload"
+          [title]="'Upload ' + dt.label"
+          accept=".jpg,.jpeg,.png,.webp,.pdf"
+          [multiple]="true"
+          [loading]="uploading === dt.type"
+          [disabled]="uploading !== null && uploading !== dt.type"
+          (filesSelected)="onFilesSelected($event, dt.type)">
+        </app-upload-btn>
+      </div>
+
+      <div class="cd-empty" *ngIf="docsOf(dt.type).length === 0">No document</div>
+
+      <div class="cd-doc-list">
+        <div class="cd-doc" *ngFor="let doc of docsOf(dt.type)">
+          <div class="cd-doc-thumb" *ngIf="isImage(doc)">
+            <img [src]="fullUrl(doc)" [alt]="doc.originalName" />
+          </div>
+          <div class="cd-doc-thumb cd-doc-pdf" *ngIf="!isImage(doc)">
+            <span>PDF</span>
+          </div>
+          <div class="cd-doc-info">
+            <span class="cd-doc-name" [title]="doc.originalName">{{ doc.originalName }}</span>
+            <span class="cd-doc-date">{{ doc.uploadedAt | date:'dd/MM/yyyy' }}</span>
+          </div>
+          <div class="cd-doc-actions">
+            <app-btn variant="icon-view" (click)="openFile(doc)" title="Open"></app-btn>
+            <app-btn variant="icon-delete" (click)="delete(doc)" title="Delete"></app-btn>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

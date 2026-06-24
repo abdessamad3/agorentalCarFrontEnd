@@ -1,0 +1,77 @@
+<div class="contrat-page" [attr.dir]="dir">
+
+  <div class="contrat-header">
+    <h2>⚙️ Paramètres de la société</h2>
+    <button type="button" class="btn-save" (click)="save()" [disabled]="saving">
+      {{ saving ? 'Enregistrement...' : 'Enregistrer' }}
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="state-msg">Chargement...</div>
+  <div *ngIf="error && !loading" class="state-error">{{ error }}</div>
+
+  <ng-container *ngIf="!loading && !error">
+
+    <!-- Logo -->
+    <div class="contrat-section">
+      <div class="section-title">Logo de la société</div>
+      <div class="logo-wrap">
+        <img *ngIf="logoPreviewUrl" [src]="logoPreviewUrl" class="logo-preview" alt="logo" />
+        <div *ngIf="!logoPreviewUrl" class="logo-placeholder">Aucun logo</div>
+        <div class="logo-upload">
+          <app-upload-btn label="Choisir un fichier" accept="image/*" (fileSelected)="onLogoChange($event)"></app-upload-btn>
+          <span class="upload-hint">PNG ou JPG, max 2 Mo</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Infos société -->
+    <div class="contrat-section">
+      <div class="section-title">Informations de la société</div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Raison sociale</label>
+          <input [(ngModel)]="raisonSociale" placeholder="Ex: AGOCAR SARL" />
+        </div>
+        <div class="field">
+          <label>Téléphones (séparés par une virgule)</label>
+          <input [(ngModel)]="telephonesStr" placeholder="Ex: 0522 123 456, 0661 789 012" />
+        </div>
+        <div class="field" style="grid-column: 1 / -1">
+          <label>Adresse</label>
+          <input [(ngModel)]="adresse" placeholder="Ex: 25, Rue Mohammed V, Casablanca" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Identifiants fiscaux -->
+    <div class="contrat-section">
+      <div class="section-title">Identifiants fiscaux</div>
+      <div class="grid-2">
+        <div class="field">
+          <label>RC (Registre du Commerce)</label>
+          <input [(ngModel)]="rc" placeholder="Ex: 12345" />
+        </div>
+        <div class="field">
+          <label>ICE</label>
+          <input [(ngModel)]="ice" placeholder="Ex: 000123456000012" />
+        </div>
+        <div class="field">
+          <label>IF (Identifiant Fiscal)</label>
+          <input [(ngModel)]="ifFiscal" placeholder="Ex: 12345678" />
+        </div>
+        <div class="field">
+          <label>CNSS</label>
+          <input [(ngModel)]="cnss" placeholder="Ex: 1234567" />
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-actions">
+      <button type="button" class="btn-save" (click)="save()" [disabled]="saving">
+        {{ saving ? 'Enregistrement...' : 'Enregistrer' }}
+      </button>
+    </div>
+
+  </ng-container>
+</div>

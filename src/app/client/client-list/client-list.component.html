@@ -1,11 +1,11 @@
 <div class="list-container" [attr.dir]="dir">
   <div class="header">
     <div class="header-left"><h1>{{ 'clients' | translate }}</h1></div>
-    <button class="btn-add" (click)="openAdd()">+ {{ 'add' | translate }}</button>
+    <app-btn variant="primary" (click)="openAdd()">+ {{ 'add' | translate }}</app-btn>
   </div>
   <div class="search-filter-bar">
     <div class="search-input">
-      <input type="text" [(ngModel)]="search" [placeholder]="'clientSearchPlaceholder' | translate" />
+      <input type="text" [(ngModel)]="search" (ngModelChange)="onSearch()" [placeholder]="'clientSearchPlaceholder' | translate" />
     </div>
     <select [(ngModel)]="filterNationalite" class="filter-select">
       <option value="">{{ 'allNationalities' | translate }}</option>
@@ -14,7 +14,12 @@
   </div>
   <div *ngIf="loading" class="loading-state"><p>{{ 'loading' | translate }}</p></div>
   <div *ngIf="error && !loading" class="error-state"><p>{{ error }}</p><button (click)="load()" class="btn-retry">{{ 'retry' | translate }}</button></div>
-  <div *ngIf="!loading && !error && filtered.length === 0" class="empty-state"><p>{{ 'noData' | translate }}</p></div>
+  <div *ngIf="!loading && !error && filtered.length === 0" class="empty-state">
+    <span class="empty-icon">👤</span>
+    <div class="empty-title">{{ 'noClientsYet' | translate }}</div>
+    <div class="empty-message">{{ 'noClientsMessage' | translate }}</div>
+    <button class="empty-action" (click)="openAdd()">+ {{ 'addFirstClient' | translate }}</button>
+  </div>
   <div *ngIf="!loading && !error && filtered.length > 0" class="table-container">
     <table class="bureaus-table">
       <thead><tr>
@@ -25,78 +30,184 @@
         <th>{{ 'passeport' | translate }}</th>
         <th>{{ 'permisConduire' | translate }}</th>
         <th>{{ 'nationalite' | translate }}</th>
+        <th>{{ 'outstandingDebt' | translate }}</th>
         <th>{{ 'actions' | translate }}</th>
       </tr></thead>
       <tbody>
-        <tr *ngFor="let item of filtered" class="bureau-row">
+        <tr *ngFor="let item of paged" class="bureau-row">
           <td class="date-cell">{{ item.id }}</td>
           <td class="name-cell">{{ item.prenom ? item.prenom + ' ' + item.nom : item.nom }}</td>
           <td>{{ item.telephone || '-' }}</td>
           <td>{{ item.cin || '-' }}</td>
           <td>{{ item.passeport || '-' }}</td>
-          <td>{{ item.permisConduire || item.permis_conduite || '-' }}</td>
+          <td>{{ item.permisConduite || '-' }}</td>
           <td>{{ item.nationalite || '-' }}</td>
+          <td>
+            <span class="debt-badge" [ngClass]="debtRiskClass(item.outstandingDebt)" *ngIf="item.outstandingDebt > 0">
+              {{ (item.outstandingDebt | number:'1.0-2') }} MAD
+            </span>
+            <span *ngIf="!item.outstandingDebt" class="text-muted">—</span>
+          </td>
           <td class="actions-cell">
-            <button (click)="openView(item)" class="btn-action btn-view" [title]="'view'|translate"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
-            <button (click)="openEdit(item)" class="btn-action btn-edit" [title]="'edit'|translate"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-            <button (click)="openDelete(item.id)" class="btn-action btn-delete" [title]="'delete'|translate"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
+            <app-btn variant="icon-view" (click)="viewProfile(item)" title="View Profile"></app-btn>
+            <app-btn variant="icon-edit" (click)="openEdit(item)" [title]="'edit'|translate"></app-btn>
+            <app-btn variant="icon-delete" (click)="openDelete(item.id)" [title]="'delete'|translate"></app-btn>
           </td>
         </tr>
       </tbody>
     </table>
+    <app-paginator [page]="page" [limit]="limit" [total]="total"
+      (pageChange)="onPageChange($event)">
+    </app-paginator>
   </div>
 </div>
 
 <div *ngIf="modalMode" class="modal-overlay" (click)="closeModal()">
   <div class="modal" (click)="$event.stopPropagation()">
 
-    <!-- VIEW -->
-    <ng-container *ngIf="modalMode === 'view' && selected">
-      <div class="modal-header"><h2>{{ 'client' | translate }}</h2><button class="modal-close" (click)="closeModal()">&times;</button></div>
-      <div class="modal-body">
-        <div class="detail-row" *ngFor="let e of objectEntries(selected)">
-          <span class="detail-label">{{ e[0] }}</span><span class="detail-value">{{ displayValue(e[1]) }}</span>
-        </div>
-      </div>
-      <div class="modal-footer"><button class="btn-secondary" (click)="closeModal()">{{ 'close' | translate }}</button><button class="btn-primary" (click)="openEdit(selected)">{{ 'edit' | translate }}</button></div>
-    </ng-container>
-
-    <!-- FORM (Add / Edit) -->
-    <ng-container *ngIf="modalMode === 'form'">
+    <!-- FORM (Add / Edit) — info + cards steps -->
+    <ng-container *ngIf="modalMode === 'form' && (formStep === 'info' || formStep === 'cards')">
       <div class="modal-header"><h2>{{ (isEditing ? 'edit' : 'add') | translate }} {{ 'client' | translate }}</h2><button class="modal-close" (click)="closeModal()">&times;</button></div>
       <form [formGroup]="form" (ngSubmit)="save()">
         <div class="modal-body">
-          <div class="form-row">
-            <div class="form-group"><label>{{ 'name' | translate }} <span class="required">*</span></label><input type="text" formControlName="nom" /></div>
-            <div class="form-group"><label>{{ 'prenom' | translate }}</label><input type="text" formControlName="prenom" /></div>
+
+          <!-- Step indicator -->
+          <div class="step-indicator">
+            <span class="step-dot" [class.active]="formStep === 'info'">1. {{ 'clientInfo' | translate }}</span>
+            <span class="step-sep">—</span>
+            <span class="step-dot" [class.active]="formStep === 'cards'">2. {{ 'documentNumbers' | translate }}</span>
+            <span class="step-sep">—</span>
+            <span class="step-dot">3. {{ 'documents' | translate }}</span>
           </div>
-          <div class="form-row">
-            <div class="form-group"><label>{{ 'telephone' | translate }}</label><input type="text" formControlName="telephone" /></div>
-            <div class="form-group"><label>{{ 'nationalite' | translate }}</label><input type="text" formControlName="nationalite" /></div>
-          </div>
-          <div class="form-row">
-            <div class="form-group"><label>CIN</label><input type="text" formControlName="cin" /></div>
-            <div class="form-group"><label>{{ 'passeport' | translate }}</label><input type="text" formControlName="passeport" /></div>
-          </div>
-          <div class="form-row">
-            <div class="form-group"><label>{{ 'permisConduire' | translate }}</label><input type="text" formControlName="permisConduire" /></div>
-            <div class="form-group"><label>Email</label><input type="email" formControlName="email" /></div>
-          </div>
-          <div class="form-group"><label>{{ 'address' | translate }}</label><input type="text" formControlName="adresse" /></div>
+
+          <!-- Step 1: personal info -->
+          <ng-container *ngIf="showInfoFields">
+            <div class="form-row">
+              <div class="form-group"><label>{{ 'name' | translate }} <span class="required">*</span></label><input type="text" formControlName="nom" /></div>
+              <div class="form-group"><label>{{ 'prenom' | translate }} <span class="required">*</span></label><input type="text" formControlName="prenom" /></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>{{ 'telephone' | translate }} <span class="required">*</span></label><input type="text" formControlName="telephone" /></div>
+              <div class="form-group nationalite-combo">
+                <label>{{ 'nationalite' | translate }} <span class="required">*</span></label>
+                <input type="text" formControlName="nationalite" autocomplete="off"
+                  (focus)="nationaliteDropdownOpen = true" (blur)="onNationaliteBlur()" />
+                <ul class="nationalite-dropdown" *ngIf="nationaliteDropdownOpen">
+                  <li *ngFor="let n of filteredNationalites" (mousedown)="selectNationalite(n)">{{ n }}</li>
+                  <li *ngIf="filteredNationalites.length === 0" class="nationalite-empty">{{ 'noData' | translate }}</li>
+                </ul>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>{{ 'email' | translate }}</label><input type="email" formControlName="email" /></div>
+              <div class="form-group"><label>{{ 'telephone' | translate }} ({{ 'foreignPhone' | translate }})</label><input type="text" formControlName="telephoneEtranger" /></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>{{ 'dateOfBirth' | translate }}</label><input type="date" formControlName="dateNaissance" /></div>
+              <div class="form-group"><label>{{ 'placeOfBirth' | translate }}</label><input type="text" formControlName="lieuNaissance" /></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>{{ 'addressMorocco' | translate }} <span class="required">*</span></label><input type="text" formControlName="adresseMaroc" /></div>
+              <div class="form-group"><label>{{ 'addressAbroad' | translate }}</label><input type="text" formControlName="adresseEtranger" /></div>
+            </div>
+          </ng-container>
+
+          <!-- Step 2: document numbers / dates -->
+          <ng-container *ngIf="showCardsFields">
+            <div class="form-row">
+              <div class="form-group"><label>{{ 'cinLabel' | translate }} <span class="required">*</span></label><input type="text" formControlName="cin" /></div>
+              <div class="form-group"><label>{{ 'cinExpiration' | translate }}</label><input type="date" formControlName="cinExpiration" /></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>{{ 'cinIssueDate' | translate }}</label><input type="date" formControlName="cinDelivreLe" /></div>
+              <div class="form-group"><label>{{ 'cinIssuedAt' | translate }}</label><input type="text" formControlName="cinDelivreA" /></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>{{ 'passeport' | translate }}</label><input type="text" formControlName="passeport" /></div>
+              <div class="form-group"><label>{{ 'passeportExpiration' | translate }}</label><input type="date" formControlName="passeportExpiration" /></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>{{ 'passportIssueDate' | translate }}</label><input type="date" formControlName="passeportDelivreLe" /></div>
+              <div class="form-group"><label>{{ 'passportIssuedAt' | translate }}</label><input type="text" formControlName="passeportDelivreA" /></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>{{ 'permisConduire' | translate }} <span class="required">*</span></label><input type="text" formControlName="permisConduite" /></div>
+              <div class="form-group"><label>{{ 'permisExpiration' | translate }}</label><input type="date" formControlName="permisExpiration" /></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>{{ 'licenseIssueDate' | translate }}</label><input type="date" formControlName="permisDelivreLe" /></div>
+              <div class="form-group"><label>{{ 'licenseIssuedAt' | translate }}</label><input type="text" formControlName="permisDelivreA" /></div>
+            </div>
+          </ng-container>
+
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn-secondary" (click)="closeModal()">{{ 'cancel' | translate }}</button>
-          <button type="submit" class="btn-primary" [disabled]="form.invalid || isSubmitting">{{ (isSubmitting ? 'saving' : 'save') | translate }}</button>
+          <ng-container *ngIf="formStep === 'info'">
+            <app-btn variant="secondary" type="button" (click)="closeModal()">{{ 'cancel' | translate }}</app-btn>
+            <app-btn variant="primary" type="button" (click)="goToCardsStep()">{{ 'next' | translate }}</app-btn>
+          </ng-container>
+          <ng-container *ngIf="formStep === 'cards'">
+            <app-btn variant="secondary" type="button" (click)="backToInfoStep()">{{ 'back' | translate }}</app-btn>
+            <app-btn variant="primary" type="submit" [disabled]="form.invalid || isSubmitting">{{ (isSubmitting ? 'saving' : 'next') | translate }}</app-btn>
+          </ng-container>
         </div>
       </form>
+    </ng-container>
+
+    <!-- FORM (Add/Edit) — documents step, shown once info+cards are saved -->
+    <ng-container *ngIf="modalMode === 'form' && formStep === 'documents' && createdId as cid">
+      <div class="modal-header"><h2>{{ 'uploadDocumentsTitle' | translate }}</h2><button class="modal-close" (click)="closeModal()">&times;</button></div>
+      <div class="modal-body">
+        <p class="form-hint" *ngIf="!isEditing">{{ 'clientCreatedHint' | translate }}</p>
+        <app-client-documents [clientId]="cid"></app-client-documents>
+      </div>
+      <div class="modal-footer">
+        <app-btn variant="primary" (click)="closeModal()">{{ 'close' | translate }}</app-btn>
+      </div>
     </ng-container>
 
     <!-- DELETE -->
     <ng-container *ngIf="modalMode === 'delete'">
       <div class="modal-header"><h2>{{ 'confirmDelete' | translate }}</h2><button class="modal-close" (click)="closeModal()">&times;</button></div>
       <div class="modal-body"><p class="delete-warning">{{ 'deleteWarning' | translate }}</p></div>
-      <div class="modal-footer"><button class="btn-secondary" (click)="closeModal()">{{ 'cancel' | translate }}</button><button class="btn-danger" (click)="confirmDelete()">{{ 'delete' | translate }}</button></div>
+      <div class="modal-footer"><app-btn variant="secondary" (click)="closeModal()">{{ 'cancel' | translate }}</app-btn><app-btn variant="danger" (click)="confirmDelete()">{{ 'delete' | translate }}</app-btn></div>
     </ng-container>
 
   </div>
+</div>
+
+<!-- DRAWER: View -->
+<div class="drawer-backdrop" [class.visible]="drawerOpen" (click)="closeDrawer()"></div>
+<div class="drawer" [class.open]="drawerOpen">
+  <ng-container *ngIf="drawerItem">
+    <div class="drawer-header">
+      <span class="drawer-title">Details</span>
+      <button class="drawer-close" (click)="closeDrawer()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="drawer-body">
+      <div class="drawer-section">
+        <div class="drawer-section-head">Information</div>
+        <div class="drawer-row" *ngFor="let e of objectEntries(drawerItem)">
+          <span class="drawer-lbl">{{ e[0] }}</span>
+          <span class="drawer-val">{{ displayValue(e[1]) }}</span>
+        </div>
+      </div>
+      <div class="drawer-section">
+        <div class="drawer-section-head">Documents</div>
+        <app-client-documents [clientId]="drawerItem.id"></app-client-documents>
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <button class="btn-outline-danger" (click)="openDelete(drawerItem.id); closeDrawer()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+        Delete
+      </button>
+      <button class="btn-primary-sm" (click)="openEdit(drawerItem); closeDrawer()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Edit
+      </button>
+    </div>
+  </ng-container>
 </div>

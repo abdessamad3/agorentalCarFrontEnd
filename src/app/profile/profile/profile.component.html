@@ -1,0 +1,163 @@
+<div class="pf-page" [attr.dir]="dir">
+
+  <div class="pf-loading" *ngIf="loading">…</div>
+
+  <div class="pf-wrap" *ngIf="!loading && user">
+
+    <!-- Header card -->
+    <div class="pf-card pf-header-card">
+      <div class="pf-avatar">{{ initials }}</div>
+      <div class="pf-header-info">
+        <h1 class="pf-name">{{ fullName }}</h1>
+        <div class="pf-email">{{ user.email }}</div>
+        <div class="pf-badges">
+          <span class="pf-badge" *ngFor="let r of user.roles">{{ roleLabel(r) }}</span>
+          <span class="pf-badge pf-badge-muted" *ngIf="user.bureauNom">{{ user.bureauNom }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Personal information -->
+    <div class="pf-card">
+      <div class="pf-card-head">
+        <span>{{ t('personalInfo') }}</span>
+        <button type="button" class="pf-link-btn" (click)="toggleEdit()">
+          {{ editing ? t('cancel') : t('editProfile') }}
+        </button>
+      </div>
+
+      <!-- Read-only view -->
+      <div class="pf-info-grid" *ngIf="!editing">
+        <div class="pf-info-row">
+          <span class="pf-info-label">{{ t('prenom') }}</span>
+          <span class="pf-info-val">{{ user.prenom || '—' }}</span>
+        </div>
+        <div class="pf-info-row">
+          <span class="pf-info-label">{{ t('nom') }}</span>
+          <span class="pf-info-val">{{ user.nom || '—' }}</span>
+        </div>
+        <div class="pf-info-row">
+          <span class="pf-info-label">{{ t('email') }}</span>
+          <span class="pf-info-val">{{ user.email || '—' }}</span>
+        </div>
+        <div class="pf-info-row">
+          <span class="pf-info-label">{{ t('phone') }}</span>
+          <span class="pf-info-val">{{ user.telephone || '—' }}</span>
+        </div>
+        <div class="pf-info-row">
+          <span class="pf-info-label">{{ t('role') }}</span>
+          <span class="pf-info-val">{{ user.roles?.map(roleLabel).join(', ') }}</span>
+        </div>
+        <div class="pf-info-row" *ngIf="user.bureauNom">
+          <span class="pf-info-label">{{ t('bureau') }}</span>
+          <span class="pf-info-val">{{ user.bureauNom }}</span>
+        </div>
+        <div class="pf-info-row" *ngIf="user.creeAu">
+          <span class="pf-info-label">{{ t('memberSince') }}</span>
+          <span class="pf-info-val">{{ user.creeAu | date:'d MMM y' }}</span>
+        </div>
+      </div>
+
+      <!-- Edit form -->
+      <form [formGroup]="form" (ngSubmit)="save()" *ngIf="editing" class="pf-form">
+        <div class="pf-field">
+          <label class="pf-label">{{ t('prenom') }}</label>
+          <input class="pf-input" formControlName="prenom" />
+        </div>
+        <div class="pf-field">
+          <label class="pf-label">{{ t('nom') }}</label>
+          <input class="pf-input" formControlName="nom" />
+        </div>
+        <div class="pf-field">
+          <label class="pf-label">{{ t('email') }}</label>
+          <input class="pf-input" type="email" formControlName="email" />
+        </div>
+        <div class="pf-field">
+          <label class="pf-label">{{ t('phone') }}</label>
+          <input class="pf-input" formControlName="telephone" />
+        </div>
+        <button type="submit" class="pf-save-btn" [disabled]="form.invalid || saving">
+          {{ saving ? t('saving') : t('saveChanges') }}
+        </button>
+      </form>
+    </div>
+
+    <!-- My Bureaus (managers only) -->
+    <div class="pf-card" *ngIf="isManager">
+      <div class="pf-card-head"><span>{{ t('myBureaus') }}</span></div>
+
+      <div class="pf-bureau-loading" *ngIf="loadingBureaus">{{ t('loadingBureaus') }}</div>
+
+      <div class="pf-bureau-empty" *ngIf="!loadingBureaus && !myBureaus.length">
+        {{ t('noBureaus') }}
+      </div>
+
+      <div class="pf-bureau-list" *ngIf="!loadingBureaus && myBureaus.length">
+        <a class="pf-bureau-row" *ngFor="let b of myBureaus" [routerLink]="['/bureau', b.id]">
+          <div class="pf-bureau-main">
+            <div class="pf-bureau-name">{{ b.nom }}</div>
+            <div class="pf-bureau-addr" *ngIf="b.adresse">{{ b.adresse }}</div>
+            <div class="pf-bureau-company" *ngIf="b.companyNom">{{ b.companyNom }}</div>
+          </div>
+          <span class="pf-badge" [class.pf-badge-muted]="b.statut !== 'actif'">{{ b.statut }}</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Signature -->
+    <div class="pf-card">
+      <div class="pf-card-head">
+        <span>{{ t('signature') }}</span>
+        <button type="button" class="pf-link-btn" *ngIf="user.signatureBlob && signatureMode === 'preview'"
+          (click)="signatureMode = 'draw'">
+          {{ t('replaceSignature') }}
+        </button>
+      </div>
+
+      <ng-container *ngIf="signatureMode === 'preview'">
+        <div class="pf-sig-preview" *ngIf="user.signatureBlob">
+          <img [src]="user.signatureBlob" alt="signature" />
+        </div>
+        <div class="pf-sig-empty" *ngIf="!user.signatureBlob">{{ t('noSignatureYet') }}</div>
+        <div class="pf-sig-actions">
+          <button type="button" class="pf-outline-btn" *ngIf="!user.signatureBlob" (click)="signatureMode = 'draw'">
+            + {{ t('drawSignature') }}
+          </button>
+          <button type="button" class="pf-danger-btn" *ngIf="user.signatureBlob" (click)="clearSignature()">
+            {{ t('removeSignature') }}
+          </button>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="signatureMode === 'draw'">
+        <app-signature-pad
+          [label]="t('drawSignature')"
+          [existingSignature]="null"
+          (signatureChange)="onSignatureDraw($event)">
+        </app-signature-pad>
+        <div class="pf-sig-actions">
+          <button type="button" class="pf-outline-btn" (click)="signatureMode = 'preview'; signatureDrawing = null">
+            {{ t('cancel') }}
+          </button>
+          <button type="button" class="pf-save-btn" [disabled]="!signatureDrawing || signatureSaving"
+            (click)="saveSignature()">
+            {{ signatureSaving ? t('saving') : t('saveSignature') }}
+          </button>
+        </div>
+      </ng-container>
+    </div>
+
+    <!-- Security -->
+    <div class="pf-card">
+      <div class="pf-card-head"><span>{{ t('security') }}</span></div>
+      <div class="pf-security-row">
+        <div>
+          <div class="pf-security-title">{{ t('changePassword') }}</div>
+          <div class="pf-security-desc">{{ t('changePasswordDesc') }}</div>
+        </div>
+        <a routerLink="/change-password" class="pf-outline-btn">{{ t('changePassword') }}</a>
+      </div>
+    </div>
+
+  </div>
+</div>

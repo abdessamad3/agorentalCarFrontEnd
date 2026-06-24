@@ -4,19 +4,24 @@
     <app-btn variant="primary" size="lg" (click)="openAdd()">+ {{ 'add' | translate }}</app-btn>
   </div>
   <div class="search-filter-bar">
-    <div class="search-input"><input type="text" [(ngModel)]="search" [placeholder]="'search' | translate" /></div>
+    <div class="search-input"><input type="text" [(ngModel)]="search" (ngModelChange)="onSearch()" [placeholder]="'search' | translate" /></div>
   </div>
   <div *ngIf="loading" class="loading-state"><p>{{ 'loading' | translate }}</p></div>
   <div *ngIf="error && !loading" class="error-state">
     <p>{{ error }}</p>
     <app-btn variant="danger" size="sm" (click)="load()">{{ 'retry' | translate }}</app-btn>
   </div>
-  <div *ngIf="!loading && !error && filtered.length === 0" class="empty-state"><p>{{ 'noData' | translate }}</p></div>
+  <div *ngIf="!loading && !error && filtered.length === 0" class="empty-state">
+    <span class="empty-icon">💰</span>
+    <div class="empty-title">No payments recorded</div>
+    <div class="empty-message">Payment records from reservations will appear here.</div>
+    <button class="empty-action" (click)="openAdd()">+ Add Payment</button>
+  </div>
   <div *ngIf="!loading && !error && filtered.length > 0" class="table-container">
     <table class="bureaus-table">
       <thead>
         <tr>
-          <th>{{ 'contratId' | translate }}</th>
+          <th>{{ 'contrat' | translate }}</th>
           <th>{{ 'montant' | translate }}</th>
           <th>{{ 'date' | translate }}</th>
           <th>{{ 'modePaiement' | translate }}</th>
@@ -25,10 +30,10 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let item of filtered" class="bureau-row">
-          <td>{{ item.contratId || item.contrat?.id }}</td>
+        <tr *ngFor="let item of paged" class="bureau-row">
+          <td>{{ contratForPayment(item)?.numero || ('#' + (item.reservationId ?? item.reservation?.id ?? '—')) }}</td>
           <td>{{ item.montant }} MAD</td>
-          <td class="date-cell">{{ item.date | date:'shortDate' }}</td>
+          <td class="date-cell">{{ item.datePaiement | date:'shortDate' }}</td>
           <td>{{ item.modePaiement }}</td>
           <td><span class="status-badge" [ngClass]="'status-' + item.statut">{{ item.statut }}</span></td>
           <td class="actions-cell">
@@ -39,6 +44,9 @@
         </tr>
       </tbody>
     </table>
+    <app-paginator [page]="page" [limit]="limit" [total]="filtered.length"
+      (pageChange)="onPageChange($event)">
+    </app-paginator>
   </div>
 </div>
 
@@ -73,10 +81,10 @@
         <div class="modal-body">
           <div class="form-row">
             <div class="form-group">
-              <label>{{ 'contratId' | translate }} <span class="required">*</span></label>
-              <select formControlName="contratId">
+              <label>{{ 'contrat' | translate }} <span class="required">*</span></label>
+              <select formControlName="reservationId">
                 <option value="">— {{ 'select' | translate }} —</option>
-                <option *ngFor="let c of filteredContrats" [value]="c.id">{{ contratLabel(c) }}</option>
+                <option *ngFor="let c of filteredContrats" [value]="c.reservation?.id">{{ contratLabel(c) }}</option>
               </select>
             </div>
             <div class="form-group">
@@ -87,7 +95,7 @@
           <div class="form-row">
             <div class="form-group">
               <label>{{ 'date' | translate }}</label>
-              <input type="date" formControlName="date" />
+              <input type="date" formControlName="datePaiement" />
             </div>
             <div class="form-group">
               <label>{{ 'modePaiement' | translate }}</label>
@@ -103,8 +111,8 @@
             <label>{{ 'status' | translate }}</label>
             <select formControlName="statut">
               <option value="en_attente">En attente</option>
-              <option value="paye">Payé</option>
-              <option value="annule">Annulé</option>
+              <option value="payee">Payé</option>
+              <option value="annulee">Annulé</option>
             </select>
           </div>
         </div>

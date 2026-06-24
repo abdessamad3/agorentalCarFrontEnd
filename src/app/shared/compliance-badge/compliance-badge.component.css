@@ -1,0 +1,21 @@
+.compliance-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.badge-valid        { background: #d1fae5; color: #065f46; }
+.badge-warning      { background: #fef3c7; color: #92400e; }
+.badge-critical     { background: #ffedd5; color: #9a3412; }
+.badge-expired      { background: #fee2e2; color: #991b1b; }
+.badge-unknown      { background: #f1f5f9; color: #64748b; }
+.badge-not_required { background: #eff6ff; color: #3b82f6; }
+
+.badge-icon  { font-size: 10px; }
+.badge-days  { font-size: 10px; }

@@ -1,0 +1,50 @@
+<div class="contrat-page" [attr.dir]="dir">
+
+  <div class="contrat-header">
+    <h2>📋 Conditions générales du contrat</h2>
+    <button type="button" class="btn-save" (click)="save()" [disabled]="saving">
+      {{ saving ? 'Enregistrement...' : 'Enregistrer' }}
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="state-msg">Chargement...</div>
+  <div *ngIf="error && !loading" class="state-error">{{ error }}</div>
+
+  <ng-container *ngIf="!loading && !error">
+    <div class="contrat-section">
+      <p class="hint-text">Ces textes apparaissent en page 2 du contrat PDF (colonne gauche en français, colonne droite en arabe).</p>
+      <div class="conditions-grid">
+
+        <div class="cond-col">
+          <div class="cond-label">Conditions en français</div>
+          <textarea
+            [(ngModel)]="texteFrancais"
+            rows="24"
+            class="cond-textarea"
+            placeholder="Saisir les conditions générales en français...">
+          </textarea>
+        </div>
+
+        <div class="cond-col">
+          <div class="cond-label" style="text-align:right">الشروط العامة</div>
+          <textarea
+            [(ngModel)]="texteArabe"
+            rows="24"
+            class="cond-textarea"
+            dir="rtl"
+            style="text-align:right"
+            placeholder="أدخل الشروط العامة بالعربية...">
+          </textarea>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="bottom-actions">
+      <button type="button" class="btn-save" (click)="save()" [disabled]="saving">
+        {{ saving ? 'Enregistrement...' : 'Enregistrer' }}
+      </button>
+    </div>
+
+  </ng-container>
+</div>

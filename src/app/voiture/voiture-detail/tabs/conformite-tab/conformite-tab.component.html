@@ -1,0 +1,99 @@
+<!-- ── KPI CARDS ──────────────────────────────────────────────── -->
+<div class="exp-kpi-row">
+
+  <!-- Insurance -->
+  <div class="exp-kpi-card" [ngClass]="levelCardClass(insLevel)">
+    <div class="exp-kpi-icon-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="20" height="20">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+    </div>
+    <div class="exp-kpi-body">
+      <div class="exp-kpi-val">{{ levelIcon(insLevel) }}
+        <span class="exp-kpi-curr" style="font-size:0.85rem"> {{ expiryLabel(compliance.assurance?.expiresAt) }}</span>
+      </div>
+      <div class="exp-kpi-lbl">{{ t('assurances') }}</div>
+    </div>
+  </div>
+
+  <!-- Vignette -->
+  <div class="exp-kpi-card" [ngClass]="levelCardClass(vigLevel)">
+    <div class="exp-kpi-icon-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="20" height="20">
+        <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      </svg>
+    </div>
+    <div class="exp-kpi-body">
+      <div class="exp-kpi-val">{{ levelIcon(vigLevel) }}
+        <span class="exp-kpi-curr" style="font-size:0.85rem"> {{ expiryLabel(compliance.vignette?.expiresAt) }}</span>
+      </div>
+      <div class="exp-kpi-lbl">{{ t('vignettes') }}</div>
+    </div>
+  </div>
+
+  <!-- Suivi Technique -->
+  <div class="exp-kpi-card" [ngClass]="levelCardClass(suiviLevel)">
+    <div class="exp-kpi-icon-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="20" height="20">
+        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+      </svg>
+    </div>
+    <div class="exp-kpi-body">
+      <div class="exp-kpi-val">{{ levelIcon(suiviLevel) }}
+        <span class="exp-kpi-curr" style="font-size:0.85rem"> {{ expiryLabel(compliance.visite?.expiresAt) }}</span>
+      </div>
+      <div class="exp-kpi-lbl">{{ t('technicalDoc') }}</div>
+    </div>
+  </div>
+
+  <!-- Overall Score -->
+  <div class="exp-kpi-card" [ngClass]="overallScoreClass">
+    <div class="exp-kpi-icon-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="20" height="20">
+        <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+      </svg>
+    </div>
+    <div class="exp-kpi-body">
+      <div class="exp-kpi-val">{{ overallScore }}<span class="exp-kpi-curr">%</span></div>
+      <div class="exp-kpi-lbl">{{ t('conformite') }}</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── TYPE PILLS ─────────────────────────────────────────────── -->
+<div class="efb2-type-pills conf-type-pills">
+  <button *ngFor="let s of SECTIONS"
+          class="efb2-tpill"
+          [class.efb2-tpill-active]="selectedSection === s.value"
+          [style.--tp-color]="s.color"
+          [style.--tp-bg]="s.bg"
+          (click)="selectedSection = s.value">
+    {{ s.icon }} {{ t(s.labelKey) }}
+  </button>
+</div>
+
+<!-- ── SECTION CONTENT ────────────────────────────────────────── -->
+<app-insurance-tab
+  *ngIf="selectedSection === 'insurance'"
+  [carId]="carId"
+  [car]="car"
+  [dir]="dir"
+  (carRefresh)="carRefresh.emit()">
+</app-insurance-tab>
+
+<app-vignette-tab
+  *ngIf="selectedSection === 'vignettes'"
+  [carId]="carId"
+  [car]="car"
+  [dir]="dir"
+  (carRefresh)="carRefresh.emit()">
+</app-vignette-tab>
+
+<app-suivi-tab
+  *ngIf="selectedSection === 'suivi'"
+  [carId]="carId"
+  [car]="car"
+  [dir]="dir"
+  (carRefresh)="carRefresh.emit()">
+</app-suivi-tab>

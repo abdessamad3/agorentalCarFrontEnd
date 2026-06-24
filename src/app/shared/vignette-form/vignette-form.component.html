@@ -1,0 +1,94 @@
+<!-- Error banner -->
+<div *ngIf="errorMessage" class="vig-error">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" style="flex-shrink:0">
+    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+  </svg>
+  {{ errorMessage }}
+</div>
+
+<div class="vig-grid">
+
+  <!-- Year -->
+  <div class="vig-field">
+    <label>{{ 'year' | translate }} <span class="vig-req">*</span></label>
+    <input type="number" formControlName="annee" min="2000" max="2100" />
+  </div>
+
+  <!-- Date limite -->
+  <div class="vig-field">
+    <label>{{ 'dateLimite' | translate }} <span class="vig-req">*</span></label>
+    <input type="date" formControlName="dateLimite"
+           [class.vig-invalid]="form.get('dateLimite')?.invalid && form.get('dateLimite')?.touched" />
+  </div>
+
+  <!-- Date facture -->
+  <div class="vig-field">
+    <label>{{ 'dateFacture' | translate }}</label>
+    <input type="date" formControlName="dateFacture" />
+  </div>
+
+  <!-- Montant -->
+  <div *ngIf="showMontant" class="vig-field">
+    <label>{{ 'montant' | translate }} (MAD)</label>
+    <input type="number" formControlName="montant" min="0" step="0.01" placeholder="0" />
+  </div>
+
+  <!-- Montant payé + reste -->
+  <ng-container *ngIf="showMontantPaye">
+    <div class="vig-field">
+      <label>{{ 'amountPaid' | translate }} (MAD)</label>
+      <input type="number" formControlName="montantPaye" min="0" step="0.01" placeholder="0"
+             [class.vig-input-readonly]="montantPayeReadonly"
+             [attr.readonly]="montantPayeReadonly ? true : null" />
+      <small *ngIf="montantPayeReadonly" class="vig-hint-muted">{{ 'managedViaPaymentPanel' | translate }}</small>
+      <small *ngIf="hasExceedsTotalError" class="vig-hint-error">{{ 'amountPaidExceedsTotal' | translate }}</small>
+    </div>
+    <div class="vig-field">
+      <label>{{ 'remaining' | translate }}</label>
+      <input type="number" [value]="reste" readonly class="vig-input-readonly" placeholder="0" />
+    </div>
+  </ng-container>
+
+  <!-- File upload section -->
+  <ng-container *ngIf="showFileUpload">
+
+    <!-- Current doc (edit mode) -->
+    <div *ngIf="isEditing && existingFilePath && !selectedFile" class="vig-field vig-field-full">
+      <label>{{ 'currentDoc' | translate }}</label>
+      <div class="vig-file-existing">
+        <ng-container *ngIf="!isPdf(existingFilePath); else vigPdfExisting">
+          <a [href]="getFileUrl(existingFilePath)" target="_blank">
+            <img [src]="getFileUrl(existingFilePath)" class="vig-img-preview" alt="current doc" />
+          </a>
+        </ng-container>
+        <ng-template #vigPdfExisting>
+          <a [href]="getFileUrl(existingFilePath)" target="_blank" class="vig-pdf-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+            PDF — click to open
+          </a>
+        </ng-template>
+      </div>
+    </div>
+
+    <!-- Upload new file -->
+    <div class="vig-field vig-field-full">
+      <label>{{ (isEditing && existingFilePath ? 'replaceDoc' : 'uploadDoc') | translate }}</label>
+      <div class="vig-upload-row">
+        <app-upload-btn variant="block" accept="image/*,.pdf"
+          [label]="selectedFile ? selectedFile.name : (('uploadDoc' | translate) + ' (photo / PDF)')"
+          (fileSelected)="onFileChange($event)"></app-upload-btn>
+        <button *ngIf="selectedFile" class="vig-clear-btn" type="button" (click)="clearFile()">✕</button>
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div *ngIf="filePreview" class="vig-field vig-field-full">
+      <img [src]="filePreview" class="vig-img-preview" alt="preview" />
+    </div>
+
+  </ng-container>
+
+</div>

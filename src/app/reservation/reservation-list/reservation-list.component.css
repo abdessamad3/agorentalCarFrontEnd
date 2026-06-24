@@ -38,6 +38,21 @@
 
 .search-box input:focus { border-color: #3182ce; }
 
+.btn-secondary-sm {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.55rem 1rem;
+  background: #fff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  text-decoration: none;
+}
+
 .btn-new {
   display: inline-flex;
   align-items: center;
@@ -180,6 +195,13 @@
 .btn-view:hover { background: #bee3f8; }
 .btn-edit { background: #fefcbf; color: #744210; }
 .btn-edit:hover { background: #faf089; }
+.btn-dossier { background: #3b82f6; color: #fff; }
+.btn-dossier:hover { background: #2563eb; }
+
+/* Status dot for delivery/return columns */
+.status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+.dot-done    { background: #10b981; }
+.dot-pending { background: #d1d5db; }
 
 /* Table */
 .table-wrap { overflow-x: auto; }
@@ -462,3 +484,6 @@
   .header-actions { flex-wrap: wrap; }
   .search-box input { width: 160px; }
 }
+
+.btn-export-pdf { padding: 0.45rem 1rem; background: #e53e3e; color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+.btn-export-pdf:hover { background: #c53030; }

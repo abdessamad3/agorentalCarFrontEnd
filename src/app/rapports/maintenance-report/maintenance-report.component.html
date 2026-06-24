@@ -1,0 +1,140 @@
+<div class="rp-page" [attr.dir]="dir">
+
+  <!-- Header -->
+  <div class="rp-header">
+    <div>
+      <div class="rp-title">Maintenance Report</div>
+      <div class="rp-subtitle">Repairs, oil changes, and AdBlue costs per vehicle</div>
+    </div>
+    <div class="rp-actions">
+      <select class="rp-select" [(ngModel)]="selectedYear" (ngModelChange)="onYearChange()">
+        <option *ngFor="let y of availableYears" [value]="y">{{ y }}</option>
+      </select>
+      <button class="btn-export btn-csv" (click)="exportCSV()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export CSV
+      </button>
+      <button class="btn-export btn-print" (click)="print()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Print / PDF
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="rp-loading">Loading maintenance data…</div>
+
+  <ng-container *ngIf="!loading">
+
+    <!-- Stats -->
+    <div class="rp-stats">
+      <div class="stat-card sc-blue">
+        <div class="sc-num">{{ stats.vehicles }}</div>
+        <div class="sc-lbl">Vehicles with Activity</div>
+      </div>
+      <div class="stat-card sc-orange">
+        <div class="sc-num">{{ stats.repairs }}</div>
+        <div class="sc-lbl">Repairs</div>
+      </div>
+      <div class="stat-card sc-teal">
+        <div class="sc-num">{{ stats.oilChanges }}</div>
+        <div class="sc-lbl">Oil Changes</div>
+      </div>
+      <div class="stat-card sc-purple">
+        <div class="sc-num">{{ stats.adblue }}</div>
+        <div class="sc-lbl">AdBlue Refills</div>
+      </div>
+      <div class="stat-card sc-red">
+        <div class="sc-num" style="font-size:1.1rem">{{ fmt(stats.totalCost) }}</div>
+        <div class="sc-lbl">Total Cost</div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="rp-toolbar">
+      <input class="rp-search" type="text" [(ngModel)]="search" placeholder="Search by vehicle or plate…" />
+    </div>
+
+    <!-- Per-vehicle summary -->
+    <div class="rp-section" *ngIf="filteredVehicles.length">Per-Vehicle Breakdown</div>
+    <div class="rp-table-wrap" *ngIf="filteredVehicles.length">
+      <table class="rp-table">
+        <thead>
+          <tr>
+            <th>Vehicle</th>
+            <th>Plate</th>
+            <th class="td-right">Repairs</th>
+            <th class="td-right">Repair Cost</th>
+            <th class="td-right">Oil Changes</th>
+            <th class="td-right">Oil Cost</th>
+            <th class="td-right">AdBlue</th>
+            <th class="td-right">AdBlue Qty</th>
+            <th class="td-right">AdBlue Cost</th>
+            <th class="td-right">Total Cost</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of filteredVehicles">
+            <td><strong>{{ row.label }}</strong></td>
+            <td class="mono">{{ row.immatriculation }}</td>
+            <td class="td-right">{{ row.repairs }}</td>
+            <td class="td-right mono negative">{{ row.repairCost > 0 ? fmt(row.repairCost) : '—' }}</td>
+            <td class="td-right">{{ row.oilChanges }}</td>
+            <td class="td-right mono negative">{{ row.oilCost > 0 ? fmt(row.oilCost) : '—' }}</td>
+            <td class="td-right">{{ row.adblue }}</td>
+            <td class="td-right mono">{{ row.adblueQty > 0 ? (row.adblueQty.toFixed(1) + ' L') : '—' }}</td>
+            <td class="td-right mono negative">{{ row.adbluesCost > 0 ? fmt(row.adbluesCost) : '—' }}</td>
+            <td class="td-right mono negative" style="font-weight:700">{{ fmt(row.totalCost) }}</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr style="font-weight:700; background:#f7fafc;">
+            <td colspan="2">Total</td>
+            <td class="td-right">{{ stats.repairs }}</td>
+            <td class="td-right mono negative">{{ fmt(stats.repairCost) }}</td>
+            <td class="td-right">{{ stats.oilChanges }}</td>
+            <td class="td-right mono negative">{{ fmt(stats.oilCost) }}</td>
+            <td class="td-right">{{ stats.adblue }}</td>
+            <td class="td-right mono">{{ stats.adblueQty.toFixed(1) }} L</td>
+            <td class="td-right mono negative">{{ fmt(stats.adbluesCost) }}</td>
+            <td class="td-right mono negative">{{ fmt(stats.totalCost) }}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <!-- Recent events -->
+    <div class="rp-section" *ngIf="filteredEvents.length">All Maintenance Events — {{ selectedYear }}</div>
+    <div class="rp-table-wrap" *ngIf="filteredEvents.length">
+      <table class="rp-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Vehicle</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th class="td-right">Cost</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let ev of filteredEvents">
+            <td class="mono">{{ ev.date | date:'dd/MM/yyyy' }}</td>
+            <td>{{ ev.vehicle }}</td>
+            <td>
+              <span class="doc-badge"
+                [ngClass]="ev.type === 'Repair' ? 'doc-expired' : ev.type === 'Oil Change' ? 'doc-ok' : 'doc-soon'">
+                {{ ev.type }}
+              </span>
+            </td>
+            <td style="color:#718096;font-size:.85rem">{{ ev.description }}</td>
+            <td class="td-right mono negative">{{ ev.cost > 0 ? fmt(ev.cost) : '—' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="filteredVehicles.length === 0" class="rp-empty">
+      No maintenance activity found for {{ selectedYear }}
+    </div>
+
+  </ng-container>
+</div>

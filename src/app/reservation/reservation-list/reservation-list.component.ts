@@ -1,21 +1,25 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { TranslationService } from '../../services/translation.service';
 import { CrudService } from '../../services/crud.service';
-import { forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { ExportService } from '../../services/export.service';
+import { InvoiceService } from '../../services/invoice.service';
+import { PaginatorComponent } from '../../shared/paginator/paginator.component';
+import { Router } from '@angular/router';
+import { Subject, forkJoin, of } from 'rxjs';
+import { debounceTime, switchMap, takeUntil, catchError } from 'rxjs/operators';
 
 @Component({
   selector: 'app-reservation-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, TranslatePipe],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, TranslatePipe, PaginatorComponent],
   templateUrl: './reservation-list.component.html',
   styleUrls: ['./reservation-list.component.css']
 })
-export class ReservationListComponent implements OnInit {
+export class ReservationListComponent implements OnInit, OnDestroy {
   items: any[] = [];
   clients: any[] = [];
   voitures: any[] = [];
@@ -24,6 +28,7 @@ export class ReservationListComponent implements OnInit {
   error = '';
   dir = 'ltr';
   search = '';
+  page = 1; limit = 20; total = 0;
 
   modalMode: 'view' | 'form' | 'delete' | null = null;
   selected: any = null;
@@ -34,10 +39,16 @@ export class ReservationListComponent implements OnInit {
   readonly objectEntries = Object.entries;
   readonly endpoint = 'reservation';
 
+  private searchSubject = new Subject<void>();
+  private destroy$ = new Subject<void>();
+
   constructor(
     private crud: CrudService,
     private ts: TranslationService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private exportSvc: ExportService,
+    private invoiceSvc: InvoiceService,
+    private router: Router,
   ) {
     this.form = this.fb.group({
       clientId:          ['', Validators.required],
@@ -54,16 +65,28 @@ export class ReservationListComponent implements OnInit {
   ngOnInit() {
     this.ts.direction$.subscribe(d => this.dir = d);
     this.loadRefData();
+    this.searchSubject.pipe(
+      debounceTime(300),
+      switchMap(() => {
+        this.loading = true; this.error = '';
+        return this.crud.getPage(this.endpoint, { page: this.page, limit: this.limit, search: this.search }).pipe(
+          catchError(() => { this.error = this.ts.translate('loadError'); return of(null); })
+        );
+      }),
+      takeUntil(this.destroy$)
+    ).subscribe(r => { if (r) { this.items = r.data ?? []; this.total = r.meta?.total ?? this.items.length; } this.loading = false; });
     this.load();
   }
 
+  ngOnDestroy() { this.destroy$.next(); this.destroy$.complete(); }
+
   loadRefData() {
     forkJoin({
-      clients:     this.crud.getAll('client').pipe(catchError(() => of([]))),
-      voitures:    this.crud.getAll('voiture', { limit: 1000 }).pipe(catchError(() => of([]))),
+      clients:     this.crud.getPage('client').pipe(catchError(() => of({ data: [] } as any))),
+      voitures:    this.crud.getAll('voiture').pipe(catchError(() => of([]))),
       accessoires: this.crud.getAll('accessoire').pipe(catchError(() => of([]))),
     }).subscribe(({ clients, voitures, accessoires }) => {
-      this.clients     = Array.isArray(clients)     ? clients     : (clients     as any)?.data ?? [];
+      this.clients     = (clients as any)?.data ?? [];
       this.voitures    = Array.isArray(voitures)    ? voitures    : (voitures    as any)?.data ?? [];
       this.accessoires = Array.isArray(accessoires) ? accessoires : (accessoires as any)?.data ?? [];
     });
@@ -72,17 +95,16 @@ export class ReservationListComponent implements OnInit {
   load() {
     this.loading = true;
     this.error = '';
-    this.crud.getAll(this.endpoint).subscribe({
-      next: r => { this.items = Array.isArray(r) ? r : (r?.data ?? []); this.loading = false; },
+    this.crud.getPage(this.endpoint, { page: this.page, limit: this.limit, search: this.search }).subscribe({
+      next: r => { this.items = r.data ?? []; this.total = r.meta?.total ?? this.items.length; this.loading = false; },
       error: () => { this.error = this.ts.translate('loadError'); this.loading = false; }
     });
   }
 
-  get filteredItems(): any[] {
-    if (!this.search.trim()) return this.items;
-    const q = this.search.toLowerCase();
-    return this.items.filter(i => Object.values(i).some(v => String(v).toLowerCase().includes(q)));
-  }
+  onSearch(): void { this.page = 1; this.searchSubject.next(); }
+  onPageChange(p: number): void { this.page = p; this.load(); }
+
+  get filteredItems(): any[] { return this.items; }
 
   private getStatus(r: any): string {
     return (r.reservationStatus || r.statut || '').toLowerCase();
@@ -228,6 +250,35 @@ export class ReservationListComponent implements OnInit {
 
   paymentStatusLabel(r: any): string { return this.t(this.paymentStatusKey(r)); }
   paymentStatusClass(r: any): string { return 'chip-pay-' + this.paymentStatusKey(r); }
+
+  exportReceipt(r: any)   { this.exportSvc.reservationReceipt(r); }
+  generateInvoice(r: any) { this.invoiceSvc.generateForReservation(r.id); }
+
+  goToDossier(item: any): void {
+    this.router.navigate(['/location', item.id]);
+  }
+
+  goToContrat(item: any): void {
+    if (item.contratId) {
+      this.router.navigate(['/contrat', item.contratId, 'edit']);
+    } else {
+      this.router.navigate(['/contrat', 'new'], { queryParams: { reservationId: item.id } });
+    }
+  }
+
+  deliveryStatus(r: any): string {
+    if (r.vehicleDeliveryId || r.hasDelivery) return 'done';
+    const s = (r.reservationStatus || '').toLowerCase();
+    if (s === 'en_cours' || s === 'terminee') return 'done';
+    return 'pending';
+  }
+
+  returnStatus(r: any): string {
+    if (r.vehicleReturnInspectionId || r.hasReturn) return 'done';
+    const s = (r.reservationStatus || '').toLowerCase();
+    if (s === 'terminee') return 'done';
+    return 'pending';
+  }
 
   t(key: string) { return this.ts.translate(key); }
 

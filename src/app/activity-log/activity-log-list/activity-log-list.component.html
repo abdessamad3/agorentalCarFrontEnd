@@ -1,0 +1,137 @@
+<div class="al-page">
+
+  <!-- Header -->
+  <div class="al-header">
+    <div class="al-title">
+      <span class="al-icon">📋</span>
+      <div>
+        <h1>Activity Log</h1>
+        <p>{{ total }} record(s) found</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="al-filters">
+    <select [(ngModel)]="entityType" class="al-select">
+      <option value="">All entities</option>
+      <option *ngFor="let e of ENTITY_TYPES" [value]="e">{{ e }}</option>
+    </select>
+
+    <select [(ngModel)]="action" class="al-select">
+      <option value="">All actions</option>
+      <option *ngFor="let a of ACTIONS" [value]="a">{{ a }}</option>
+    </select>
+
+    <div class="al-date-range">
+      <input type="date" [(ngModel)]="dateFrom" class="al-input" placeholder="From">
+      <span class="al-dash">→</span>
+      <input type="date" [(ngModel)]="dateTo"   class="al-input" placeholder="To">
+    </div>
+
+    <button class="btn-primary" (click)="applyFilters()">Filter</button>
+    <button class="btn-ghost"   (click)="resetFilters()">Reset</button>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error" class="al-error">{{ error }}</div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="al-loading">
+    <div class="spinner"></div> Loading…
+  </div>
+
+  <!-- Table -->
+  <div *ngIf="!loading" class="al-table-wrap">
+    <table class="al-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>User</th>
+          <th>Action</th>
+          <th>Entity</th>
+          <th>#ID</th>
+          <th>Bureau</th>
+          <th>Changes</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let log of logs">
+          <!-- Main row -->
+          <tr [class.al-row-expanded]="expandedId === log.id">
+            <td class="al-cell-date">{{ log.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+            <td class="al-cell-user">
+              <span class="al-user-name">{{ log.user?.nom ?? '—' }}</span>
+              <span class="al-user-email">{{ log.user?.email ?? '' }}</span>
+            </td>
+            <td><span class="al-badge" [ngClass]="actionClass(log.action)">{{ log.action }}</span></td>
+            <td class="al-cell-entity">{{ log.entityType }}</td>
+            <td class="al-cell-id">#{{ log.entityId }}</td>
+            <td class="al-cell-bureau">{{ log.bureau ?? '—' }}</td>
+            <td class="al-cell-changes">
+              <ng-container *ngIf="log.action === 'UPDATE'">
+                <span class="al-changed-fields">
+                  {{ changedKeys(log).join(', ') }}
+                </span>
+              </ng-container>
+              <ng-container *ngIf="log.action === 'CREATE' && log.newData">
+                <span class="al-summary">{{ (log.newData | json).slice(0,60) }}…</span>
+              </ng-container>
+              <ng-container *ngIf="log.action === 'DELETE' || log.action === 'ARCHIVE'">
+                <span class="al-deleted">Snapshot saved</span>
+              </ng-container>
+            </td>
+            <td>
+              <button class="btn-expand" (click)="toggleExpand(log.id)"
+                      *ngIf="log.oldData || log.newData">
+                {{ expandedId === log.id ? '▲' : '▼' }}
+              </button>
+            </td>
+          </tr>
+
+          <!-- Expanded diff row -->
+          <tr *ngIf="expandedId === log.id" class="al-diff-row">
+            <td colspan="8">
+              <div class="al-diff">
+                <table class="al-diff-table">
+                  <thead>
+                    <tr>
+                      <th>Field</th>
+                      <th *ngIf="log.oldData">Old value</th>
+                      <th *ngIf="log.newData">New value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let key of changedKeys(log)">
+                      <td class="al-diff-field">{{ key }}</td>
+                      <td *ngIf="log.oldData" class="al-diff-old">{{ formatVal(log.oldData[key]) }}</td>
+                      <td *ngIf="log.newData" class="al-diff-new">{{ formatVal(log.newData[key]) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </td>
+          </tr>
+        </ng-container>
+
+        <tr *ngIf="logs.length === 0">
+          <td colspan="8" class="al-empty">No activity logs found.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div *ngIf="pages > 1" class="al-pagination">
+    <button (click)="goToPage(1)"        [disabled]="page === 1">«</button>
+    <button (click)="goToPage(page - 1)" [disabled]="page === 1">‹</button>
+    <button *ngFor="let p of pagesArray()"
+            (click)="goToPage(p)"
+            [class.active]="p === page">{{ p }}</button>
+    <button (click)="goToPage(page + 1)" [disabled]="page === pages">›</button>
+    <button (click)="goToPage(pages)"    [disabled]="page === pages">»</button>
+    <span class="al-page-info">Page {{ page }} / {{ pages }}</span>
+  </div>
+
+</div>

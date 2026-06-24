@@ -1,0 +1,804 @@
+<div class="dossier-page" *ngIf="!loading && !error && dossier">
+
+  <!-- ── Header ─────────────────────────────────────────────────────────── -->
+  <div class="dossier-header">
+    <div class="header-left">
+      <button class="btn-back" (click)="router.navigate(['/reservation'])">← {{ t('reservations') }}</button>
+      <div class="header-info">
+        <span class="contract-number">{{ contractNumber }}</span>
+        <span class="status-chip" [ngClass]="statusClass(status)">{{ statusLabel(status) }}</span>
+        <span class="compliance-badge" [ngClass]="complianceClass(complianceOverall)">
+          {{ complianceOverall }}
+        </span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="vehicle-info">🚗 {{ vehicleLabel }}</div>
+      <div class="client-info">👤 {{ clientLabel }}</div>
+      <div class="payment-summary">
+        <span class="status-chip" [ngClass]="paymentStatusClass()">
+          {{ (dossier.montantPaye | number:'1.2-2') }} / {{ (dossier.montantTotal | number:'1.2-2') }} MAD
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tab bar ────────────────────────────────────────────────────────── -->
+  <div class="tab-bar">
+    <button class="tab-btn" [class.active]="activeTab === 'reservation'" (click)="setTab('reservation')">
+      {{ t('reservation') }}
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'depart'" (click)="setTab('depart')">
+      {{ t('depart') }} <span *ngIf="tabComplete('depart')" class="tab-done">✓</span>
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'paiements'" (click)="setTab('paiements')">
+      {{ t('paiements') }} <span *ngIf="dossier.paiements?.length" class="tab-count">({{ dossier.paiements.length }})</span>
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'retour'" (click)="setTab('retour')">
+      {{ t('retour') }} <span *ngIf="tabComplete('retour')" class="tab-done">✓</span>
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'documents'" (click)="setTab('documents')">
+      {{ t('documents') }}
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'validation'" (click)="setTab('validation')">
+      {{ t('validation') }} <span *ngIf="tabComplete('validation')" class="tab-done">✓</span>
+    </button>
+  </div>
+
+  <div class="tab-body">
+
+    <!-- ── Tab: Réservation ─────────────────────────────────────────────── -->
+    <ng-container *ngIf="activeTab === 'reservation'">
+      <div class="info-grid">
+        <div class="info-card">
+          <h3>{{ t('dates') }}</h3>
+          <div class="info-row">
+            <span class="info-label">{{ t('depart') }}</span>
+            <span>{{ dossier.reservation.dateDebut | date:'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">{{ t('expectedReturn') }}</span>
+            <span>{{ dossier.reservation.dateFin | date:'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">{{ t('deliveryLocation') }}</span>
+            <span>{{ dossier.reservation.lieuLivraison || '—' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">{{ t('returnLocation') }}</span>
+            <span>{{ dossier.reservation.lieuRetour || '—' }}</span>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <h3>{{ t('pricing') }}</h3>
+          <div class="info-row">
+            <span class="info-label">{{ t('dailyRate') }}</span>
+            <span>{{ (effectiveDailyRate | number:'1.2-2') }} MAD</span>
+          </div>
+          <div class="info-row" *ngIf="dossier.contrat">
+            <span class="info-label">{{ t('billedDays') }}</span>
+            <span>{{ dossier.contrat.nbJoursFactures }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">{{ t('total') }}</span>
+            <strong>{{ (dossier.montantTotal | number:'1.2-2') }} MAD</strong>
+          </div>
+          <div class="info-row" *ngIf="dossier.contrat?.hasCaution">
+            <span class="info-label">{{ t('deposit') }}</span>
+            <span>{{ (dossier.contrat.cautionMontant | number:'1.2-2') }} MAD</span>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <h3>{{ t('client') }}</h3>
+          <div class="info-row"><span class="info-label">{{ t('name') }}</span><span>{{ dossier.reservation.client?.nom }}</span></div>
+          <div class="info-row"><span class="info-label">{{ t('telephone') }}</span><span>{{ dossier.reservation.client?.telephone || '—' }}</span></div>
+          <div class="info-row"><span class="info-label">CIN</span><span>{{ dossier.reservation.client?.cin || '—' }}</span></div>
+          <div class="info-row"><span class="info-label">{{ t('permisConduire') }}</span><span>{{ dossier.reservation.client?.permisConduite || '—' }}</span></div>
+          <div class="info-row"><span class="info-label">{{ t('nationalite') }}</span><span>{{ dossier.reservation.client?.nationalite || '—' }}</span></div>
+        </div>
+
+        <div class="info-card" *ngIf="dossier.reservation.deuxiemeChauffeur">
+          <h3>{{ t('secondDriver') }}</h3>
+          <div class="info-row"><span class="info-label">{{ t('name') }}</span><span>{{ dossier.reservation.deuxiemeChauffeur.nom }}</span></div>
+          <div class="info-row"><span class="info-label">CIN</span><span>{{ dossier.reservation.deuxiemeChauffeur.cin || '—' }}</span></div>
+          <div class="info-row"><span class="info-label">{{ t('permisConduire') }}</span><span>{{ dossier.reservation.deuxiemeChauffeur.permisConduite || '—' }}</span></div>
+        </div>
+
+        <div class="info-card" *ngIf="dossier.contrat">
+          <h3>{{ t('contract') }}</h3>
+          <div class="info-row"><span class="info-label">{{ t('number') }}</span><strong>{{ dossier.contrat.numero }}</strong></div>
+          <div class="info-row"><span class="info-label">{{ t('signedOn') }}</span><span>{{ dossier.contrat.signedAt | date:'dd/MM/yyyy HH:mm' }}</span></div>
+          <div class="info-row" *ngIf="dossier.contrat.franchise > 0">
+            <span class="info-label">{{ t('franchise') }}</span>
+            <span>{{ (dossier.contrat.franchise | number:'1.2-2') }} MAD</span>
+          </div>
+        </div>
+
+        <div class="info-card" *ngIf="dossier.reservation.accessoires?.length">
+          <h3>{{ t('accessories') }}</h3>
+          <div class="info-row" *ngFor="let a of dossier.reservation.accessoires">
+            <span>{{ a.nom }}</span>
+            <span>{{ (a.prix | number:'1.2-2') }} MAD</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timeline -->
+      <div class="timeline-section">
+        <h3>{{ t('progress') }}</h3>
+        <div class="timeline">
+          <div class="timeline-step" *ngFor="let step of dossier.timeline"
+               [class.completed]="step.completed" [class.pending]="!step.completed">
+            <div class="step-dot"></div>
+            <div class="step-info">
+              <span class="step-label">{{ step.label }}</span>
+              <span class="step-date" *ngIf="step.date">{{ step.date | date:'dd/MM/yy HH:mm' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- ── Tab: Départ ──────────────────────────────────────────────────── -->
+    <ng-container *ngIf="activeTab === 'depart'">
+
+      <!-- Compliance blocked banner -->
+      <div class="compliance-alert" *ngIf="isComplianceBlocked && !isDeliveryDone">
+        <strong>{{ t('deliveryBlocked') }}</strong> — {{ t('vehicleComplianceIs') }}
+        <strong>{{ complianceOverall }}</strong>. {{ t('updateVehicleDocsBeforeKeys') }}
+      </div>
+
+      <!-- Delivery done banner -->
+      <div class="delivery-done-banner" *ngIf="isDeliveryDone">
+        ✓ {{ t('vehicleHandedOver') }} — {{ t('contract') }} <strong>{{ contractNumber }}</strong> {{ t('activeSince') }}
+        {{ dossier.vehicleDelivery?.deliveredAt | date:'dd/MM/yyyy HH:mm' }}
+      </div>
+
+      <fieldset [disabled]="isDeliveryDone" style="border:none;padding:0;margin:0;">
+
+        <!-- Section 1: Période -->
+        <div class="form-section">
+          <h3>{{ t('rentalPeriod') }}</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>{{ t('startDate') }}</label>
+              <input type="text" [value]="dossier.reservation.dateDebut | date:'dd/MM/yyyy HH:mm'" readonly class="input-readonly" />
+            </div>
+            <div class="form-group">
+              <label>{{ t('expectedEndDate') }}</label>
+              <input type="text" [value]="dossier.reservation.dateFin | date:'dd/MM/yyyy HH:mm'" readonly class="input-readonly" />
+            </div>
+            <div class="form-group">
+              <label>{{ t('totalDuration') }}</label>
+              <input type="text" [value]="departNbJours + ' ' + t('daysSuffix')" readonly class="input-readonly" />
+            </div>
+            <div class="form-group">
+              <label>{{ t('billedDays') }} <small>({{ t('editable') }})</small></label>
+              <input type="number" [(ngModel)]="departForm.nbJoursFactures" min="1" [placeholder]="departNbJours" />
+            </div>
+          </div>
+          <div class="form-grid mt-2">
+            <div class="form-group">
+              <label>{{ t('deliveryLocation') }}</label>
+              <input type="text" [(ngModel)]="departForm.lieuLivraison" [placeholder]="t('deliveryLocationExample')" />
+            </div>
+            <div class="form-group">
+              <label>{{ t('returnLocation') }}</label>
+              <input type="text" [(ngModel)]="departForm.lieuRetour" [placeholder]="t('returnLocationExample')" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 2: 1er Conducteur -->
+        <div class="form-section">
+          <h3>{{ t('firstDriver') }}</h3>
+          <div class="driver-info-grid">
+            <div class="info-row"><span class="info-label">{{ t('fullName') }}</span><span>{{ ((dossier.reservation.client?.prenom ? dossier.reservation.client?.prenom + ' ' : '') + (dossier.reservation.client?.nom || '')) || '—' }}</span></div>
+            <div class="info-row"><span class="info-label">CIN</span><span>{{ dossier.reservation.client?.cin || '—' }}</span></div>
+            <div class="info-row"><span class="info-label">{{ t('cinIssueDate') }}</span><span>{{ (dossier.reservation.client?.cinDelivreLe | date:'dd/MM/yyyy') || '—' }}</span></div>
+            <div class="info-row"><span class="info-label">{{ t('cinIssuedAt') }}</span><span>{{ dossier.reservation.client?.cinDelivreA || '—' }}</span></div>
+            <div class="info-row"><span class="info-label">{{ t('passeport') }}</span><span>{{ dossier.reservation.client?.passeport || '—' }}</span></div>
+            <div class="info-row"><span class="info-label">{{ t('passportIssueDate') }}</span><span>{{ (dossier.reservation.client?.passeportDelivreLe | date:'dd/MM/yyyy') || '—' }}</span></div>
+            <div class="info-row"><span class="info-label">{{ t('passportIssuedAt') }}</span><span>{{ dossier.reservation.client?.passeportDelivreA || '—' }}</span></div>
+            <div class="info-row"><span class="info-label">{{ t('dateOfBirth') }}</span><span>{{ (dossier.reservation.client?.dateNaissance | date:'dd/MM/yyyy') || '—' }}</span></div>
+            <div class="info-row"><span class="info-label">{{ t('placeOfBirth') }}</span><span>{{ dossier.reservation.client?.lieuNaissance || '—' }}</span></div>
+            <div class="info-row"><span class="info-label">{{ t('address') }}</span><span>{{ dossier.reservation.client?.adresse || dossier.reservation.client?.adresseMaroc || '—' }}</span></div>
+            <div class="info-row"><span class="info-label">{{ t('licenseNumber') }}</span><span>{{ dossier.reservation.client?.permisConduite || '—' }}</span></div>
+            <div class="info-row"><span class="info-label">{{ t('licenseIssueDate') }}</span><span>{{ (dossier.reservation.client?.permisDelivreLe | date:'dd/MM/yyyy') || '—' }}</span></div>
+            <div class="info-row"><span class="info-label">{{ t('licenseIssuedAt') }}</span><span>{{ dossier.reservation.client?.permisDelivreA || '—' }}</span></div>
+            <div class="info-row"><span class="info-label">{{ t('telephone') }}</span><span>{{ dossier.reservation.client?.telephone || '—' }}</span></div>
+          </div>
+        </div>
+
+        <!-- Section 3: 2ème Conducteur (optional) -->
+        <div class="form-section" *ngIf="dossier.reservation.deuxiemeChauffeur">
+          <h3>{{ t('secondDriver') }}</h3>
+          <div class="driver-info-grid">
+            <div class="info-row"><span class="info-label">{{ t('fullName') }}</span><span>{{ dossier.reservation.deuxiemeChauffeur.nom || '—' }}</span></div>
+            <div class="info-row"><span class="info-label">CIN</span><span>{{ dossier.reservation.deuxiemeChauffeur.cin || '—' }}</span></div>
+            <div class="info-row"><span class="info-label">{{ t('passeport') }}</span><span>{{ dossier.reservation.deuxiemeChauffeur.passeport || '—' }}</span></div>
+            <div class="info-row"><span class="info-label">{{ t('passportIssueDate') }}</span><span>{{ (dossier.reservation.deuxiemeChauffeur.passeportDelivreLe | date:'dd/MM/yyyy') || '—' }}</span></div>
+            <div class="info-row"><span class="info-label">{{ t('passportIssuedAt') }}</span><span>{{ dossier.reservation.deuxiemeChauffeur.passeportDelivreA || '—' }}</span></div>
+            <div class="info-row"><span class="info-label">{{ t('dateOfBirth') }}</span><span>{{ (dossier.reservation.deuxiemeChauffeur.dateNaissance | date:'dd/MM/yyyy') || '—' }}</span></div>
+            <div class="info-row"><span class="info-label">{{ t('licenseNumber') }}</span><span>{{ dossier.reservation.deuxiemeChauffeur.permisConduite || '—' }}</span></div>
+            <div class="info-row"><span class="info-label">{{ t('licenseIssueDate') }}</span><span>{{ (dossier.reservation.deuxiemeChauffeur.permisDelivreLe | date:'dd/MM/yyyy') || '—' }}</span></div>
+            <div class="info-row"><span class="info-label">{{ t('licenseIssuedAt') }}</span><span>{{ dossier.reservation.deuxiemeChauffeur.permisDelivreA || '—' }}</span></div>
+          </div>
+        </div>
+
+        <!-- Section 4: Véhicule -->
+        <div class="form-section">
+          <h3>{{ t('vehicle') }}</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>{{ t('makeModel') }}</label>
+              <input type="text" [value]="(dossier.reservation.voiture?.marque || '') + ' ' + (dossier.reservation.voiture?.modele || '')" readonly class="input-readonly" />
+            </div>
+            <div class="form-group">
+              <label>{{ t('immatriculation') }}</label>
+              <input type="text" [value]="dossier.reservation.voiture?.immatriculation || ''" readonly class="input-readonly" />
+            </div>
+            <div class="form-group">
+              <label>{{ t('mileageOut') }}</label>
+              <input type="number" [(ngModel)]="departForm.mileageOut" min="0" placeholder="km" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 5: Tarification -->
+        <div class="form-section">
+          <h3>{{ t('pricing') }}</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>{{ t('dailyRate') }}</label>
+              <input type="text" [value]="(effectiveDailyRate | number:'1.2-2') + ' MAD'" readonly class="input-readonly" />
+            </div>
+            <div class="form-group">
+              <label>{{ t('billedDays') }}</label>
+              <input type="number" [(ngModel)]="departForm.nbJoursFactures" min="1" [placeholder]="departNbJours" />
+            </div>
+            <div class="form-group">
+              <label>{{ t('netTotalDue') }}</label>
+              <input type="text" [value]="(departTotalNet | number:'1.2-2') + ' MAD'" readonly class="input-computed" />
+            </div>
+            <div class="form-group">
+              <label>{{ t('advancePaid') }}</label>
+              <input type="text" [value]="(dossier.montantPaye | number:'1.2-2') + ' MAD'" readonly class="input-readonly" />
+            </div>
+            <div class="form-group">
+              <label>{{ t('remaining') }}</label>
+              <input type="text" [value]="(departReste | number:'1.2-2') + ' MAD'" readonly class="input-computed" />
+            </div>
+            <div class="form-group">
+              <label>{{ t('franchise') }} (MAD)</label>
+              <input type="number" [(ngModel)]="departForm.franchise" min="0" step="0.01" placeholder="0.00" />
+            </div>
+          </div>
+          <!-- Caution toggle -->
+          <div class="caution-row mt-2">
+            <label class="checkbox-item caution-toggle">
+              <input type="checkbox" [(ngModel)]="departForm.hasCaution" />
+              <strong>{{ t('deposit') }}</strong>
+            </label>
+            <div class="form-group caution-amount" *ngIf="departForm.hasCaution">
+              <label>{{ t('depositAmount') }}</label>
+              <input type="number" [(ngModel)]="departForm.cautionMontant" min="0" step="0.01" placeholder="0.00" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 6: Carburant -->
+        <div class="form-section">
+          <h3>{{ t('fuelAtDeparture') }}</h3>
+          <div class="fuel-bar-group">
+            <div class="fuel-bar">
+              <button *ngFor="let f of FUEL_LEVELS" type="button"
+                      class="fuel-btn" [class.selected]="departForm.fuelLevelOut === f"
+                      (click)="departForm.fuelLevelOut = f">
+                {{ FUEL_LABELS[f] }}
+              </button>
+            </div>
+            <span class="fuel-selected-label">{{ t('selectedLabel') }} <strong>{{ FUEL_LABELS[departForm.fuelLevelOut] }}</strong></span>
+          </div>
+        </div>
+
+        <!-- Section 7: Équipements -->
+        <div class="form-section">
+          <h3>{{ t('equipmentAtCheckout') }}</h3>
+          <div class="checkbox-grid">
+            <label class="checkbox-item"><input type="checkbox" [(ngModel)]="departForm.hasExtincteur" /> {{ t('extinguisher') }}</label>
+            <label class="checkbox-item"><input type="checkbox" [(ngModel)]="departForm.hasLavage" /> {{ t('carWash') }}</label>
+            <label class="checkbox-item"><input type="checkbox" [(ngModel)]="departForm.hasPlaqueDepannage" /> {{ t('breakdownPlate') }}</label>
+            <label class="checkbox-item"><input type="checkbox" [(ngModel)]="departForm.hasCric" /> {{ t('jack') }}</label>
+            <label class="checkbox-item"><input type="checkbox" [(ngModel)]="departForm.hasGilet" /> {{ t('safetyVest') }}</label>
+            <label class="checkbox-item"><input type="checkbox" [(ngModel)]="departForm.hasRoueSecours" /> {{ t('spareWheel') }}</label>
+            <label class="checkbox-item"><input type="checkbox" [(ngModel)]="departForm.hasSiegeBebe" /> {{ t('babySeat') }}</label>
+            <label class="checkbox-item"><input type="checkbox" [(ngModel)]="departForm.hasTriangle" /> {{ t('warningTriangle') }}</label>
+          </div>
+          <div class="form-group mt-2">
+            <label>{{ t('equipmentNotes') }}</label>
+            <textarea [(ngModel)]="departForm.equipementNotes" rows="2" [placeholder]="t('equipmentNotesPlaceholder')"></textarea>
+          </div>
+        </div>
+
+        <!-- Section 8: Notes livraison -->
+        <div class="form-section">
+          <h3>{{ t('deliveryNotes') }}</h3>
+          <textarea [(ngModel)]="departForm.deliveryNotes" rows="3"
+                    class="full-width-textarea"
+                    [placeholder]="t('deliveryNotesPlaceholder')"></textarea>
+        </div>
+
+      </fieldset>
+
+      <!-- Sticky action -->
+      <div class="sticky-action" *ngIf="!isDeliveryDone">
+        <button class="btn-primary btn-lg" (click)="remettreLesCles()"
+                [disabled]="savingDepart || isComplianceBlocked">
+          {{ savingDepart ? t('handingOverKeys') : t('handOverKeysStartContract') }}
+        </button>
+        <span class="action-hint" *ngIf="isComplianceBlocked">{{ t('unlockedAfterComplianceUpdate') }}</span>
+      </div>
+
+    </ng-container>
+
+    <!-- ── Tab: Paiements ───────────────────────────────────────────────── -->
+    <ng-container *ngIf="activeTab === 'paiements'">
+      <div class="paiement-summary">
+        <div class="pay-stat">
+          <span class="pay-label">{{ t('total') }}</span>
+          <strong>{{ (dossier.montantTotal | number:'1.2-2') }} MAD</strong>
+        </div>
+        <div class="pay-stat">
+          <span class="pay-label">{{ t('amountPaid') }}</span>
+          <strong class="text-green">{{ (dossier.montantPaye | number:'1.2-2') }} MAD</strong>
+        </div>
+        <div class="pay-stat" *ngIf="!dossier.montantSurpaye">
+          <span class="pay-label">{{ t('remaining') }}</span>
+          <strong class="text-red">{{ (dossier.montantRestant | number:'1.2-2') }} MAD</strong>
+        </div>
+        <div class="pay-stat" *ngIf="dossier.montantSurpaye > 0">
+          <span class="pay-label">{{ t('overpayments') }}</span>
+          <strong class="text-green">{{ (dossier.montantSurpaye | number:'1.2-2') }} MAD</strong>
+        </div>
+      </div>
+
+      <!-- Add payment -->
+      <div class="form-section" *ngIf="status !== 'terminee' && status !== 'annulee'">
+        <h3>{{ t('addPayment') }}</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>{{ t('montant') }} (MAD)</label>
+            <input type="number" [(ngModel)]="newPaiement.montant" min="0.01" step="0.01" />
+            <span class="field-warning" *ngIf="newPaiement.montant > dossier.montantRestant">{{ t('amountExceedsRemaining') }}</span>
+          </div>
+          <div class="form-group">
+            <label>{{ t('date') }}</label>
+            <input type="date" [(ngModel)]="newPaiement.datePaiement" />
+          </div>
+          <div class="form-group">
+            <label>{{ t('paymentMethod') }}</label>
+            <select [(ngModel)]="newPaiement.modePaiement">
+              <option value="especes">{{ t('paymentCash') }}</option>
+              <option value="carte">{{ t('paymentCard') }}</option>
+              <option value="virement">{{ t('paymentTransfer') }}</option>
+              <option value="cheque">{{ t('cheque') }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>{{ t('note') }}</label>
+            <input type="text" [(ngModel)]="newPaiement.note" [placeholder]="t('optional')" />
+          </div>
+        </div>
+        <button class="btn-primary mt-2" (click)="addPaiement()" [disabled]="savingPaiement">
+          {{ savingPaiement ? t('saving') : t('addPayment') }}
+        </button>
+      </div>
+
+      <!-- Payment history -->
+      <div class="table-wrap mt-4">
+        <table class="data-table" *ngIf="dossier.paiements?.length > 0; else noPaiements">
+          <thead>
+            <tr>
+              <th>{{ t('date') }}</th>
+              <th>{{ t('montant') }}</th>
+              <th>{{ t('paymentMethod') }}</th>
+              <th>{{ t('note') }}</th>
+              <th *ngIf="status !== 'terminee'">{{ t('actions') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of dossier.paiements">
+              <td>{{ p.datePaiement | date:'dd/MM/yyyy' }}</td>
+              <td class="td-amount">{{ (p.montant | number:'1.2-2') }} MAD</td>
+              <td>{{ p.modePaiement }}</td>
+              <td>{{ p.note || '—' }}</td>
+              <td *ngIf="status !== 'terminee'">
+                <button class="btn-icon btn-del" (click)="deletePaiement(p.id)" [title]="t('delete')">🗑</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <ng-template #noPaiements>
+          <p class="empty-msg">{{ t('noPaymentsRecorded') }}</p>
+        </ng-template>
+      </div>
+    </ng-container>
+
+    <!-- ── Tab: Retour ──────────────────────────────────────────────────── -->
+    <ng-container *ngIf="activeTab === 'retour'">
+
+      <!-- Retour done banner -->
+      <div class="delivery-done-banner retour-done-banner" *ngIf="isRetourDone">
+        ✓ {{ t('contractClosedOn') }}
+        <strong>{{ dossier.vehicleReturnInspection?.inspectedAt | date:'dd/MM/yyyy HH:mm' }}</strong>
+        <button type="button" class="undo-cloture-btn" *ngIf="canUndoClosure" [disabled]="undoingCloture" (click)="undoCloture()">
+          {{ undoingCloture ? t('saving') : t('undoClosure') }}
+        </button>
+      </div>
+
+      <!-- Not yet en_cours warning -->
+      <div class="info-alert" *ngIf="!isRetourDone && status !== 'en_cours'">
+        {{ t('contractMustBeActiveForReturn') }}
+      </div>
+
+      <ng-container *ngIf="status === 'en_cours' || isRetourDone">
+
+        <fieldset [disabled]="isRetourDone" style="border:none;padding:0;margin:0;">
+
+          <!-- Required: données de retour -->
+          <div class="form-section">
+            <h3>{{ t('returnData') }}</h3>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>{{ t('returnDateTime') }}</label>
+                <input type="datetime-local" [(ngModel)]="retourForm.inspectedAt" (change)="onKmRetourChange()" />
+              </div>
+              <div class="form-group">
+                <label>{{ t('returnMileage') }} <span class="required-star">*</span></label>
+                <input type="number" [(ngModel)]="retourForm.kilometrage" min="0" [placeholder]="t('odometerPlaceholder')" />
+              </div>
+            </div>
+
+            <!-- Km reference -->
+            <div class="km-reference-row" *ngIf="dossier.vehicleDelivery">
+              <span class="km-ref-item">{{ t('departureKm') }} <strong>{{ dossier.vehicleDelivery.mileageOut ?? '—' }}</strong></span>
+              <span class="km-ref-item" *ngIf="retourForm.kilometrage && dossier.vehicleDelivery.mileageOut">
+                {{ t('distanceCovered') }} <strong>{{ retourForm.kilometrage - dossier.vehicleDelivery.mileageOut }} km</strong>
+              </span>
+            </div>
+
+            <!-- Fuel level at return -->
+            <div class="fuel-bar-group mt-3">
+              <div class="fuel-bar-labels">
+                <span class="form-group-label">{{ t('fuelAtReturn') }}</span>
+                <span class="fuel-ref" *ngIf="dossier.vehicleDelivery">
+                  {{ t('depart') }}: <strong>{{ FUEL_LABELS[dossier.vehicleDelivery.fuelLevelOut] || '—' }}</strong>
+                </span>
+              </div>
+              <div class="fuel-bar">
+                <button *ngFor="let f of FUEL_LEVELS" type="button"
+                        class="fuel-btn" [class.selected]="retourForm.fuelLevelIn === f"
+                        (click)="retourForm.fuelLevelIn = f; onFuelLevelInChange()">
+                  {{ FUEL_LABELS[f] }}
+                </button>
+              </div>
+              <span class="fuel-selected-label">{{ t('retour') }} : <strong>{{ FUEL_LABELS[retourForm.fuelLevelIn] }}</strong></span>
+            </div>
+          </div>
+
+          <!-- Collapsible: Frais supplémentaires -->
+          <div class="form-section collapsible-section">
+            <button type="button" class="collapsible-header" (click)="showFrais = !showFrais">
+              <span class="collapsible-title">{{ t('additionalFees') }}</span>
+              <span class="frais-badge" *ngIf="totalChargesBeforeRemise > 0">
+                {{ (totalChargesBeforeRemise | number:'1.2-2') }} MAD
+              </span>
+              <span class="collapse-arrow" [class.open]="showFrais">▼</span>
+            </button>
+            <div class="collapsible-body" *ngIf="showFrais">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>{{ t('fuelFee') }}</label>
+                  <input type="number" [(ngModel)]="retourForm.fuelCharge" min="0" step="0.01" placeholder="0.00" />
+                  <span class="field-hint" *ngIf="retourForm.fuelCharge > 0">{{ t('autoCalculated') }}</span>
+                </div>
+                <div class="form-group">
+                  <label>{{ t('lateFee') }}</label>
+                  <input type="number" [(ngModel)]="retourForm.lateCharge" min="0" step="0.01" placeholder="0.00" />
+                  <span class="field-hint" *ngIf="retourForm.lateCharge > 0">{{ t('autoCalculated') }}</span>
+                </div>
+                <div class="form-group">
+                  <label>{{ t('damageFee') }}</label>
+                  <input type="number" [(ngModel)]="retourForm.damageCharge" min="0" step="0.01" placeholder="0.00" />
+                </div>
+                <div class="form-group">
+                  <label>{{ t('missingEquipmentFee') }}</label>
+                  <input type="number" [(ngModel)]="retourForm.equipmentCharge" min="0" step="0.01" placeholder="0.00" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Collapsible: Remise -->
+          <div class="form-section collapsible-section">
+            <button type="button" class="collapsible-header" (click)="showRemise = !showRemise">
+              <span class="collapsible-title">{{ t('discountAdjustment') }}</span>
+              <span class="frais-badge remise-badge" *ngIf="retourForm.remiseMontant > 0">
+                −{{ (retourForm.remiseMontant | number:'1.2-2') }} MAD
+              </span>
+              <span class="collapse-arrow" [class.open]="showRemise">▼</span>
+            </button>
+            <div class="collapsible-body" *ngIf="showRemise">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>{{ t('discountAmount') }} <small>{{ t('positiveMeansReduction') }}</small></label>
+                  <input type="number" [(ngModel)]="retourForm.remiseMontant" step="0.01" placeholder="0.00" />
+                </div>
+                <div class="form-group">
+                  <label>{{ t('discountReason') }}</label>
+                  <input type="text" [(ngModel)]="retourForm.remiseMotif" [placeholder]="t('discountReasonExample')" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Collapsible: État général -->
+          <div class="form-section collapsible-section">
+            <button type="button" class="collapsible-header" (click)="showDommages = !showDommages">
+              <span class="collapsible-title">{{ t('overallVehicleCondition') }}</span>
+              <span class="frais-badge damage-badge" *ngIf="retourForm.condition !== 'clean'">
+                {{ retourForm.condition === 'minor_damage' ? t('minorDamage') : t('majorDamage') }}
+              </span>
+              <span class="collapse-arrow" [class.open]="showDommages">▼</span>
+            </button>
+            <div class="collapsible-body" *ngIf="showDommages">
+              <div class="form-group">
+                <label>{{ t('generalCondition') }}</label>
+                <select [(ngModel)]="retourForm.condition">
+                  <option value="clean">{{ t('cleanNoDamage') }}</option>
+                  <option value="minor_damage">{{ t('minorDamage') }}</option>
+                  <option value="major_damage">{{ t('majorDamage') }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Collapsible: Notes -->
+          <div class="form-section collapsible-section">
+            <button type="button" class="collapsible-header" (click)="showRetourNotes = !showRetourNotes">
+              <span class="collapsible-title">{{ t('returnNotes') }}</span>
+              <span class="collapse-arrow" [class.open]="showRetourNotes">▼</span>
+            </button>
+            <div class="collapsible-body" *ngIf="showRetourNotes">
+              <textarea [(ngModel)]="retourForm.notes" rows="3"
+                        class="full-width-textarea"
+                        [placeholder]="t('returnNotesPlaceholder')"></textarea>
+            </div>
+          </div>
+
+        </fieldset>
+
+        <!-- Live totals -->
+        <div class="totals-summary">
+          <div class="totals-row">
+            <span>{{ t('rental') }} ({{ dossier.contrat?.nbJoursFactures ?? departNbJours }} {{ t('daysAbbrev') }} × {{ (effectiveDailyRate | number:'1.2-2') }} MAD)</span>
+            <span class="totals-value">{{ (dossier.montantTotal | number:'1.2-2') }} MAD</span>
+          </div>
+          <div class="totals-row totals-charge" *ngIf="totalChargesBeforeRemise > 0">
+            <span>{{ t('additionalFees') }}</span>
+            <span class="totals-value">+ {{ (totalChargesBeforeRemise | number:'1.2-2') }} MAD</span>
+          </div>
+          <div class="totals-row totals-remise" *ngIf="retourForm.remiseMontant > 0">
+            <span>{{ t('discount') }}{{ retourForm.remiseMotif ? ' (' + retourForm.remiseMotif + ')' : '' }}</span>
+            <span class="totals-value text-green">− {{ (retourForm.remiseMontant | number:'1.2-2') }} MAD</span>
+          </div>
+          <div class="totals-row totals-paid">
+            <span>{{ t('alreadyCollected') }}</span>
+            <span class="totals-value">− {{ (dossier.montantPaye | number:'1.2-2') }} MAD</span>
+          </div>
+          <div class="totals-row totals-final">
+            <span>{{ t('finalAmountDue') }}</span>
+            <strong class="totals-value" [class.text-red]="retourMontantFinalDu > 0" [class.text-green]="retourMontantFinalDu === 0">
+              {{ (retourMontantFinalDu | number:'1.2-2') }} MAD
+            </strong>
+          </div>
+          <div class="totals-row totals-caution" *ngIf="dossier.contrat?.hasCaution">
+            <span>{{ t('depositToRefund') }} ({{ (dossier.contrat.cautionMontant | number:'1.2-2') }} MAD {{ t('paidSuffix') }})</span>
+            <strong class="totals-value text-green">
+              {{ (retourCautionRemboursee | number:'1.2-2') }} MAD
+            </strong>
+          </div>
+        </div>
+
+        <!-- Final Settlement — optional payment collected right here at return time, instead
+             of a separate trip to the Paiements tab. Staff can still close with 0 and let the
+             client pay later (soft, not required). -->
+        <div class="form-section closing-payment-section" *ngIf="!isRetourDone">
+          <h3>{{ t('finalSettlement') }}</h3>
+          <p class="form-hint">{{ t('finalSettlementHint') }}</p>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>{{ t('montant') }} (MAD)</label>
+              <input type="number" [(ngModel)]="closingPaymentAmount" min="0" step="0.01"
+                     [placeholder]="(retourMontantFinalDu | number:'1.2-2')" />
+              <button type="button" class="fill-amount-btn" (click)="useFullClosingAmount()">{{ t('useFullAmount') }}</button>
+              <span class="field-warning" *ngIf="closingPaymentAmount && closingPaymentAmount > retourMontantFinalDu">
+                {{ t('amountExceedsRemaining') }}
+              </span>
+            </div>
+            <div class="form-group">
+              <label>{{ t('paymentMethod') }}</label>
+              <select [(ngModel)]="closingPaymentMode">
+                <option value="especes">{{ t('paymentCash') }}</option>
+                <option value="carte">{{ t('paymentCard') }}</option>
+                <option value="virement">{{ t('paymentTransfer') }}</option>
+                <option value="cheque">{{ t('cheque') }}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Acknowledgment + Clôture -->
+        <div class="cloture-action" *ngIf="!isRetourDone">
+          <label class="checkbox-item confirm-check">
+            <input type="checkbox" [(ngModel)]="retourConfirmed" />
+            {{ t('returnConfirmText') }}
+          </label>
+          <button class="btn-danger btn-lg" (click)="cloturerContrat()"
+                  [disabled]="savingRetour || !retourConfirmed || !retourForm.kilometrage">
+            {{ savingRetour ? t('closingInProgress') : (closingPaymentAmount && closingPaymentAmount > 0 ? t('closeAndCollectPayment') : t('closeContract')) }}
+          </button>
+          <span class="action-hint" *ngIf="!retourConfirmed">{{ t('checkConfirmationToEnable') }}</span>
+          <span class="action-hint" *ngIf="retourConfirmed && !retourForm.kilometrage">{{ t('returnMileageRequired') }}</span>
+          <span class="action-hint" *ngIf="closingPaymentAmount && closingPaymentAmount > 0">{{ t('closingPaymentNote') }}</span>
+        </div>
+
+      </ng-container>
+    </ng-container>
+
+    <!-- ── Tab: Validation ────────────────────────────────────────────── -->
+    <ng-container *ngIf="activeTab === 'validation'">
+
+      <!-- All done banner -->
+      <div class="delivery-done-banner" *ngIf="validationAllDone">
+        ✓ {{ t('dossierComplete') }}
+      </div>
+
+      <!-- Checklist -->
+      <div class="form-section">
+        <h3>{{ t('closingChecklist') }}</h3>
+        <div class="validation-checklist">
+          <div class="vcheck-item" *ngFor="let c of validationChecks"
+               [class.vcheck-done]="c.done" [class.vcheck-pending]="!c.done">
+            <span class="vcheck-icon">{{ c.done ? '✓' : '○' }}</span>
+            <span class="vcheck-label">{{ c.label }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contract status -->
+      <div class="form-section">
+        <h3>{{ t('contractStatus') }}</h3>
+        <div class="info-grid" style="grid-template-columns: repeat(auto-fill,minmax(200px,1fr));gap:.75rem">
+          <div class="info-card">
+            <div class="info-row">
+              <span class="info-label">{{ t('contract') }}</span>
+              <strong>{{ contractNumber }}</strong>
+            </div>
+            <div class="info-row">
+              <span class="info-label">{{ t('status') }}</span>
+              <span class="status-chip" [ngClass]="statusClass(status)">{{ statusLabel(status) }}</span>
+            </div>
+            <div class="info-row" *ngIf="dossier.contrat?.signedAt">
+              <span class="info-label">{{ t('signedOn') }}</span>
+              <span>{{ dossier.contrat.signedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+          </div>
+          <div class="info-card">
+            <div class="info-row">
+              <span class="info-label">{{ t('totalRental') }}</span>
+              <strong>{{ (dossier.montantTotal | number:'1.2-2') }} MAD</strong>
+            </div>
+            <div class="info-row">
+              <span class="info-label">{{ t('collected') }}</span>
+              <span class="text-green">{{ (dossier.montantPaye | number:'1.2-2') }} MAD</span>
+            </div>
+            <div class="info-row" *ngIf="!dossier.montantSurpaye">
+              <span class="info-label">{{ t('remaining') }}</span>
+              <span [class.text-red]="dossier.montantRestant > 0">{{ (dossier.montantRestant | number:'1.2-2') }} MAD</span>
+            </div>
+            <div class="info-row" *ngIf="dossier.montantSurpaye > 0">
+              <span class="info-label">{{ t('overpayments') }}</span>
+              <span class="text-green">{{ (dossier.montantSurpaye | number:'1.2-2') }} MAD</span>
+            </div>
+          </div>
+          <div class="info-card" *ngIf="dossier.vehicleReturnInspection">
+            <div class="info-row">
+              <span class="info-label">{{ t('returnedOn') }}</span>
+              <span>{{ dossier.vehicleReturnInspection.inspectedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">{{ t('returnMileage') }}</span>
+              <span>{{ dossier.vehicleReturnInspection.kilometrage ?? '—' }} km</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">{{ t('condition') }}</span>
+              <span>{{ dossier.vehicleReturnInspection.condition === 'clean' ? t('goodCondition') :
+                        dossier.vehicleReturnInspection.condition === 'minor_damage' ? t('minorDamage') : t('majorDamage') }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Final actions -->
+      <div class="form-section">
+        <h3>{{ t('finalDocuments') }}</h3>
+        <div class="doc-list">
+          <div class="doc-item">
+            <div class="doc-icon">📄</div>
+            <div class="doc-info">
+              <strong>{{ t('rentalContract') }}</strong>
+              <span *ngIf="dossier.contrat">{{ dossier.contrat.numero }}</span>
+              <span *ngIf="!dossier.contrat" class="text-muted">{{ t('notSigned') }}</span>
+            </div>
+            <button class="btn-secondary" (click)="downloadContratPdf()" [disabled]="!dossier.contrat">
+              {{ t('downloadPdf') }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pending actions when not yet complete -->
+      <div class="info-alert" *ngIf="!validationAllDone">
+        <strong>{{ t('dossierIncomplete') }}</strong> {{ t('completeRemainingSteps') }}
+        <div style="margin-top:.5rem;display:flex;gap:.5rem;flex-wrap:wrap">
+          <button class="btn-secondary" *ngIf="!isDeliveryDone"    (click)="setTab('depart')">    → {{ t('depart') }}</button>
+          <button class="btn-secondary" *ngIf="dossier?.paymentStatus !== 'paid'" (click)="setTab('paiements')">→ {{ t('paiements') }}</button>
+          <button class="btn-secondary" *ngIf="!isRetourDone"       (click)="setTab('retour')">    → {{ t('retour') }}</button>
+        </div>
+      </div>
+
+    </ng-container>
+
+    <!-- ── Tab: Documents ───────────────────────────────────────────────── -->
+    <ng-container *ngIf="activeTab === 'documents'">
+      <div class="doc-list">
+        <div class="doc-item">
+          <div class="doc-icon">📄</div>
+          <div class="doc-info">
+            <strong>{{ t('rentalContract') }}</strong>
+            <span *ngIf="dossier.contrat">{{ dossier.contrat.numero }}</span>
+            <span *ngIf="!dossier.contrat" class="text-muted">{{ t('notSigned') }}</span>
+          </div>
+          <button class="btn-secondary" (click)="downloadContratPdf()" [disabled]="!dossier.contrat">
+            {{ t('downloadPdf') }}
+          </button>
+          <button class="btn-secondary" (click)="openPrintContrat()" [disabled]="!dossier.contrat">
+            {{ t('print') }}
+          </button>
+        </div>
+      </div>
+    </ng-container>
+
+  </div>
+</div>
+
+<!-- Print overlay — same branded template/mechanism used in contrat-list, window.print() fires
+     inside it. Independent of the tab content above, so it's placed outside the tab body. -->
+<app-print-contrat
+  *ngIf="printContractData"
+  [contractData]="printContractData"
+  (closed)="printContractData = null">
+</app-print-contrat>
+
+<!-- Loading -->
+<div *ngIf="loading" class="state-msg">{{ t('loadingDossier') }}</div>
+
+<!-- Error -->
+<div *ngIf="error" class="state-error">
+  {{ error }}
+  <button class="btn-retry" (click)="load()">{{ t('retry') }}</button>
+</div>

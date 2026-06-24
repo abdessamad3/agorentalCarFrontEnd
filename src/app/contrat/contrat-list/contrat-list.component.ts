@@ -1,28 +1,59 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { RouterModule, Router } from '@angular/router';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { TranslationService } from '../../services/translation.service';
 import { CrudService } from '../../services/crud.service';
+import { ContratService } from '../../services/contrat.service';
+import { ExportService } from '../../services/export.service';
+import { InvoiceService } from '../../services/invoice.service';
+import { ToastService } from '../../services/toast.service';
 import { PrintContratComponent } from '../print-contrat/print-contrat.component';
+import { VehicleDeliveryFormComponent } from '../vehicle-delivery-form/vehicle-delivery-form.component';
+import { VehicleReturnFormComponent } from '../vehicle-return-form/vehicle-return-form.component';
+import { BtnComponent } from '../../shared/btn/btn.component';
+import { PaginatorComponent } from '../../shared/paginator/paginator.component';
+import { Subject, of } from 'rxjs';
+import { debounceTime, switchMap, takeUntil, catchError } from 'rxjs/operators';
 
 @Component({
   selector: 'app-contrat-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, TranslatePipe, PrintContratComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, TranslatePipe, PrintContratComponent, VehicleDeliveryFormComponent, VehicleReturnFormComponent, BtnComponent, PaginatorComponent],
   templateUrl: './contrat-list.component.html',
-  styleUrls: ['../../shared/styles/crud-list.css']
+  styleUrls: ['../../shared/styles/crud-list.css', './contrat-list.component.css']
 })
-export class ContratListComponent implements OnInit {
+export class ContratListComponent implements OnInit, OnDestroy {
   items: any[] = [];
   loading = true; error = ''; dir = 'ltr'; search = '';
-  modalMode: 'view' | 'form' | 'delete' | null = null;
-  selected: any = null; form: FormGroup; isSubmitting = false; deleteId: number | null = null;
+  page = 1; limit = 20; total = 0;
+  modalMode: 'form' | 'delete' | null = null;
+  form: FormGroup; isSubmitting = false; deleteId: number | null = null;
   printItem: any = null;
   readonly endpoint = 'contrat';
   readonly objectEntries = Object.entries;
 
-  constructor(private crud: CrudService, private ts: TranslationService, private fb: FormBuilder) {
+  drawerOpen = false;
+  drawerItem: any = null;
+
+  deliveryItem: any  = null;
+  returnItem: any    = null;
+  deliveryData: any  = null;
+
+  private searchSubject = new Subject<void>();
+  private destroy$ = new Subject<void>();
+
+  constructor(
+    private crud: CrudService,
+    private ts: TranslationService,
+    private fb: FormBuilder,
+    private exportSvc: ExportService,
+    private invoiceSvc: InvoiceService,
+    private contratService: ContratService,
+    private toast: ToastService,
+    private router: Router,
+  ) {
     this.form = this.fb.group({
       clientId:     ['', Validators.required],
       voitureId:    ['', Validators.required],
@@ -32,29 +63,94 @@ export class ContratListComponent implements OnInit {
     });
   }
 
-  ngOnInit() { this.ts.direction$.subscribe(d => this.dir = d); this.load(); }
+  ngOnInit() {
+    this.ts.direction$.subscribe(d => this.dir = d);
+    this.searchSubject.pipe(
+      debounceTime(300),
+      switchMap(() => {
+        this.loading = true; this.error = '';
+        return this.crud.getPage(this.endpoint, { page: this.page, limit: this.limit, search: this.search }).pipe(
+          catchError(() => { this.error = this.ts.translate('loadError'); return of(null); })
+        );
+      }),
+      takeUntil(this.destroy$)
+    ).subscribe(r => { if (r) { this.items = r.data ?? []; this.total = r.meta?.total ?? 0; } this.loading = false; });
+    this.load();
+  }
+
+  ngOnDestroy() { this.destroy$.next(); this.destroy$.complete(); }
 
   load() {
     this.loading = true; this.error = '';
-    this.crud.getAll(this.endpoint).subscribe({
-      next: r => { this.items = Array.isArray(r) ? r : (r?.data ?? []); this.loading = false; },
+    this.crud.getPage(this.endpoint, { page: this.page, limit: this.limit, search: this.search }).subscribe({
+      next: (r: any) => {
+        this.items = r.data ?? [];
+        this.total = r.meta?.total ?? 0;
+        this.loading = false;
+      },
       error: () => { this.error = this.ts.translate('loadError'); this.loading = false; }
     });
   }
 
-  get filtered() {
-    if (!this.search.trim()) return this.items;
-    const q = this.search.toLowerCase();
-    return this.items.filter(i => Object.values(i).some(v => String(v).toLowerCase().includes(q)));
-  }
+  get filtered() { return this.items; }
 
-  openView(item: any)    { this.selected = item; this.modalMode = 'view'; }
-  openAdd()              { this.selected = null; this.form.reset({ montantTotal: 0 }); this.modalMode = 'form'; }
+  get paged(): any[] { return this.items; }
+
+  onSearch(): void { this.page = 1; this.searchSubject.next(); }
+  onPageChange(p: number): void { this.page = p; this.load(); }
+
+  openView(item: any)    { this.drawerItem = item; this.drawerOpen = true; }
+  openAdd()              { this.router.navigate(['/contrat', 'new']); }
+  openEdit(item: any)    { this.router.navigate(['/contrat', item.id, 'edit']); }
   openDelete(id: number) { this.deleteId = id; this.modalMode = 'delete'; }
   openPrint(item: any)   { this.printItem = item; }
-  closeModal()           { this.modalMode = null; this.selected = null; this.deleteId = null; this.isSubmitting = false; }
+  exportPDF(item: any)   { this.exportSvc.rentalContract(item); }
 
-  @HostListener('document:keydown.escape') onEscape() { this.closeModal(); }
+  openDelivery(item: any) {
+    this.deliveryItem = item.reservation;
+    this.returnItem   = null;
+  }
+
+  openReturn(item: any) {
+    this.returnItem   = item.reservation;
+    this.deliveryItem = null;
+    this.deliveryData = null;
+    this.crud.getById('vehicle-delivery/contrat', item.id).subscribe({
+      next: (d: any) => { this.deliveryData = d; },
+      error: () => {}
+    });
+  }
+
+  onDeliverySaved()  { this.deliveryItem = null; this.load(); }
+  onDeliveryClosed() { this.deliveryItem = null; }
+  onReturnSaved()    { this.returnItem = null; this.deliveryData = null; this.load(); }
+  onReturnClosed()   { this.returnItem = null; this.deliveryData = null; }
+
+  reservationStatus(item: any): string {
+    return item.reservation?.reservationStatus ?? '';
+  }
+  generateInvoice(item: any) {
+    const resId = item.reservationId ?? item.reservation?.id ?? item.id;
+    if (resId) this.invoiceSvc.generateForReservation(resId);
+  }
+
+  downloadPdf(item: any) {
+    this.contratService.downloadPdf(item.id).subscribe({
+      next: (blob: Blob) => {
+        const url  = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href  = url;
+        link.download = `contrat-${item.numero || item.id}.pdf`;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+      },
+      error: () => this.toast.show('Erreur de génération PDF', 'error')
+    });
+  }
+  closeModal()           { this.modalMode = null; this.deleteId = null; this.isSubmitting = false; }
+  closeDrawer()          { this.drawerOpen = false; this.drawerItem = null; }
+
+  @HostListener('document:keydown.escape') onEscape() { this.closeModal(); this.closeDrawer(); }
 
   save() {
     if (this.form.invalid) return;

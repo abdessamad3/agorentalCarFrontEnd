@@ -11,17 +11,17 @@
   <!-- Tabs + Search -->
   <div class="search-filter-bar">
     <div class="tab-bar">
-      <button class="tab-btn" [class.active]="activeTab === 'available'" (click)="activeTab = 'available'">
+      <button class="tab-btn" [class.active]="activeTab === 'available'" (click)="activeTab = 'available'; onSearch()">
         {{ t('availableToSell') }}
         <span class="tab-count">{{ availableVoitures.length }}</span>
       </button>
-      <button class="tab-btn" [class.active]="activeTab === 'sold'" (click)="activeTab = 'sold'">
+      <button class="tab-btn" [class.active]="activeTab === 'sold'" (click)="activeTab = 'sold'; onSearch()">
         {{ t('soldVehicles') }}
         <span class="tab-count sold-count">{{ soldVoitures.length }}</span>
       </button>
     </div>
     <div class="search-input">
-      <input type="text" [(ngModel)]="search" [placeholder]="t('search') + '...'" />
+      <input type="text" [(ngModel)]="search" (ngModelChange)="onSearch()" [placeholder]="t('search') + '...'" />
     </div>
   </div>
 
@@ -53,7 +53,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let v of availableVoitures; let i = index" class="bureau-row">
+          <tr *ngFor="let v of pagedAvailable; let i = index" class="bureau-row">
             <td class="date-cell">{{ i + 1 }}</td>
             <td>
               <div class="name-cell">{{ v.marque }} {{ v.modele }}</div>
@@ -80,6 +80,9 @@
           </tr>
         </tbody>
       </table>
+      <app-paginator [page]="page" [limit]="limit" [total]="availableVoitures.length"
+        (pageChange)="onPageChange($event)">
+      </app-paginator>
     </div>
     <ng-template #noAvailable>
       <div class="empty-state"><p>{{ t('noCarsToSell') }}</p></div>
@@ -104,7 +107,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let v of soldVoitures; let i = index" class="bureau-row sold-row">
+          <tr *ngFor="let v of pagedSold; let i = index" class="bureau-row sold-row">
             <td class="date-cell">{{ i + 1 }}</td>
             <td>
               <div class="name-cell">{{ v.marque }} {{ v.modele }}</div>
@@ -125,12 +128,7 @@
             <td>{{ v.acheteur || '—' }}</td>
             <td class="actions-cell">
               <app-btn variant="icon-view" (click)="openView(v)" [title]="t('view')"></app-btn>
-              <button class="btn-action btn-edit" (click)="openEditSale(v)" [title]="t('edit')">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                </svg>
-              </button>
+              <app-btn variant="icon-edit" (click)="openEditSale(v)" [title]="t('edit')"></app-btn>
               <a [routerLink]="['/voiture', v.id]" class="btn-action btn-view" [title]="t('vehicleDetails')">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
@@ -142,6 +140,9 @@
           </tr>
         </tbody>
       </table>
+      <app-paginator [page]="page" [limit]="limit" [total]="soldVoitures.length"
+        (pageChange)="onPageChange($event)">
+      </app-paginator>
     </div>
     <ng-template #noSold>
       <div class="empty-state"><p>{{ t('noSoldCars') }}</p></div>
@@ -254,58 +255,33 @@
     </div>
   </div>
 
-  <!-- ===== VIEW MODAL (sold car details) ===== -->
-  <div class="modal-overlay" *ngIf="modalMode === 'view'" (click)="closeModal()">
-    <div class="modal" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>{{ t('soldCar') }} — {{ carLabel(selectedCar) }}</h2>
-        <button class="modal-close" (click)="closeModal()">×</button>
-      </div>
-      <div class="modal-body">
-        <div class="detail-row">
-          <span class="detail-label">{{ t('car') }}</span>
-          <span class="detail-value">{{ carLabel(selectedCar) }}</span>
+
+</div>
+
+<!-- DRAWER: View -->
+<div class="drawer-backdrop" [class.visible]="drawerOpen" (click)="closeDrawer()"></div>
+<div class="drawer" [class.open]="drawerOpen">
+  <ng-container *ngIf="drawerItem">
+    <div class="drawer-header">
+      <span class="drawer-title">Details</span>
+      <button class="drawer-close" (click)="closeDrawer()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="drawer-body">
+      <div class="drawer-section">
+        <div class="drawer-section-head">Information</div>
+        <div class="drawer-row" *ngFor="let e of objectEntries(drawerItem)">
+          <span class="drawer-lbl">{{ e[0] }}</span>
+          <span class="drawer-val">{{ displayValue(e[1]) }}</span>
         </div>
-        <div class="detail-row">
-          <span class="detail-label">{{ t('immatriculation') }}</span>
-          <span class="detail-value"><span class="plate-badge">{{ selectedCar?.immatriculation || '—' }}</span></span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">{{ t('saleDate') }}</span>
-          <span class="detail-value">{{ selectedCar?.dateVente ? (selectedCar.dateVente | date:'dd/MM/yyyy') : '—' }}</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">{{ t('salePrice') }}</span>
-          <span class="detail-value price-cell">{{ selectedCar?.prixVente ? ((selectedCar.prixVente | number:'1.0-0') + ' MAD') : '—' }}</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">{{ t('prixAchat') }}</span>
-          <span class="detail-value">{{ selectedCar?.prixAchat ? ((selectedCar.prixAchat | number:'1.0-0') + ' MAD') : '—' }}</span>
-        </div>
-        <div class="detail-row" *ngIf="saleProfit(selectedCar) !== null">
-          <span class="detail-label">{{ t('profit') }}</span>
-          <span class="detail-value"
-            [class.profit-positive]="saleProfit(selectedCar)! >= 0"
-            [class.profit-negative]="saleProfit(selectedCar)! < 0">
-            {{ saleProfit(selectedCar)! >= 0 ? '+' : '' }}{{ (saleProfit(selectedCar)! | number:'1.0-0') }} MAD
-          </span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">{{ t('buyer') }}</span>
-          <span class="detail-value">{{ selectedCar?.acheteur || '—' }}</span>
-        </div>
-        <div class="detail-row" *ngIf="selectedCar?.notesVente">
-          <span class="detail-label">{{ t('notes') }}</span>
-          <span class="detail-value">{{ selectedCar.notesVente }}</span>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <app-btn variant="secondary" (click)="closeModal()">{{ t('close') }}</app-btn>
-        <a [routerLink]="['/voiture', selectedCar?.id]" class="btn-primary" (click)="closeModal()">
-          {{ t('vehicleDetails') }}
-        </a>
       </div>
     </div>
-  </div>
-
+    <div class="drawer-footer">
+      <button class="btn-primary-sm" (click)="openEditSale(drawerItem); closeDrawer()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Edit Sale
+      </button>
+    </div>
+  </ng-container>
 </div>

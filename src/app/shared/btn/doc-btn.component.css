@@ -1,0 +1,30 @@
+:host { display: contents; }
+
+.doc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid #81e6d9;
+  background: #e6fffa;
+  color: #2c7a7b;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s, color 0.18s, box-shadow 0.18s, transform 0.1s;
+  flex-shrink: 0;
+}
+
+.doc-btn:hover {
+  background: #2c7a7b;
+  border-color: #285e61;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(44, 122, 123, 0.35);
+  transform: translateY(-1px);
+}
+
+.doc-btn:active {
+  transform: scale(0.95);
+  box-shadow: none;
+}

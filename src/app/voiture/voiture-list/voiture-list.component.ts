@@ -1,31 +1,36 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
-import { switchMap, of, forkJoin } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { Subject, switchMap, of, forkJoin } from 'rxjs';
+import { debounceTime, takeUntil, catchError } from 'rxjs/operators';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import { ComplianceBadgeComponent } from '../../shared/compliance-badge/compliance-badge.component';
+import { UploadBtnComponent } from '../../shared/btn/upload-btn.component';
 import { VoitureService } from '../../services/voiture.service';
 import { CrudService } from '../../services/crud.service';
 import { TranslationService } from '../../services/translation.service';
+import { AuthService } from '../../services/auth.service';
 import { environment } from '../../../environments/environment';
+import { complianceSeverity } from '../../shared/utils/compliance.utils';
 
 const PLACEHOLDER = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjI1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjI1MCIgZmlsbD0iI2VkZjJmNyIvPjx0ZXh0IHg9IjIwMCIgeT0iMTI1IiBmaWxsPSIjYTBhZWMwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiBmb250LXNpemU9IjYwIj7wn5qlPC90ZXh0Pjwvc3ZnPg==`;
 
 @Component({
   selector: 'app-voiture-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, ComplianceBadgeComponent, UploadBtnComponent],
   templateUrl: './voiture-list.component.html',
   styleUrls: ['./voiture-list.component.css']
 })
-export class VoitureListComponent implements OnInit {
+export class VoitureListComponent implements OnInit, OnDestroy {
   voitures: any[] = [];
   reservations: any[] = [];
-  reparations: any[] = [];
+  private oilStatusMap: Map<number, { status: 'OK' | 'DUE_SOON' | 'OVERDUE' | 'UNKNOWN'; remainingKm: number | null; nextKm: number | null }> = new Map();
   loading = true;
   error = '';
   page = 1;
-  limit = 12;
+  limit = 20;
   total = 0;
   pages = 0;
   dir = 'ltr';
@@ -39,16 +44,23 @@ export class VoitureListComponent implements OnInit {
   dateFrom = '';
   dateTo = '';
 
-  stats = { total: 0, disponible: 0, louee: 0, maintenance: 0, horsService: 0, vendu: 0, archive: 0 };
+  stats = {
+    total: 0, brouillon: 0, setup: 0, disponible: 0, reserve: 0,
+    louee: 0, maintenance: 0, horsService: 0, decommissioned: 0, vendu: 0, archive: 0
+  };
 
-  modalMode: 'edit' | 'delete' | 'status' | null = null;
+  get canManageVehicle(): boolean {
+    return !this.auth.hasRole('ROLE_STAFF') && !this.auth.hasRole('ROLE_MANAGER');
+  }
+
+  modalMode: 'edit' | 'delete' | null = null;
   selectedVoiture: any = null;
   isSubmitting = false;
   deleteId: number | null = null;
   deleteError = '';
 
   editImageFile: File | null = null;
-  editImagePreview: string | null = null;
+  editImagePreview: SafeUrl | null = null;
   editGallery: { id: number; path: string }[] = [];
 
   toast: { message: string; type: 'error' | 'success' } | null = null;
@@ -57,23 +69,21 @@ export class VoitureListComponent implements OnInit {
   editForm: FormGroup;
 
   readonly STATUS_TABS = [
-    { key: 'all',         labelKey: 'all',         icon: '🚗' },
-    { key: 'disponible',  labelKey: 'disponible',   icon: '✅' },
-    { key: 'louee',       labelKey: 'louee',        icon: '🔑' },
-    { key: 'maintenance', labelKey: 'maintenance',  icon: '🔧' },
-    { key: 'hors_service',labelKey: 'horsService',  icon: '⛔' },
-    { key: 'vendu',       labelKey: 'vendu',        icon: '💰' },
-    { key: 'archive',     labelKey: 'archive',      icon: '📦' },
+    { key: 'all',            labelKey: 'all'            },
+    { key: 'brouillon',      labelKey: 'brouillon'      },
+    { key: 'setup',          labelKey: 'setup'          },
+    { key: 'disponible',     labelKey: 'disponible'     },
+    { key: 'reserve',        labelKey: 'reserve'        },
+    { key: 'louee',          labelKey: 'louee'          },
+    { key: 'maintenance',    labelKey: 'maintenance'    },
+    { key: 'hors_service',   labelKey: 'horsService'    },
+    { key: 'decommissioned', labelKey: 'decommissioned' },
+    { key: 'vendu',          labelKey: 'vendu'          },
+    { key: 'archive',        labelKey: 'archive'        },
   ];
 
   readonly FUEL_OPTIONS = ['Essence','Diesel','Hybride','Electrique'];
   readonly TRANSMISSION_OPTIONS = ['Manuelle','Automatique'];
-
-  readonly ALL_STATUSES = [
-    { value: 'archive', label: 'archive' },
-  ];
-
-  newStatus = '';
 
   constructor(
     private voitureService: VoitureService,
@@ -81,7 +91,9 @@ export class VoitureListComponent implements OnInit {
     private ts: TranslationService,
     private fb: FormBuilder,
     public router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private sanitizer: DomSanitizer,
+    private auth: AuthService
   ) {
     this.editForm = this.fb.group({
       marque:            ['', Validators.required],
@@ -107,120 +119,114 @@ export class VoitureListComponent implements OnInit {
       prixAchat:         [0],
       caution:           [0],
       dateAchat:         [''],
-      dateExpirationAssurance: [''],
-      dateExpirationVignette:  [''],
-      dateExpirationVisite:    [''],
-      voitureStatus:     ['disponible'],
     });
   }
 
+  private searchSubject = new Subject<void>();
+  private destroy$ = new Subject<void>();
+
   ngOnInit(): void {
     this.ts.direction$.subscribe(d => this.dir = d);
+    this.searchSubject.pipe(
+      debounceTime(300),
+      switchMap(() => {
+        this.loading = true; this.error = '';
+        return this.carsObs().pipe(catchError(() => { this.error = this.ts.translate('loadError'); return of(null); }));
+      }),
+      takeUntil(this.destroy$)
+    ).subscribe(r => { if (r) this.applyCarsResult(r); this.loading = false; });
     const editId = this.route.snapshot.queryParamMap.get('edit');
     this.loadCars(editId ? +editId : undefined);
   }
 
-  loadCars(openEditId?: number): void {
-    this.loading = true;
-    this.error = '';
-    forkJoin({
-      cars:         this.voitureService.getVoitures(this.page, this.limit, '', this.dateFrom, this.dateTo),
-      reservations: this.crud.getAll('reservations').pipe(catchError(() => of([]))),
-      reparations:  this.crud.getAll('reparation').pipe(catchError(() => of([])))
-    }).subscribe({
-      next: ({ cars, reservations, reparations }) => {
-        let data: any[] = [];
-        if (Array.isArray(cars)) {
-          data = cars;
-          this.total = data.length;
-          this.pages = 1;
-        } else if (cars?.data) {
-          data = cars.data;
-          this.total = cars.meta?.total ?? data.length;
-          this.pages = cars.meta?.pages ?? 1;
-        }
-        this.reservations = Array.isArray(reservations) ? reservations : (reservations?.data ?? []);
-        this.reparations  = Array.isArray(reparations)  ? reparations  : (reparations?.data  ?? []);
-        this.voitures = data.map(v => ({ ...v, _img: this.imgUrl(v.image) }));
-        this.calcStats();
-        this.loading = false;
-        if (openEditId) {
-          const car = this.voitures.find(v => v.id === openEditId);
-          if (car) this.openEdit(car);
-          this.router.navigate([], { queryParams: {}, replaceUrl: true });
-        }
-      },
-      error: () => {
-        this.loading = false;
-        this.error = this.ts.translate('loadError');
-      }
+  ngOnDestroy() { this.destroy$.next(); this.destroy$.complete(); }
+
+  private carsObs() {
+    return forkJoin({
+      cars:         this.voitureService.getVoitures(this.page, this.limit, this.searchQuery, this.dateFrom, this.dateTo),
+      reservations: this.crud.getAll('reservation').pipe(catchError(() => of([]))),
+      oilReminders: this.crud.getAll('dashboard/oil-reminders').pipe(catchError(() => of(null))),
     });
   }
 
-  private readonly MANUAL_STATUSES = ['vendu', 'archive'];
+  private applyCarsResult({ cars, reservations, oilReminders }: any, openEditId?: number) {
+    let data: any[] = [];
+    if (Array.isArray(cars)) { data = cars; this.total = data.length; this.pages = 1; }
+    else if (cars?.data) { data = cars.data; this.total = cars.meta?.total ?? data.length; this.pages = cars.meta?.totalPages ?? cars.meta?.pages ?? 1; }
+    this.reservations = Array.isArray(reservations) ? reservations : (reservations?.data ?? []);
+    this.buildOilStatusMap(oilReminders, data);
+    this.voitures = data.map((v: any) => ({ ...v, _img: this.imgUrl(v.image) }));
+    this.calcStats();
+    if (openEditId) {
+      const car = this.voitures.find(v => v.id === openEditId);
+      if (car) this.openEdit(car);
+      this.router.navigate([], { queryParams: {}, replaceUrl: true });
+    }
+  }
+
+  loadCars(openEditId?: number): void {
+    this.loading = true; this.error = '';
+    this.carsObs().subscribe({
+      next: r  => { this.applyCarsResult(r, openEditId); this.loading = false; },
+      error: () => { this.loading = false; this.error = this.ts.translate('loadError'); }
+    });
+  }
+
+  private buildOilStatusMap(reminders: any, cars: any[]): void {
+    this.oilStatusMap.clear();
+    if (reminders?.all) {
+      for (const item of reminders.all) {
+        this.oilStatusMap.set(item.voitureId, {
+          status: item.status,
+          remainingKm: item.remainingKm,
+          nextKm: item.nextOilChangeKm,
+        });
+      }
+    }
+    for (const car of cars) {
+      if (!this.oilStatusMap.has(car.id)) {
+        this.oilStatusMap.set(car.id, { status: 'UNKNOWN', remainingKm: null, nextKm: null });
+      }
+    }
+  }
+
+  oilStatus(carId: number): { status: 'OK' | 'DUE_SOON' | 'OVERDUE' | 'UNKNOWN'; remainingKm: number | null; nextKm: number | null } {
+    return this.oilStatusMap.get(carId) ?? { status: 'UNKNOWN', remainingKm: null, nextKm: null };
+  }
+
+  // ── Status (server-authoritative) ────────────────────────────────────────
 
   effectiveStatus(v: any): string {
-    const stored = (v.voitureStatus || '').toLowerCase();
-    if (this.MANUAL_STATUSES.includes(stored)) return stored;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const hasExpiredDoc = ['dateExpirationAssurance', 'dateExpirationVignette', 'dateExpirationVisite']
-      .some(f => v[f] && new Date(v[f]) < today);
-    if (hasExpiredDoc) return 'hors_service';
-
-    const hasActiveRepair = this.reparations.some(r => {
-      if ((r.voitureId ?? r.voiture?.id) !== v.id) return false;
-      if (!r.dateFin) return true;
-      const fin = new Date(r.dateFin);
-      fin.setHours(23, 59, 59, 999);
-      return fin >= today;
-    });
-    if (hasActiveRepair) return 'maintenance';
-
-    const cancelledStatuses = ['annulee', 'annule', 'cancelled'];
-    const isActive = this.reservations.some(r => {
-      if ((r.voitureId ?? r.voiture?.id) !== v.id) return false;
-      if (cancelledStatuses.includes((r.reservationStatus || r.statut || '').toLowerCase())) return false;
-      const start = new Date(r.dateDebut);
-      const end   = new Date(r.dateFin);
-      start.setHours(0, 0, 0, 0);
-      end.setHours(23, 59, 59, 999);
-      return today >= start && today <= end;
-    });
-    return isActive ? 'louee' : 'disponible';
+    return ((v.effectiveStatus || v.voitureStatus || 'brouillon') as string).toLowerCase();
   }
-
-  status(v: any): string { return this.effectiveStatus(v); }
 
   calcStats(): void {
     const all = this.voitures;
     this.stats = {
-      total:      all.length,
-      disponible: all.filter(v => this.effectiveStatus(v) === 'disponible').length,
-      louee:      all.filter(v => this.effectiveStatus(v) === 'louee').length,
-      maintenance:all.filter(v => this.effectiveStatus(v) === 'maintenance').length,
-      horsService:all.filter(v => this.effectiveStatus(v) === 'hors_service').length,
-      vendu:      all.filter(v => this.effectiveStatus(v) === 'vendu').length,
-      archive:    all.filter(v => this.effectiveStatus(v) === 'archive').length,
+      total:         this.total || all.length,
+      brouillon:     all.filter(v => this.effectiveStatus(v) === 'brouillon').length,
+      setup:         all.filter(v => this.effectiveStatus(v) === 'setup').length,
+      disponible:    all.filter(v => this.effectiveStatus(v) === 'disponible').length,
+      reserve:       all.filter(v => this.effectiveStatus(v) === 'reserve').length,
+      louee:         all.filter(v => this.effectiveStatus(v) === 'louee').length,
+      maintenance:   all.filter(v => this.effectiveStatus(v) === 'maintenance').length,
+      horsService:   all.filter(v => this.effectiveStatus(v) === 'hors_service').length,
+      decommissioned:all.filter(v => this.effectiveStatus(v) === 'decommissioned').length,
+      vendu:         all.filter(v => this.effectiveStatus(v) === 'vendu').length,
+      archive:       all.filter(v => this.effectiveStatus(v) === 'archive').length,
     };
   }
 
   get filtered(): any[] {
     let list = this.voitures;
-    if (this.statusFilter !== 'all')    list = list.filter(v => this.status(v) === this.statusFilter.toLowerCase());
+    if (this.statusFilter !== 'all')    list = list.filter(v => this.effectiveStatus(v) === this.statusFilter.toLowerCase());
     if (this.fuelFilter)                list = list.filter(v => (v.typeCarburant || '').toLowerCase() === this.fuelFilter.toLowerCase());
     if (this.transmissionFilter)        list = list.filter(v => (v.transmission || '').toLowerCase() === this.transmissionFilter.toLowerCase());
     if (this.categoryFilter)            list = list.filter(v => (v.categorie || '').toLowerCase() === this.categoryFilter.toLowerCase());
-    if (this.searchQuery.trim()) {
-      const q = this.searchQuery.toLowerCase();
-      list = list.filter(v =>
-        `${v.marque} ${v.modele} ${v.annee} ${v.immatriculation || ''} ${v.couleur || ''}`.toLowerCase().includes(q)
-      );
-    }
     return list;
   }
+
+  onSearch(): void { this.page = 1; this.searchSubject.next(); }
 
   get hasActiveFilters(): boolean {
     return !!(this.searchQuery.trim() || this.fuelFilter || this.transmissionFilter || this.categoryFilter || this.statusFilter !== 'all');
@@ -237,6 +243,8 @@ export class VoitureListComponent implements OnInit {
     this.transmissionFilter = '';
     this.categoryFilter = '';
     this.statusFilter = 'all';
+    this.page = 1;
+    this.loadCars();
   }
 
   imgUrl(img?: string): string {
@@ -247,37 +255,50 @@ export class VoitureListComponent implements OnInit {
 
   // ── Alert helpers ────────────────────────────────────────────────────────
 
-  daysUntil(dateStr?: string): number | null {
-    if (!dateStr) return null;
-    return Math.floor((new Date(dateStr).getTime() - Date.now()) / 86400000);
-  }
-
-  isExpired(dateStr?: string): boolean {
-    const d = this.daysUntil(dateStr);
-    return d !== null && d < 0;
-  }
-
-  isExpiring(dateStr?: string): boolean {
-    const d = this.daysUntil(dateStr);
-    return d !== null && d >= 0 && d <= 30;
-  }
-
   alertCount(car: any): number {
-    return ['dateExpirationAssurance','dateExpirationVignette','dateExpirationVisite']
-      .filter(f => this.isExpired(car[f]) || this.isExpiring(car[f])).length;
+    const c = car.compliance;
+    if (c) {
+      return ['vignette', 'assurance', 'visite'].filter(k => {
+        const sev = complianceSeverity(c[k]?.status);
+        return sev === 'warning' || sev === 'danger';
+      }).length;
+    }
+    return this.effectiveStatus(car) === 'hors_service' ? 1 : 0;
   }
 
   alertLevel(car: any): 'danger' | 'warning' | '' {
-    const fields = ['dateExpirationAssurance','dateExpirationVignette','dateExpirationVisite'];
-    if (fields.some(f => this.isExpired(car[f]))) return 'danger';
-    if (fields.some(f => this.isExpiring(car[f]))) return 'warning';
-    return '';
+    const c = car.compliance;
+    if (c) {
+      const severities = ['vignette', 'assurance', 'visite'].map(k => complianceSeverity(c[k]?.status));
+      if (severities.includes('danger')) return 'danger';
+      if (severities.includes('warning')) return 'warning';
+      return '';
+    }
+    return this.effectiveStatus(car) === 'hors_service' ? 'danger' : '';
   }
+
+  compDotClass(status: string | undefined): string {
+    const sev = complianceSeverity(status);
+    if (sev === 'neutral') return 'dot-unknown';
+    if (sev === 'ok')      return 'dot-ok';
+    if (sev === 'warning') return 'dot-warn';
+    return 'dot-critical';
+  }
+
+  // ── Status display ───────────────────────────────────────────────────────
 
   statusClass(s: string): string {
     const map: Record<string, string> = {
-      disponible: 'st-green', louee: 'st-blue', maintenance: 'st-orange',
-      hors_service: 'st-red', vendu: 'st-gray', archive: 'st-dark',
+      brouillon:      'st-draft',
+      setup:          'st-setup',
+      disponible:     'st-green',
+      reserve:        'st-teal',
+      louee:          'st-blue',
+      maintenance:    'st-orange',
+      hors_service:   'st-red',
+      decommissioned: 'st-brown',
+      vendu:          'st-gray',
+      archive:        'st-dark',
     };
     return map[(s || '').toLowerCase()] ?? 'st-gray';
   }
@@ -285,10 +306,40 @@ export class VoitureListComponent implements OnInit {
   statusLabel(s: string): string {
     const normalized = (s || '').toLowerCase();
     const keyMap: Record<string, string> = {
-      disponible: 'disponible', louee: 'louee', maintenance: 'maintenance',
-      hors_service: 'horsService', vendu: 'vendu', archive: 'archive',
+      brouillon:      'brouillon',
+      setup:          'setup',
+      disponible:     'disponible',
+      reserve:        'reserve',
+      louee:          'louee',
+      maintenance:    'maintenance',
+      hors_service:   'horsService',
+      decommissioned: 'decommissioned',
+      vendu:          'vendu',
+      archive:        'archive',
     };
     return this.t(keyMap[normalized] ?? normalized);
+  }
+
+  statCount(key: string): number {
+    if (key === 'all') return this.stats.total;
+    return (this.stats as any)[key === 'hors_service' ? 'horsService' : key] ?? 0;
+  }
+
+  // ── Next booking ─────────────────────────────────────────────────────────
+
+  nextBookingDate(carId: number): string | null {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const cancelled = ['annulee', 'annule', 'cancelled'];
+    const upcoming = this.reservations
+      .filter(r => {
+        if ((r.voitureId ?? r.voiture?.id) !== carId) return false;
+        if (cancelled.includes((r.reservationStatus || r.statut || '').toLowerCase())) return false;
+        const start = new Date(r.dateDebut); start.setHours(0, 0, 0, 0);
+        return start >= today;
+      })
+      .sort((a, b) => new Date(a.dateDebut).getTime() - new Date(b.dateDebut).getTime())[0];
+    if (!upcoming) return null;
+    return new Date(upcoming.dateDebut).toLocaleDateString('fr-MA', { day: '2-digit', month: 'short', year: 'numeric' });
   }
 
   // ── Date availability ────────────────────────────────────────────────────
@@ -342,11 +393,6 @@ export class VoitureListComponent implements OnInit {
     return [immatNum1, (immatLetter || '').toUpperCase(), immatNum2].filter(Boolean).join('-');
   }
 
-  statCount(key: string): number {
-    if (key === 'all') return this.stats.total;
-    return (this.stats as any)[key === 'hors_service' ? 'horsService' : key] ?? 0;
-  }
-
   // ── Modals ───────────────────────────────────────────────────────────────
 
   openEdit(car: any): void {
@@ -361,10 +407,6 @@ export class VoitureListComponent implements OnInit {
       prixJour: car.prixJour || 0, prixSemaine: car.prixSemaine || 0,
       prixMois: car.prixMois || 0, prixAchat: car.prixAchat || 0,
       caution: car.caution || 0, dateAchat: car.dateAchat || '',
-      dateExpirationAssurance: car.dateExpirationAssurance || '',
-      dateExpirationVignette: car.dateExpirationVignette || '',
-      dateExpirationVisite: car.dateExpirationVisite || '',
-      voitureStatus: car.voitureStatus || 'disponible',
     });
     this.editGallery = Array.isArray(car.galleryImages)
       ? car.galleryImages.map((g: any) => ({ id: g.id, path: this.imgUrl(g.path) }))
@@ -373,12 +415,6 @@ export class VoitureListComponent implements OnInit {
   }
 
   openDelete(id: number): void { this.deleteId = id; this.modalMode = 'delete'; }
-
-  openStatus(car: any): void {
-    this.selectedVoiture = car;
-    this.newStatus = car.voitureStatus || 'disponible';
-    this.modalMode = 'status';
-  }
 
   closeModal(): void {
     this.modalMode = null; this.selectedVoiture = null;
@@ -404,26 +440,19 @@ export class VoitureListComponent implements OnInit {
     });
   }
 
-  addGalleryImage(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file || !this.selectedVoiture) return;
+  addGalleryImage(file: File): void {
+    if (!this.selectedVoiture) return;
     this.voitureService.addVoitureImage(this.selectedVoiture.id, file).subscribe({
       next: (res) => { this.editGallery.push({ id: res.id, path: this.imgUrl(res.image) }); },
       error: (err) => { this.showToast(this.apiError(err)); }
     });
-    input.value = '';
   }
 
-  onEditImageSelect(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) return;
+  onEditImageSelect(file: File): void {
     this.editImageFile = file;
     const reader = new FileReader();
-    reader.onload = (e) => this.editImagePreview = e.target?.result as string;
+    reader.onload = (e) => this.editImagePreview = this.sanitizer.bypassSecurityTrustUrl(e.target?.result as string);
     reader.readAsDataURL(file);
-    input.value = '';
   }
 
   @HostListener('document:keydown.escape') onEscape() { this.closeModal(); }
@@ -463,45 +492,54 @@ export class VoitureListComponent implements OnInit {
     });
   }
 
-  archiveSelected(): void {
-    if (!this.deleteId) return;
-    this.voitureService.updateVoiture(this.deleteId, { voitureStatus: 'archive' }).subscribe({
-      next: () => { this.closeModal(); this.loadCars(); },
-      error: () => { this.isSubmitting = false; }
-    });
-  }
-
-  confirmStatus(): void {
-    if (!this.selectedVoiture || !this.newStatus) return;
-    if (this.newStatus === 'archive' && this.status(this.selectedVoiture) !== 'disponible') return;
-    this.isSubmitting = true;
-    this.voitureService.updateVoiture(this.selectedVoiture.id, { voitureStatus: this.newStatus }).subscribe({
-      next: () => { this.closeModal(); this.loadCars(); },
-      error: () => { this.isSubmitting = false; }
-    });
-  }
-
   duplicate(car: any): void {
-    const payload = { ...car };
-    delete payload.id;
-    payload.immatriculation = '';
-    payload.vin = '';
-    payload.voitureStatus = 'disponible';
-    this.voitureService.createVoiture(this.toFormData(payload)).subscribe({
-      next: () => this.loadCars()
-    });
-  }
-
-  private toFormData(obj: any): FormData {
+    const COPY_FIELDS = ['marque','modele','version','annee','typeCarburant','transmission',
+      'couleur','places','portes','puissanceCv','categorie','climatisation',
+      'kilometrageActuel','prixJour','prixSemaine','prixMois','prixAchat','caution','dateAchat'];
     const fd = new FormData();
-    Object.entries(obj).forEach(([k, v]) => {
-      if (v !== null && v !== undefined) fd.append(k, String(v));
+    COPY_FIELDS.forEach(k => {
+      const v = car[k];
+      if (v !== null && v !== undefined && v !== '') fd.append(k, String(v));
     });
-    return fd;
+    this.voitureService.createVoiture(fd).subscribe({ next: () => this.loadCars() });
   }
 
   onPreviousPage(): void { if (this.page > 1)          { this.page--; this.loadCars(); } }
   onNextPage():     void { if (this.page < this.pages) { this.page++; this.loadCars(); } }
+
+  // ── PHASE 8: per-car health indicators ──────────────────────────────────
+
+  readinessScore(car: any): number {
+    const c = car.compliance;
+    let score = 0; let total = 0;
+
+    // Identity: plate + brand + model + year
+    total++; if (car.immatriculation && car.marque && car.modele && car.annee) score++;
+    // Pricing
+    total++; if ((car.prixJour ?? 0) > 0) score++;
+    // Insurance
+    total++; if (complianceSeverity(c?.assurance?.status) === 'ok') score++;
+    // Vignette
+    total++; if (complianceSeverity(c?.vignette?.status) === 'ok') score++;
+    // Inspection (only required for cars 3+ years old)
+    const age = car.annee ? (new Date().getFullYear() - +car.annee) : 0;
+    if (age >= 3) {
+      total++;
+      if (complianceSeverity(c?.visite?.status) === 'ok' || c?.visite?.status === 'NOT_REQUIRED') score++;
+    }
+
+    return total > 0 ? Math.round((score / total) * 100) : 0;
+  }
+
+  readinessClass(score: number): string {
+    if (score >= 100) return 'rdy-full';
+    if (score >= 60)  return 'rdy-mid';
+    return 'rdy-low';
+  }
+
+  showReadiness(car: any): boolean {
+    return ['brouillon', 'setup'].includes(this.effectiveStatus(car));
+  }
 
   t(key: string): string { return this.ts.translate(key); }
 }

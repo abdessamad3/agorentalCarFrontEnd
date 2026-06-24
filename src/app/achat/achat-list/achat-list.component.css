@@ -178,6 +178,13 @@
 
 /* ── Overrides for larger modal ──────────────────────────────────────────── */
 .modal-wide { max-width: 680px; }
+.modal-wide form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
 
 @media (max-width: 768px) {
   .stats-bar { grid-template-columns: 1fr 1fr; }

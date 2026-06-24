@@ -1,0 +1,11 @@
+.pg-bar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.6rem; padding:.65rem 1rem; background:#f7fafc; border-top:1px solid #e2e8f0; border-radius:0 0 12px 12px; }
+.pg-info { font-size:.8rem; color:#718096; }
+.pg-controls { display:flex; align-items:center; gap:.5rem; }
+.pg-limit { padding:.28rem .5rem; border:1px solid #cbd5e0; border-radius:5px; font-size:.78rem; background:#fff; cursor:pointer; outline:none; }
+.pg-limit:focus { border-color:#3182ce; }
+.pg-pages { display:flex; align-items:center; gap:.2rem; }
+.pg-btn { width:28px; height:28px; display:flex; align-items:center; justify-content:center; border:1px solid #e2e8f0; border-radius:5px; background:#fff; cursor:pointer; font-size:.85rem; color:#4a5568; transition:all .15s; padding:0; }
+.pg-btn:hover:not(:disabled) { background:#ebf8ff; border-color:#3182ce; color:#3182ce; }
+.pg-btn:disabled { opacity:.38; cursor:not-allowed; }
+.pg-btn.pg-active { background:#3182ce; border-color:#3182ce; color:#fff; font-weight:700; }
+.pg-ellipsis { padding:0 .2rem; color:#a0aec0; font-size:.8rem; line-height:28px; }

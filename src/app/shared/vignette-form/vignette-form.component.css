@@ -1,0 +1,103 @@
+:host { display: block; }
+
+/* ── Grid & Fields ──────────────────────────────────── */
+.vig-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.vig-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.vig-field-full { grid-column: 1 / -1; }
+
+.vig-field label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.vig-field input {
+  padding: 0.5rem 0.75rem;
+  border: 1.5px solid #e8eefa;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  color: #1a202c;
+  background: white;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.vig-field input:focus { border-color: #2f80ed; box-shadow: 0 0 0 3px rgba(47,128,237,0.1); }
+.vig-field input.vig-invalid { border-color: #eb5757; }
+.vig-input-readonly { background: #f8fafc !important; color: #94a3b8 !important; cursor: default; }
+
+.vig-req    { color: #eb5757; margin-left: 2px; }
+.vig-hint-muted { font-size: 0.72rem; color: #64748b; font-style: italic; }
+.vig-hint-error { font-size: 0.72rem; color: #dc2626; font-style: italic; }
+
+/* ── Error banner ───────────────────────────────────── */
+.vig-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding: 0.7rem 1rem;
+  background: #fff5f5;
+  border: 1px solid #fed7d7;
+  border-radius: 6px;
+  color: #c53030;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+/* ── File upload ────────────────────────────────────── */
+.vig-upload-row { display: flex; align-items: center; gap: 8px; }
+
+.vig-clear-btn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: #a0aec0;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+.vig-clear-btn:hover { color: #e53e3e; background: #fff5f5; }
+
+.vig-file-existing { display: flex; align-items: center; gap: 8px; }
+
+.vig-img-preview {
+  max-height: 120px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: block;
+}
+
+.vig-pdf-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.45rem 0.9rem;
+  border: 1.5px dashed #93c5fd;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.82rem;
+  text-decoration: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+.vig-pdf-link:hover { border-color: #4299e1; background: #ebf8ff; }
+
+/* ── Responsive ─────────────────────────────────────── */
+@media (max-width: 480px) {
+  .vig-grid { grid-template-columns: 1fr; }
+}

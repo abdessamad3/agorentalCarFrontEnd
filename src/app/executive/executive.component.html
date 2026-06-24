@@ -1,0 +1,235 @@
+<div class="rp-page" [dir]="dir">
+
+  <!-- Header -->
+  <div class="rp-header">
+    <div class="rp-header-left">
+      <div class="rp-header-icon" style="background:#1a202c;color:#f6ad55">👑</div>
+      <div>
+        <div class="rp-title">Executive Dashboard</div>
+        <div class="rp-subtitle">High-level operational & financial overview for management</div>
+      </div>
+    </div>
+    <div class="rp-actions">
+      <button class="btn-export btn-print" onclick="window.print()">🖨️ Print</button>
+      <button class="btn-export btn-csv" (click)="load()">↻ Refresh</button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" style="padding:3rem;text-align:center;color:#a0aec0;">
+    <span class="rp-loading-spinner"></span> Loading executive data…
+  </div>
+
+  <ng-container *ngIf="!loading">
+
+    <!-- Alert banner -->
+    <div *ngIf="alerts.length > 0"
+      style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.5rem">
+      <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#a0aec0;margin-bottom:.6rem">
+        Action Required
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.4rem">
+        <div *ngFor="let a of alerts"
+          style="display:flex;align-items:center;gap:.6rem;font-size:.85rem;padding:.4rem .75rem;border-radius:8px;cursor:pointer"
+          [style.background]="a.urgency==='critical'?'#fff5f5':a.urgency==='warning'?'#fffaf0':'#ebf8ff'"
+          [routerLink]="a.link">
+          <span>{{ a.icon }}</span>
+          <span [style.color]="a.urgency==='critical'?'#c53030':a.urgency==='warning'?'#dd6b20':'#2b6cb0'">{{ a.text }}</span>
+          <span style="margin-left:auto;color:#a0aec0;font-size:.75rem">→</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI cards -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem">
+      <a *ngFor="let k of kpis"
+        [routerLink]="k.link"
+        style="text-decoration:none;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:1.25rem 1.5rem;display:block;transition:box-shadow .15s"
+        class="exec-kpi-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
+          <span style="font-size:1.5rem">{{ k.icon }}</span>
+          <span *ngIf="k.trend !== undefined"
+            style="font-size:.75rem;font-weight:700;padding:.2rem .5rem;border-radius:999px"
+            [style.background]="k.trend >= 0 ? '#f0fff4' : '#fff5f5'"
+            [style.color]="k.trend >= 0 ? '#276749' : '#c53030'">
+            {{ k.trend >= 0 ? '+' : '' }}{{ k.trend }}%
+          </span>
+        </div>
+        <div style="font-size:1.4rem;font-weight:800;line-height:1" [style.color]="k.color">{{ k.value }}</div>
+        <div style="font-size:.78rem;font-weight:600;color:#4a5568;margin-top:.25rem">{{ k.label }}</div>
+        <div *ngIf="k.sub" style="font-size:.72rem;color:#a0aec0;margin-top:.2rem">{{ k.sub }}</div>
+      </a>
+    </div>
+
+    <!-- Main grid: chart + fleet status + top vehicles -->
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:1.5rem;margin-bottom:1.5rem">
+
+      <!-- Monthly revenue chart -->
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:1.5rem">
+        <div class="rp-section" style="margin-top:0">Revenue vs Expenses — Last 6 Months</div>
+        <div style="display:flex;align-items:flex-end;gap:8px;height:130px;padding-bottom:1.5rem;border-bottom:1px solid #e2e8f0">
+          <ng-container *ngFor="let b of monthBars">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+              <div style="display:flex;align-items:flex-end;gap:2px;height:120px">
+                <div style="width:14px;border-radius:3px 3px 0 0;background:#4299e1"
+                  [style.height]="b.rH+'px'" [attr.title]="b.label+' Revenue'"></div>
+                <div style="width:14px;border-radius:3px 3px 0 0;background:#fc8181"
+                  [style.height]="b.eH+'px'" [attr.title]="b.label+' Expenses'"></div>
+              </div>
+              <div style="font-size:.65rem;color:#718096;white-space:nowrap;max-width:38px;overflow:hidden;text-overflow:ellipsis" [title]="b.label">
+                {{ b.label.slice(0, 6) }}
+              </div>
+            </div>
+          </ng-container>
+        </div>
+        <div style="display:flex;gap:1rem;margin-top:.75rem;font-size:.75rem">
+          <span style="display:flex;align-items:center;gap:.3rem">
+            <span style="display:inline-block;width:10px;height:10px;background:#4299e1;border-radius:2px"></span> Revenue
+          </span>
+          <span style="display:flex;align-items:center;gap:.3rem">
+            <span style="display:inline-block;width:10px;height:10px;background:#fc8181;border-radius:2px"></span> Expenses
+          </span>
+          <span style="margin-left:auto;font-weight:700;color:#276749">
+            This month: {{ fmt(revenueThisMonth) }}
+            <span style="margin-left:.4rem" [style.color]="revTrendPct>=0?'#276749':'#c53030'">
+              ({{ revTrendPct>=0?'+':'' }}{{ revTrendPct }}%)
+            </span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Fleet status -->
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:1.5rem">
+        <div class="rp-section" style="margin-top:0">Fleet Status</div>
+        <div style="display:flex;flex-direction:column;gap:.75rem">
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:.25rem">
+              <span style="color:#718096">Available</span>
+              <span style="font-weight:700;color:#276749">{{ availableVehicles }}</span>
+            </div>
+            <div style="height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden">
+              <div style="height:100%;background:#48bb78;border-radius:4px"
+                [style.width]="barPct(availableVehicles, totalVehicles)+'%'"></div>
+            </div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:.25rem">
+              <span style="color:#718096">Rented</span>
+              <span style="font-weight:700;color:#2b6cb0">{{ rentedVehicles }}</span>
+            </div>
+            <div style="height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden">
+              <div style="height:100%;background:#4299e1;border-radius:4px"
+                [style.width]="barPct(rentedVehicles, totalVehicles)+'%'"></div>
+            </div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:.25rem">
+              <span style="color:#718096">Maintenance</span>
+              <span style="font-weight:700;color:#dd6b20">{{ maintenanceVehicles }}</span>
+            </div>
+            <div style="height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden">
+              <div style="height:100%;background:#f6ad55;border-radius:4px"
+                [style.width]="barPct(maintenanceVehicles, totalVehicles)+'%'"></div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:1rem;padding:.75rem;background:#ebf8ff;border-radius:10px;text-align:center">
+          <div style="font-size:1.6rem;font-weight:800;color:#2b6cb0">{{ fleetUtilization }}%</div>
+          <div style="font-size:.75rem;color:#4a5568;margin-top:.15rem">Utilization Rate</div>
+        </div>
+        <div style="margin-top:.75rem;display:flex;justify-content:space-between;font-size:.8rem">
+          <a routerLink="/rapports/fleet" style="color:#4299e1;text-decoration:none">Fleet Report →</a>
+          <a routerLink="/fleet-health" style="color:#4299e1;text-decoration:none">Health Scores →</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top vehicles + compliance + cash flow -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem">
+
+      <!-- Top 5 vehicles -->
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:1.5rem">
+        <div class="rp-section" style="margin-top:0">Top 5 Vehicles by Revenue</div>
+        <div *ngIf="topVehicles.length === 0" style="color:#a0aec0;font-size:.82rem;text-align:center;padding:1rem">No data</div>
+        <div style="display:flex;flex-direction:column;gap:.6rem">
+          <div *ngFor="let v of topVehicles; let i=index" style="display:flex;align-items:center;gap:.6rem">
+            <span style="font-size:.85rem;width:20px;text-align:center">{{ i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1) }}</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ v.label }}</div>
+              <div style="font-size:.72rem;color:#718096">{{ v.rentals }} rental{{ v.rentals!==1?'s':'' }}</div>
+            </div>
+            <div style="font-size:.82rem;font-weight:700;color:#276749;white-space:nowrap">{{ fmt(v.revenue) }}</div>
+          </div>
+        </div>
+        <div style="margin-top:.75rem">
+          <a routerLink="/rapports/profitability" style="color:#4299e1;font-size:.78rem;text-decoration:none">Full profitability report →</a>
+        </div>
+      </div>
+
+      <!-- Compliance summary -->
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:1.5rem">
+        <div class="rp-section" style="margin-top:0">Compliance Status</div>
+        <div style="display:flex;flex-direction:column;gap:.75rem">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:.6rem .75rem;background:#fff5f5;border-radius:8px"
+            [style.opacity]="complianceAlerts.overdue===0?'0.5':'1'">
+            <span style="font-size:.82rem;color:#c53030;font-weight:600">🔴 Overdue</span>
+            <span style="font-size:1.1rem;font-weight:800;color:#c53030">{{ complianceAlerts.overdue }}</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:.6rem .75rem;background:#fffaf0;border-radius:8px"
+            [style.opacity]="complianceAlerts.critical===0?'0.5':'1'">
+            <span style="font-size:.82rem;color:#dd6b20;font-weight:600">🟠 Critical</span>
+            <span style="font-size:1.1rem;font-weight:800;color:#dd6b20">{{ complianceAlerts.critical }}</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:.6rem .75rem;background:#fffaf0;border-radius:8px"
+            [style.opacity]="complianceAlerts.warning===0?'0.5':'1'">
+            <span style="font-size:.82rem;color:#d69e2e;font-weight:600">🟡 Warning</span>
+            <span style="font-size:1.1rem;font-weight:800;color:#d69e2e">{{ complianceAlerts.warning }}</span>
+          </div>
+        </div>
+        <div style="margin-top:.75rem;display:flex;gap:.5rem">
+          <a routerLink="/compliance-center" style="color:#4299e1;font-size:.78rem;text-decoration:none">Compliance Center →</a>
+        </div>
+      </div>
+
+      <!-- Cash flow -->
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:1.5rem">
+        <div class="rp-section" style="margin-top:0">Cash Flow</div>
+        <div style="display:flex;flex-direction:column;gap:.75rem">
+          <div style="background:#f0fff4;border-radius:10px;padding:.75rem">
+            <div style="font-size:.72rem;color:#718096;margin-bottom:.2rem">Collected (all time)</div>
+            <div style="font-size:1.2rem;font-weight:800;color:#276749">{{ fmt(collected) }}</div>
+          </div>
+          <div style="background:#fff5f5;border-radius:10px;padding:.75rem">
+            <div style="font-size:.72rem;color:#718096;margin-bottom:.2rem">Outstanding Debt</div>
+            <div style="font-size:1.2rem;font-weight:800;color:#c53030">{{ fmt(outstanding) }}</div>
+          </div>
+          <div style="background:#ebf8ff;border-radius:10px;padding:.75rem">
+            <div style="font-size:.72rem;color:#718096;margin-bottom:.2rem">Clients</div>
+            <div style="font-size:1.2rem;font-weight:800;color:#2b6cb0">{{ totalClients }}</div>
+          </div>
+        </div>
+        <div style="margin-top:.75rem">
+          <a routerLink="/paiement-client" style="color:#4299e1;font-size:.78rem;text-decoration:none">Client payments →</a>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Quick links -->
+    <div style="margin-top:1.5rem;background:#f7fafc;border:1px solid #e2e8f0;border-radius:12px;padding:1rem 1.5rem">
+      <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#a0aec0;margin-bottom:.75rem">Enterprise Reports</div>
+      <div style="display:flex;flex-wrap:wrap;gap:.5rem">
+        <a routerLink="/rapports/fleet"          class="btn-export btn-print">📋 Fleet</a>
+        <a routerLink="/rapports/financial"      class="btn-export btn-print">💹 Financial</a>
+        <a routerLink="/rapports/profitability"  class="btn-export btn-print">📊 Profitability</a>
+        <a routerLink="/rapports/forecast"       class="btn-export btn-print">🔮 Forecast</a>
+        <a routerLink="/rapports/branches"       class="btn-export btn-print">🏢 Branches</a>
+        <a routerLink="/rapports/clients"        class="btn-export btn-print">👥 Customers</a>
+        <a routerLink="/rapports/maintenance"    class="btn-export btn-print">🔧 Maintenance</a>
+        <a routerLink="/maintenance/planning"    class="btn-export btn-print">📅 Planning</a>
+        <a routerLink="/fleet-health"            class="btn-export btn-print">❤️ Health</a>
+        <a routerLink="/compliance-center"       class="btn-export btn-print">⚡ Compliance</a>
+      </div>
+    </div>
+
+  </ng-container>
+</div>

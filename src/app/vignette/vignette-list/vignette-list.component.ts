@@ -1,70 +1,78 @@
-﻿import { Component, OnInit, HostListener } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { TranslationService } from '../../services/translation.service';
 import { CrudService } from '../../services/crud.service';
+import { BtnComponent } from '../../shared/btn/btn.component';
+import { VignetteModalComponent } from '../../shared/vignette-modal/vignette-modal.component';
+import { PaginatorComponent } from '../../shared/paginator/paginator.component';
 
 @Component({
   selector: 'app-vignette-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, TranslatePipe],
+  imports: [CommonModule, FormsModule, TranslatePipe, BtnComponent, VignetteModalComponent, PaginatorComponent],
   templateUrl: './vignette-list.component.html',
   styleUrls: ['../../shared/styles/crud-list.css']
 })
 export class VignetteListComponent implements OnInit {
   items: any[] = [];
   loading = true; error = ''; dir = 'ltr'; search = '';
-  modalMode: 'view' | 'form' | 'delete' | null = null;
-  selected: any = null; form: FormGroup; isSubmitting = false; deleteId: number | null = null; isEditing = false;
+  page = 1; limit = 20; total = 0;
+  modalMode: 'form' | 'delete' | null = null;
+  selected: any = null; isSubmitting = false; deleteId: number | null = null; isEditing = false;
+  saveError: string | null = null;
   readonly endpoint = 'vignette';
   readonly objectEntries = Object.entries;
 
-  constructor(private crud: CrudService, private ts: TranslationService, private fb: FormBuilder) {
-    this.form = this.fb.group({
-      annee:      [new Date().getFullYear(), [Validators.required, Validators.min(2000)]],
-      dateLimite: [''],
-      depenseId:  [null]
-    });
-  }
+  drawerOpen = false;
+  drawerItem: any = null;
+
+  constructor(private crud: CrudService, private ts: TranslationService) {}
 
   ngOnInit() { this.ts.direction$.subscribe(d => this.dir = d); this.load(); }
 
   load() {
     this.loading = true; this.error = '';
-    this.crud.getAll(this.endpoint).subscribe({
-      next: r => { this.items = Array.isArray(r) ? r : (r?.data ?? []); this.loading = false; },
+    this.crud.getPage(this.endpoint, { page: this.page, limit: this.limit, search: this.search }).subscribe({
+      next: r => { this.items = r.data ?? []; this.total = r.meta?.total ?? 0; this.loading = false; },
       error: () => { this.error = this.ts.translate('loadError'); this.loading = false; }
     });
   }
 
-  get filtered() {
-    if (!this.search.trim()) return this.items;
-    const q = this.search.toLowerCase();
-    return this.items.filter(i => Object.values(i).some(v => String(v).toLowerCase().includes(q)));
-  }
+  get filtered() { return this.items; }
 
-  openView(item: any)   { this.selected = item; this.modalMode = 'view'; }
-  openAdd()             { this.selected = null; this.isEditing = false; this.form.reset({ annee: new Date().getFullYear(), montant: 0 }); this.modalMode = 'form'; }
-  openEdit(item: any)   { this.selected = item; this.isEditing = true; this.form.patchValue(item); this.modalMode = 'form'; }
-  openDelete(id: number){ this.deleteId = id; this.modalMode = 'delete'; }
-  closeModal()          { this.modalMode = null; this.selected = null; this.deleteId = null; this.isSubmitting = false; this.isEditing = false; }
+  get paged(): any[] { return this.items; }
 
-  @HostListener('document:keydown.escape') onEscape() { this.closeModal(); }
+  onSearch(): void { this.page = 1; this.load(); }
+  onPageChange(p: number): void { this.page = p; this.load(); }
 
-  save() {
-    if (this.form.invalid) return;
+  openView(item: any)    { this.drawerItem = item; this.drawerOpen = true; }
+  openAdd()              { this.selected = null; this.isEditing = false; this.saveError = null; this.modalMode = 'form'; }
+  openEdit(item: any)    { this.selected = item; this.isEditing = true; this.saveError = null; this.modalMode = 'form'; }
+  openDelete(id: number) { this.deleteId = id; this.modalMode = 'delete'; }
+  closeModal()           { this.modalMode = null; this.selected = null; this.deleteId = null; this.isSubmitting = false; this.isEditing = false; this.saveError = null; }
+  closeDrawer()          { this.drawerOpen = false; this.drawerItem = null; }
+
+  @HostListener('document:keydown.escape') onEscape() { this.closeModal(); this.closeDrawer(); }
+
+  onSave(event: { value: any; file: File | null }): void {
     this.isSubmitting = true;
+    this.saveError = null;
     const req = this.isEditing
-      ? this.crud.update(this.endpoint, this.selected.id, this.form.value)
-      : this.crud.create(this.endpoint, this.form.value);
-    req.subscribe({ next: () => { this.closeModal(); this.load(); }, error: () => { this.isSubmitting = false; } });
+      ? this.crud.update(this.endpoint, this.selected.id, event.value)
+      : this.crud.create(this.endpoint, event.value);
+    req.subscribe({
+      next: () => { this.closeModal(); this.load(); },
+      error: () => { this.isSubmitting = false; this.saveError = this.ts.translate('saveError'); }
+    });
   }
 
   confirmDelete() {
     if (!this.deleteId) return;
     this.crud.remove(this.endpoint, this.deleteId).subscribe({ next: () => { this.closeModal(); this.load(); }, error: () => this.closeModal() });
   }
+
   displayValue(val: any): string {
     if (val === null || val === undefined) return '-';
     if (typeof val === 'object') return val.nom || val.name || val.libelle || val.marque || val.titre || JSON.stringify(val);

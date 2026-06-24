@@ -1,0 +1,126 @@
+<div class="pay-dep-backdrop" (click)="close()">
+  <div class="pay-dep-panel" (click)="$event.stopPropagation()" [attr.dir]="dir">
+
+    <div class="pay-dep-head">
+      <div class="pay-dep-title">
+        <span class="pay-dep-title-icon">💳</span>
+        <div>
+          <div class="pay-dep-title-main">{{ t('paymentHistory') }}</div>
+          <div class="pay-dep-title-sub">{{ title }}</div>
+        </div>
+      </div>
+      <button class="pay-dep-close" (click)="close()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="pay-dep-kpi">
+      <div class="pay-dep-kpi-item">
+        <span class="pay-dep-kpi-label">{{ t('totalAmount') }}</span>
+        <span class="pay-dep-kpi-value">{{ montantTotal | number:'1.0-0' }} MAD</span>
+      </div>
+      <div class="pay-dep-kpi-item pay-dep-kpi-green">
+        <span class="pay-dep-kpi-label">{{ t('totalPaid') }}</span>
+        <span class="pay-dep-kpi-value">{{ montantPaye | number:'1.0-0' }} MAD</span>
+      </div>
+      <div class="pay-dep-kpi-item" [class.pay-dep-kpi-red]="reste > 0">
+        <span class="pay-dep-kpi-label">{{ t('remaining') }}</span>
+        <span class="pay-dep-kpi-value">{{ reste | number:'1.0-0' }} MAD</span>
+      </div>
+    </div>
+
+    <div class="pay-dep-progress-wrap" *ngIf="montantTotal > 0">
+      <div class="pay-dep-progress-bar">
+        <div class="pay-dep-progress-fill" [style.width.%]="progressPct"></div>
+      </div>
+      <span class="pay-dep-progress-pct">{{ progressPct }}%</span>
+    </div>
+
+    <div class="pay-dep-history">
+      <div class="pay-dep-section-title">{{ t('installments') }}</div>
+      <div *ngIf="loading" class="pay-dep-loading"><span class="spin-sm"></span> {{ t('loading') }}</div>
+      <div *ngIf="!loading && paiements.length === 0" class="pay-dep-empty">{{ t('noPayments') }}</div>
+      <table *ngIf="!loading && paiements.length > 0" class="pay-dep-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>{{ t('date') }}</th>
+            <th>{{ t('totalAmount') }}</th>
+            <th>{{ t('note') }}</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of paiements; let i = index" class="pay-dep-row"
+              [class.pay-dep-initial-row]="p.paymentType === 'initial'">
+            <td class="pay-dep-num">{{ i + 1 }}</td>
+            <td>{{ p.datePaiement | date:'dd/MM/yyyy' }}</td>
+            <td class="pay-dep-amt">{{ p.montant | number:'1.0-0' }} MAD</td>
+            <td class="pay-dep-note">
+              <span *ngIf="p.paymentType === 'initial'" class="pay-dep-initial-badge">{{ t('initialPayment') || 'Initial' }}</span>
+              <span *ngIf="p.paymentType !== 'initial'">{{ p.note || '—' }}</span>
+            </td>
+            <td class="pay-dep-del-cell">
+              <button class="pay-dep-del-btn" [disabled]="deleteId === p.id"
+                      (click)="deletePay(p.id)" [title]="t('deletePayment')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+                </svg>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pay-dep-add-form" [formGroup]="form" *ngIf="reste > 0">
+      <div class="pay-dep-section-title">{{ t('addInstallment') }}</div>
+      <div class="pay-dep-form-row">
+        <div class="pay-dep-field">
+          <label>{{ t('totalAmount') }}</label>
+          <input type="number" formControlName="montant" min="0.01" [max]="reste" step="0.01"
+                 class="pay-dep-input" placeholder="0.00"
+                 [class.is-invalid]="(form.get('montant')?.invalid && form.get('montant')?.touched) || (+form.get('montant')?.value > reste)">
+          <span class="pay-dep-field-error" *ngIf="+form.get('montant')?.value > reste">
+            {{ t('exceeds_remaining') || 'Exceeds remaining' }} ({{ reste | number:'1.0-2' }} MAD)
+          </span>
+        </div>
+        <div class="pay-dep-field">
+          <label>{{ t('date') }}</label>
+          <input type="date" formControlName="datePaiement" class="pay-dep-input"
+                 [min]="dateFacture || ''"
+                 [class.is-invalid]="(form.get('datePaiement')?.invalid && form.get('datePaiement')?.touched) || !!(dateFacture && form.get('datePaiement')?.value && form.get('datePaiement')?.value < dateFacture)">
+          <span class="pay-dep-field-error"
+                *ngIf="dateFacture && form.get('datePaiement')?.value && form.get('datePaiement')?.value < dateFacture">
+            {{ t('paymentBeforeInvoice') || 'Cannot be before invoice date' }}
+          </span>
+        </div>
+        <div class="pay-dep-field pay-dep-field-wide">
+          <label>{{ t('note') }}</label>
+          <input type="text" formControlName="note" class="pay-dep-input" placeholder="Optional note">
+        </div>
+      </div>
+      <div class="pay-dep-form-actions">
+        <button class="btn-pay-dep-submit" (click)="submit()"
+                [disabled]="submitting || form.invalid || +form.get('montant')?.value > reste || !!(dateFacture && form.get('datePaiement')?.value && form.get('datePaiement')?.value < dateFacture)">
+          <span *ngIf="submitting" class="spin-sm"></span>
+          <svg *ngIf="!submitting" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          {{ submitting ? t('saving') : t('addInstallment') }}
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="reste <= 0 && montantTotal > 0" class="pay-dep-paid-banner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+      Fully paid
+    </div>
+
+  </div>
+</div>

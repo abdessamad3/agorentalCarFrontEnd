@@ -1,8 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BureauService } from '../../services/bureauservice.service';
+import { ToastService } from '../../services/toast.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-bureau-edit',
@@ -17,21 +20,28 @@ export class BureauEditComponent implements OnInit {
   isSubmitting = false;
   error = '';
   bureauId: number | null = null;
+  users: any[] = [];
 
   constructor(
     private fb: FormBuilder,
     private bureauService: BureauService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private toast: ToastService,
+    private http: HttpClient,
   ) {
     this.bureauForm = this.fb.group({
       nom: ['', Validators.required],
       adresse: [''],
-      statut: ['actif', Validators.required]
+      statut: ['actif', Validators.required],
+      managerId: [null]
     });
   }
 
   ngOnInit(): void {
+    this.http.get<any>(`${environment.apiUrl}/utilisateur?limit=100`).subscribe({
+      next: (r) => { this.users = Array.isArray(r) ? r : (r?.data ?? []); }
+    });
     this.route.params.subscribe(params => {
       if (params['id']) {
         this.bureauId = params['id'];
@@ -40,18 +50,22 @@ export class BureauEditComponent implements OnInit {
     });
   }
 
+  get managers(): any[] {
+    return this.users.filter(u => (u.roles || []).includes('ROLE_MANAGER'));
+  }
+
   loadBureau(id: number): void {
     this.bureauService.getBureauById(id).subscribe({
       next: (data) => {
         this.bureauForm.patchValue({
           nom: data.nom,
           adresse: data.adresse,
-          statut: data.statut
+          statut: data.statut,
+          managerId: data.managerId ?? null
         });
         this.loading = false;
       },
       error: (err) => {
-        console.error('❌ Error:', err);
         this.error = 'Failed to load bureau';
         this.loading = false;
       }
@@ -60,22 +74,21 @@ export class BureauEditComponent implements OnInit {
 
   onSubmit(): void {
     if (this.bureauForm.invalid || !this.bureauId) {
-      alert('Please fill all required fields');
+      this.toast.show('Please fill all required fields', 'warning');
       return;
     }
 
     this.isSubmitting = true;
 
     this.bureauService.updateBureau(this.bureauId, this.bureauForm.value).subscribe({
-      next: (response) => {
+      next: () => {
         this.isSubmitting = false;
-        alert('Bureau updated successfully!');
+        this.toast.show('Bureau updated successfully!', 'success');
         this.router.navigate(['/bureau', this.bureauId]);
       },
       error: (err) => {
         this.isSubmitting = false;
-        console.error('❌ Error:', err);
-        alert('Error: ' + (err.error?.message || 'Failed to update bureau'));
+        this.toast.show(err.error?.message || 'Failed to update bureau', 'error');
       }
     });
   }

@@ -2,31 +2,47 @@
 
   <!-- Logo -->
   <div class="sidebar-header">
-    <div class="logo-icon">🚙</div>
-    <div class="logo-text">{{ getLabel('logo') }}</div>
+    <div class="logo-icon">
+      <img *ngIf="logoUrl" [src]="logoUrl" class="sidebar-logo-img" alt="logo"
+           (error)="logoUrl = null" />
+      <span *ngIf="!logoUrl" class="logo-fallback">🚙</span>
+    </div>
+    <div class="logo-text">{{ companyName }}</div>
+  </div>
+
+  <!-- Bureau Switcher -->
+  <div class="bureau-switcher" *ngIf="bureaux.length > 1">
+    <select (change)="onBureauSwitch($event)">
+      <option *ngFor="let b of bureaux" [value]="b.id" [selected]="b.id === currentBureauId">{{ b.nom }}</option>
+    </select>
   </div>
 
   <!-- Language Switcher -->
   <div class="lang-switcher">
-    <button [class.active]="currentLang === 'en'" (click)="changeLanguage('en')">EN</button> |
-    <button [class.active]="currentLang === 'fr'" (click)="changeLanguage('fr')">FR</button> |
+    <button [class.active]="currentLang === 'en'" (click)="changeLanguage('en')">EN</button>
+    <button [class.active]="currentLang === 'fr'" (click)="changeLanguage('fr')">FR</button>
     <button [class.active]="currentLang === 'ar'" (click)="changeLanguage('ar')">AR</button>
   </div>
 
   <!-- Navigation -->
   <nav class="sidebar-nav">
     <ng-container *ngFor="let group of menuGroups">
-      <div *ngIf="group.labelKey" class="nav-group-label">{{ getLabel(group.labelKey) }}</div>
-      <a
-        *ngFor="let item of group.items"
-        [routerLink]="item.link"
-        routerLinkActive="active-link"
-        (click)="onNavClick()"
-        class="nav-item"
-      >
-        <span class="nav-icon">{{ item.icon }}</span>
-        <span class="nav-label">{{ getLabel(item.key) }}</span>
-      </a>
+      <ng-container *ngIf="hasVisibleItems(group)">
+        <div *ngIf="group.labelKey" class="nav-group-label">{{ getLabel(group.labelKey) }}</div>
+        <ng-container *ngFor="let item of group.items">
+          <a
+            *ngIf="canSee(item.roles)"
+            [routerLink]="item.link"
+            routerLinkActive="active-link"
+            (click)="onNavClick()"
+            class="nav-item"
+          >
+            <span class="nav-icon">{{ item.icon }}</span>
+            <span class="nav-label">{{ getLabel(item.key) }}</span>
+            <span *ngIf="item.badge" class="nav-badge">{{ item.badge }}</span>
+          </a>
+        </ng-container>
+      </ng-container>
     </ng-container>
   </nav>
 
@@ -37,4 +53,5 @@
       <span>{{ getLabel('logout') }}</span>
     </button>
   </div>
+
 </div>
