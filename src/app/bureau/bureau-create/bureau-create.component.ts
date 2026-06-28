@@ -29,6 +29,7 @@ export class BureauCreateComponent implements OnInit {
     this.bureauForm = this.fb.group({
       nom: ['', Validators.required],
       adresse: [''],
+      telephone: [''],
       statut: ['actif', Validators.required],
       managerId: [null]
     });

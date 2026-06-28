@@ -164,11 +164,15 @@ export class TopHeaderComponent implements OnInit, OnDestroy {
   }
 
   markRead(id: number): void {
+    const n = this.notifications.find(x => x.id === id);
     this.notifService.markRead(id).subscribe({
       next: () => {
-        const n = this.notifications.find(x => x.id === id);
         if (n) { n.isRead = true; n.readAt = new Date().toISOString(); }
         this.notifService.refreshCount();
+        if (n?.deepLink) {
+          this.notifPanelOpen = false;
+          this.router.navigateByUrl(n.deepLink);
+        }
       },
     });
   }

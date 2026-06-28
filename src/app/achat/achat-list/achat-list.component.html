@@ -160,10 +160,6 @@
                 <label>{{ t('purchasePrice') }} <span class="required">*</span></label>
                 <input type="number" formControlName="prixAchat" min="0" />
               </div>
-              <div class="form-group">
-                <label>{{ t('apport') }} <span class="required">*</span></label>
-                <input type="number" formControlName="apport" min="0" />
-              </div>
             </div>
           </div>
 
@@ -182,17 +178,23 @@
               <div class="form-section-title">{{ t('creditDetails') }}</div>
               <div class="form-row">
                 <div class="form-group">
+                  <label>{{ t('apport') }}</label>
+                  <input type="number" formControlName="apport" min="0" />
+                </div>
+                <div class="form-group">
                   <label>{{ t('mensualite') }} <span class="required">*</span></label>
                   <input type="number" formControlName="mensualite" min="1" />
                 </div>
+              </div>
+              <div class="form-row">
                 <div class="form-group">
                   <label>{{ t('tauxInteret') }}</label>
                   <input type="number" formControlName="tauxInteret" min="0" step="0.1" />
                 </div>
-              </div>
-              <div class="form-group">
-                <label>{{ t('dateDebutCredit') }}</label>
-                <input type="date" formControlName="dateDebutCredit" />
+                <div class="form-group">
+                  <label>{{ t('dateDebutCredit') }}</label>
+                  <input type="date" formControlName="dateDebutCredit" />
+                </div>
               </div>
             </div>
 

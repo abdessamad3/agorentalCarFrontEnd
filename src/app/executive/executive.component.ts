@@ -1,10 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { forkJoin, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { forkJoin } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { safe, toArr } from '../shared/utils/rx.utils';
 import { CrudService } from '../services/crud.service';
 import { TranslationService } from '../services/translation.service';
+import { daysUntil } from '../shared/utils/date.utils';
 
 interface KPI { label: string; value: string; sub?: string; trend?: number; color: string; icon: string; link?: string; }
 interface AlertRow { icon: string; text: string; urgency: 'critical' | 'warning' | 'info'; link: string; }
@@ -63,9 +65,6 @@ export class ExecutiveComponent implements OnInit {
     this.load();
   }
 
-  private safe(obs: any) { return obs.pipe(catchError(() => of([]))); }
-  private toArr(r: any): any[] { return Array.isArray(r) ? r : (r?.data ?? []); }
-
   load() {
     this.loading = true;
     const now     = new Date();
@@ -74,26 +73,26 @@ export class ExecutiveComponent implements OnInit {
     const lastYM  = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}`;
 
     forkJoin({
-      cars:         this.safe(this.crud.getAll('voiture',         { limit: 500 })),
-      reservations: this.safe(this.crud.getAll('reservation',     { limit: 3000 })),
-      depenses:     this.safe(this.crud.getAll('depense',         { limit: 2000 })),
-      reparations:  this.safe(this.crud.getAll('reparation')),
-      clients:      this.safe(this.crud.getAll('client',          { limit: 100 })),
-      assur:        this.safe(this.crud.getAll('assurance',       { limit: 500 })),
-      vignettes:    this.safe(this.crud.getAll('vignette',        { limit: 500 })),
-      suivis:       this.safe(this.crud.getAll('suivi-technique', { limit: 500 })),
-      vidanges:     this.safe(this.crud.getAll('vidange',         { limit: 500 })),
+      cars:         safe(this.crud.getAll('voiture',         { limit: 500 })),
+      reservations: safe(this.crud.getAll('reservation',     { limit: 3000 })),
+      depenses:     safe(this.crud.getAll('depense',         { limit: 2000 })),
+      reparations:  safe(this.crud.getAll('reparation')),
+      clients:      safe(this.crud.getAll('client',          { limit: 100 })),
+      assur:        safe(this.crud.getAll('assurance',       { limit: 500 })),
+      vignettes:    safe(this.crud.getAll('vignette',        { limit: 500 })),
+      suivis:       safe(this.crud.getAll('suivi-technique', { limit: 500 })),
+      vidanges:     safe(this.crud.getAll('vidange',         { limit: 500 })),
     }).pipe(
       map(({ cars, reservations, depenses, reparations, clients, assur, vignettes, suivis, vidanges }: any) => {
-        const carList  = this.toArr(cars);
-        const resList  = this.toArr(reservations);
-        const expList  = this.toArr(depenses);
-        const repList  = this.toArr(reparations);
-        const clientList = this.toArr(clients);
-        const asList   = this.toArr(assur);
-        const vigList  = this.toArr(vignettes);
-        const suvList  = this.toArr(suivis);
-        const vidList  = this.toArr(vidanges);
+        const carList  = toArr(cars);
+        const resList  = toArr(reservations);
+        const expList  = toArr(depenses);
+        const repList  = toArr(reparations);
+        const clientList = toArr(clients);
+        const asList   = toArr(assur);
+        const vigList  = toArr(vignettes);
+        const suvList  = toArr(suivis);
+        const vidList  = toArr(vidanges);
 
         // ── Fleet ────────────────────────────────────────────────
         this.totalVehicles      = carList.length;
@@ -188,20 +187,15 @@ export class ExecutiveComponent implements OnInit {
 
         // ── Compliance alerts ────────────────────────────────────
         let overdue = 0, critical = 0, warning = 0;
-        const daysFrom = (ds: string | null | undefined) => {
-          if (!ds) return null;
-          const d = new Date(ds);
-          return isNaN(d.getTime()) ? null : Math.round((d.getTime() - Date.now()) / 86_400_000);
-        };
         for (const a of [...asList, ...vigList]) {
-          const days = daysFrom(a.dateFin ?? a.dateExpiration);
+          const days = daysUntil(a.dateFin ?? a.dateExpiration);
           if (days === null) continue;
           if (days < 0)    overdue++;
           else if (days <= 7)  critical++;
           else if (days <= 30) warning++;
         }
         for (const s of suvList) {
-          const days = daysFrom(s.prochainDate ?? s.dateProchaine);
+          const days = daysUntil(s.prochainDate ?? s.dateProchaine);
           if (days === null) continue;
           if (days < 0)    overdue++;
           else if (days <= 7)  critical++;

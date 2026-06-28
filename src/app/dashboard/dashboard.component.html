@@ -1,524 +1,604 @@
-<div class="dashboard" [class.rtl]="dir === 'rtl'">
+<!-- ════════════════════════════════════════
+     MOBILE LAYOUT
+════════════════════════════════════════ -->
+<div *ngIf="isMobile" class="cal-mobile-page" [class.rtl]="dir === 'rtl'" [attr.dir]="dir">
 
-  <!-- Loading -->
-  <div *ngIf="loading" class="loading-overlay">
-    <div class="spinner"></div>
-  </div>
-
-  <div class="dash-inner">
-
-  <!-- ===== KPI CARDS ===== -->
-  <div class="kpi-grid">
-
-    <div class="kpi-card kpi-red">
-      <div class="kpi-top">
-        <div class="kpi-label">{{ t('expenses') }}</div>
-        <div class="kpi-icon">📉</div>
+  <!-- Mobile Stats Row -->
+  <div class="mob-stats-scroll">
+    <div class="mob-stat-card stat-clickable" (click)="openStatModal('active')">
+      <div class="mob-stat-icon msic-green">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
       </div>
-      <div class="kpi-value">{{ totalExpenses | number:'1.0-0' }} <span class="kpi-currency">MAD</span></div>
-      <div class="kpi-sub">{{ t('monthlySummary') }}</div>
-    </div>
-
-    <div class="kpi-card kpi-green">
-      <div class="kpi-top">
-        <div class="kpi-label">{{ t('revenue') }}</div>
-        <div class="kpi-icon">💰</div>
+      <div>
+        <div class="mob-stat-num">{{ activeCount }}</div>
+        <div class="mob-stat-lbl">{{ t('activeRentals') }}</div>
       </div>
-      <div class="kpi-value">{{ totalRevenue | number:'1.0-0' }} <span class="kpi-currency">MAD</span></div>
-      <div class="kpi-sub">{{ t('totalRevenue') }}</div>
     </div>
-
-    <div class="kpi-card kpi-teal">
-      <div class="kpi-top">
-        <div class="kpi-label">{{ t('occupancyRate') }}</div>
-        <div class="kpi-icon">📊</div>
+    <div class="mob-stat-card stat-clickable" (click)="openStatModal('thisMonth')">
+      <div class="mob-stat-icon msic-blue">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
       </div>
-      <div class="kpi-value">{{ occupancyRate }}<span class="kpi-currency">%</span></div>
-      <div class="kpi-sub">{{ bookedCars }} / {{ totalCars }} {{ t('myCars') }}</div>
-    </div>
-
-    <div class="kpi-card kpi-blue">
-      <div class="kpi-top">
-        <div class="kpi-label">{{ t('activeBookings') }}</div>
-        <div class="kpi-icon">📅</div>
+      <div>
+        <div class="mob-stat-num">{{ thisMonthCount }}</div>
+        <div class="mob-stat-lbl">{{ t('thisMonth') }}</div>
       </div>
-      <div class="kpi-value">{{ activeBookings }}</div>
-      <div class="kpi-sub">{{ t('reservations') }}</div>
     </div>
 
-    <div class="kpi-card kpi-darkblue">
-      <div class="kpi-top">
-        <div class="kpi-label">{{ t('totalCars') }}</div>
-        <div class="kpi-icon">🚗</div>
+    <div class="mob-stat-card stat-clickable" (click)="openStatModal('available')">
+      <div class="mob-stat-icon msic-navy">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
       </div>
-      <div class="kpi-value">{{ totalCars }}</div>
-      <div class="kpi-sub">{{ t('myCars') }}</div>
-    </div>
-
-    <div class="kpi-card kpi-purple">
-      <div class="kpi-top">
-        <div class="kpi-label">{{ t('clients') }}</div>
-        <div class="kpi-icon">👥</div>
+      <div>
+        <div class="mob-stat-num">{{ availableFleet }}</div>
+        <div class="mob-stat-lbl">{{ t('availableCars') }}</div>
       </div>
-      <div class="kpi-value">{{ totalClients }}</div>
-      <div class="kpi-sub">{{ t('clients') }}</div>
     </div>
-
-  </div>
-
-  <!-- ===== COMPLIANCE KPI CARDS ===== -->
-  <div class="kpi-grid compliance-kpi-grid" *ngIf="totalCars > 0">
-    <div class="kpi-card kpi-green">
-      <div class="kpi-top"><div class="kpi-label">{{ t('compliant') }}</div><div class="kpi-icon">✅</div></div>
-      <div class="kpi-value">{{ compliantCount }}</div>
-      <div class="kpi-sub">{{ t('myCars') }}</div>
-    </div>
-    <div class="kpi-card kpi-yellow">
-      <div class="kpi-top"><div class="kpi-label">{{ t('expiringSoon') }}</div><div class="kpi-icon">⚠️</div></div>
-      <div class="kpi-value">{{ warningCount }}</div>
-      <div class="kpi-sub">&le;30 {{ t('days') }}</div>
-    </div>
-    <div class="kpi-card kpi-orange">
-      <div class="kpi-top"><div class="kpi-label">{{ t('criticalDocs') }}</div><div class="kpi-icon">🔴</div></div>
-      <div class="kpi-value">{{ criticalCount }}</div>
-      <div class="kpi-sub">&le;7 {{ t('days') }}</div>
-    </div>
-    <div class="kpi-card kpi-red">
-      <div class="kpi-top"><div class="kpi-label">{{ t('blocked') }}</div><div class="kpi-icon">🚫</div></div>
-      <div class="kpi-value">{{ blockedCount }}</div>
-      <div class="kpi-sub">{{ t('expiredOrMissing') }}</div>
+    <div class="mob-stat-card stat-clickable" (click)="openStatModal('returnToday')">
+      <div class="mob-stat-icon msic-purple">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
+      </div>
+      <div>
+        <div class="mob-stat-num">{{ returnTodayCount }}</div>
+        <div class="mob-stat-lbl">{{ t('returningToday') }}</div>
+      </div>
     </div>
   </div>
 
-  <!-- ===== CREDIT KPI STRIP ===== -->
-  <div class="credit-strip" *ngIf="creditsActive > 0 || creditsOverdue > 0">
-    <div class="cs-item cs-active">
-      <span class="cs-icon">📈</span>
-      <div class="cs-body">
-        <div class="cs-val">{{ creditsActive }}</div>
-        <div class="cs-lbl">Credits Active</div>
-      </div>
+  <!-- Mobile Header -->
+  <div class="mob-header">
+    <div class="mob-nav-row">
+      <button class="mob-nav-btn" (click)="mobilePrev()" [disabled]="mobileView === 'agenda'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="mob-period-label">{{ mobileHeaderLabel }}</span>
+      <button class="mob-nav-btn" (click)="mobileNext()" [disabled]="mobileView === 'agenda'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+      <button class="mob-today-btn" (click)="goToToday()" [class.today-active]="isViewingCurrentMonth && mobileView !== 'day' || isViewingToday && mobileView === 'day'">
+        {{ t('today') }}
+      </button>
     </div>
-    <div class="cs-item cs-due">
-      <span class="cs-icon">📆</span>
-      <div class="cs-body">
-        <div class="cs-val">{{ creditsDue | number:'1.0-0' }} <span class="cs-curr">MAD</span></div>
-        <div class="cs-lbl">Due This Month</div>
-      </div>
+
+    <div class="mob-view-tabs">
+      <button class="mob-vtab" [class.active]="mobileView === 'month'"  (click)="setMobileView('month')">{{ t('month') }}</button>
+      <button class="mob-vtab" [class.active]="mobileView === 'week'"   (click)="setMobileView('week')">{{ t('week') }}</button>
+      <button class="mob-vtab" [class.active]="mobileView === 'day'"    (click)="setMobileView('day')">{{ t('day') }}</button>
+      <button class="mob-vtab" [class.active]="mobileView === 'agenda'" (click)="setMobileView('agenda')">{{ t('agenda') }}</button>
+      <button class="mob-filter-btn" (click)="showMobileFilter = !showMobileFilter" [class.filter-active]="filterStatus !== 'all'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+      </button>
     </div>
-    <div class="cs-item" [class.cs-overdue]="creditsOverdue > 0" [class.cs-ok]="creditsOverdue === 0">
-      <span class="cs-icon">{{ creditsOverdue > 0 ? '⚠️' : '✅' }}</span>
-      <div class="cs-body">
-        <div class="cs-val">{{ creditsOverdue }}</div>
-        <div class="cs-lbl">Credits Overdue</div>
-      </div>
+
+    <div *ngIf="showMobileFilter" class="mob-filter-dropdown">
+      <button class="mob-fpill"              [class.on]="filterStatus === 'all'"       (click)="setFilter('all')">{{ t('all') }}</button>
+      <button class="mob-fpill mob-fp-blue"  [class.on]="filterStatus === 'confirmed'" (click)="setFilter('confirmed')">{{ t('confirmed') }}</button>
+      <button class="mob-fpill mob-fp-green" [class.on]="filterStatus === 'active'"    (click)="setFilter('active')">{{ t('inProgress') }}</button>
+      <button class="mob-fpill mob-fp-orange"[class.on]="filterStatus === 'pending'"   (click)="setFilter('pending')">{{ t('pending') }}</button>
+      <button class="mob-fpill mob-fp-teal"  [class.on]="filterStatus === 'available'" (click)="setFilter('available')">{{ t('available') }}</button>
     </div>
-    <div class="cs-item cs-debt">
-      <span class="cs-icon">💰</span>
-      <div class="cs-body">
-        <div class="cs-val">{{ fmt(creditDebtTotal) }} <span class="cs-curr">MAD</span></div>
-        <div class="cs-lbl">Remaining Debt</div>
-      </div>
-    </div>
-    <a routerLink="/credit-monitoring" class="cs-details-link">View Details →</a>
   </div>
 
-  <!-- ===== COMPLIANCE ALERT TABLES ===== -->
-  <div class="alerts-row" *ngIf="critical7Days.length > 0 || expiringSoon30.length > 0">
-
-    <div class="card alert-card alert-expired-card" *ngIf="critical7Days.length > 0">
-      <div class="card-header">
-        <span class="card-title alert-title-expired">🔴 {{ t('criticalDocs') }} (&le;7j) ({{ critical7Days.length }})</span>
-        <a routerLink="/voiture" class="card-link">→</a>
-      </div>
-      <div class="alert-list">
-        <a *ngFor="let item of critical7Days" [routerLink]="['/voiture', item.car.id]" class="alert-item alert-item-expired">
-          <div class="alert-car">
-            <span class="alert-car-label">{{ item.car.marque }} {{ item.car.modele }}</span>
-            <span class="alert-plate">{{ item.car.immatriculation || '—' }}</span>
-          </div>
-          <div class="alert-doc"><span class="alert-doc-type">{{ item.doc }}</span></div>
-          <span class="alert-days expired-days">{{ item.days }}j</span>
-        </a>
+  <!-- Month View -->
+  <div *ngIf="mobileView === 'month'" class="mob-month-view"
+       (touchstart)="onTouchStart($event)" (touchend)="onTouchEnd($event)">
+    <div class="mob-day-headers">
+      <div *ngFor="let d of dayLabels; let i = index"
+           class="mob-dh" [class.mob-dh-weekend]="i === 0 || i === 6">{{ d }}</div>
+    </div>
+    <div *ngIf="loading" class="mob-month-grid">
+      <div class="mob-cell mob-sk-cell" *ngFor="let _ of skeletonArr">
+        <div class="mob-sk-num"></div>
       </div>
     </div>
-
-    <div class="card alert-card alert-due-card" *ngIf="expiringSoon30.length > 0">
-      <div class="card-header">
-        <span class="card-title alert-title-due">⚠️ {{ t('expiringSoon') }} (&le;30j) ({{ expiringSoon30.length }})</span>
-        <a routerLink="/voiture" class="card-link">→</a>
-      </div>
-      <div class="alert-list">
-        <a *ngFor="let item of expiringSoon30" [routerLink]="['/voiture', item.car.id]" class="alert-item alert-item-due">
-          <div class="alert-car">
-            <span class="alert-car-label">{{ item.car.marque }} {{ item.car.modele }}</span>
-            <span class="alert-plate">{{ item.car.immatriculation || '—' }}</span>
+    <div *ngIf="!loading" class="mob-month-grid">
+      <ng-container *ngFor="let week of weeks">
+        <div *ngFor="let day of week"
+             class="mob-cell"
+             [class.other-month]="!day.isCurrentMonth"
+             [class.mob-today]="day.isToday"
+             [class.mob-weekend]="day.isWeekend && !day.isToday"
+             [class.has-events]="day.bookings.length > 0"
+             (click)="selectMobileDay(day)">
+          <span class="mob-day-num" [class.mob-today-num]="day.isToday">{{ day.dayNum }}</span>
+          <div *ngIf="day.bookings.length > 0" class="mob-event-dots">
+            <span *ngFor="let b of day.bookings | slice:0:3"
+                  class="mob-dot" [ngClass]="'dot-' + bookingStatusClass(b)"></span>
+            <span *ngIf="day.bookings.length > 3" class="mob-dot-more">+{{ day.bookings.length - 3 }}</span>
           </div>
-          <div class="alert-doc"><span class="alert-doc-type">{{ item.doc }}</span></div>
-          <span class="alert-days due-days">{{ item.days }}j</span>
-        </a>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ===== DOCUMENT ALERTS ===== -->
-  <div class="alerts-row" *ngIf="expiredAlerts.length > 0 || dueThisMonthAlerts.length > 0">
-
-    <!-- Expired Documents -->
-    <div class="card alert-card alert-expired-card" *ngIf="expiredAlerts.length > 0">
-      <div class="card-header">
-        <span class="card-title alert-title-expired">&#9888; {{ t('expiredDocuments') }} ({{ expiredAlerts.length }})</span>
-        <a routerLink="/voiture" class="card-link">→</a>
-      </div>
-      <div class="alert-list">
-        <a *ngFor="let a of expiredAlerts" [routerLink]="['/voiture', a.carId]" class="alert-item alert-item-expired">
-          <div class="alert-car">
-            <span class="alert-car-label">{{ a.carLabel }}</span>
-            <span class="alert-plate">{{ a.immatriculation }}</span>
-          </div>
-          <div class="alert-doc">
-            <span class="alert-doc-type">{{ docTypeLabel(a.docType) }}</span>
-            <span class="alert-date">{{ a.date | date:'dd/MM/yyyy' }}</span>
-          </div>
-          <span class="alert-days expired-days">{{ -a.daysOverOrLeft }}j</span>
-        </a>
-      </div>
-    </div>
-
-    <!-- Due This Month -->
-    <div class="card alert-card alert-due-card" *ngIf="dueThisMonthAlerts.length > 0">
-      <div class="card-header">
-        <span class="card-title alert-title-due">&#128276; {{ t('dueThisMonth') }} ({{ dueThisMonthAlerts.length }})</span>
-        <a routerLink="/voiture" class="card-link">→</a>
-      </div>
-      <div class="alert-list">
-        <a *ngFor="let a of dueThisMonthAlerts" [routerLink]="['/voiture', a.carId]" class="alert-item alert-item-due">
-          <div class="alert-car">
-            <span class="alert-car-label">{{ a.carLabel }}</span>
-            <span class="alert-plate">{{ a.immatriculation }}</span>
-          </div>
-          <div class="alert-doc">
-            <span class="alert-doc-type">{{ docTypeLabel(a.docType) }}</span>
-            <span class="alert-date">{{ a.date | date:'dd/MM/yyyy' }}</span>
-          </div>
-          <span class="alert-days due-days">{{ a.daysOverOrLeft }}j</span>
-        </a>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ===== CARS IN REPAIR ===== -->
-  <div class="card repair-card" *ngIf="carsInRepair.length > 0">
-    <div class="card-header">
-      <span class="card-title">🔧 {{ t('carsInRepair') }} <span class="repair-count-badge">{{ carsInRepair.length }}</span></span>
-      <a routerLink="/reparation" class="card-link">{{ t('all') }} →</a>
-    </div>
-    <div class="repair-list">
-      <a *ngFor="let item of carsInRepair" [routerLink]="['/voiture', item.car?.id]" class="repair-item">
-        <div class="repair-car-icon">🔧</div>
-        <div class="repair-car-info">
-          <span class="repair-car-name">{{ item.car?.marque }} {{ item.car?.modele }}</span>
-          <span class="repair-car-plate">{{ item.car?.immatriculation || '—' }}</span>
         </div>
-        <div class="repair-desc">{{ item.repair.descriptionTechnique || '—' }}</div>
-        <div class="repair-dates">
-          <span class="repair-date-from">{{ item.repair.dateDebut | date:'dd/MM/yy' }}</span>
-          <span class="repair-arrow">→</span>
-          <span class="repair-date-to" [class.repair-ongoing]="!item.repair.dateFin">
-            {{ item.repair.dateFin ? (item.repair.dateFin | date:'dd/MM/yy') : t('ongoing') }}
-          </span>
+      </ng-container>
+    </div>
+  </div>
+
+  <!-- Week View -->
+  <div *ngIf="mobileView === 'week'" class="mob-week-view"
+       (touchstart)="onTouchStart($event)" (touchend)="onTouchEnd($event)">
+    <div class="mob-week-grid">
+      <div *ngFor="let cell of weekCells"
+           class="mob-week-col"
+           [class.mob-wc-today]="cell.isToday"
+           [class.mob-wc-weekend]="cell.isWeekend"
+           [class.has-events]="cell.bookings.length > 0"
+           (click)="selectMobileDay(cell)">
+        <div class="mob-wc-dayname">{{ dayLabels[cell.date.getDay()] }}</div>
+        <div class="mob-wc-num" [class.mob-today-num]="cell.isToday">{{ cell.dayNum }}</div>
+        <div *ngIf="cell.bookings.length > 0" class="mob-wc-badge">{{ cell.bookings.length }}</div>
+        <div *ngIf="cell.bookings.length === 0" class="mob-wc-empty-dot"></div>
+        <div class="mob-wc-dots">
+          <span *ngFor="let b of cell.bookings | slice:0:3"
+                class="mob-dot mob-dot-sm" [ngClass]="'dot-' + bookingStatusClass(b)"></span>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Day View -->
+  <div *ngIf="mobileView === 'day'" class="mob-day-view"
+       (touchstart)="onTouchStart($event)" (touchend)="onTouchEnd($event)">
+    <div *ngIf="dayViewCell?.bookings?.length === 0" class="mob-empty-state">
+      <div class="mob-empty-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </div>
+      <div class="mob-empty-title">{{ t('noBookingsForDay') }}</div>
+      <a routerLink="/reservation/create" class="mob-empty-cta">{{ t('newBooking') }}</a>
+    </div>
+    <div *ngIf="dayViewCell && dayViewCell.bookings.length > 0" class="mob-day-list">
+      <div *ngFor="let b of dayViewCell.bookings"
+           class="mob-day-item" [ngClass]="'mob-dmi-' + bookingStatusClass(b)">
+        <div class="mob-dmi-accent"></div>
+        <div class="mob-dmi-body">
+          <div class="mob-dmi-top">
+            <span class="mob-dmi-vehicle">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+              {{ getVoitureLabel(b) }}
+            </span>
+            <span class="mob-dmi-badge" [ngClass]="'mob-badge-' + bookingStatusClass(b)">{{ b.reservationStatus || b.statut }}</span>
+          </div>
+          <div class="mob-dmi-mid">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span>{{ getClientName(b) }}</span>
+          </div>
+          <div class="mob-dmi-dates">
+            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            {{ b.dateDebut | date:'dd MMM' }} — {{ b.dateFin | date:'dd MMM yyyy' }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Agenda View -->
+  <div *ngIf="mobileView === 'agenda'" class="mob-agenda-view">
+    <div *ngIf="agendaGroups.length === 0" class="mob-empty-state">
+      <div class="mob-empty-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div class="mob-empty-title">{{ t('noUpcomingReservations') }}</div>
+    </div>
+    <div *ngFor="let group of agendaGroups" class="mob-agenda-group">
+      <div class="mob-agenda-date-header" [class.mob-agh-today]="group.isToday">
+        <span class="mob-agd-label">{{ group.dateLabel }}</span>
+        <span class="mob-agd-count">{{ group.items.length }}</span>
+      </div>
+      <div *ngFor="let b of group.items"
+           class="mob-agenda-item" [ngClass]="'mob-agi-' + bookingStatusClass(b)">
+        <div class="mob-agi-accent"></div>
+        <div class="mob-agi-body">
+          <div class="mob-agi-top">
+            <span class="mob-agi-vehicle">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+              {{ getVoitureLabel(b) }}
+            </span>
+            <span class="mob-agi-badge" [ngClass]="'mob-badge-' + bookingStatusClass(b)">{{ b.reservationStatus || b.statut }}</span>
+          </div>
+          <div class="mob-agi-client">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            {{ getClientName(b) }}
+          </div>
+          <div class="mob-agi-dates">
+            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            {{ b.dateDebut | date:'dd MMM' }} — {{ b.dateFin | date:'dd MMM yyyy' }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ════════════════════════════════════════
+     DESKTOP LAYOUT
+════════════════════════════════════════ -->
+<div *ngIf="!isMobile" class="cal-page" [class.rtl]="dir === 'rtl'" [attr.dir]="dir">
+
+  <!-- Stats Bar -->
+  <div class="stats-bar">
+    <div class="stat-card stat-clickable" (click)="openStatModal('active')">
+      <div class="stat-icon icon-green">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+      </div>
+      <div class="stat-info">
+        <span class="stat-num">{{ activeCount }}</span>
+        <span class="stat-lbl">{{ t('activeRentals') }}</span>
+      </div>
+    </div>
+    <div class="stat-card stat-clickable" (click)="openStatModal('thisMonth')">
+      <div class="stat-icon icon-blue">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </div>
+      <div class="stat-info">
+        <span class="stat-num">{{ thisMonthCount }}</span>
+        <span class="stat-lbl">{{ t('thisMonth') }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card stat-clickable" (click)="openStatModal('available')">
+      <div class="stat-icon icon-navy">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <div class="stat-info">
+        <span class="stat-num">{{ availableFleet }}</span>
+        <span class="stat-lbl">{{ t('availableCars') }}</span>
+      </div>
+    </div>
+    <div class="stat-card stat-clickable" (click)="openStatModal('returnToday')">
+      <div class="stat-icon icon-purple">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
+      </div>
+      <div class="stat-info">
+        <span class="stat-num">{{ returnTodayCount }}</span>
+        <span class="stat-lbl">{{ t('returningToday') }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calendar Card -->
+  <div class="cal-card">
+
+    <!-- Header -->
+    <div class="cal-header">
+      <div class="header-nav">
+        <button class="nav-btn" (click)="prevMonth()" [title]="t('previous')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <h2 class="month-title">{{ currentMonthLabel }}</h2>
+        <button class="nav-btn" (click)="nextMonth()" [title]="t('next')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <button class="today-btn" (click)="goToToday()" [class.today-active]="isViewingCurrentMonth">{{ t('today') }}</button>
+      </div>
+
+      <div class="header-filters">
+        <button class="fpill"              [class.fpill-on]="filterStatus === 'all'"       (click)="setFilter('all')">{{ t('all') }}</button>
+        <button class="fpill fpill-blue"   [class.fpill-on]="filterStatus === 'confirmed'" (click)="setFilter('confirmed')">{{ t('confirmed') }}</button>
+        <button class="fpill fpill-green"  [class.fpill-on]="filterStatus === 'active'"    (click)="setFilter('active')">{{ t('inProgress') }}</button>
+        <button class="fpill fpill-orange" [class.fpill-on]="filterStatus === 'pending'"   (click)="setFilter('pending')">{{ t('pending') }}</button>
+        <button class="fpill fpill-teal"   [class.fpill-on]="filterStatus === 'available'" (click)="setFilter('available')">{{ t('available') }}</button>
+      </div>
+
+      <a routerLink="/reservation/create" class="btn-new">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span class="btn-new-text">{{ t('newBooking') }}</span>
+      </a>
+    </div>
+
+    <!-- Day Headers -->
+    <div class="day-headers">
+      <div class="dh" *ngFor="let d of dayLabels; let i = index" [class.dh-weekend]="i === 0 || i === 6">{{ d }}</div>
+    </div>
+
+    <!-- Skeleton -->
+    <div *ngIf="loading" class="cal-grid">
+      <div class="cal-cell sk-cell" *ngFor="let _ of skeletonArr">
+        <div class="sk-num"></div>
+        <div class="sk-chip"></div>
+        <div class="sk-chip sk-short"></div>
+      </div>
+    </div>
+
+    <!-- Calendar Grid -->
+    <div *ngIf="!loading" class="cal-grid">
+      <ng-container *ngFor="let week of weeks">
+        <div
+          *ngFor="let day of week"
+          class="cal-cell"
+          [class.other-month]="!day.isCurrentMonth"
+          [class.today]="day.isToday"
+          [class.weekend]="day.isWeekend && !day.isToday"
+          [class.has-events]="filterStatus === 'available' ? day.availableCars.length > 0 : day.bookings.length > 0"
+          (click)="selectDay(day)">
+
+          <div class="cell-top">
+            <span class="day-num" [class.today-num]="day.isToday">{{ day.dayNum }}</span>
+            <span *ngIf="filterStatus !== 'available' && day.bookings.length > 0" class="event-count-badge">{{ day.bookings.length }}</span>
+            <span *ngIf="filterStatus === 'available' && day.availableCars.length > 0" class="event-count-badge ecb-teal">{{ day.availableCars.length }}</span>
+          </div>
+
+          <div class="cell-events" *ngIf="filterStatus !== 'available'">
+            <div *ngFor="let b of day.bookings | slice:0:2"
+                 class="event-pill" [ngClass]="'ep-' + bookingStatusClass(b)"
+                 [title]="getVoitureLabel(b) + ' — ' + getClientName(b)">
+              <span class="ep-text">{{ getVoitureLabel(b) }}</span>
+            </div>
+            <div *ngIf="day.bookings.length > 2" class="ep-more">+{{ day.bookings.length - 2 }} {{ t('more') }}</div>
+          </div>
+
+          <div class="cell-events" *ngIf="filterStatus === 'available'">
+            <div *ngFor="let v of day.availableCars | slice:0:2"
+                 class="event-pill ep-available" [title]="carLabel(v)">
+              <span class="ep-text">{{ carLabel(v) }}</span>
+            </div>
+            <div *ngIf="day.availableCars.length > 2" class="ep-more">+{{ day.availableCars.length - 2 }} {{ t('more') }}</div>
+          </div>
+
+        </div>
+      </ng-container>
+    </div>
+
+    <!-- Legend -->
+    <div class="cal-legend">
+      <span class="leg-label">{{ t('status') }}:</span>
+      <div class="leg-item"><span class="leg-dot ld-confirmed"></span>{{ t('confirmed') }}</div>
+      <div class="leg-item"><span class="leg-dot ld-active"></span>{{ t('inProgress') }}</div>
+      <div class="leg-item"><span class="leg-dot ld-pending"></span>{{ t('pending') }}</div>
+      <div class="leg-item"><span class="leg-dot ld-completed"></span>{{ t('done') }}</div>
+      <div class="leg-item"><span class="leg-dot ld-cancelled"></span>{{ t('cancelled') }}</div>
+      <div class="leg-spacer"></div>
+      <div class="leg-item"><span class="leg-today-swatch"></span>{{ t('today') }}</div>
+      <div class="leg-item"><span class="leg-weekend-swatch"></span>Weekend</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Desktop Day Detail Modal -->
+<div *ngIf="selectedDay && !isMobile" class="modal-overlay" (click)="closeDay()">
+  <div class="detail-modal" (click)="$event.stopPropagation()">
+    <div class="dm-header">
+      <div>
+        <h3 class="dm-title">{{ selectedDay.date | date:'EEEE, d MMMM' }}</h3>
+        <span class="dm-subtitle">{{ selectedDay.bookings.length }} {{ t('reservations') }}</span>
+      </div>
+      <button class="dm-close" (click)="closeDay()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="dm-body">
+      <div *ngFor="let b of selectedDay.bookings"
+           class="dm-item" [ngClass]="'dmi-' + bookingStatusClass(b)">
+        <div class="dmi-accent"></div>
+        <div class="dmi-content">
+          <div class="dmi-top">
+            <span class="dmi-vehicle">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+              {{ getVoitureLabel(b) }}
+            </span>
+            <span class="dmi-badge" [ngClass]="'badge-' + bookingStatusClass(b)">{{ b.reservationStatus || b.statut }}</span>
+          </div>
+          <div class="dmi-bottom">
+            <span class="dmi-client">
+              <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              {{ getClientName(b) }}
+            </span>
+            <span class="dmi-dates">
+              <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              {{ b.dateDebut | date:'dd MMM' }} — {{ b.dateFin | date:'dd MMM yyyy' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="dm-footer">
+      <button class="dm-close-btn" (click)="closeDay()">{{ t('close') }}</button>
+      <a routerLink="/reservation/create" class="dm-add-btn" (click)="closeDay()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        {{ t('newBooking') }}
       </a>
     </div>
   </div>
+</div>
 
-  <!-- ===== OIL CHANGE REMINDERS ===== -->
-  <div class="oil-reminders-row" *ngIf="oilOverdue.length > 0 || oilDueSoon.length > 0">
-
-    <!-- Overdue -->
-    <div class="card oil-card oil-card-overdue" *ngIf="oilOverdue.length > 0">
-      <div class="card-header">
-        <span class="card-title">🔴 {{ t('oilOverdue') || 'Overdue Oil Changes' }} <span class="oil-count-badge oil-count-red">{{ oilOverdue.length }}</span></span>
-        <a routerLink="/voiture" class="card-link">{{ t('all') }} →</a>
-      </div>
-      <div class="oil-list">
-        <a *ngFor="let item of oilOverdue" [routerLink]="['/voiture', item.voitureId]" class="oil-item">
-          <div class="oil-car-icon oil-icon-red">🛢</div>
-          <div class="oil-car-info">
-            <span class="oil-car-name">{{ item.voiture }}</span>
-            <span class="oil-car-plate">{{ item.immatriculation || '—' }}</span>
-          </div>
-          <div class="oil-km-info">
-            <span class="oil-current">{{ item.currentKm | number:'1.0-0' }} km</span>
-            <span class="oil-arrow">→</span>
-            <span class="oil-next">{{ item.nextOilChangeKm | number:'1.0-0' }} km</span>
-          </div>
-          <div class="oil-overdue-badge">{{ (item.remainingKm * -1) | number:'1.0-0' }} km {{ t('overdue') || 'overdue' }}</div>
-        </a>
-      </div>
-    </div>
-
-    <!-- Due Soon -->
-    <div class="card oil-card oil-card-due-soon" *ngIf="oilDueSoon.length > 0">
-      <div class="card-header">
-        <span class="card-title">🟠 {{ t('oilDueSoon') || 'Oil Changes Due Soon' }} <span class="oil-count-badge oil-count-orange">{{ oilDueSoon.length }}</span></span>
-        <a routerLink="/voiture" class="card-link">{{ t('all') }} →</a>
-      </div>
-      <div class="oil-list">
-        <a *ngFor="let item of oilDueSoon" [routerLink]="['/voiture', item.voitureId]" class="oil-item">
-          <div class="oil-car-icon oil-icon-orange">🛢</div>
-          <div class="oil-car-info">
-            <span class="oil-car-name">{{ item.voiture }}</span>
-            <span class="oil-car-plate">{{ item.immatriculation || '—' }}</span>
-          </div>
-          <div class="oil-km-info">
-            <span class="oil-current">{{ item.currentKm | number:'1.0-0' }} km</span>
-            <span class="oil-arrow">→</span>
-            <span class="oil-next">{{ item.nextOilChangeKm | number:'1.0-0' }} km</span>
-          </div>
-          <div class="oil-due-soon-badge">{{ item.remainingKm | number:'1.0-0' }} km {{ t('remaining') || 'remaining' }}</div>
-        </a>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ===== ROW 2: Fleet Status + Payment Distribution ===== -->
-  <div class="row-2">
-
-    <!-- Fleet Status -->
-    <div class="card fleet-card">
-      <div class="card-header">
-        <span class="card-title">{{ t('fleetStatus') }}</span>
-        <a routerLink="/voiture" class="card-link">→</a>
-      </div>
-      <div class="fleet-items">
-        <div class="fleet-item fleet-available">
-          <div class="fleet-dot"></div>
-          <div class="fleet-info">
-            <span class="fleet-label">{{ t('availableCars') }}</span>
-            <span class="fleet-count">{{ availableCars }}</span>
-          </div>
-          <div class="fleet-bar-wrap">
-            <div class="fleet-bar" [style.width.%]="totalCars > 0 ? (availableCars / totalCars) * 100 : 0"></div>
-          </div>
+<!-- Mobile Bottom Sheet -->
+<ng-container *ngIf="isMobile && bottomSheetDay">
+  <div class="mob-bs-overlay" (click)="closeBottomSheet()">
+    <div class="mob-bs" (click)="$event.stopPropagation()">
+      <div class="mob-bs-handle"></div>
+      <div class="mob-bs-header">
+        <div>
+          <h3 class="mob-bs-title">{{ bottomSheetDay.date | date:'EEEE, d MMMM' }}</h3>
+          <span class="mob-bs-subtitle">{{ bottomSheetDay.bookings.length }} {{ t('reservations') }}</span>
         </div>
-        <div class="fleet-item fleet-booked">
-          <div class="fleet-dot"></div>
-          <div class="fleet-info">
-            <span class="fleet-label">{{ t('bookedCars') }}</span>
-            <span class="fleet-count">{{ bookedCars }}</span>
-          </div>
-          <div class="fleet-bar-wrap">
-            <div class="fleet-bar" [style.width.%]="totalCars > 0 ? (bookedCars / totalCars) * 100 : 0"></div>
-          </div>
-        </div>
-        <div class="fleet-item fleet-maintenance">
-          <div class="fleet-dot"></div>
-          <div class="fleet-info">
-            <span class="fleet-label">{{ t('maintenance') }}</span>
-            <span class="fleet-count">{{ maintenanceCars }}</span>
-          </div>
-          <div class="fleet-bar-wrap">
-            <div class="fleet-bar" [style.width.%]="totalCars > 0 ? (maintenanceCars / totalCars) * 100 : 0"></div>
-          </div>
-        </div>
+        <button class="mob-bs-close-btn" (click)="closeBottomSheet()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
-    </div>
-
-    <!-- Payment Distribution -->
-    <div class="card payment-card">
-      <div class="card-header">
-        <span class="card-title">{{ t('paymentDistribution') }}</span>
-        <a routerLink="/paiement" class="card-link">→</a>
-      </div>
-      <div class="payment-donut">
-        <div class="donut-chart">
-          <svg viewBox="0 0 36 36" class="donut-svg">
-            <circle class="donut-bg" cx="18" cy="18" r="15.9155" />
-            <circle class="donut-paid" cx="18" cy="18" r="15.9155"
-              [attr.stroke-dasharray]="paidPct + ' ' + (100 - paidPct)" />
-            <circle class="donut-partial" cx="18" cy="18" r="15.9155"
-              [attr.stroke-dasharray]="partialPct + ' ' + (100 - partialPct)"
-              [attr.stroke-dashoffset]="100 - paidPct" />
-            <circle class="donut-unpaid" cx="18" cy="18" r="15.9155"
-              [attr.stroke-dasharray]="unpaidPct + ' ' + (100 - unpaidPct)"
-              [attr.stroke-dashoffset]="100 - paidPct - partialPct" />
-          </svg>
-          <div class="donut-center">
-            <span class="donut-pct">{{ paidPct }}%</span>
-            <span class="donut-sub">{{ t('paid') }}</span>
-          </div>
-        </div>
-        <div class="payment-legend">
-          <div class="legend-item">
-            <span class="legend-dot dot-paid"></span>
-            <span>{{ t('paid') }}</span>
-            <span class="legend-val">{{ paidCount }}</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-dot dot-partial"></span>
-            <span>{{ t('partial') }}</span>
-            <span class="legend-val">{{ partialCount }}</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-dot dot-unpaid"></span>
-            <span>{{ t('unpaid') }}</span>
-            <span class="legend-val">{{ unpaidCount }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ===== ROW 3: Financial Chart + Booking Chart ===== -->
-  <div class="row-3">
-
-    <!-- 12-Month Financial Overview -->
-    <div class="card chart-card">
-      <div class="card-header">
-        <span class="card-title">{{ t('financialOverview') }}</span>
-        <div class="chart-legend">
-          <span class="cleg cleg-rev">{{ t('revenue') }}</span>
-          <span class="cleg cleg-exp">{{ t('expenses') }}</span>
-        </div>
-      </div>
-      <div class="bar-chart">
-        <div *ngFor="let bar of monthBars" class="bar-group">
-          <div class="bars-wrap">
-            <div class="bar bar-rev" [style.height.%]="bar.revenueH" [title]="bar.revenue + ' MAD'"></div>
-            <div class="bar bar-exp" [style.height.%]="bar.expensesH" [title]="bar.expenses + ' MAD'"></div>
-          </div>
-          <div class="bar-label">{{ bar.label }}</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Booking Stats -->
-    <div class="card chart-card">
-      <div class="card-header">
-        <span class="card-title">{{ t('bookingStats') }}</span>
-        <div class="chart-legend">
-          <span class="cleg cleg-book">{{ t('reservations') }}</span>
-        </div>
-      </div>
-      <div class="bar-chart">
-        <div *ngFor="let bar of bookingMonthBars" class="bar-group">
-          <div class="bars-wrap">
-            <div class="bar bar-book" [style.height.%]="bar.h" [title]="bar.count + ''"></div>
-          </div>
-          <div class="bar-label">{{ bar.label }}</div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ===== Recent Bookings — last 10 reservations, full width ===== -->
-  <div class="card recent-card">
-    <div class="card-header">
-      <span class="card-title">{{ t('recentBookings') }}</span>
-      <a routerLink="/reservation" class="card-link">{{ t('all') }} →</a>
-    </div>
-
-    <div *ngIf="recentReservations.length > 0; else noResData" class="table-wrap">
-      <table class="dash-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>{{ t('client') }}</th>
-            <th>{{ t('car') }}</th>
-            <th>{{ t('startDate') }}</th>
-            <th>{{ t('endDate') }}</th>
-            <th>{{ t('montant') }}</th>
-            <th>{{ t('status') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let r of recentReservations; let i = index">
-            <td class="td-num">{{ i + 1 }}</td>
-            <td>{{ r.client?.nom || clientName(r) || '—' }}</td>
-            <td>{{ r.voiture?.marque ? (r.voiture.marque + ' ' + (r.voiture.modele || '')) : voitureLabel(r) }}</td>
-            <td>{{ r.dateDebut | date:'dd/MM/yy' }}</td>
-            <td>{{ r.dateFin | date:'dd/MM/yy' }}</td>
-            <td class="td-amount">{{ (r.total || r.montant || 0) | number:'1.0-0' }} MAD</td>
-            <td>
-              <span class="status-badge"
-                [class.status-active]="reservationStatus(r) === 'active'"
-                [class.status-upcoming]="reservationStatus(r) === 'upcoming'"
-                [class.status-closed]="reservationStatus(r) === 'done'">
-                {{ t(reservationStatus(r)) }}
+      <div class="mob-bs-body">
+        <div *ngFor="let b of bottomSheetDay.bookings"
+             class="mob-bs-item" [ngClass]="'mob-bsi-' + bookingStatusClass(b)">
+          <div class="mob-bsi-accent"></div>
+          <div class="mob-bsi-content">
+            <div class="mob-bsi-top">
+              <span class="mob-bsi-vehicle">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                {{ getVoitureLabel(b) }}
               </span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <ng-template #noResData>
-      <div class="no-data-msg">{{ t('noData') }}</div>
-    </ng-template>
-  </div>
-
-  <!-- ===== PROFITABILITY RANKING ===== -->
-  <div class="profit-rank-row" *ngIf="!profitLoading && (topCars.length > 0 || bottomCars.length > 0)">
-
-    <!-- Most Profitable -->
-    <div class="card profit-rank-card profit-rank-top">
-      <div class="card-header">
-        <span class="card-title">📈 Most Profitable · {{ currentYear }}</span>
-        <a routerLink="/rapports/profitability" class="card-link">Full report →</a>
+              <span class="mob-bsi-badge" [ngClass]="'mob-badge-' + bookingStatusClass(b)">{{ b.reservationStatus || b.statut }}</span>
+            </div>
+            <div class="mob-bsi-client">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              {{ getClientName(b) }}
+            </div>
+            <div class="mob-bsi-dates">
+              <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              {{ b.dateDebut | date:'dd MMM' }} — {{ b.dateFin | date:'dd MMM yyyy' }}
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="pr-list">
-        <a *ngFor="let r of topCars; let i = index"
-           [routerLink]="['/voiture', r.id]"
-           class="pr-item">
-          <span class="pr-rank pr-rank-top">{{ i + 1 }}</span>
-          <div class="pr-car">
-            <span class="pr-label">{{ r.label }}</span>
-            <span class="pr-plate">{{ r.immatriculation }}</span>
-          </div>
-          <div class="pr-numbers">
-            <span class="pr-rev">{{ fmt(r.revenue) }} MAD</span>
-            <span class="pr-net pr-net-pos" [class.pr-net-neg]="r.net < 0">
-              {{ r.net >= 0 ? '+' : '' }}{{ fmt(r.net) }} MAD
-            </span>
-          </div>
-          <span class="pr-margin" [class.pr-margin-neg]="r.margin < 0">{{ r.margin }}%</span>
+      <div class="mob-bs-footer">
+        <button class="mob-bs-cancel" (click)="closeBottomSheet()">{{ t('close') }}</button>
+        <a routerLink="/reservation/create" class="mob-bs-add" (click)="closeBottomSheet()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          {{ t('newBooking') }}
         </a>
       </div>
     </div>
+  </div>
+</ng-container>
 
-    <!-- Least Profitable -->
-    <div class="card profit-rank-card profit-rank-bottom">
-      <div class="card-header">
-        <span class="card-title">📉 Least Profitable · {{ currentYear }}</span>
-        <a routerLink="/rapports/profitability" class="card-link">Full report →</a>
+<!-- Mobile FAB -->
+<div *ngIf="isMobile" class="mob-fab-wrap">
+  <a routerLink="/reservation/create" class="mob-fab-primary" [title]="t('newBooking')">
+    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  </a>
+</div>
+
+<!-- ═══════════════════════════════════════
+     STAT CARD MODAL
+════════════════════════════════════════ -->
+<div *ngIf="statModal" class="modal-overlay" (click)="closeStatModal()">
+  <div class="sm-modal" (click)="$event.stopPropagation()">
+
+    <!-- Header -->
+    <div class="sm-header">
+      <div class="sm-title-wrap">
+        <div class="sm-title-icon"
+          [class.sm-ti-green]="statModal === 'active'"
+          [class.sm-ti-blue]="statModal === 'thisMonth'"
+          [class.sm-ti-navy]="statModal === 'available'"
+          [class.sm-ti-purple]="statModal === 'returnToday'">
+          <ng-container *ngIf="statModal === 'active'">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+          </ng-container>
+          <ng-container *ngIf="statModal === 'thisMonth'">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </ng-container>
+          <ng-container *ngIf="statModal === 'available'">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </ng-container>
+          <ng-container *ngIf="statModal === 'returnToday'">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
+          </ng-container>
+        </div>
+        <div>
+          <h3 class="sm-title">
+            <ng-container *ngIf="statModal === 'active'">{{ t('activeRentals') }}</ng-container>
+            <ng-container *ngIf="statModal === 'thisMonth'">{{ t('thisMonth') }}</ng-container>
+            <ng-container *ngIf="statModal === 'available'">{{ t('availableCars') }}</ng-container>
+            <ng-container *ngIf="statModal === 'returnToday'">{{ t('returningToday') }}</ng-container>
+          </h3>
+          <span class="sm-count">
+            <ng-container *ngIf="statModal === 'active'">{{ activeRentalsList.length }} {{ t('reservations') }}</ng-container>
+            <ng-container *ngIf="statModal === 'thisMonth'">{{ thisMonthList.length }} {{ t('reservations') }}</ng-container>
+            <ng-container *ngIf="statModal === 'available'">{{ availableCarsList.length }} {{ t('vehicles') }}</ng-container>
+            <ng-container *ngIf="statModal === 'returnToday'">{{ returnTodayList.length }} {{ t('reservations') }}</ng-container>
+          </span>
+        </div>
       </div>
-      <div class="pr-list">
-        <a *ngFor="let r of bottomCars; let i = index"
-           [routerLink]="['/voiture', r.id]"
-           class="pr-item">
-          <span class="pr-rank pr-rank-bottom">{{ i + 1 }}</span>
-          <div class="pr-car">
-            <span class="pr-label">{{ r.label }}</span>
-            <span class="pr-plate">{{ r.immatriculation }}</span>
-          </div>
-          <div class="pr-numbers">
-            <span class="pr-rev">{{ fmt(r.revenue) }} MAD</span>
-            <span class="pr-net" [class.pr-net-pos]="r.net >= 0" [class.pr-net-neg]="r.net < 0">
-              {{ r.net >= 0 ? '+' : '' }}{{ fmt(r.net) }} MAD
-            </span>
-          </div>
-          <span class="pr-margin" [class.pr-margin-neg]="r.margin < 0">{{ r.margin }}%</span>
-        </a>
-      </div>
+      <button class="dm-close" (click)="closeStatModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     </div>
 
-  </div>
+    <!-- Body -->
+    <div class="sm-body">
 
-  </div><!-- /.dash-inner -->
+      <!-- Active Rentals -->
+      <ng-container *ngIf="statModal === 'active'">
+        <div *ngIf="!activeRentalsList.length" class="sm-empty">{{ t('noData') }}</div>
+        <div *ngFor="let r of activeRentalsList" class="sm-item">
+          <div class="sm-item-accent sm-accent-active"></div>
+          <div class="sm-item-main">
+            <div class="sm-item-row1">
+              <span class="sm-vehicle">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                {{ getVoitureLabel(r) }}
+              </span>
+              <span class="sm-badge sm-badge-active">{{ t('inProgress') }}</span>
+            </div>
+            <div class="sm-item-row2">
+              <span class="sm-client">
+                <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                {{ getClientName(r) }}
+              </span>
+              <span class="sm-dates">{{ r.dateDebut | date:'dd MMM' }} — {{ r.dateFin | date:'dd MMM yyyy' }}</span>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- This Month -->
+      <ng-container *ngIf="statModal === 'thisMonth'">
+        <div *ngIf="!thisMonthList.length" class="sm-empty">{{ t('noData') }}</div>
+        <div *ngFor="let r of thisMonthList" class="sm-item">
+          <div class="sm-item-accent" [ngClass]="'sm-accent-' + bookingStatusClass(r)"></div>
+          <div class="sm-item-main">
+            <div class="sm-item-row1">
+              <span class="sm-vehicle">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                {{ getVoitureLabel(r) }}
+              </span>
+              <span class="sm-badge" [ngClass]="'sm-badge-' + bookingStatusClass(r)">{{ r.reservationStatus || r.statut }}</span>
+            </div>
+            <div class="sm-item-row2">
+              <span class="sm-client">
+                <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                {{ getClientName(r) }}
+              </span>
+              <span class="sm-dates">{{ r.dateDebut | date:'dd MMM' }} — {{ r.dateFin | date:'dd MMM yyyy' }}</span>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Available Cars -->
+      <ng-container *ngIf="statModal === 'available'">
+        <div *ngIf="!availableCarsList.length" class="sm-empty">{{ t('noData') }}</div>
+        <div *ngFor="let v of availableCarsList" class="sm-item sm-car-item">
+          <div class="sm-car-icon-wrap">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+          </div>
+          <div class="sm-item-main">
+            <div class="sm-item-row1">
+              <span class="sm-vehicle">{{ v.marque }} {{ v.modele }}</span>
+              <span class="sm-badge sm-badge-available">{{ t('available') }}</span>
+            </div>
+            <div class="sm-item-row2">
+              <span class="sm-plate">{{ v.immatriculation }}</span>
+              <span *ngIf="v.annee" class="sm-year">{{ v.annee }}</span>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Returns Today -->
+      <ng-container *ngIf="statModal === 'returnToday'">
+        <div *ngIf="!returnTodayList.length" class="sm-empty">{{ t('noData') }}</div>
+        <div *ngFor="let r of returnTodayList" class="sm-item">
+          <div class="sm-item-accent sm-accent-return"></div>
+          <div class="sm-item-main">
+            <div class="sm-item-row1">
+              <span class="sm-vehicle">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                {{ getVoitureLabel(r) }}
+              </span>
+              <span class="sm-badge sm-badge-return">{{ t('returningToday') }}</span>
+            </div>
+            <div class="sm-item-row2">
+              <span class="sm-client">
+                <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                {{ getClientName(r) }}
+              </span>
+              <span class="sm-dates">{{ r.dateDebut | date:'dd MMM' }} — {{ r.dateFin | date:'dd MMM yyyy' }}</span>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+    </div>
+
+    <div class="sm-footer">
+      <button class="dm-close-btn" (click)="closeStatModal()">{{ t('close') }}</button>
+    </div>
+  </div>
 </div>

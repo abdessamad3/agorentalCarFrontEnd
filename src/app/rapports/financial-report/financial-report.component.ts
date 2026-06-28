@@ -6,6 +6,7 @@ import { TranslationService } from '../../services/translation.service';
 import { ExportService } from '../../services/export.service';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { toArr } from '../../shared/utils/rx.utils';
 
 type ViewMode = 'monthly' | 'quarterly' | 'yearly';
 
@@ -53,9 +54,9 @@ export class FinancialReportComponent implements OnInit {
       payments:     safe(this.crud.getAll('paiement', { limit: 2000 })),
     }).subscribe({
       next: ({ reservations, expenses, payments }: any) => {
-        this.reservations = this.toArr(reservations);
-        this.expenses     = this.toArr(expenses);
-        this.payments     = this.toArr(payments);
+        this.reservations = toArr(reservations);
+        this.expenses     = toArr(expenses);
+        this.payments     = toArr(payments);
 
         const years = new Set<number>();
         [...this.reservations, ...this.expenses].forEach(item => {
@@ -190,7 +191,6 @@ export class FinancialReportComponent implements OnInit {
     return n.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
-  private toArr(r: any): any[] { return Array.isArray(r) ? r : (r?.data ?? []); }
 
   exportExcel() {
     this.exportSvc.financialExcel(this.monthBars, this.selectedYear);
@@ -206,9 +206,9 @@ export class FinancialReportComponent implements OnInit {
     }).subscribe({
       next: ({ assurances, reparations, vidanges }: any) => {
         this.exportSvc.expenseExcel(
-          this.toArr(assurances),
-          this.toArr(reparations),
-          this.toArr(vidanges),
+          toArr(assurances),
+          toArr(reparations),
+          toArr(vidanges),
         );
         this.expenseExporting = false;
       },

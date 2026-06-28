@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { forkJoin, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { forkJoin } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { safe, toArr } from '../../shared/utils/rx.utils';
 import { CrudService } from '../../services/crud.service';
 import { TranslationService } from '../../services/translation.service';
 
@@ -62,20 +63,17 @@ export class ForecastReportComponent implements OnInit {
     this.load();
   }
 
-  private safe(obs: any) { return obs.pipe(catchError(() => of([]))); }
-  private toArr(r: any): any[] { return Array.isArray(r) ? r : (r?.data ?? []); }
-
   load() {
     this.loading = true;
     forkJoin({
-      reservations: this.safe(this.crud.getAll('reservation', { limit: 3000 })),
-      depenses:     this.safe(this.crud.getAll('depense',     { limit: 3000 })),
-      reparations:  this.safe(this.crud.getAll('reparation',  { limit: 2000 })),
+      reservations: safe(this.crud.getAll('reservation', { limit: 3000 })),
+      depenses:     safe(this.crud.getAll('depense',     { limit: 3000 })),
+      reparations:  safe(this.crud.getAll('reparation',  { limit: 2000 })),
     }).pipe(
       map(({ reservations, depenses, reparations }: any) => {
-        const resList  = this.toArr(reservations);
-        const expList  = this.toArr(depenses);
-        const repList  = this.toArr(reparations);
+        const resList  = toArr(reservations);
+        const expList  = toArr(depenses);
+        const repList  = toArr(reparations);
 
         // Build monthly aggregates from history
         const revMap: Map<string, number> = new Map();

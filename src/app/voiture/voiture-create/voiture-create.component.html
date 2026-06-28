@@ -140,7 +140,6 @@
             <select formControlName="typeFinancement">
               <option value="comptant">{{ t('comptant') }}</option>
               <option value="credit">{{ t('creditFinancing') }}</option>
-              <option value="leasing">{{ t('leasing') }}</option>
             </select>
           </div>
         </div>
@@ -154,6 +153,28 @@
             <label>{{ t('mensualite') }} (MAD)</label>
             <input type="number" formControlName="mensualite" min="0" placeholder="0" />
           </div>
+          <div class="fg">
+            <label>{{ t('tauxInteret') }} (%)</label>
+            <input type="number" formControlName="tauxInteret" min="0" step="0.1" placeholder="0" />
+          </div>
+        </div>
+
+        <div *ngIf="isCreditType && creditCalc.dureeMois > 0" class="credit-calc-panel">
+          <div class="calc-header">🧮 {{ t('financingSummary') }}</div>
+          <div class="calc-grid">
+            <div class="calc-item">
+              <span class="calc-item-label">{{ t('resteAFinancer') }}</span>
+              <span class="calc-item-value highlight">{{ creditCalc.resteAFinancer | number:'1.0-0' }} MAD</span>
+            </div>
+            <div class="calc-item">
+              <span class="calc-item-label">{{ t('dureeMois') }}</span>
+              <span class="calc-item-value highlight">{{ creditCalc.dureeMois }} {{ t('months') }}</span>
+            </div>
+            <div class="calc-item" *ngIf="creditCalc.dernierMensualite > 0">
+              <span class="calc-item-label">{{ t('dernierMensualite') }}</span>
+              <span class="calc-item-value last-month">{{ creditCalc.dernierMensualite | number:'1.2-2' }} MAD</span>
+            </div>
+          </div>
         </div>
 
         <div class="step-note">
@@ -163,7 +184,7 @@
       </div>
 
       <!-- ══ STEP: Assurance ════════════════════════════════════════════════ -->
-      <div *ngIf="currentStepKey === 'assurance'" class="form-section">
+      <div [hidden]="currentStepKey !== 'assurance'" class="form-section">
         <div class="section-title">
           <div class="step-num-badge">3</div>
           <div>
@@ -200,12 +221,30 @@
             <input type="number" formControlName="montant" min="0" placeholder="0" />
           </div>
           <div class="fg">
+            <label>Montant payé (MAD)</label>
+            <input type="number" formControlName="montantPaye" min="0" placeholder="0" />
+          </div>
+          <div class="fg req">
             <label>Date de début</label>
             <input type="date" formControlName="dateDebut" />
           </div>
-          <div class="fg">
+          <div class="fg req">
             <label>Date d'expiration</label>
             <input type="date" formControlName="dateFin" />
+          </div>
+        </div>
+
+        <div class="cfu-row">
+          <label class="cfu-label">Document (PDF / image)</label>
+          <div class="cfu-area">
+            <input type="file" id="assuranceFileInput" accept=".pdf,.jpg,.jpeg,.png,.webp" style="display:none" (change)="onAssuranceFileSelect($event)" />
+            <label for="assuranceFileInput" class="cfu-btn">
+              <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+              Choisir un fichier
+            </label>
+            <span *ngIf="assuranceFile" class="cfu-name">{{ assuranceFile.name }}</span>
+            <span *ngIf="!assuranceFile" class="cfu-hint">Facultatif — carte d'assurance, contrat…</span>
+            <button *ngIf="assuranceFile" type="button" class="cfu-clear" (click)="assuranceFile = null">✕</button>
           </div>
         </div>
 
@@ -217,7 +256,7 @@
       </div>
 
       <!-- ══ STEP: Vignette ═════════════════════════════════════════════════ -->
-      <div *ngIf="currentStepKey === 'vignette'" class="form-section">
+      <div [hidden]="currentStepKey !== 'vignette'" class="form-section">
         <div class="section-title">
           <div class="step-num-badge">4</div>
           <div>
@@ -244,6 +283,24 @@
             <label>Montant (MAD)</label>
             <input type="number" formControlName="montant" min="0" placeholder="0" />
           </div>
+          <div class="fg">
+            <label>Montant payé (MAD)</label>
+            <input type="number" formControlName="montantPaye" min="0" placeholder="0" />
+          </div>
+        </div>
+
+        <div class="cfu-row">
+          <label class="cfu-label">Document (PDF / image)</label>
+          <div class="cfu-area">
+            <input type="file" id="vignetteFileInput" accept=".pdf,.jpg,.jpeg,.png,.webp" style="display:none" (change)="onVignetteFileSelect($event)" />
+            <label for="vignetteFileInput" class="cfu-btn">
+              <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+              Choisir un fichier
+            </label>
+            <span *ngIf="vignetteFile" class="cfu-name">{{ vignetteFile.name }}</span>
+            <span *ngIf="!vignetteFile" class="cfu-hint">Facultatif — copie de la vignette…</span>
+            <button *ngIf="vignetteFile" type="button" class="cfu-clear" (click)="vignetteFile = null">✕</button>
+          </div>
         </div>
 
         <div class="comp-step-skip-row">
@@ -254,7 +311,7 @@
       </div>
 
       <!-- ══ STEP: Inspection technique (conditionnelle) ═══════════════════ -->
-      <div *ngIf="currentStepKey === 'inspection'" class="form-section">
+      <div [hidden]="currentStepKey !== 'inspection'" class="form-section">
         <div class="section-title">
           <div class="step-num-badge">5</div>
           <div>
@@ -265,7 +322,7 @@
 
         <div class="comp-step-banner comp-banner-required">
           <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15"><path fill-rule="evenodd" d="M10 2a1 1 0 00-1 1v1a1 1 0 002 0V3a1 1 0 00-1-1zM4 4h3a3 3 0 000 6H4a3 3 0 000-6zm0 8h16v2H0v-2h4z" clip-rule="evenodd"/></svg>
-          <span><strong>Requis pour l'activation</strong> — ce véhicule a {{ form.value.annee ? (2026 - form.value.annee) : '?' }} ans et nécessite une visite technique valide.</span>
+          <span><strong>Requis pour l'activation</strong> — ce véhicule a {{ form.value.annee ? (currentYear - form.value.annee) : '?' }} ans et nécessite une visite technique valide.</span>
         </div>
 
         <div class="form-grid form-grid-2" [formGroup]="inspectionForm">
@@ -293,7 +350,7 @@
       <!-- ══ STEP: Pricing ═══════════════════════════════════════════════════ -->
       <div *ngIf="currentStepKey === 'pricing'" class="form-section">
         <div class="section-title">
-          <div class="step-num-badge">6</div>
+          <div class="step-num-badge">{{ stepIndex('pricing') + 1 }}</div>
           <div>
             <h2>{{ t('financialInfo') }}</h2>
             <p class="section-desc">{{ t('pricePerDay') }}, {{ t('deposit') }}</p>
@@ -306,20 +363,6 @@
             <div class="price-input-wrap">
               <input type="number" formControlName="prixJour" min="0" class="price-input" placeholder="0" />
               <span class="price-curr">MAD / {{ t('daily') }}</span>
-            </div>
-          </div>
-          <div class="price-card price-week">
-            <div class="price-label">{{ t('weeklyRate') }}</div>
-            <div class="price-input-wrap">
-              <input type="number" formControlName="prixSemaine" min="0" class="price-input" placeholder="0" />
-              <span class="price-curr">MAD / {{ t('weekly') }}</span>
-            </div>
-          </div>
-          <div class="price-card price-month">
-            <div class="price-label">{{ t('monthlyRate') }}</div>
-            <div class="price-input-wrap">
-              <input type="number" formControlName="prixMois" min="0" class="price-input" placeholder="0" />
-              <span class="price-curr">MAD / {{ t('monthly') }}</span>
             </div>
           </div>
         </div>
@@ -335,7 +378,7 @@
       <!-- ══ STEP: Images / Documents ════════════════════════════════════════ -->
       <div *ngIf="currentStepKey === 'documents'" class="form-section">
         <div class="section-title">
-          <div class="step-num-badge">7</div>
+          <div class="step-num-badge">{{ stepIndex('documents') + 1 }}</div>
           <div>
             <h2>{{ t('vehicleImages') }}</h2>
             <p class="section-desc">{{ t('dropImages') }}</p>
@@ -380,7 +423,7 @@
       <!-- ══ STEP: Accessories ═══════════════════════════════════════════════ -->
       <div *ngIf="currentStepKey === 'accessories'" class="form-section">
         <div class="section-title">
-          <div class="step-num-badge">8</div>
+          <div class="step-num-badge">{{ stepIndex('accessories') + 1 }}</div>
           <div>
             <h2>{{ t('accessories') }}</h2>
             <p class="section-desc">{{ t('color') }}, {{ t('places') }}, {{ t('vehicleCategory') }}</p>
@@ -468,42 +511,117 @@
               <span class="rc-label">{{ t('financingType') }}</span>
               <span class="rc-val">{{ t(form.value.typeFinancement === 'credit' ? 'creditFinancing' : form.value.typeFinancement) }}</span>
             </div>
+            <div class="rc-row" *ngIf="isCreditType && form.value.apport">
+              <span class="rc-label">{{ t('apport') }}</span>
+              <span class="rc-val">{{ form.value.apport }} MAD</span>
+            </div>
+            <div class="rc-row" *ngIf="isCreditType && form.value.mensualite">
+              <span class="rc-label">{{ t('mensualite') }}</span>
+              <span class="rc-val">{{ form.value.mensualite }} MAD / mois</span>
+            </div>
           </div>
 
-          <!-- Compliance summary -->
+          <!-- Compliance summary — Assurance -->
           <div class="review-card">
             <div class="rc-head">
-              <span class="rc-title">Documents légaux</span>
+              <span class="rc-title">🛡️ Assurance</span>
               <button type="button" class="rc-edit" (click)="goTo(stepIndex('assurance'))">{{ t('edit') }}</button>
             </div>
-            <div class="rc-row">
-              <span class="rc-label">Assurance</span>
-              <span class="rc-val">
-                <ng-container *ngIf="assuranceForm.value.compagnie || assuranceForm.value.dateFin; else skippedTpl">
-                  {{ assuranceForm.value.compagnie || '—' }}
-                  <span *ngIf="assuranceForm.value.dateFin" class="rc-date-hint"> · exp. {{ assuranceForm.value.dateFin | date:'dd/MM/yyyy' }}</span>
-                </ng-container>
-                <ng-template #skippedTpl><span class="rc-warn">À compléter après création</span></ng-template>
-              </span>
+            <ng-container *ngIf="!complianceSkipped['assurance']; else assuranceSkipped">
+              <div class="rc-row" *ngIf="assuranceForm.value.compagnie">
+                <span class="rc-label">Compagnie</span>
+                <span class="rc-val">{{ assuranceForm.value.compagnie }}</span>
+              </div>
+              <div class="rc-row" *ngIf="assuranceForm.value.typeAssurance">
+                <span class="rc-label">Type</span>
+                <span class="rc-val">{{ assuranceForm.value.typeAssurance }}</span>
+              </div>
+              <div class="rc-row" *ngIf="assuranceForm.value.numeroContrat">
+                <span class="rc-label">N° contrat</span>
+                <span class="rc-val">{{ assuranceForm.value.numeroContrat }}</span>
+              </div>
+              <div class="rc-row" *ngIf="assuranceForm.value.dateDebut">
+                <span class="rc-label">Début</span>
+                <span class="rc-val">{{ fmtDateStr(assuranceForm.value.dateDebut) }}</span>
+              </div>
+              <div class="rc-row">
+                <span class="rc-label">Expiration <span style="color:#e53e3e">*</span></span>
+                <span class="rc-val"
+                      [style.color]="assuranceForm.value.dateFin ? 'inherit' : '#e53e3e'"
+                      [style.font-weight]="assuranceForm.value.dateFin ? 'inherit' : '600'">
+                  {{ assuranceForm.value.dateFin ? fmtDateStr(assuranceForm.value.dateFin) : '⚠ Non renseigné' }}
+                </span>
+              </div>
+              <div class="rc-row" *ngIf="assuranceForm.value.montant">
+                <span class="rc-label">Montant</span>
+                <span class="rc-val">{{ assuranceForm.value.montant }} MAD
+                  <span *ngIf="assuranceForm.value.montantPaye" class="rc-date-hint"> · payé {{ assuranceForm.value.montantPaye }} MAD</span>
+                </span>
+              </div>
+              <div class="rc-row" *ngIf="assuranceFile">
+                <span class="rc-label">Document</span>
+                <span class="rc-val rc-file">📎 {{ assuranceFile.name }}</span>
+              </div>
+            </ng-container>
+            <ng-template #assuranceSkipped>
+              <div class="rc-row"><span class="rc-warn">À compléter après création</span></div>
+            </ng-template>
+          </div>
+
+          <!-- Compliance summary — Vignette -->
+          <div class="review-card">
+            <div class="rc-head">
+              <span class="rc-title">🏷️ Vignette</span>
+              <button type="button" class="rc-edit" (click)="goTo(stepIndex('vignette'))">{{ t('edit') }}</button>
             </div>
-            <div class="rc-row">
-              <span class="rc-label">Vignette</span>
-              <span class="rc-val">
-                <ng-container *ngIf="vignetteForm.value.dateLimite; else skipVig">
-                  {{ vignetteForm.value.annee }} · exp. {{ vignetteForm.value.dateLimite | date:'dd/MM/yyyy' }}
-                </ng-container>
-                <ng-template #skipVig><span class="rc-warn">À compléter après création</span></ng-template>
-              </span>
+            <ng-container *ngIf="!complianceSkipped['vignette'] && vignetteForm.value.dateLimite; else vignetteSkipped">
+              <div class="rc-row">
+                <span class="rc-label">Année</span>
+                <span class="rc-val">{{ vignetteForm.value.annee }}</span>
+              </div>
+              <div class="rc-row">
+                <span class="rc-label">Expiration</span>
+                <span class="rc-val">{{ fmtDateStr(vignetteForm.value.dateLimite) }}</span>
+              </div>
+              <div class="rc-row" *ngIf="vignetteForm.value.montant">
+                <span class="rc-label">Montant</span>
+                <span class="rc-val">{{ vignetteForm.value.montant }} MAD
+                  <span *ngIf="vignetteForm.value.montantPaye" class="rc-date-hint"> · payé {{ vignetteForm.value.montantPaye }} MAD</span>
+                </span>
+              </div>
+              <div class="rc-row" *ngIf="vignetteFile">
+                <span class="rc-label">Document</span>
+                <span class="rc-val rc-file">📎 {{ vignetteFile.name }}</span>
+              </div>
+            </ng-container>
+            <ng-template #vignetteSkipped>
+              <div class="rc-row"><span class="rc-warn">À compléter après création</span></div>
+            </ng-template>
+          </div>
+
+          <!-- Compliance summary — Visite technique -->
+          <div class="review-card" *ngIf="needsInspection">
+            <div class="rc-head">
+              <span class="rc-title">🔬 Visite technique</span>
+              <button type="button" class="rc-edit" (click)="goTo(stepIndex('inspection'))">{{ t('edit') }}</button>
             </div>
-            <div class="rc-row" *ngIf="needsInspection">
-              <span class="rc-label">Visite technique</span>
-              <span class="rc-val">
-                <ng-container *ngIf="inspectionForm.value.dateFin; else skipInsp">
-                  exp. {{ inspectionForm.value.dateFin | date:'dd/MM/yyyy' }}
-                </ng-container>
-                <ng-template #skipInsp><span class="rc-warn">À compléter après création</span></ng-template>
-              </span>
-            </div>
+            <ng-container *ngIf="!complianceSkipped['inspection'] && (inspectionForm.value.dateFin || inspectionForm.value.dateReglages); else inspSkipped">
+              <div class="rc-row" *ngIf="inspectionForm.value.dateReglages">
+                <span class="rc-label">Date réglages</span>
+                <span class="rc-val">{{ fmtDateStr(inspectionForm.value.dateReglages) }}</span>
+              </div>
+              <div class="rc-row" *ngIf="inspectionForm.value.dateFin">
+                <span class="rc-label">Expiration</span>
+                <span class="rc-val">{{ fmtDateStr(inspectionForm.value.dateFin) }}</span>
+              </div>
+              <div class="rc-row" *ngIf="inspectionForm.value.montant">
+                <span class="rc-label">Montant</span>
+                <span class="rc-val">{{ inspectionForm.value.montant }} MAD</span>
+              </div>
+            </ng-container>
+            <ng-template #inspSkipped>
+              <div class="rc-row"><span class="rc-warn">À compléter après création</span></div>
+            </ng-template>
           </div>
 
           <div class="review-card">
@@ -512,8 +630,6 @@
               <button type="button" class="rc-edit" (click)="goTo(stepIndex('pricing'))">{{ t('edit') }}</button>
             </div>
             <div class="rc-row"><span class="rc-label">{{ t('pricePerDay') }}</span><span class="rc-val rc-primary">{{ form.value.prixJour }} MAD</span></div>
-            <div class="rc-row" *ngIf="form.value.prixSemaine"><span class="rc-label">{{ t('weeklyRate') }}</span><span class="rc-val">{{ form.value.prixSemaine }} MAD</span></div>
-            <div class="rc-row" *ngIf="form.value.prixMois"><span class="rc-label">{{ t('monthlyRate') }}</span><span class="rc-val">{{ form.value.prixMois }} MAD</span></div>
             <div class="rc-row"><span class="rc-label">{{ t('deposit') }}</span><span class="rc-val">{{ form.value.caution || 0 }} MAD</span></div>
           </div>
 

@@ -7,9 +7,10 @@ import { catchError } from 'rxjs/operators';
 import { VoitureService } from '../../services/voiture.service';
 import { CrudService } from '../../services/crud.service';
 import { TranslationService } from '../../services/translation.service';
+import { EventBusService } from '../../services/event-bus.service';
 import { environment } from '../../../environments/environment';
 import { daysUntil as daysUntilUtil } from '../../shared/utils/date.utils';
-import { complianceSeverity as complianceSeverityUtil, complianceScore as complianceScoreUtil } from '../../shared/utils/compliance.utils';
+import { complianceSeverity as complianceSeverityUtil, complianceScore as complianceScoreUtil, ComplianceSeverity } from '../../shared/utils/compliance.utils';
 import { OverviewTabComponent }    from './tabs/overview-tab/overview-tab.component';
 import { FinancialTabComponent }   from './tabs/financial-tab/financial-tab.component';
 import { HistoryTabComponent }     from './tabs/history-tab/history-tab.component';
@@ -19,6 +20,7 @@ import { LifecyclePanelComponent, LifecycleState } from './lifecycle-panel/lifec
 import { ConformiteTabComponent }  from './tabs/conformite-tab/conformite-tab.component';
 import { TechnicalTabComponent }   from './tabs/technical-tab/technical-tab.component';
 import { UploadBtnComponent }      from '../../shared/btn/upload-btn.component';
+import { PaginatorComponent }      from '../../shared/paginator/paginator.component';
 
 const PLACEHOLDER = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjUwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iODAwIiBoZWlnaHQ9IjUwMCIgZmlsbD0iI2VkZjJmNyIvPjx0ZXh0IHg9IjQwMCIgeT0iMjUwIiBmaWxsPSIjYTBhZWMwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiBmb250LXNpemU9IjgwIj7wn5qlPC90ZXh0Pjwvc3ZnPg==`;
 
@@ -30,7 +32,7 @@ const PLACEHOLDER = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9I
     OverviewTabComponent, FinancialTabComponent,
     HistoryTabComponent, DocumentsTabComponent,
     ReadinessPanelComponent, LifecyclePanelComponent, ConformiteTabComponent,
-    TechnicalTabComponent, UploadBtnComponent,
+    TechnicalTabComponent, UploadBtnComponent, PaginatorComponent,
   ],
   templateUrl: './voiture-detail.component.html',
   styleUrls: ['./voiture-detail.component.css'],
@@ -87,6 +89,7 @@ export class VoitureDetailComponent implements OnInit {
     { key: 'sale',          labelKey: 'saleDecommission',   icon: 'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138' },
     { key: 'maintenance',   labelKey: 'maintenance',    icon: 'M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z' },
     { key: 'history',       labelKey: 'history',        icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
+    { key: 'credit',        labelKey: 'creditPayments', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
   ];
 
   // ── Sale flow ─────────────────────────────────────────────────────────────
@@ -98,6 +101,23 @@ export class VoitureDetailComponent implements OnInit {
   // ── Activate flow ─────────────────────────────────────────────────────────
   isActivating     = false;
   activateError: string | null = null;
+  isMovingToSetup  = false;
+  setupError: string | null = null;
+
+  // ── Credit tab ────────────────────────────────────────────────────────────
+  vehicleCredit: any = null;
+  creditInstallments: any[] = [];
+  loadingCredit = false;
+  payingInstallment: number | null = null;
+  cancelingInstallment: number | null = null;
+  creditRefreshTick = 0;
+  creditPage = 1;
+  readonly creditPageSize = 20;
+
+  get pagedCreditInstallments(): any[] {
+    const start = (this.creditPage - 1) * this.creditPageSize;
+    return this.creditInstallments.slice(start, start + this.creditPageSize);
+  }
 
   constructor(
     private route: ActivatedRoute,
@@ -106,6 +126,7 @@ export class VoitureDetailComponent implements OnInit {
     private ts: TranslationService,
     public router: Router,
     private fb: FormBuilder,
+    private bus: EventBusService,
   ) {
     this.saleForm = this.fb.group({
       dateVente: [new Date().toISOString().substring(0, 10)],
@@ -143,7 +164,9 @@ export class VoitureDetailComponent implements OnInit {
 
   ngOnInit(): void {
     this.ts.direction$.subscribe(d => this.dir = d);
-    const id = +this.route.snapshot.paramMap.get('id')!;
+    const id  = +this.route.snapshot.paramMap.get('id')!;
+    const tab = this.route.snapshot.queryParamMap.get('tab');
+    if (tab) this.activeTab = tab;
     this.load(id);
   }
 
@@ -226,6 +249,89 @@ export class VoitureDetailComponent implements OnInit {
   setActiveTab(key: string): void {
     this.activeTab = key;
     (document.querySelector('.page-content') as HTMLElement | null)?.scrollTo({ top: 0 });
+    if (key === 'credit' && !this.vehicleCredit && this.car?.id) {
+      this.loadCredit(this.car.id);
+    }
+  }
+
+  loadCredit(carId: number): void {
+    this.loadingCredit = true;
+    this.crud.getAll('vehicle-credit', { voitureId: carId }).pipe(
+      switchMap((res: any) => {
+        const items = Array.isArray(res) ? res : (res?.data ?? []);
+        if (!items.length) return of(null);
+        return this.crud.getById('vehicle-credit', items[0].id);
+      }),
+      catchError(() => of(null))
+    ).subscribe(full => {
+      this.vehicleCredit = full;
+      this.creditInstallments = full?.installments ?? [];
+      this.creditPage = 1;
+      this.loadingCredit = false;
+    });
+  }
+
+  payInstallment(inst: any): void {
+    this.payingInstallment = inst.id;
+    this.crud.create('vehicle-credit-payment', {
+      vehicleCreditId: this.vehicleCredit.id,
+      installmentId:   inst.id,
+      amount:          inst.amountDue,
+      paymentType:     'scheduled',
+      paymentDate:     new Date().toISOString().substring(0, 10),
+    }).subscribe({
+      next: () => {
+        this.payingInstallment = null;
+        this.refreshCredit();
+        this.creditRefreshTick++;
+        this.bus.paymentsChanged$.next();
+      },
+      error: () => { this.payingInstallment = null; },
+    });
+  }
+
+  cancelInstallment(inst: any): void {
+    if (!inst.paymentId) return;
+    this.cancelingInstallment = inst.id;
+    this.crud.remove('vehicle-credit-payment', inst.paymentId).subscribe({
+      next: () => {
+        this.cancelingInstallment = null;
+        this.refreshCredit();
+        this.creditRefreshTick++;
+        this.bus.paymentsChanged$.next();
+      },
+      error: () => { this.cancelingInstallment = null; },
+    });
+  }
+
+  private refreshCredit(): void {
+    if (!this.car?.id) return;
+    this.crud.getAll('vehicle-credit', { voitureId: this.car.id }).pipe(
+      switchMap((res: any) => {
+        const items = Array.isArray(res) ? res : (res?.data ?? []);
+        if (!items.length) return of(null);
+        return this.crud.getById('vehicle-credit', items[0].id);
+      }),
+      catchError(() => of(null))
+    ).subscribe(full => {
+      if (full) {
+        this.vehicleCredit      = full;
+        this.creditInstallments = full?.installments ?? [];
+      }
+    });
+  }
+
+  get creditMonthsRemaining(): number {
+    if (!this.creditInstallments.length) return 0;
+    return this.creditInstallments.filter(i => i.status !== 'paid').length;
+  }
+
+  get creditLastMonthRemainder(): number {
+    if (!this.vehicleCredit) return 0;
+    const last = this.creditInstallments[this.creditInstallments.length - 1];
+    if (!last) return 0;
+    const standard = this.vehicleCredit.monthlyInstallment ?? 0;
+    return Math.abs(last.amountDue - standard) > 0.01 ? last.amountDue : 0;
   }
 
   @HostListener('document:click', ['$event'])
@@ -317,14 +423,14 @@ export class VoitureDetailComponent implements OnInit {
     return '';
   }
 
-  get docAlerts(): { icon: string; name: string; field: string; date: string; level: 'danger' | 'warning' | '' }[] {
+  get docAlerts(): { icon: string; name: string; field: string; date: string; level: 'danger' | 'warning' | ''; status: string }[] {
     if (!this.car) return [];
     const c = this.car.compliance;
     if (!c) return [];
     return [
-      { icon: '🛡️', name: 'insuranceDoc', field: 'assurance', date: c.assurance?.expiresAt || '', level: this.complianceLevel(c.assurance?.status) },
-      { icon: '📄', name: 'vignetteDoc',   field: 'vignette',  date: c.vignette?.expiresAt  || '', level: this.complianceLevel(c.vignette?.status)  },
-      { icon: '🔬', name: 'technicalDoc',  field: 'visite',    date: c.visite?.expiresAt    || '', level: this.complianceLevel(c.visite?.status)    },
+      { icon: '🛡️', name: 'insuranceDoc', field: 'assurance', date: c.assurance?.expiresAt || '', level: this.complianceLevel(c.assurance?.status), status: (c.assurance?.status || '').toUpperCase() },
+      { icon: '📄', name: 'vignetteDoc',   field: 'vignette',  date: c.vignette?.expiresAt  || '', level: this.complianceLevel(c.vignette?.status),  status: (c.vignette?.status  || '').toUpperCase() },
+      { icon: '🔬', name: 'technicalDoc',  field: 'visite',    date: c.visite?.expiresAt    || '', level: this.complianceLevel(c.visite?.status),    status: (c.visite?.status    || '').toUpperCase() },
     ];
   }
 
@@ -624,11 +730,29 @@ export class VoitureDetailComponent implements OnInit {
 
   // ── Activation ───────────────────────────────────────────────────────────
 
+  get canProceedToSetup(): boolean {
+    if (this.effectiveStatus !== 'brouillon') return false;
+    return !!(this.car?.immatriculation && (this.car?.kilometrageActuel ?? 0) > 0);
+  }
+
+  proceedToSetup(): void {
+    if (!this.car || !this.canProceedToSetup) return;
+    this.isMovingToSetup = true;
+    this.setupError      = null;
+    this.voitureService.applyLifecycleEvent(this.car.id, 'vehicle.setup_started').subscribe({
+      next: () => { this.isMovingToSetup = false; this.load(this.car.id); },
+      error: (err: any) => {
+        this.isMovingToSetup = false;
+        this.setupError = err?.error?.error || err?.error?.message || 'Transition échouée.';
+      },
+    });
+  }
+
   get canActivate(): boolean {
     if (this.effectiveStatus !== 'setup') return false;
     const c = this.car?.compliance;
     if (!c) return false;
-    const isOk = (status?: string) => !!status && status !== 'EXPIRED' && status !== 'CRITICAL' && status !== 'UNKNOWN';
+    const isOk = (status?: string) => { const sev = complianceSeverityUtil(status); return sev === 'ok' || sev === 'warning'; };
     const assOk = isOk(c.assurance?.status);
     const vigOk = isOk(c.vignette?.status);
     const age = new Date().getFullYear() - (this.car?.annee || new Date().getFullYear());
@@ -697,6 +821,10 @@ export class VoitureDetailComponent implements OnInit {
         this.saleError = err?.error?.error || err?.error?.message || 'Enregistrement échoué.';
       },
     });
+  }
+
+  complianceTier(status: string | undefined): ComplianceSeverity {
+    return complianceSeverityUtil(status);
   }
 
   blockerTab(blocker: string): string {

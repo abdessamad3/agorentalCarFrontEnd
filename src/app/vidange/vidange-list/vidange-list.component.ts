@@ -4,6 +4,7 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { TranslationService } from '../../services/translation.service';
 import { CrudService } from '../../services/crud.service';
+import { EventBusService } from '../../services/event-bus.service';
 import { BtnComponent } from '../../shared/btn/btn.component';
 import { PaginatorComponent } from '../../shared/paginator/paginator.component';
 
@@ -26,7 +27,7 @@ export class VidangeListComponent implements OnInit {
   drawerOpen = false;
   drawerItem: any = null;
 
-  constructor(private crud: CrudService, private ts: TranslationService, private fb: FormBuilder) {
+  constructor(private crud: CrudService, private ts: TranslationService, private fb: FormBuilder, private bus: EventBusService) {
     this.form = this.fb.group({
       kilometrageSuivant: [0, [Validators.required, Validators.min(0)]],
       filtreAir:          [false],
@@ -68,7 +69,7 @@ export class VidangeListComponent implements OnInit {
     const req = this.isEditing
       ? this.crud.update(this.endpoint, this.selected.id, this.form.value)
       : this.crud.create(this.endpoint, this.form.value);
-    req.subscribe({ next: () => { this.closeModal(); this.load(); }, error: () => { this.isSubmitting = false; } });
+    req.subscribe({ next: () => { this.closeModal(); this.load(); this.bus.paymentsChanged$.next(); }, error: () => { this.isSubmitting = false; } });
   }
 
   confirmDelete() {

@@ -6,5 +6,8 @@
  */
 export function daysUntil(dateStr: string | null | undefined): number | null {
   if (!dateStr) return null;
-  return Math.floor((new Date(dateStr).getTime() - Date.now()) / 86400000);
+  const parts = dateStr.slice(0, 10).split('-').map(Number);
+  const target = new Date(parts[0], parts[1] - 1, parts[2]);
+  const now = new Date(); now.setHours(0, 0, 0, 0);
+  return Math.floor((target.getTime() - now.getTime()) / 86400000);
 }

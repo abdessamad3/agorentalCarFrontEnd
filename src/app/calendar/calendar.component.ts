@@ -5,6 +5,7 @@ import { CrudService } from '../services/crud.service';
 import { TranslationService } from '../services/translation.service';
 import { catchError } from 'rxjs/operators';
 import { forkJoin, of } from 'rxjs';
+import { toArr } from '../shared/utils/rx.utils';
 
 interface DayCell {
   date: Date;
@@ -103,9 +104,9 @@ export class CalendarComponent implements OnInit {
       voitures:     this.crud.getAll('voiture').pipe(catchError(() => of([]))),
       clients:      this.crud.getAll('client').pipe(catchError(() => of([]))),
     }).subscribe(({ reservations, voitures, clients }) => {
-      this.reservations = this.toArr(reservations);
-      this.voitures     = this.toArr(voitures);
-      this.clients      = this.toArr(clients);
+      this.reservations = toArr(reservations);
+      this.voitures     = toArr(voitures);
+      this.clients      = toArr(clients);
       this.computeStats();
       this.buildCalendar();
       this.buildWeekView();
@@ -115,9 +116,6 @@ export class CalendarComponent implements OnInit {
     });
   }
 
-  private toArr(r: any): any[] {
-    return Array.isArray(r) ? r : (r?.data ?? r?.['hydra:member'] ?? []);
-  }
 
   private computeStats() {
     const today = new Date(); today.setHours(12, 0, 0, 0);

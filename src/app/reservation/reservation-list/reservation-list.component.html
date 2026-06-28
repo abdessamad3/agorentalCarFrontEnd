@@ -8,7 +8,6 @@
         <input type="text" [(ngModel)]="search" (ngModelChange)="onSearch()" [placeholder]="t('search') + '...'" />
       </div>
       <a routerLink="/location/new" class="btn-new">+ Nouvelle location</a>
-      <a routerLink="/reservation/create" class="btn-secondary-sm">+ {{ t('newBooking') }}</a>
     </div>
   </div>
 
@@ -176,7 +175,6 @@
     <div *ngIf="filteredItems.length === 0" class="empty-page">
       <div class="empty-icon">📅</div>
       <p>{{ t('noData') }}</p>
-      <a routerLink="/reservation/create" class="btn-new">{{ t('createBooking') }}</a>
     </div>
 
     <app-paginator [page]="page" [limit]="limit" [total]="total"

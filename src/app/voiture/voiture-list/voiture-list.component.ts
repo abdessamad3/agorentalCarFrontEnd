@@ -11,6 +11,7 @@ import { VoitureService } from '../../services/voiture.service';
 import { CrudService } from '../../services/crud.service';
 import { TranslationService } from '../../services/translation.service';
 import { AuthService } from '../../services/auth.service';
+import { EventBusService } from '../../services/event-bus.service';
 import { environment } from '../../../environments/environment';
 import { complianceSeverity } from '../../shared/utils/compliance.utils';
 
@@ -93,7 +94,8 @@ export class VoitureListComponent implements OnInit, OnDestroy {
     public router: Router,
     private route: ActivatedRoute,
     private sanitizer: DomSanitizer,
-    private auth: AuthService
+    private auth: AuthService,
+    private bus: EventBusService,
   ) {
     this.editForm = this.fb.group({
       marque:            ['', Validators.required],
@@ -482,6 +484,7 @@ export class VoitureListComponent implements OnInit, OnDestroy {
         this.closeModal();
         if (this.filtered.length === 1 && this.page > 1) this.page--;
         this.loadCars();
+        this.bus.paymentsChanged$.next();
       },
       error: (err) => {
         const msg = err?.error?.message || err?.error?.error || '';

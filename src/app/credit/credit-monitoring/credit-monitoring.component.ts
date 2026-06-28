@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 import { CrudService } from '../../services/crud.service';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { toArr } from '../../shared/utils/rx.utils';
 
 interface ForecastMonth {
   label: string;
@@ -66,9 +67,9 @@ export class CreditMonitoringComponent implements OnInit {
       fournisseurs: safe(this.crud.getAll('fournisseur')),
     }).subscribe({
       next: (data: any) => {
-        const credits      = this.toArr(data.credits);
-        const achats       = this.toArr(data.achats);
-        const fournisseurs = this.toArr(data.fournisseurs);
+        const credits      = toArr(data.credits);
+        const achats       = toArr(data.achats);
+        const fournisseurs = toArr(data.fournisseurs);
 
         this.buildKPIs(credits);
         this.buildForecast(credits);
@@ -81,9 +82,6 @@ export class CreditMonitoringComponent implements OnInit {
     });
   }
 
-  private toArr(r: any): any[] {
-    return Array.isArray(r) ? r : (r?.data ?? r?.['hydra:member'] ?? []);
-  }
 
   computeRemaining(credit: any): number {
     const total      = +(credit.montantTotal ?? 0);

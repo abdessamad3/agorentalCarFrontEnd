@@ -262,42 +262,118 @@
 
 </div>
 
-<!-- Add Client Modal -->
+<!-- Add Client Modal — 3-step wizard -->
 <div *ngIf="showAddClientModal" class="modal-overlay" (click)="closeAddClient()">
-  <div class="modal" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h2>{{ t('addNewClient') }}</h2>
-      <button class="modal-close" (click)="closeAddClient()">×</button>
-    </div>
-    <form [formGroup]="newClientForm" (ngSubmit)="saveNewClient()">
+  <div class="modal modal-wide" (click)="$event.stopPropagation()">
+
+    <!-- Steps 1 + 2: info + cards -->
+    <ng-container *ngIf="addClientFormStep === 'info' || addClientFormStep === 'cards'">
+      <div class="modal-header">
+        <h2>{{ t('addNewClient') }}</h2>
+        <button class="modal-close" (click)="closeAddClient()">×</button>
+      </div>
+      <form [formGroup]="newClientForm" (ngSubmit)="saveNewClient()">
+        <div class="modal-body">
+
+          <!-- Step indicator -->
+          <div class="step-indicator">
+            <span class="step-dot" [class.active]="addClientFormStep === 'info'">1. {{ t('clientInfo') }}</span>
+            <span class="step-sep">—</span>
+            <span class="step-dot" [class.active]="addClientFormStep === 'cards'">2. {{ t('documentNumbers') }}</span>
+            <span class="step-sep">—</span>
+            <span class="step-dot">3. {{ t('documents') }}</span>
+          </div>
+
+          <!-- Step 1: personal info -->
+          <ng-container *ngIf="addClientFormStep === 'info'">
+            <div class="form-row">
+              <div class="form-group"><label>{{ t('name') }} <span class="required">*</span></label><input type="text" formControlName="nom" /></div>
+              <div class="form-group"><label>{{ t('prenom') }} <span class="required">*</span></label><input type="text" formControlName="prenom" /></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>{{ t('telephone') }} <span class="required">*</span></label><input type="text" formControlName="telephone" /></div>
+              <div class="form-group nationalite-combo">
+                <label>{{ t('nationalite') }} <span class="required">*</span></label>
+                <input type="text" formControlName="nationalite" autocomplete="off"
+                  (focus)="nationaliteDropdownOpen = true" (blur)="onNationaliteBlurForAdd()" />
+                <ul class="nationalite-dropdown" *ngIf="nationaliteDropdownOpen">
+                  <li *ngFor="let n of filteredNationalitesForAdd" (mousedown)="selectNationaliteForAdd(n)">{{ n }}</li>
+                  <li *ngIf="filteredNationalitesForAdd.length === 0" class="nationalite-empty">{{ t('noData') }}</li>
+                </ul>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>{{ t('email') }}</label><input type="email" formControlName="email" /></div>
+              <div class="form-group"><label>{{ t('telephone') }} ({{ t('foreignPhone') }})</label><input type="text" formControlName="telephoneEtranger" /></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>{{ t('dateOfBirth') }}</label><input type="date" formControlName="dateNaissance" /></div>
+              <div class="form-group"><label>{{ t('placeOfBirth') }}</label><input type="text" formControlName="lieuNaissance" /></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>{{ t('addressMorocco') }} <span class="required">*</span></label><input type="text" formControlName="adresseMaroc" /></div>
+              <div class="form-group"><label>{{ t('addressAbroad') }}</label><input type="text" formControlName="adresseEtranger" /></div>
+            </div>
+          </ng-container>
+
+          <!-- Step 2: document numbers / dates -->
+          <ng-container *ngIf="addClientFormStep === 'cards'">
+            <div class="form-row">
+              <div class="form-group"><label>{{ t('cinLabel') }} <span class="required">*</span></label><input type="text" formControlName="cin" /></div>
+              <div class="form-group"><label>{{ t('cinExpiration') }}</label><input type="date" formControlName="cinExpiration" /></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>{{ t('cinIssueDate') }}</label><input type="date" formControlName="cinDelivreLe" /></div>
+              <div class="form-group"><label>{{ t('cinIssuedAt') }}</label><input type="text" formControlName="cinDelivreA" /></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>{{ t('passeport') }}</label><input type="text" formControlName="passeport" /></div>
+              <div class="form-group"><label>{{ t('passeportExpiration') }}</label><input type="date" formControlName="passeportExpiration" /></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>{{ t('passportIssueDate') }}</label><input type="date" formControlName="passeportDelivreLe" /></div>
+              <div class="form-group"><label>{{ t('passportIssuedAt') }}</label><input type="text" formControlName="passeportDelivreA" /></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>{{ t('permisConduire') }} <span class="required">*</span></label><input type="text" formControlName="permisConduite" /></div>
+              <div class="form-group"><label>{{ t('permisExpiration') }}</label><input type="date" formControlName="permisExpiration" /></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>{{ t('licenseIssueDate') }}</label><input type="date" formControlName="permisDelivreLe" /></div>
+              <div class="form-group"><label>{{ t('licenseIssuedAt') }}</label><input type="text" formControlName="permisDelivreA" /></div>
+            </div>
+          </ng-container>
+
+        </div>
+        <div class="modal-footer">
+          <ng-container *ngIf="addClientFormStep === 'info'">
+            <button type="button" class="btn-secondary" (click)="closeAddClient()">{{ t('cancel') }}</button>
+            <button type="button" class="btn-primary" (click)="goToAddClientCardsStep()">{{ t('next') }}</button>
+          </ng-container>
+          <ng-container *ngIf="addClientFormStep === 'cards'">
+            <button type="button" class="btn-secondary" (click)="backToAddClientInfoStep()">{{ t('back') }}</button>
+            <button type="submit" class="btn-primary" [disabled]="newClientForm.invalid || addingClient">
+              {{ addingClient ? t('saving') : t('next') }}
+            </button>
+          </ng-container>
+        </div>
+      </form>
+    </ng-container>
+
+    <!-- Step 3: document photos -->
+    <ng-container *ngIf="addClientFormStep === 'documents' && addClientCreatedId as cid">
+      <div class="modal-header">
+        <h2>{{ t('uploadDocumentsTitle') }}</h2>
+        <button class="modal-close" (click)="closeAddClient()">×</button>
+      </div>
       <div class="modal-body">
-        <div class="form-row">
-          <div class="form-group">
-            <label>{{ t('name') }} *</label>
-            <input type="text" formControlName="nom" />
-          </div>
-          <div class="form-group">
-            <label>{{ t('prenom') }}</label>
-            <input type="text" formControlName="prenom" />
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>{{ t('telephone') }}</label>
-            <input type="text" formControlName="telephone" />
-          </div>
-          <div class="form-group">
-            <label>{{ t('cin') }}</label>
-            <input type="text" formControlName="cin" />
-          </div>
-        </div>
+        <p class="form-hint">{{ t('clientCreatedHint') }}</p>
+        <app-client-documents [clientId]="cid"></app-client-documents>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn-secondary" (click)="closeAddClient()">{{ t('cancel') }}</button>
-        <button type="submit" class="btn-primary" [disabled]="newClientForm.invalid || addingClient">
-          {{ addingClient ? t('saving') : t('save') }}
-        </button>
+        <button type="button" class="btn-primary" (click)="closeAddClient()">{{ t('close') }}</button>
       </div>
-    </form>
+    </ng-container>
+
   </div>
 </div>

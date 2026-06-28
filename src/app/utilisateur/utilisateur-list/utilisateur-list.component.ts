@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { TranslationService } from '../../services/translation.service';
 import { CrudService } from '../../services/crud.service';
+import { AuthService } from '../../services/auth.service';
 import { BtnComponent } from '../../shared/btn/btn.component';
 import { SignaturePadComponent } from '../../shared/signature-pad/signature-pad.component';
 
@@ -47,6 +48,7 @@ export class UtilisateurListComponent implements OnInit {
   signatureSaving = false;
 
   openDropdownId: number | null = null;
+  isAdmin = false;
 
   resetPwModal = false;
   resetPwUser: any = null;
@@ -67,7 +69,8 @@ export class UtilisateurListComponent implements OnInit {
   constructor(
     private crud: CrudService,
     private ts: TranslationService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private auth: AuthService
   ) {
     this.form = this.fb.group({
       nom:       ['', Validators.required],
@@ -86,11 +89,21 @@ export class UtilisateurListComponent implements OnInit {
     });
   }
 
+  get filteredBureaux(): any[] {
+    const companyId = this.form.get('companyId')?.value;
+    if (!companyId) return [];
+    return this.bureaux.filter(b => b.companyId === companyId);
+  }
+
   ngOnInit() {
     this.ts.direction$.subscribe(d => this.dir = d);
+    this.isAdmin = this.auth.hasRole('ROLE_ADMIN');
     this.load();
     this.loadBureaux();
     this.loadCompanies();
+    this.form.get('companyId')!.valueChanges.subscribe(() => {
+      this.form.get('bureauId')!.setValue(null, { emitEvent: false });
+    });
   }
 
   load() {
@@ -288,6 +301,10 @@ export class UtilisateurListComponent implements OnInit {
     this.form.reset({ nom: '', prenom: '', email: '', telephone: '', roles: ['ROLE_STAFF'], bureauId: null, companyId: null, actif: true, password: '' });
     this.form.get('password')!.setValidators([Validators.required, Validators.minLength(8)]);
     this.form.get('password')!.updateValueAndValidity();
+    this.form.get('companyId')!.setValidators([Validators.required]);
+    this.form.get('companyId')!.updateValueAndValidity();
+    this.form.get('bureauId')!.setValidators([Validators.required]);
+    this.form.get('bureauId')!.updateValueAndValidity();
     this.modalMode = 'form';
     this.openDropdownId = null;
   }
@@ -297,6 +314,10 @@ export class UtilisateurListComponent implements OnInit {
     this.selected = item;
     this.form.get('password')!.clearValidators();
     this.form.get('password')!.updateValueAndValidity();
+    this.form.get('companyId')!.clearValidators();
+    this.form.get('companyId')!.updateValueAndValidity();
+    this.form.get('bureauId')!.clearValidators();
+    this.form.get('bureauId')!.updateValueAndValidity();
     this.form.patchValue({
       nom: item.nom || '', prenom: item.prenom || '', email: item.email || '',
       telephone: item.telephone || '', roles: item.roles || ['ROLE_STAFF'],

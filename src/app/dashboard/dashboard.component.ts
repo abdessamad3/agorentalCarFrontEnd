@@ -1,20 +1,27 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { CrudService } from '../services/crud.service';
 import { TranslationService } from '../services/translation.service';
-import { of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { forkJoin, of } from 'rxjs';
+import { toArr } from '../shared/utils/rx.utils';
 
-interface MonthBar { label: string; revenue: number; expenses: number; revenueH: number; expensesH: number; }
-
-interface DocAlert {
-  carId: number;
-  carLabel: string;
-  immatriculation: string;
-  docType: 'assurance' | 'vignette' | 'visite';
+interface DayCell {
   date: Date;
-  daysOverOrLeft: number;
+  dayNum: number;
+  isCurrentMonth: boolean;
+  isToday: boolean;
+  isWeekend: boolean;
+  bookings: any[];
+  availableCars: any[];
+}
+
+interface AgendaGroup {
+  date: Date;
+  dateLabel: string;
+  isToday: boolean;
+  items: any[];
 }
 
 @Component({
@@ -25,326 +32,410 @@ interface DocAlert {
   styleUrls: ['./dashboard.component.css']
 })
 export class DashboardComponent implements OnInit {
-  loading = true;
-
-  // KPI
-  totalExpenses = 0;
-  totalRevenue = 0;
-  occupancyRate = 0;
-  activeBookings = 0;
-  totalCars = 0;
-  totalClients = 0;
-
-  // Fleet
-  availableCars = 0;
-  bookedCars = 0;
-  maintenanceCars = 0;
-
-  // Payment distribution
-  paidCount = 0;
-  unpaidCount = 0;
-  partialCount = 0;
-
-  // Charts
-  monthBars: MonthBar[] = [];
-  bookingMonthBars: { label: string; count: number; h: number }[] = [];
-
-  // Recent bookings
-  recentContracts: any[] = [];
-  recentReservations: any[] = [];
-
-  expiredAlerts: DocAlert[] = [];
-  dueThisMonthAlerts: DocAlert[] = [];
-
-  // Compliance KPIs (derived from car.compliance)
-  compliantCount  = 0;
-  warningCount    = 0;
-  criticalCount   = 0;
-  blockedCount    = 0;
-  expiringSoon30: { car: any; doc: string; days: number }[] = [];
-  critical7Days:  { car: any; doc: string; days: number }[] = [];
-
-  carsInRepair: { car: any; repair: any }[] = [];
-  oilDueSoon: any[] = [];
-  oilOverdue: any[] = [];
-
-  topCars: any[]    = [];
-  bottomCars: any[] = [];
-  profitLoading = true;
-  readonly currentYear = new Date().getFullYear();
-
-  creditsActive    = 0;
-  creditsDue       = 0;
-  creditsOverdue   = 0;
-  creditDebtTotal  = 0;
-
-  private allClients: any[] = [];
-  private allVoitures: any[] = [];
-
-  private cachedRevenueByMonth: any[] = [];
-  private cachedExpensesByMonth: any[] = [];
-  private cachedBookingsByMonth: any[] = [];
-
   dir = 'ltr';
+  loading = true;
+  currentDate = new Date();
+  weeks: DayCell[][] = [];
+  reservations: any[] = [];
+  voitures: any[] = [];
+  clients: any[] = [];
+  selectedDay: DayCell | null = null;
+  filterStatus = 'all';
+
+  activeCount = 0;
+  thisMonthCount = 0;
+  availableFleet = 0;
+  returnTodayCount = 0;
+
+  statModal: 'active' | 'available' | 'thisMonth' | 'returnToday' | null = null;
+
+  isMobile = false;
+  mobileView: 'month' | 'week' | 'day' | 'agenda' = 'month';
+  weekCells: DayCell[] = [];
+  agendaGroups: AgendaGroup[] = [];
+  bottomSheetDay: DayCell | null = null;
+  selectedDayView: Date = new Date();
+  dayViewCell: DayCell | null = null;
+  showMobileFilter = false;
+  private touchStartX = 0;
+  private touchStartY = 0;
+
+  readonly skeletonArr = Array(42).fill(0);
 
   private monthNames: Record<string, string[]> = {
-    en: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
-    fr: ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'],
+    en: ['January','February','March','April','May','June','July','August','September','October','November','December'],
+    fr: ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'],
     ar: ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'],
   };
 
-  constructor(
-    private crud: CrudService,
-    private ts: TranslationService,
-  ) {}
+  private monthNamesShort: Record<string, string[]> = {
+    en: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+    fr: ['Jan','Fév','Mar','Avr','Mai','Jui','Jul','Aoû','Sep','Oct','Nov','Déc'],
+    ar: ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'],
+  };
+
+  private dayNames: Record<string, string[]> = {
+    en: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
+    fr: ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'],
+    ar: ['أحد','إثن','ثلا','أرب','خمي','جمع','سبت'],
+  };
+
+  private dayNamesFull: Record<string, string[]> = {
+    en: ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],
+    fr: ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'],
+    ar: ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'],
+  };
+
+  constructor(private crud: CrudService, private ts: TranslationService) {}
 
   ngOnInit() {
+    this.isMobile = window.innerWidth < 768;
     this.ts.direction$.subscribe(d => this.dir = d);
-    this.ts.currentLang$.subscribe(() => {
-      if (this.cachedRevenueByMonth.length || this.cachedBookingsByMonth.length) {
-        this.monthBars        = this.buildMonthBarsFromAgg(this.cachedRevenueByMonth, this.cachedExpensesByMonth);
-        this.bookingMonthBars = this.buildBookingBarsFromAgg(this.cachedBookingsByMonth);
-      }
-    });
-    this.loadAll();
-    this.loadProfitability();
+    this.loadData();
   }
 
-  loadProfitability() {
-    this.profitLoading = true;
-    this.crud.getAll('profitability/vehicles', { year: this.currentYear })
-      .pipe(catchError(() => of(null)))
-      .subscribe({
-        next: (res: any) => {
-          const rows: any[] = res?.rows ?? [];
-          this.topCars    = rows.slice(0, 5);
-          this.bottomCars = [...rows].reverse().slice(0, 5);
-          this.profitLoading = false;
-        },
-        error: () => { this.profitLoading = false; },
-      });
-  }
+  @HostListener('window:resize')
+  onResize() { this.isMobile = window.innerWidth < 768; }
 
-  fmt(n: number): string {
-    if (Math.abs(n) >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
-    if (Math.abs(n) >= 1_000)     return (n / 1_000).toFixed(0) + 'k';
-    return n.toFixed(0);
-  }
-
-  loadAll() {
+  loadData() {
     this.loading = true;
-    this.crud.getAll('dashboard/aggregate').pipe(catchError(() => of(null))).subscribe({
-      next: (agg: any) => {
-        if (!agg) { this.loading = false; return; }
-
-        // KPIs from backend
-        const kpi = agg.kpi ?? {};
-        this.totalCars       = kpi.totalCars       ?? 0;
-        this.totalClients    = kpi.totalClients     ?? 0;
-        this.availableCars   = kpi.availableCars    ?? 0;
-        this.bookedCars      = kpi.bookedCars       ?? 0;
-        this.maintenanceCars = kpi.maintenanceCars  ?? 0;
-        this.occupancyRate   = kpi.occupancyRate    ?? 0;
-        this.activeBookings  = kpi.activeBookings   ?? 0;
-        this.totalRevenue    = kpi.totalRevenue     ?? 0;
-        this.totalExpenses   = kpi.totalExpenses    ?? 0;
-
-        // Payment distribution
-        const pd = agg.paymentDistribution ?? {};
-        this.paidCount    = pd.paidCount    ?? 0;
-        this.partialCount = pd.partialCount ?? 0;
-        this.unpaidCount  = pd.unpaidCount  ?? 0;
-
-        // Recent
-        this.recentReservations = agg.recentReservations ?? [];
-        this.recentContracts    = agg.recentContracts    ?? [];
-
-        // Cache for language-change rebuilds
-        this.cachedRevenueByMonth  = agg.revenueByMonth  ?? [];
-        this.cachedExpensesByMonth = agg.expensesByMonth ?? [];
-        this.cachedBookingsByMonth = agg.bookingsByMonth ?? [];
-
-        // Month bars from pre-computed data
-        this.monthBars        = this.buildMonthBarsFromAgg(this.cachedRevenueByMonth, this.cachedExpensesByMonth);
-        this.bookingMonthBars = this.buildBookingBarsFromAgg(this.cachedBookingsByMonth);
-
-        // Credits
-        const cr = agg.credits ?? {};
-        this.creditsActive   = cr.active      ?? 0;
-        this.creditsOverdue  = cr.overdue     ?? 0;
-        this.creditsDue      = cr.monthlyDue  ?? 0;
-        this.creditDebtTotal = cr.debtTotal   ?? 0;
-
-        // Compliance
-        const comp = agg.compliance ?? {};
-        this.compliantCount   = comp.compliant    ?? 0;
-        this.warningCount     = comp.warning      ?? 0;
-        this.criticalCount    = comp.critical     ?? 0;
-        this.blockedCount     = comp.blocked      ?? 0;
-        this.expiringSoon30   = comp.expiringSoon30 ?? [];
-        this.critical7Days    = comp.critical7Days  ?? [];
-
-        // Cars in repair + oil
-        this.carsInRepair = (agg.carsInRepair ?? []).map((r: any) => ({
-          car: { id: r.carId, marque: r.marque, modele: r.modele },
-          repair: { description: r.description, dateFin: r.dateFin }
-        }));
-        this.oilDueSoon = agg.oilReminders?.dueSoon ?? [];
-        this.oilOverdue = agg.oilReminders?.overdue ?? [];
-
-        this.loading = false;
-      },
-      error: () => { this.loading = false; }
+    forkJoin({
+      reservations: this.crud.getAll('reservation').pipe(catchError(() => of([]))),
+      voitures:     this.crud.getAll('voiture').pipe(catchError(() => of([]))),
+      clients:      this.crud.getAll('client').pipe(catchError(() => of([]))),
+    }).subscribe(({ reservations, voitures, clients }) => {
+      this.reservations = toArr(reservations);
+      this.voitures     = toArr(voitures);
+      this.clients      = toArr(clients);
+      this.computeStats();
+      this.buildCalendar();
+      this.buildWeekView();
+      this.buildAgendaView();
+      this.buildDayView();
+      this.loading = false;
     });
   }
 
-  private toArray(r: any): any[] {
-    return Array.isArray(r) ? r : (r?.data ?? r?.['hydra:member'] ?? []);
+
+  private computeStats() {
+    const today = new Date(); today.setHours(12, 0, 0, 0);
+    const y = today.getFullYear(), m = today.getMonth();
+    this.activeCount = this.reservations.filter(r => {
+      const s = new Date(r.dateDebut); s.setHours(0,0,0,0);
+      const e = new Date(r.dateFin);   e.setHours(23,59,59,999);
+      return s <= today && e >= today;
+    }).length;
+    this.thisMonthCount = this.reservations.filter(r => {
+      const d = new Date(r.dateDebut);
+      return d.getFullYear() === y && d.getMonth() === m;
+    }).length;
+    this.availableFleet = this.voitures.filter((v: any) =>
+      v.voitureStatus === 'available' || v.voitureStatus === 'disponible'
+    ).length;
+    const todayISO = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+    this.returnTodayCount = this.reservations.filter(r =>
+      (r.dateFin || '').slice(0, 10) === todayISO
+    ).length;
   }
 
-  private buildMonthBarsFromAgg(revenueRows: any[], expenseRows: any[]): MonthBar[] {
-    const lang   = this.ts.getCurrentLanguage();
-    const labels = this.monthNames[lang] || this.monthNames['en'];
-    const today  = new Date();
-    const bars: MonthBar[] = [];
-
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-      const y = d.getFullYear(); const m = d.getMonth() + 1; // SQL months are 1-based
-
-      const rev = revenueRows.find((r: any) => +r.yr === y && +r.mo === m);
-      const exp = expenseRows.find((e: any) => +e.yr === y && +e.mo === m);
-
-      bars.push({
-        label:    labels[m - 1],
-        revenue:  parseFloat(rev?.revenue ?? 0),
-        expenses: parseFloat(exp?.expenses ?? 0),
-        revenueH: 0, expensesH: 0,
-      });
-    }
-
-    const maxVal = Math.max(...bars.map(b => Math.max(b.revenue, b.expenses)), 1);
-    bars.forEach(b => {
-      b.revenueH  = Math.round((b.revenue  / maxVal) * 100);
-      b.expensesH = Math.round((b.expenses / maxVal) * 100);
-    });
-    return bars;
-  }
-
-  private buildBookingBarsFromAgg(bookingRows: any[]) {
-    const lang   = this.ts.getCurrentLanguage();
-    const labels = this.monthNames[lang] || this.monthNames['en'];
-    const today  = new Date();
-    const bars: { label: string; count: number; h: number }[] = [];
-
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-      const y = d.getFullYear(); const m = d.getMonth() + 1;
-
-      const row   = bookingRows.find((r: any) => +r.yr === y && +r.mo === m);
-      const count = +(row?.count ?? 0);
-      bars.push({ label: labels[m - 1], count, h: 0 });
-    }
-
-    const maxCount = Math.max(...bars.map(b => b.count), 1);
-    bars.forEach(b => b.h = Math.round((b.count / maxCount) * 100));
-    return bars;
-  }
-
-  private buildMonthBars(_r: any[], _e: any[]): MonthBar[] { return []; }
-  private buildBookingBars(_r: any[]): { label: string; count: number; h: number }[] { return []; }
-
-  get paymentTotal() { return Math.max(this.paidCount + this.unpaidCount + this.partialCount, 1); }
-  get paidPct()    { return Math.round((this.paidCount    / this.paymentTotal) * 100); }
-  get unpaidPct()  { return Math.round((this.unpaidCount  / this.paymentTotal) * 100); }
-  get partialPct() { return Math.round((this.partialCount / this.paymentTotal) * 100); }
-
-  clientName(r: any): string {
-    const id = r.clientId || r.client?.id;
-    const c = this.allClients.find((x: any) => x.id === id);
-    return c ? `${c.nom} ${c.prenom || ''}`.trim() : (r.client?.nom || `#${id || '?'}`);
-  }
-
-  voitureLabel(r: any): string {
-    const id = r.voitureId || r.voiture?.id;
-    const v = this.allVoitures.find((x: any) => x.id === id);
-    return v ? `${v.marque} ${v.modele}` : (r.voiture?.marque || `#${id || '?'}`);
-  }
-
-  reservationStatus(r: any): string {
+  buildCalendar() {
+    const year = this.currentDate.getFullYear();
+    const month = this.currentDate.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrev  = new Date(year, month, 0).getDate();
     const today = new Date();
-    const start = new Date(r.dateDebut);
-    const end = new Date(r.dateFin);
-    if (end < today) return 'done';
-    if (start <= today && end >= today) return 'active';
-    return 'upcoming';
+    const cells: DayCell[] = [];
+
+    for (let i = firstDay - 1; i >= 0; i--)
+      cells.push(this.makeCell(new Date(year, month - 1, daysInPrev - i), false, today));
+    for (let d = 1; d <= daysInMonth; d++)
+      cells.push(this.makeCell(new Date(year, month, d), true, today));
+    for (let d = 1; d <= 42 - cells.length; d++)
+      cells.push(this.makeCell(new Date(year, month + 1, d), false, today));
+
+    this.weeks = [];
+    for (let i = 0; i < cells.length; i += 7)
+      this.weeks.push(cells.slice(i, i + 7));
   }
 
-  private buildDocAlerts(cars: any[]): void {
+  buildWeekView() {
+    const d = new Date(this.currentDate);
+    const dayOfWeek = d.getDay();
+    const startOfWeek = new Date(d);
+    startOfWeek.setDate(d.getDate() - dayOfWeek);
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const thisYear = today.getFullYear();
-    const thisMonth = today.getMonth();
+    this.weekCells = [];
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(startOfWeek);
+      date.setDate(startOfWeek.getDate() + i);
+      this.weekCells.push(this.makeCell(date, date.getMonth() === this.currentDate.getMonth(), today));
+    }
+  }
 
-    const expired: DocAlert[] = [];
-    const dueThisMonth: DocAlert[] = [];
+  buildAgendaView() {
+    const today = new Date(); today.setHours(0,0,0,0);
+    const source = this.filterStatus === 'all'
+      ? this.reservations
+      : this.reservations.filter(r => this.bookingStatusClass(r) === this.filterStatus);
 
-    // Compliance KPI reset
-    this.compliantCount = 0; this.warningCount = 0; this.criticalCount = 0; this.blockedCount = 0;
-    this.expiringSoon30 = []; this.critical7Days = [];
-    const docLabels: Record<string, string> = { vignette: 'Vignette', assurance: 'Assurance', visite: 'Visite tech.' };
+    const sorted = [...source]
+      .filter(r => { const e = new Date(r.dateFin); e.setHours(23,59,59,999); return e >= today; })
+      .sort((a, b) => new Date(a.dateDebut).getTime() - new Date(b.dateDebut).getTime());
 
-    for (const car of cars) {
-      const label = `${car.marque || ''} ${car.modele || ''}`.trim();
-
-      // Compliance KPIs from car.compliance
-      if (car.compliance) {
-        const overall = car.compliance.overall;
-        if (overall === 'VALID')         this.compliantCount++;
-        else if (overall === 'WARNING')  this.warningCount++;
-        else if (overall === 'CRITICAL') this.criticalCount++;
-        else if (overall !== 'NOT_REQUIRED') this.blockedCount++;
-
-        for (const key of ['vignette', 'assurance', 'visite'] as const) {
-          const info = car.compliance[key];
-          if (!info || info.daysRemaining === null) continue;
-          if (info.status === 'NOT_REQUIRED') continue;
-          if (info.daysRemaining >= 0 && info.daysRemaining <= 30) {
-            this.expiringSoon30.push({ car, doc: docLabels[key], days: info.daysRemaining });
-          }
-          if (info.daysRemaining >= 0 && info.daysRemaining <= 7) {
-            this.critical7Days.push({ car, doc: docLabels[key], days: info.daysRemaining });
-          }
-        }
+    const groups = new Map<string, AgendaGroup>();
+    for (const r of sorted) {
+      const d = new Date(r.dateDebut); d.setHours(0,0,0,0);
+      const key = d.toDateString();
+      if (!groups.has(key)) {
+        groups.set(key, {
+          date: new Date(d),
+          dateLabel: this.formatAgendaDate(d),
+          isToday: d.toDateString() === today.toDateString(),
+          items: []
+        });
       }
-
+      groups.get(key)!.items.push(r);
     }
-
-    this.expiredAlerts = expired.sort((a, b) => a.daysOverOrLeft - b.daysOverOrLeft);
-    this.dueThisMonthAlerts = dueThisMonth.sort((a, b) => a.daysOverOrLeft - b.daysOverOrLeft);
-    this.expiringSoon30.sort((a, b) => a.days - b.days);
-    this.critical7Days.sort((a, b) => a.days - b.days);
+    this.agendaGroups = Array.from(groups.values());
   }
 
-  private buildCarsInRepair(cars: any[], reparations: any[]): void {
+  buildDayView() {
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const active = reparations.filter(r => {
-      if (!r.dateFin) return true;
-      const fin = new Date(r.dateFin);
-      fin.setHours(23, 59, 59, 999);
-      return fin >= today;
-    });
-    this.carsInRepair = active.map(r => {
-      const carId = r.voitureId ?? r.voiture?.id;
-      const car = cars.find(c => c.id === carId) ?? r.voiture ?? null;
-      return { car, repair: r };
-    }).filter(x => x.car);
+    this.dayViewCell = this.makeCell(new Date(this.selectedDayView), true, today);
   }
 
-  docTypeLabel(type: string): string {
-    const map: Record<string, string> = { assurance: 'insuranceDoc', vignette: 'vignetteDoc', visite: 'technicalDoc' };
-    return this.t(map[type] || type);
+  private formatAgendaDate(d: Date): string {
+    const lang = this.ts.getCurrentLanguage();
+    const daysFull = this.dayNamesFull[lang] || this.dayNamesFull['en'];
+    const monthsShort = this.monthNamesShort[lang] || this.monthNamesShort['en'];
+    return `${daysFull[d.getDay()]}, ${d.getDate()} ${monthsShort[d.getMonth()]}`;
+  }
+
+  private makeCell(date: Date, isCurrentMonth: boolean, today: Date): DayCell {
+    const source = this.filterStatus === 'all'
+      ? this.reservations
+      : this.reservations.filter(r => this.bookingStatusClass(r) === this.filterStatus);
+
+    const probe = new Date(date); probe.setHours(12,0,0,0);
+    const overlapsDay = (r: any) => {
+      const s = new Date(r.dateDebut); s.setHours(0,0,0,0);
+      const e = new Date(r.dateFin);   e.setHours(23,59,59,999);
+      return probe >= s && probe <= e;
+    };
+
+    const bookings = source.filter(overlapsDay);
+    const bookedIds = new Set(
+      this.reservations
+        .filter(r => this.bookingStatusClass(r) !== 'cancelled')
+        .filter(overlapsDay)
+        .map(r => r.voitureId || r.voiture?.id)
+    );
+    const todayStart = new Date(today); todayStart.setHours(0, 0, 0, 0);
+    const nonOperational = new Set(['vendu', 'archive', 'decommissioned', 'brouillon', 'setup', 'hors_service', 'maintenance']);
+    const availableCars = probe < todayStart ? [] : this.voitures.filter(v => {
+      const s = ((v as any).voitureStatus || '').toLowerCase();
+      return !bookedIds.has(v.id) && !nonOperational.has(s);
+    });
+
+    const day = date.getDay();
+    return {
+      date, dayNum: date.getDate(), isCurrentMonth,
+      isToday:   date.toDateString() === today.toDateString(),
+      isWeekend: day === 0 || day === 6,
+      bookings, availableCars,
+    };
+  }
+
+  prevMonth() {
+    this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() - 1, 1);
+    this.buildCalendar(); this.buildWeekView(); this.buildAgendaView();
+  }
+  nextMonth() {
+    this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 1);
+    this.buildCalendar(); this.buildWeekView(); this.buildAgendaView();
+  }
+  prevWeek() {
+    const d = new Date(this.currentDate); d.setDate(d.getDate() - 7);
+    this.currentDate = d; this.buildWeekView();
+  }
+  nextWeek() {
+    const d = new Date(this.currentDate); d.setDate(d.getDate() + 7);
+    this.currentDate = d; this.buildWeekView();
+  }
+  prevDay() {
+    const d = new Date(this.selectedDayView); d.setDate(d.getDate() - 1);
+    this.selectedDayView = d; this.buildDayView();
+  }
+  nextDay() {
+    const d = new Date(this.selectedDayView); d.setDate(d.getDate() + 1);
+    this.selectedDayView = d; this.buildDayView();
+  }
+
+  mobilePrev() {
+    switch (this.mobileView) {
+      case 'month':  this.prevMonth(); break;
+      case 'week':   this.prevWeek();  break;
+      case 'day':    this.prevDay();   break;
+      case 'agenda': this.prevMonth(); break;
+    }
+  }
+  mobileNext() {
+    switch (this.mobileView) {
+      case 'month':  this.nextMonth(); break;
+      case 'week':   this.nextWeek();  break;
+      case 'day':    this.nextDay();   break;
+      case 'agenda': this.nextMonth(); break;
+    }
+  }
+
+  goToToday() {
+    this.currentDate = new Date();
+    this.selectedDayView = new Date();
+    this.buildCalendar(); this.buildWeekView(); this.buildDayView(); this.buildAgendaView();
+  }
+
+  setFilter(status: string) {
+    this.filterStatus = status;
+    this.showMobileFilter = false;
+    this.buildCalendar(); this.buildWeekView(); this.buildAgendaView(); this.buildDayView();
+  }
+
+  setMobileView(view: 'month' | 'week' | 'day' | 'agenda') {
+    this.mobileView = view;
+    this.bottomSheetDay = null;
+  }
+
+  get isViewingCurrentMonth(): boolean {
+    const n = new Date();
+    return this.currentDate.getFullYear() === n.getFullYear()
+        && this.currentDate.getMonth()    === n.getMonth();
+  }
+  get isViewingToday(): boolean {
+    return this.selectedDayView.toDateString() === new Date().toDateString();
+  }
+  get currentMonthLabel(): string {
+    const lang  = this.ts.getCurrentLanguage();
+    const names = this.monthNames[lang] || this.monthNames['en'];
+    return `${names[this.currentDate.getMonth()]} ${this.currentDate.getFullYear()}`;
+  }
+  get dayLabels(): string[] {
+    const lang = this.ts.getCurrentLanguage();
+    return this.dayNames[lang] || this.dayNames['en'];
+  }
+  get currentWeekLabel(): string {
+    if (!this.weekCells.length) return '';
+    const lang = this.ts.getCurrentLanguage();
+    const months = this.monthNamesShort[lang] || this.monthNamesShort['en'];
+    const first = this.weekCells[0].date;
+    const last  = this.weekCells[6].date;
+    if (first.getMonth() === last.getMonth())
+      return `${first.getDate()} – ${last.getDate()} ${months[last.getMonth()]} ${last.getFullYear()}`;
+    return `${first.getDate()} ${months[first.getMonth()]} – ${last.getDate()} ${months[last.getMonth()]} ${last.getFullYear()}`;
+  }
+  get currentDayLabel(): string {
+    const lang = this.ts.getCurrentLanguage();
+    const months = this.monthNamesShort[lang] || this.monthNamesShort['en'];
+    const days   = this.dayNamesFull[lang]    || this.dayNamesFull['en'];
+    const d = this.selectedDayView;
+    return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]}`;
+  }
+  get mobileHeaderLabel(): string {
+    switch (this.mobileView) {
+      case 'month':  return this.currentMonthLabel;
+      case 'week':   return this.currentWeekLabel;
+      case 'day':    return this.currentDayLabel;
+      case 'agenda': return this.t('upcoming');
+    }
+  }
+
+  private dayHasContent(day: DayCell): boolean {
+    return this.filterStatus === 'available' ? day.availableCars.length > 0 : day.bookings.length > 0;
+  }
+
+  selectDay(day: DayCell) {
+    if (!this.dayHasContent(day)) return;
+    this.selectedDay = this.selectedDay?.date.toDateString() === day.date.toDateString() ? null : day;
+  }
+  selectMobileDay(day: DayCell) {
+    if (this.dayHasContent(day)) {
+      this.bottomSheetDay = day;
+    } else {
+      this.selectedDayView = new Date(day.date);
+      this.buildDayView();
+      this.mobileView = 'day';
+    }
+  }
+
+  closeBottomSheet() { this.bottomSheetDay = null; }
+  closeDay() { this.selectedDay = null; }
+  openStatModal(type: 'active' | 'available' | 'thisMonth' | 'returnToday') { this.statModal = type; }
+  closeStatModal() { this.statModal = null; }
+
+  get activeRentalsList(): any[] {
+    const today = new Date(); today.setHours(12, 0, 0, 0);
+    return this.reservations.filter(r => {
+      const s = new Date(r.dateDebut); s.setHours(0,0,0,0);
+      const e = new Date(r.dateFin);   e.setHours(23,59,59,999);
+      return s <= today && e >= today;
+    });
+  }
+
+  get returnTodayList(): any[] {
+    const now = new Date();
+    const todayISO = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    return this.reservations.filter(r => (r.dateFin || '').slice(0, 10) === todayISO);
+  }
+  get availableCarsList(): any[] {
+    return this.voitures.filter(v => {
+      const s = ((v as any).effectiveStatus || (v as any).voitureStatus || '').toLowerCase();
+      return s === 'available' || s === 'disponible';
+    });
+  }
+  get thisMonthList(): any[] {
+    const today = new Date();
+    const y = today.getFullYear(), m = today.getMonth();
+    return this.reservations.filter(r => {
+      const d = new Date(r.dateDebut);
+      return d.getFullYear() === y && d.getMonth() === m;
+    }).sort((a, b) => new Date(a.dateDebut).getTime() - new Date(b.dateDebut).getTime());
+  }
+
+  @HostListener('document:keydown.escape') onEscape() {
+    this.closeDay(); this.closeBottomSheet(); this.showMobileFilter = false; this.closeStatModal();
+  }
+
+  onTouchStart(e: TouchEvent) {
+    this.touchStartX = e.changedTouches[0].screenX;
+    this.touchStartY = e.changedTouches[0].screenY;
+  }
+  onTouchEnd(e: TouchEvent) {
+    const dx = this.touchStartX - e.changedTouches[0].screenX;
+    const dy = Math.abs(this.touchStartY - e.changedTouches[0].screenY);
+    if (Math.abs(dx) > 55 && dy < 80) {
+      if (dx > 0) this.mobileNext(); else this.mobilePrev();
+    }
+  }
+
+  getVoitureLabel(r: any): string {
+    const v = this.voitures.find(v => v.id === (r.voitureId || r.voiture?.id));
+    return v ? `${v.marque} ${v.modele}` : `#${r.voitureId || '?'}`;
+  }
+  carLabel(v: any): string { return `${v.marque} ${v.modele}`; }
+  getClientName(r: any): string {
+    const id = r.clientId || r.client?.id;
+    const c  = this.clients.find(c => c.id === id);
+    if (c) return `${c.prenom || ''} ${c.nom}`.trim();
+    return r.client?.nom || `#${id || '?'}`;
+  }
+  bookingStatusClass(r: any): string {
+    const s = (r.reservationStatus || r.statut || '').toLowerCase().replace(/ /g, '_');
+    if (['confirmee','confirmed'].includes(s))                   return 'confirmed';
+    if (['en_cours','active','encours'].includes(s))             return 'active';
+    if (['terminee','completed','done','termine'].includes(s))   return 'completed';
+    if (['annulee','cancelled','annule'].includes(s))            return 'cancelled';
+    if (s === 'maintenance')                                     return 'maintenance';
+    return 'pending';
   }
 
   t(key: string) { return this.ts.translate(key); }

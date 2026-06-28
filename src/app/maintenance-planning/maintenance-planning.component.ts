@@ -1,10 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { forkJoin, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { forkJoin } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { safe, toArr } from '../shared/utils/rx.utils';
 import { CrudService } from '../services/crud.service';
 import { TranslationService } from '../services/translation.service';
+import { daysUntil } from '../shared/utils/date.utils';
 
 export type TaskPriority = 'OVERDUE' | 'CRITICAL' | 'WARNING' | 'UPCOMING' | 'OK';
 export type TaskType = 'oil_change' | 'technical_visit' | 'repair' | 'insurance' | 'vignette';
@@ -22,13 +24,6 @@ export interface MaintenanceTask {
   description: string;
   cost?: number;
   sourceId: number;
-}
-
-function daysFromNow(dateStr: string | null | undefined): number | null {
-  if (!dateStr) return null;
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return null;
-  return Math.round((d.getTime() - Date.now()) / 86_400_000);
 }
 
 function priorityFromDays(days: number | null): TaskPriority {
@@ -90,9 +85,6 @@ export class MaintenancePlanningComponent implements OnInit {
     this.load();
   }
 
-  private safe(obs: any) { return obs.pipe(catchError(() => of([]))); }
-  private toArr(r: any): any[] { return Array.isArray(r) ? r : (r?.data ?? []); }
-
   private carLabel(car: any): string {
     return `${car?.marque ?? ''} ${car?.modele ?? ''}`.trim() || `#${car?.id}`;
   }
@@ -100,20 +92,20 @@ export class MaintenancePlanningComponent implements OnInit {
   load() {
     this.loading = true;
     forkJoin({
-      cars:     this.safe(this.crud.getAll('voiture',         { limit: 500 })),
-      vidanges: this.safe(this.crud.getAll('vidange',         { limit: 500 })),
-      repairs:  this.safe(this.crud.getAll('reparation',      { limit: 500 })),
-      suivis:   this.safe(this.crud.getAll('suivi-technique', { limit: 500 })),
-      assur:    this.safe(this.crud.getAll('assurance',       { limit: 500 })),
-      vignettes:this.safe(this.crud.getAll('vignette',        { limit: 500 })),
+      cars:     safe(this.crud.getAll('voiture',         { limit: 500 })),
+      vidanges: safe(this.crud.getAll('vidange',         { limit: 500 })),
+      repairs:  safe(this.crud.getAll('reparation',      { limit: 500 })),
+      suivis:   safe(this.crud.getAll('suivi-technique', { limit: 500 })),
+      assur:    safe(this.crud.getAll('assurance',       { limit: 500 })),
+      vignettes:safe(this.crud.getAll('vignette',        { limit: 500 })),
     }).pipe(
       map(({ cars, vidanges, repairs, suivis, assur, vignettes }: any) => {
-        const carList = this.toArr(cars);
+        const carList = toArr(cars);
         const carMap  = new Map<number, any>(carList.map((c: any) => [c.id, c]));
         const tasks: MaintenanceTask[] = [];
 
         // Oil changes
-        for (const v of this.toArr(vidanges)) {
+        for (const v of toArr(vidanges)) {
           const carId = v.voitureId ?? v.voiture?.id;
           const car   = carMap.get(carId);
           const currentKm = car?.kilometrage ?? 0;
@@ -121,7 +113,7 @@ export class MaintenancePlanningComponent implements OnInit {
           const nextDate  = v.dateProchaine ?? null;
           const remKm     = nextKm ? nextKm - currentKm : null;
 
-          let days = daysFromNow(nextDate);
+          let days = daysUntil(nextDate);
           let priority: TaskPriority;
 
           if (remKm !== null && remKm <= 0)      priority = 'OVERDUE';
@@ -149,10 +141,10 @@ export class MaintenancePlanningComponent implements OnInit {
         }
 
         // Technical visits
-        for (const s of this.toArr(suivis)) {
+        for (const s of toArr(suivis)) {
           const carId = s.voitureId ?? s.voiture?.id;
           const car   = carMap.get(carId);
-          const days  = daysFromNow(s.prochainDate ?? s.dateProchaine);
+          const days  = daysUntil(s.prochainDate ?? s.dateProchaine);
           const priority = priorityFromDays(days);
           if (priority === 'OK') continue;
           tasks.push({
@@ -171,12 +163,12 @@ export class MaintenancePlanningComponent implements OnInit {
         }
 
         // Repairs (pending/open)
-        for (const r of this.toArr(repairs)) {
+        for (const r of toArr(repairs)) {
           const statut = (r.statut ?? '').toLowerCase();
           if (['terminee', 'done', 'complete', 'completed'].includes(statut)) continue;
           const carId = r.voitureId ?? r.voiture?.id;
           const car   = carMap.get(carId);
-          const days  = daysFromNow(r.datePrevu ?? r.date);
+          const days  = daysUntil(r.datePrevu ?? r.date);
           const priority = days !== null && days < 0 ? 'OVERDUE' : days !== null && days <= 7 ? 'CRITICAL' : 'WARNING';
           tasks.push({
             vehicleId:     carId,
@@ -195,10 +187,10 @@ export class MaintenancePlanningComponent implements OnInit {
         }
 
         // Insurance expiry
-        for (const a of this.toArr(assur)) {
+        for (const a of toArr(assur)) {
           const carId = a.voitureId ?? a.voiture?.id;
           const car   = carMap.get(carId);
-          const days  = daysFromNow(a.dateFin ?? a.dateExpiration);
+          const days  = daysUntil(a.dateFin ?? a.dateExpiration);
           const priority = priorityFromDays(days);
           if (priority === 'OK') continue;
           tasks.push({
@@ -218,10 +210,10 @@ export class MaintenancePlanningComponent implements OnInit {
         }
 
         // Vignette expiry
-        for (const v of this.toArr(vignettes)) {
+        for (const v of toArr(vignettes)) {
           const carId = v.voitureId ?? v.voiture?.id;
           const car   = carMap.get(carId);
-          const days  = daysFromNow(v.dateFin ?? v.dateExpiration);
+          const days  = daysUntil(v.dateFin ?? v.dateExpiration);
           const priority = priorityFromDays(days);
           if (priority === 'OK') continue;
           tasks.push({

@@ -309,7 +309,8 @@
             <span *ngIf="card.level === ''">Valid</span>
             <span *ngIf="card.level === 'warning' && card.days !== null && card.days >= 0">Expires in {{ card.days }} days</span>
             <span *ngIf="card.level === 'warning' && (card.days === null || card.days < 0)">Expiring soon</span>
-            <span *ngIf="card.level === 'danger'">Expired</span>
+            <span *ngIf="card.level === 'danger' && card.days !== null && card.days >= 0">Critical — {{ card.days }}d left</span>
+            <span *ngIf="card.level === 'danger' && (card.days === null || card.days < 0)">Expired</span>
           </div>
           <div class="ccard-days" *ngIf="card.level === '' && card.days !== null && card.days >= 0">
             {{ card.days }} days remaining
@@ -396,37 +397,37 @@
             {{ +(car.prixJour||0) > 0 ? '✓' : '→' }}
           </span>
         </button>
-        <button class="ob-ws-item" (click)="setActiveTab('compliance')">
+        <button class="ob-ws-item" (click)="setActiveTab('conformite')">
           <span class="ob-ws-item-emoji">🛡️</span>
           <span class="ob-ws-item-label">Insurance</span>
           <span class="ob-ws-item-hint">Active policy required</span>
           <span class="ob-ws-item-status"
-                [class.owi-ok]="car.compliance?.assurance?.status === 'VALID'"
-                [class.owi-warn]="car.compliance?.assurance?.status === 'WARNING'"
-                [class.owi-todo]="!car.compliance?.assurance?.status || car.compliance?.assurance?.status === 'EXPIRED'">
-            {{ car.compliance?.assurance?.status === 'VALID' ? '✓' : car.compliance?.assurance?.status === 'WARNING' ? '▲' : '→' }}
+                [class.owi-ok]="complianceTier(car.compliance?.assurance?.status) === 'ok'"
+                [class.owi-warn]="complianceTier(car.compliance?.assurance?.status) === 'warning' || complianceTier(car.compliance?.assurance?.status) === 'danger'"
+                [class.owi-todo]="complianceTier(car.compliance?.assurance?.status) === 'neutral'">
+            {{ complianceTier(car.compliance?.assurance?.status) === 'ok' ? '✓' : complianceTier(car.compliance?.assurance?.status) === 'neutral' ? '→' : '▲' }}
           </span>
         </button>
-        <button class="ob-ws-item" (click)="setActiveTab('compliance')">
+        <button class="ob-ws-item" (click)="setActiveTab('conformite')">
           <span class="ob-ws-item-emoji">📄</span>
           <span class="ob-ws-item-label">Vignette</span>
           <span class="ob-ws-item-hint">Annual road tax</span>
           <span class="ob-ws-item-status"
-                [class.owi-ok]="car.compliance?.vignette?.status === 'VALID'"
-                [class.owi-warn]="car.compliance?.vignette?.status === 'WARNING'"
-                [class.owi-todo]="!car.compliance?.vignette?.status || car.compliance?.vignette?.status === 'EXPIRED'">
-            {{ car.compliance?.vignette?.status === 'VALID' ? '✓' : car.compliance?.vignette?.status === 'WARNING' ? '▲' : '→' }}
+                [class.owi-ok]="complianceTier(car.compliance?.vignette?.status) === 'ok'"
+                [class.owi-warn]="complianceTier(car.compliance?.vignette?.status) === 'warning' || complianceTier(car.compliance?.vignette?.status) === 'danger'"
+                [class.owi-todo]="complianceTier(car.compliance?.vignette?.status) === 'neutral'">
+            {{ complianceTier(car.compliance?.vignette?.status) === 'ok' ? '✓' : complianceTier(car.compliance?.vignette?.status) === 'neutral' ? '→' : '▲' }}
           </span>
         </button>
-        <button class="ob-ws-item" *ngIf="vehicleAgeYears >= 3" (click)="setActiveTab('compliance')">
+        <button class="ob-ws-item" *ngIf="vehicleAgeYears >= 3" (click)="setActiveTab('conformite')">
           <span class="ob-ws-item-emoji">🔬</span>
           <span class="ob-ws-item-label">Technical Inspection</span>
           <span class="ob-ws-item-hint">Required — {{ vehicleAgeYears }}y old</span>
           <span class="ob-ws-item-status"
-                [class.owi-ok]="car.compliance?.visite?.status === 'VALID'"
-                [class.owi-warn]="car.compliance?.visite?.status === 'WARNING'"
-                [class.owi-todo]="!car.compliance?.visite?.status || car.compliance?.visite?.status === 'EXPIRED'">
-            {{ car.compliance?.visite?.status === 'VALID' ? '✓' : car.compliance?.visite?.status === 'WARNING' ? '▲' : '→' }}
+                [class.owi-ok]="complianceTier(car.compliance?.visite?.status) === 'ok'"
+                [class.owi-warn]="complianceTier(car.compliance?.visite?.status) === 'warning' || complianceTier(car.compliance?.visite?.status) === 'danger'"
+                [class.owi-todo]="complianceTier(car.compliance?.visite?.status) === 'neutral'">
+            {{ complianceTier(car.compliance?.visite?.status) === 'ok' ? '✓' : complianceTier(car.compliance?.visite?.status) === 'neutral' ? '→' : '▲' }}
           </span>
         </button>
         <button class="ob-ws-item" (click)="openEditModal()">
@@ -439,6 +440,23 @@
             {{ images.length > 0 && images[0] !== placeholderImg ? '✓' : '→' }}
           </span>
         </button>
+      </div>
+
+      <!-- Proceed to setup — brouillon cars with immat + km -->
+      <div class="ob-ws-activate-row" *ngIf="effectiveStatus === 'brouillon'">
+        <div *ngIf="setupError" class="ob-activate-error">{{ setupError }}</div>
+        <button class="ob-btn-setup"
+                [disabled]="!canProceedToSetup || isMovingToSetup"
+                (click)="proceedToSetup()">
+          <span *ngIf="isMovingToSetup" class="spin-sm"></span>
+          <svg *ngIf="!isMovingToSetup" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15">
+            <path d="M13 5l7 7-7 7M5 5l7 7-7 7"/>
+          </svg>
+          {{ isMovingToSetup ? 'Traitement…' : 'Passer en configuration' }}
+        </button>
+        <p *ngIf="!canProceedToSetup" class="ob-activate-hint">
+          Renseignez la plaque d'immatriculation et le kilométrage pour continuer.
+        </p>
       </div>
 
       <!-- Activate button — enabled only when all mandatory docs are present -->
@@ -596,6 +614,7 @@
 
       <app-overview-tab
         *ngIf="activeTab === 'overview'"
+        [creditRefresh]="creditRefreshTick"
         [car]="car"
         [carId]="car.id"
         [reservations]="reservations"
@@ -612,6 +631,7 @@
 
       <app-financial-tab
         *ngIf="activeTab === 'financial'"
+        [creditRefresh]="creditRefreshTick"
         [carId]="car.id"
         [car]="car"
         [reservations]="reservations"
@@ -779,6 +799,127 @@
         [dir]="dir"
         [carId]="car?.id ?? null">
       </app-history-tab>
+
+      <!-- ══════════════════════════════════════════════ CREDIT TAB -->
+      <div *ngIf="activeTab === 'credit'" class="credit-tab">
+
+        <!-- Loading -->
+        <div *ngIf="loadingCredit" class="credit-loading">
+          <span class="spin"></span> {{ t('loading') }}
+        </div>
+
+        <!-- No credit found -->
+        <div *ngIf="!loadingCredit && !vehicleCredit" class="credit-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40">
+            <path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+          </svg>
+          <p>{{ t('noCreditRecord') }}</p>
+        </div>
+
+        <!-- Credit data -->
+        <ng-container *ngIf="!loadingCredit && vehicleCredit">
+
+          <!-- Summary cards -->
+          <div class="credit-summary-grid">
+            <div class="credit-kpi">
+              <span class="credit-kpi-label">{{ t('financedAmount') }}</span>
+              <span class="credit-kpi-value">{{ vehicleCredit.financedAmount | number:'1.0-0' }} MAD</span>
+            </div>
+            <div class="credit-kpi">
+              <span class="credit-kpi-label">{{ t('monthlyInstallment') }}</span>
+              <span class="credit-kpi-value">{{ vehicleCredit.monthlyInstallment | number:'1.2-2' }} MAD</span>
+            </div>
+            <div class="credit-kpi">
+              <span class="credit-kpi-label">{{ t('monthsRemaining') }}</span>
+              <span class="credit-kpi-value credit-kpi-accent">{{ creditMonthsRemaining }}</span>
+            </div>
+            <div class="credit-kpi" *ngIf="creditLastMonthRemainder > 0">
+              <span class="credit-kpi-label">{{ t('lastMonthRemainder') }}</span>
+              <span class="credit-kpi-value credit-kpi-warn">{{ creditLastMonthRemainder | number:'1.2-2' }} MAD</span>
+            </div>
+            <div class="credit-kpi">
+              <span class="credit-kpi-label">{{ t('remainingBalance') }}</span>
+              <span class="credit-kpi-value credit-kpi-warn">{{ vehicleCredit.remainingBalance | number:'1.0-0' }} MAD</span>
+            </div>
+            <div class="credit-kpi">
+              <span class="credit-kpi-label">{{ t('status') }}</span>
+              <span class="credit-status-badge" [ngClass]="'cs-' + vehicleCredit.status">{{ vehicleCredit.status }}</span>
+            </div>
+          </div>
+
+          <!-- Progress bar -->
+          <div class="credit-progress-wrap">
+            <div class="credit-progress-label">
+              <span>{{ t('paymentProgress') }}</span>
+              <span>{{ creditInstallments.length - creditMonthsRemaining }} / {{ creditInstallments.length }} {{ t('months') }}</span>
+            </div>
+            <div class="credit-progress-track">
+              <div class="credit-progress-fill"
+                [style.width.%]="creditInstallments.length ? (creditInstallments.length - creditMonthsRemaining) / creditInstallments.length * 100 : 0">
+              </div>
+            </div>
+          </div>
+
+          <!-- Installments table -->
+          <div class="credit-table-wrap">
+            <table class="credit-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>{{ t('dueDate') }}</th>
+                  <th>{{ t('amountDue') }}</th>
+                  <th>{{ t('amountPaid') }}</th>
+                  <th>{{ t('status') }}</th>
+                  <th>{{ t('paidAt') }}</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let inst of pagedCreditInstallments" [ngClass]="'inst-' + inst.status">
+                  <td>{{ inst.installmentNumber }}</td>
+                  <td>{{ inst.dueDate | date:'dd/MM/yyyy' }}</td>
+                  <td>{{ inst.amountDue | number:'1.2-2' }} MAD</td>
+                  <td>{{ (inst.amountPaid || 0) | number:'1.2-2' }} MAD</td>
+                  <td>
+                    <span class="inst-status-badge" [ngClass]="'is-' + inst.status">{{ t(inst.status) }}</span>
+                  </td>
+                  <td>{{ inst.paidAt ? (inst.paidAt | date:'dd/MM/yyyy') : '—' }}</td>
+                  <td>
+                    <button *ngIf="inst.status !== 'paid'"
+                      class="btn-pay-inst"
+                      [disabled]="payingInstallment === inst.id"
+                      (click)="payInstallment(inst)">
+                      <span *ngIf="payingInstallment === inst.id" class="spin-sm"></span>
+                      {{ payingInstallment === inst.id ? t('saving') : t('markPaid') }}
+                    </button>
+                    <ng-container *ngIf="inst.status === 'paid'">
+                      <span class="inst-paid-check">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>
+                        {{ t('paid') }}
+                      </span>
+                      <button
+                        class="btn-cancel-inst"
+                        [disabled]="cancelingInstallment === inst.id"
+                        (click)="cancelInstallment(inst)">
+                        {{ cancelingInstallment === inst.id ? t('saving') : t('cancel') }}
+                      </button>
+                    </ng-container>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <app-paginator
+            *ngIf="creditInstallments.length > creditPageSize"
+            [page]="creditPage"
+            [limit]="creditPageSize"
+            [total]="creditInstallments.length"
+            (pageChange)="creditPage = $event">
+          </app-paginator>
+
+        </ng-container>
+      </div><!-- /.credit-tab -->
 
     </div><!-- /.vd-tab-body -->
   </ng-container><!-- /main content -->

@@ -7,7 +7,7 @@
       <p class="um-subtitle">Manage employees, administrators, permissions, and bureau access.</p>
     </div>
     <div class="um-header-actions">
-      <button class="btn-primary-sm" (click)="openCreate()">
+      <button *ngIf="isAdmin" class="btn-primary-sm" (click)="openCreate()">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Add User
       </button>
@@ -103,7 +103,7 @@
   </div>
 
   <!-- Bulk bar -->
-  <div class="bulk-bar" *ngIf="someSelected">
+  <div class="bulk-bar" *ngIf="someSelected && isAdmin">
     <span class="bulk-count">
       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
       {{ selectedIds.size }} selected
@@ -146,7 +146,7 @@
           ? 'Try adjusting your search or filters.'
           : 'Get started by adding your first team member.' }}
     </p>
-    <button *ngIf="!search && !filterRole && !filterBureau && !filterStatus"
+    <button *ngIf="isAdmin && !search && !filterRole && !filterBureau && !filterStatus"
       class="btn-primary-sm" (click)="openCreate()">Add First User</button>
   </div>
 
@@ -220,8 +220,8 @@
             <td class="td-actions">
               <div class="actions-cell">
                 <app-btn variant="icon-view" title="View profile" (click)="openDrawer(item)"></app-btn>
-                <app-btn variant="icon-edit" title="Edit user" (click)="openEdit(item)"></app-btn>
-                <div class="ia-dropdown" (click)="$event.stopPropagation()">
+                <app-btn *ngIf="isAdmin" variant="icon-edit" title="Edit user" (click)="openEdit(item)"></app-btn>
+                <div *ngIf="isAdmin" class="ia-dropdown" (click)="$event.stopPropagation()">
                   <button class="btn-action btn-delete" (click)="toggleDropdown(item.id, $event)" title="More options">
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
                   </button>
@@ -387,7 +387,7 @@
       </div>
 
     </div>
-    <div class="drawer-footer">
+    <div class="drawer-footer" *ngIf="isAdmin">
       <button class="btn-outline-danger" (click)="deleteFromDrawer()">
         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
         Delete
@@ -440,18 +440,29 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label>Bureau</label>
-            <select formControlName="bureauId">
-              <option [ngValue]="null">— None —</option>
-              <option *ngFor="let b of bureaux" [ngValue]="b.id">{{ b.nom }}</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Company</label>
-            <select formControlName="companyId">
-              <option [ngValue]="null">— None —</option>
+            <label>Company <span *ngIf="isCreateMode" class="required">*</span></label>
+            <select formControlName="companyId"
+              [class.invalid]="form.get('companyId')?.invalid && form.get('companyId')?.touched">
+              <option [ngValue]="null">— Select company —</option>
               <option *ngFor="let c of companies" [ngValue]="c.id">{{ c.nom }}</option>
             </select>
+            <span *ngIf="form.get('companyId')?.invalid && form.get('companyId')?.touched" class="field-error">
+              Company is required.
+            </span>
+          </div>
+          <div class="form-group">
+            <label>Bureau <span *ngIf="isCreateMode" class="required">*</span></label>
+            <select formControlName="bureauId"
+              [disabled]="!form.get('companyId')?.value"
+              [class.invalid]="form.get('bureauId')?.invalid && form.get('bureauId')?.touched">
+              <option [ngValue]="null">
+                {{ form.get('companyId')?.value ? '— Select bureau —' : '— Select company first —' }}
+              </option>
+              <option *ngFor="let b of filteredBureaux" [ngValue]="b.id">{{ b.nom }}</option>
+            </select>
+            <span *ngIf="form.get('bureauId')?.invalid && form.get('bureauId')?.touched" class="field-error">
+              Bureau is required.
+            </span>
           </div>
         </div>
 

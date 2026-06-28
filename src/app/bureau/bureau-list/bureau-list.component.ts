@@ -60,6 +60,7 @@ export class BureauListComponent implements OnInit, OnDestroy {
     this.createForm = this.fb.group({
       nom:       ['', Validators.required],
       adresse:   [''],
+      telephone: [''],
       statut:    ['actif', Validators.required],
       managerId: [null],
       companyId: [null],
@@ -67,6 +68,7 @@ export class BureauListComponent implements OnInit, OnDestroy {
     this.editForm = this.fb.group({
       nom:       ['', Validators.required],
       adresse:   [''],
+      telephone: [''],
       statut:    ['actif', Validators.required],
       managerId: [null],
       companyId: [null],
@@ -134,7 +136,7 @@ export class BureauListComponent implements OnInit, OnDestroy {
   }
 
   openCreate(): void {
-    this.createForm.reset({ nom: '', adresse: '', statut: 'actif', managerId: null, companyId: null });
+    this.createForm.reset({ nom: '', adresse: '', telephone: '', statut: 'actif', managerId: null, companyId: null });
     this.modalMode = 'create';
   }
 
@@ -148,6 +150,7 @@ export class BureauListComponent implements OnInit, OnDestroy {
     this.editForm.patchValue({
       nom: bureau.nom,
       adresse: bureau.adresse || '',
+      telephone: bureau.telephone || '',
       statut: bureau.statut,
       managerId: bureau.managerId ?? null,
       companyId: bureau.companyId ?? null,

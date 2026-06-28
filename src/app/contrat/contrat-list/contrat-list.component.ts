@@ -31,6 +31,7 @@ export class ContratListComponent implements OnInit, OnDestroy {
   modalMode: 'form' | 'delete' | null = null;
   form: FormGroup; isSubmitting = false; deleteId: number | null = null;
   printItem: any = null;
+  printLoading = false;
   readonly endpoint = 'contrat';
   readonly objectEntries = Object.entries;
 
@@ -103,7 +104,13 @@ export class ContratListComponent implements OnInit, OnDestroy {
   openAdd()              { this.router.navigate(['/contrat', 'new']); }
   openEdit(item: any)    { this.router.navigate(['/contrat', item.id, 'edit']); }
   openDelete(id: number) { this.deleteId = id; this.modalMode = 'delete'; }
-  openPrint(item: any)   { this.printItem = item; }
+  openPrint(item: any) {
+    this.printLoading = true;
+    this.crud.getById('contrat', item.id + '/full').subscribe({
+      next: (full: any) => { this.printItem = full; this.printLoading = false; },
+      error: () => { this.printItem = item; this.printLoading = false; }
+    });
+  }
   exportPDF(item: any)   { this.exportSvc.rentalContract(item); }
 
   openDelivery(item: any) {

@@ -53,3 +53,26 @@
   transition: background .15s;
 }
 .btn-view:hover { background: #e5e7eb; }
+
+.btn-print {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: #f8fafc; color: #475569; border: 1px solid #e2e8f0;
+  border-radius: 5px; padding: 4px 7px; cursor: pointer;
+  transition: background .15s;
+}
+.btn-print:hover { background: #e2e8f0; }
+.btn-print:disabled { opacity: .5; cursor: not-allowed; }
+
+.print-loading-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.35);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 8000;
+}
+.print-loading-box {
+  background: #fff; border-radius: 10px; padding: 24px 32px;
+  display: flex; align-items: center; gap: 12px;
+  font-size: .95rem; color: #1a3a5c; font-weight: 600;
+  box-shadow: 0 8px 32px rgba(0,0,0,.18);
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.print-spin { animation: spin .8s linear infinite; }

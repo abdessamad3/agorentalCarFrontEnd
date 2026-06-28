@@ -498,6 +498,56 @@
 
 .btn-secondary:hover { background: #f7fafc; }
 
+/* Wide modal for the client wizard */
+.modal-wide { width: 600px; }
+
+/* Step indicator */
+.step-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #a0aec0;
+}
+.step-dot { color: #a0aec0; }
+.step-dot.active { color: #3182ce; }
+.step-sep { color: #cbd5e0; }
+
+/* Nationality combo dropdown */
+.nationalite-combo { position: relative; }
+.nationalite-dropdown {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  z-index: 200;
+  max-height: 200px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.nationalite-dropdown li {
+  padding: 0.5rem 0.85rem;
+  font-size: 0.85rem;
+  color: #2d3748;
+  cursor: pointer;
+}
+.nationalite-dropdown li:hover { background: #ebf8ff; }
+.nationalite-empty { color: #a0aec0 !important; cursor: default !important; }
+
+/* Required asterisk */
+.required { color: #e53e3e; }
+
+/* Form hint (documents step) */
+.form-hint { font-size: 0.82rem; color: #718096; margin: 0 0 1rem; }
+
 /* RTL */
 .create-page.rtl { direction: rtl; }
 .create-page.rtl .vehicle-check { left: 8px; right: auto; }

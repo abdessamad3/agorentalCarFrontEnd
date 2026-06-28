@@ -37,7 +37,6 @@ export class SidebarComponent implements OnInit {
       labelKey: 'groupOrganisation',
       items: [
         { link: '/dashboard', icon: '📊', key: 'dashboard' },
-        { link: '/calendar',  icon: '📅', key: 'calendar' },
         { link: '/bureau',    icon: '🏢', key: 'bureaus', roles: ['ROLE_ADMIN','ROLE_MANAGER','ROLE_STAFF'] },
       ]
     },
@@ -45,36 +44,36 @@ export class SidebarComponent implements OnInit {
       labelKey: 'groupFleet',
       items: [
         { link: '/voiture',              icon: '🚗', key: 'myCars' },
-        { link: '/compliance',           icon: '⏰', key: 'compliance' },
-        { link: '/compliance-center',    icon: '⚡', key: 'complianceCenterNav', roles: ['ROLE_ADMIN','ROLE_MANAGER'] },
-        { link: '/fleet-health',         icon: '❤️', key: 'fleetHealth',       roles: ['ROLE_ADMIN','ROLE_MANAGER'] },
-        { link: '/maintenance/planning', icon: '📋', key: 'maintenancePlanning', roles: ['ROLE_ADMIN','ROLE_MANAGER'] },
+        { link: '/compliance',           icon: '⏰', key: 'compliance',          roles: ['ROLE_ADMIN'] },
+        { link: '/compliance-center',    icon: '⚡', key: 'complianceCenterNav', roles: ['ROLE_ADMIN'] },
+        { link: '/fleet-health',         icon: '❤️', key: 'fleetHealth',        roles: ['ROLE_ADMIN'] },
+        { link: '/maintenance/planning', icon: '📋', key: 'maintenancePlanning', roles: ['ROLE_ADMIN'] },
       ]
     },
     {
       labelKey: 'groupRentals',
       items: [
         { link: '/client',            icon: '👤', key: 'clients',           roles: ['ROLE_ADMIN','ROLE_MANAGER','ROLE_STAFF'] },
-        { link: '/location/new',      icon: '➕', key: 'createBooking',     roles: ['ROLE_ADMIN','ROLE_MANAGER','ROLE_STAFF'] },
+        { link: '/location/new',      icon: '➕', key: 'createBooking',     roles: ['ROLE_ADMIN'] },
         { link: '/reservation',       icon: '📅', key: 'reservations',      roles: ['ROLE_ADMIN','ROLE_MANAGER','ROLE_STAFF'], badge: '!' },
-        { link: '/contrat',           icon: '📄', key: 'contrats',          roles: ['ROLE_ADMIN','ROLE_MANAGER','ROLE_STAFF'] },
+        { link: '/contrat',           icon: '📄', key: 'contrats',          roles: ['ROLE_ADMIN'] },
         { link: '/return-inspection', icon: '🔍', key: 'returnInspections', roles: ['ROLE_ADMIN','ROLE_MANAGER','ROLE_STAFF'] },
       ]
     },
     {
       labelKey: 'groupFinance',
       items: [
-        { link: '/paiement',                       icon: '💳', key: 'paiements',           roles: ['ROLE_ADMIN','ROLE_MANAGER'] },
-        { link: '/paiement-client',                icon: '💰', key: 'clientPayments',      roles: ['ROLE_ADMIN','ROLE_MANAGER'] },
-        { link: '/vehicle-expenses',               icon: '🚗', key: 'vehicleExpenses',     roles: ['ROLE_ADMIN','ROLE_MANAGER'] },
+        { link: '/paiement',                       icon: '💳', key: 'paiements',           roles: ['ROLE_ADMIN'] },
+        { link: '/paiement-client',                icon: '💰', key: 'clientPayments',      roles: ['ROLE_ADMIN'] },
+        { link: '/vehicle-expenses',               icon: '🚗', key: 'vehicleExpenses',     roles: ['ROLE_ADMIN'] },
         { link: '/bureau-expenses',                icon: '🏢', key: 'bureauExpenses',      roles: ['ROLE_ADMIN','ROLE_MANAGER'] },
         { link: '/credit',                         icon: '📈', key: 'credits',             roles: ['ROLE_ADMIN','ROLE_MANAGER'] },
         { link: '/credit-monitoring',              icon: '💳', key: 'creditMonitoring',    roles: ['ROLE_ADMIN','ROLE_MANAGER'] },
         { link: '/infraction',                     icon: '⚠️', key: 'infractions',         roles: ['ROLE_ADMIN','ROLE_MANAGER'], badge: '⚠' },
-        { link: '/achat-voiture',                  icon: '🛒', key: 'carPurchases',        roles: ['ROLE_ADMIN','ROLE_MANAGER'] },
-        { link: '/vente',                          icon: '🏷️', key: 'ventes',              roles: ['ROLE_ADMIN','ROLE_MANAGER'] },
+        { link: '/achat-voiture',                  icon: '🛒', key: 'carPurchases',        roles: ['ROLE_ADMIN'] },
+        { link: '/vente',                          icon: '🏷️', key: 'ventes',              roles: ['ROLE_ADMIN'] },
         { link: '/fournisseur',                    icon: '🏭', key: 'suppliers',           roles: ['ROLE_ADMIN','ROLE_MANAGER'] },
-        { link: '/mensualite',                     icon: '📆', key: 'monthlyPayments',     roles: ['ROLE_ADMIN','ROLE_MANAGER'] },
+        { link: '/mensualite',                     icon: '📆', key: 'monthlyPayments',     roles: ['ROLE_ADMIN'] },
         { link: '/vehicle-financing',              icon: '🏦', key: 'financingDashboard',  roles: ['ROLE_ADMIN','ROLE_MANAGER'] },
         { link: '/vehicle-financing/contracts',    icon: '📄', key: 'financingContracts',  roles: ['ROLE_ADMIN','ROLE_MANAGER'] },
         { link: '/vehicle-financing/create',       icon: '➕', key: 'financingNewContract', roles: ['ROLE_ADMIN','ROLE_MANAGER'] },
@@ -148,7 +147,7 @@ export class SidebarComponent implements OnInit {
       this.http.get<any>(`${environment.apiUrl}/bureau`).subscribe({
         next: (res) => {
           const list = Array.isArray(res) ? res : (res?.data ?? []);
-          this.companyService.setBureaux(list.map((b: any) => ({ id: b.id, nom: b.nom })));
+          this.companyService.setBureaux(list.map((b: any) => ({ id: b.id, nom: b.nom, adresse: b.adresse ?? '', telephone: b.telephone ?? '' })));
         }
       });
     }

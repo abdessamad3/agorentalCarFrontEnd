@@ -9,17 +9,9 @@ import { PaginatorComponent } from '../../shared/paginator/paginator.component';
 import { Subject, of } from 'rxjs';
 import { debounceTime, switchMap, takeUntil, catchError } from 'rxjs/operators';
 
-export const BUREAU_EXPENSE_TYPES = [
-  { value: 'loyer',        label: 'Rent (Loyer)' },
-  { value: 'salaire',      label: 'Salary (Salaire)' },
-  { value: 'telephone',    label: 'Phone (Téléphone)' },
-  { value: 'electricite',  label: 'Electricity (Électricité)' },
-  { value: 'eau',          label: 'Water (Eau)' },
-  { value: 'internet',     label: 'Internet' },
-  { value: 'fournitures',  label: 'Office Supplies (Fournitures)' },
-  { value: 'publicite',    label: 'Advertising (Publicité)' },
-  { value: 'nettoyage',    label: 'Cleaning (Nettoyage)' },
-  { value: 'autre',        label: 'Other (Autre)' },
+export const BUREAU_EXPENSE_TYPE_KEYS = [
+  'loyer', 'salaire', 'telephone', 'electricite', 'eau',
+  'internet', 'fournitures', 'publicite', 'nettoyage', 'vignetteBureau', 'autre',
 ];
 
 @Component({
@@ -50,7 +42,10 @@ export class BureauExpenseListComponent implements OnInit, OnDestroy {
   drawerOpen = false;
   drawerItem: any = null;
 
-  readonly expenseTypes = BUREAU_EXPENSE_TYPES;
+  readonly expenseTypeKeys = BUREAU_EXPENSE_TYPE_KEYS;
+  get expenseTypes() {
+    return this.expenseTypeKeys.map(k => ({ value: k === 'vignetteBureau' ? 'vignette' : k, label: this.t(k) }));
+  }
 
   get isAdmin(): boolean { return this.auth.hasRole('ROLE_ADMIN'); }
 
@@ -67,7 +62,7 @@ export class BureauExpenseListComponent implements OnInit, OnDestroy {
       bureauId:    [null],
       typeDepense: ['', Validators.required],
       montant:     [0, [Validators.required, Validators.min(0.01)]],
-      date:        ['', Validators.required],
+      dateDebut:   ['', Validators.required],
       statut:      ['pending'],
       description: [''],
       datePaiement:[''],
@@ -119,7 +114,7 @@ export class BureauExpenseListComponent implements OnInit, OnDestroy {
   openAdd() {
     this.selected = null;
     this.isEditing = false;
-    this.form.reset({ montant: 0, statut: 'pending', bureauId: null, typeDepense: '', date: new Date().toISOString().slice(0, 10) });
+    this.form.reset({ montant: 0, statut: 'pending', bureauId: null, typeDepense: '', dateDebut: new Date().toISOString().slice(0, 10) });
     this.modalMode = 'form';
   }
 
@@ -130,7 +125,7 @@ export class BureauExpenseListComponent implements OnInit, OnDestroy {
       bureauId:     item.bureauId,
       typeDepense:  item.typeDepense,
       montant:      item.montant,
-      date:         item.date,
+      dateDebut:    item.dateDebut,
       statut:       item.statut,
       description:  item.description,
       datePaiement: item.datePaiement,
@@ -173,8 +168,12 @@ export class BureauExpenseListComponent implements OnInit, OnDestroy {
   }
 
   typeLabel(val: string): string {
-    return this.expenseTypes.find(t => t.value === val)?.label ?? val;
+    const key = val === 'vignette' ? 'vignetteBureau' : val;
+    const tr = this.t(key);
+    return tr !== key ? tr : val;
   }
+
+  t(key: string): string { return this.ts.translate(key); }
 
   statutClass(s: string): string {
     return s === 'paid' ? 'badge-paid' : s === 'partial' ? 'badge-partial' : 'badge-pending';

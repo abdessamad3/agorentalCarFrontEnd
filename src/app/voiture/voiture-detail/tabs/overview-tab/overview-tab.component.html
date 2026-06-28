@@ -91,7 +91,8 @@
       <span class="dm-icon">{{ doc.icon }}</span>
       <span class="dm-name">{{ t(doc.name) }}</span>
       <span class="dm-badge">
-        <ng-container *ngIf="doc.level==='danger'">{{ t('alertExpired') }}</ng-container>
+        <ng-container *ngIf="doc.level==='danger' && doc.status==='EXPIRED'">{{ t('alertExpired') }}</ng-container>
+        <ng-container *ngIf="doc.level==='danger' && doc.status!=='EXPIRED'">{{ t('criticalStatus') }}</ng-container>
         <ng-container *ngIf="doc.level==='warning'">{{ t('alertExpiring') }}</ng-container>
         <ng-container *ngIf="doc.level===''">OK</ng-container>
       </span>

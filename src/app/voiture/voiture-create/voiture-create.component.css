@@ -66,6 +66,7 @@
   font-size: 0.9rem; color: #2d3748; background: #fafafa;
   transition: all 0.2s; box-sizing: border-box; width: 100%;
 }
+.fg select { appearance: revert; cursor: pointer; }
 .fg input:focus, .fg select:focus { outline: none; border-color: #3182ce; background: white; box-shadow: 0 0 0 3px rgba(49,130,206,0.1); }
 .fg input.monospace { font-family: 'Courier New', monospace; letter-spacing: 0.05em; }
 
@@ -219,6 +220,22 @@
 }
 .btn-add-supplier:hover { background: #bee3f8; border-color: #63b3ed; }
 
+/* ── Credit calculator panel ─────────────────────────────────────────────── */
+.credit-calc-panel {
+  background: #ebf8ff; border: 1.5px solid #90cdf4; border-radius: 10px;
+  padding: 1rem 1.25rem; margin-top: 0.25rem;
+}
+.calc-header {
+  font-size: 0.82rem; font-weight: 800; color: #2b6cb0;
+  text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem;
+}
+.calc-grid { display: flex; flex-wrap: wrap; gap: 1rem; }
+.calc-item { display: flex; flex-direction: column; gap: 0.2rem; min-width: 120px; }
+.calc-item-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #2b6cb0; }
+.calc-item-value { font-size: 1.1rem; font-weight: 800; color: #1a365d; }
+.calc-item-value.highlight { color: #2b6cb0; }
+.calc-item-value.last-month { color: #c05621; }
+
 /* ── Supplier creation modal ─────────────────────────────────────────────── */
 .sup-modal-backdrop {
   position: fixed; inset: 0; background: rgba(11,45,78,0.55); z-index: 2000;
@@ -322,3 +339,31 @@
 
 .rc-date-hint { color: #718096; font-weight: 400; font-size: 0.82em; }
 .rc-warn { color: #c05621; font-size: 0.82rem; font-style: italic; }
+
+/* ── Compliance file upload ─────────────────────────────────────────────── */
+.cfu-row {
+  margin-top: 1.1rem;
+  display: flex; flex-direction: column; gap: 0.4rem;
+}
+.cfu-label {
+  font-size: 0.82rem; font-weight: 700; color: #4a5568;
+  text-transform: uppercase; letter-spacing: 0.03em;
+}
+.cfu-area {
+  display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap;
+}
+.cfu-btn {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.45rem 0.9rem; border-radius: 7px; cursor: pointer;
+  font-size: 0.82rem; font-weight: 600;
+  background: #f7fafc; border: 1.5px solid #cbd5e0; color: #4a5568;
+  transition: border-color 0.15s, background 0.15s;
+}
+.cfu-btn:hover { border-color: #667eea; background: #ebf4ff; color: #434190; }
+.cfu-name { font-size: 0.82rem; color: #2d3748; font-weight: 500; word-break: break-all; }
+.cfu-hint { font-size: 0.8rem; color: #a0aec0; }
+.cfu-clear {
+  background: none; border: none; cursor: pointer;
+  font-size: 0.9rem; color: #a0aec0; padding: 0 0.2rem; line-height: 1;
+}
+.cfu-clear:hover { color: #e53e3e; }

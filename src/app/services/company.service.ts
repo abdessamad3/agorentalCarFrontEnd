@@ -5,7 +5,7 @@ const LOGO_KEY      = 'company_logo';
 const NAME_KEY      = 'company_name';
 const BUREAU_ID_KEY = 'company_bureau_id';
 
-export interface BureauOption { id: number; nom: string; }
+export interface BureauOption { id: number; nom: string; adresse?: string; telephone?: string; }
 
 @Injectable({ providedIn: 'root' })
 export class CompanyService {
@@ -37,6 +37,14 @@ export class CompanyService {
   getCurrentName(): string            { return this.companyName.getValue(); }
   getCurrentBureauId(): number | null { return this.bureauId.getValue(); }
   getBureaux(): BureauOption[]        { return this.bureauxList.getValue(); }
+
+  getCurrentBureau(): BureauOption | null {
+    const id = this.bureauId.getValue();
+    return id != null ? (this.bureauxList.getValue().find(b => b.id === id) ?? null) : null;
+  }
+
+  getCurrentBureauAdresse(): string { return this.getCurrentBureau()?.adresse ?? ''; }
+  getCurrentBureauTelephone(): string { return this.getCurrentBureau()?.telephone ?? ''; }
 
   setBureaux(list: BureauOption[]) {
     this.bureauxList.next(list);

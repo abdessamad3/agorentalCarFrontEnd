@@ -392,7 +392,7 @@ export const routes: Routes = [
     path: 'utilisateur',
     loadComponent: () => import('./utilisateur/utilisateur-list/utilisateur-list.component').then(m => m.UtilisateurListComponent),
     canActivate: [authGuard, roleGuard],
-    data: { roles: ['ROLE_ADMIN'], breadcrumbs: ['Administration', 'Users & Roles'] }
+    data: { roles: ['ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_STAFF'], breadcrumbs: ['Administration', 'Users & Roles'] }
   },
   {
     path: 'company',

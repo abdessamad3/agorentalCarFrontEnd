@@ -5,6 +5,8 @@ import { RouterModule } from '@angular/router';
 import { CrudService } from '../services/crud.service';
 import { TranslationService } from '../services/translation.service';
 import { ExportService } from '../services/export.service';
+import { daysUntil } from '../shared/utils/date.utils';
+import { safe, toArr } from '../shared/utils/rx.utils';
 import { forkJoin, of, Observable } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { UploadBtnComponent } from '../shared/btn/upload-btn.component';
@@ -94,7 +96,6 @@ export class NotificationsComponent implements OnInit {
 
   private loadAll(): void {
     this.loading = true;
-    const safe = (obs: any) => obs.pipe(catchError(() => of([])));
     forkJoin({
       cars:         this.loadAllCars(),
       assurances:   safe(this.crud.getAll('assurance',       { limit: 2000 })),
@@ -104,7 +105,7 @@ export class NotificationsComponent implements OnInit {
       oilReminders: safe(this.crud.getAll('dashboard/oil-reminders')),
     }).subscribe({
       next: ({ cars, assurances, vignettes, visites, contrats, oilReminders }: any) => {
-        this.carsData = this.toArr(cars);
+        this.carsData = toArr(cars);
         const carMap: Record<number, string> = {};
         this.carBureauMap = {};
         this.carsData.forEach((c: any) => {
@@ -114,10 +115,10 @@ export class NotificationsComponent implements OnInit {
         });
 
         const dateNotifs = [
-          ...this.mapAssurances(this.toArr(assurances), carMap),
-          ...this.mapVignettes(this.toArr(vignettes),   carMap),
-          ...this.mapVisites(this.toArr(visites),        carMap),
-          ...this.mapContrats(this.toArr(contrats),      carMap),
+          ...this.mapAssurances(toArr(assurances), carMap),
+          ...this.mapVignettes(toArr(vignettes),   carMap),
+          ...this.mapVisites(toArr(visites),        carMap),
+          ...this.mapContrats(toArr(contrats),      carMap),
         ].filter((n, i, arr) =>
           arr.findIndex(x => x.source === n.source && x.vehicleId === n.vehicleId) === i
         ).sort((a, b) => a.daysLeft - b.daysLeft);
@@ -376,16 +377,6 @@ export class NotificationsComponent implements OnInit {
 
   // ── Private mappers ─────────────────────────────────────────────────────────
 
-  private daysBetween(dateStr: string): number {
-    if (!dateStr) return 9999;
-    const exp = new Date(dateStr);
-    if (isNaN(exp.getTime())) return 9999;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    exp.setHours(0, 0, 0, 0);
-    return Math.floor((exp.getTime() - today.getTime()) / 86400000);
-  }
-
   private statusFor(days: number): NotifStatus {
     if (days < 0)   return 'expired';
     if (days <= 7)  return 'critical';
@@ -396,7 +387,7 @@ export class NotificationsComponent implements OnInit {
   private mapAssurances(items: any[], carMap: Record<number, string>): Notif[] {
     return items.filter(i => i.dateFin).map(i => {
       const vid  = i.voitureId ?? i.voiture?.id ?? i.voiture;
-      const days = this.daysBetween(i.dateFin);
+      const days = daysUntil(i.dateFin) ?? 9999;
       return {
         id: i.id, source: 'assurance' as NotifSource,
         vehicleLabel: carMap[vid] || `#${vid}`,
@@ -410,7 +401,7 @@ export class NotificationsComponent implements OnInit {
   private mapVignettes(items: any[], carMap: Record<number, string>): Notif[] {
     return items.filter(i => i.dateLimite).map(i => {
       const vid  = i.voitureId ?? i.voiture?.id ?? i.voiture;
-      const days = this.daysBetween(i.dateLimite);
+      const days = daysUntil(i.dateLimite) ?? 9999;
       return {
         id: i.id, source: 'vignette' as NotifSource,
         vehicleLabel: carMap[vid] || `#${vid || i.annee}`,
@@ -430,7 +421,7 @@ export class NotificationsComponent implements OnInit {
       return true;
     }).map(i => {
       const vid  = i.voitureId ?? i.voiture?.id ?? i.voiture;
-      const days = this.daysBetween(i.dateFin);
+      const days = daysUntil(i.dateFin) ?? 9999;
       return {
         id: i.id, source: 'visite' as NotifSource,
         vehicleLabel: carMap[vid] || `#${vid}`,
@@ -445,7 +436,7 @@ export class NotificationsComponent implements OnInit {
 
   private mapContrats(items: any[], carMap: Record<number, string>): Notif[] {
     return items.filter(i => i.dateFin).map(i => {
-      const days       = this.daysBetween(i.dateFin);
+      const days       = daysUntil(i.dateFin) ?? 9999;
       const clientName = i.clientNom || i.clientPrenom
         ? `${i.clientPrenom || ''} ${i.clientNom || ''}`.trim()
         : (i.client?.nom ? `${i.client.prenom || ''} ${i.client.nom}`.trim() : null);
@@ -502,5 +493,4 @@ export class NotificationsComponent implements OnInit {
     );
   }
 
-  private toArr(r: any): any[] { return Array.isArray(r) ? r : (r?.data ?? []); }
 }

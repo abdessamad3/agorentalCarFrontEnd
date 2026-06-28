@@ -1,11 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { forkJoin, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { forkJoin } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { safe, toArr } from '../shared/utils/rx.utils';
 import { CrudService } from '../services/crud.service';
 import { TranslationService } from '../services/translation.service';
 import { SuiviTechnique, Vidange } from '../models/compliance.model';
+import { daysUntil } from '../shared/utils/date.utils';
 
 type Urgency = 'OVERDUE' | 'CRITICAL' | 'WARNING' | 'UPCOMING';
 
@@ -22,13 +24,6 @@ interface ComplianceTask {
   detail: string;
   done: boolean;
   estimatedCost?: number;
-}
-
-function daysFrom(d: string | null | undefined): number | null {
-  if (!d) return null;
-  const dt = new Date(d);
-  if (isNaN(dt.getTime())) return null;
-  return Math.round((dt.getTime() - Date.now()) / 86_400_000);
 }
 
 function urgency(days: number | null): Urgency {
@@ -76,9 +71,6 @@ export class ComplianceCenterComponent implements OnInit {
     this.load();
   }
 
-  private safe(obs: any) { return obs.pipe(catchError(() => of([]))); }
-  private toArr<T = any>(r: any): T[] { return Array.isArray(r) ? r : (r?.data ?? []); }
-
   private carLabel(car: any): string {
     return `${car?.marque ?? ''} ${car?.modele ?? ''}`.trim() || `#${car?.id}`;
   }
@@ -88,15 +80,15 @@ export class ComplianceCenterComponent implements OnInit {
     this.tasks   = [];
 
     forkJoin({
-      cars:      this.safe(this.crud.getAll('voiture',         { limit: 500 })),
-      assur:     this.safe(this.crud.getAll('assurance',       { limit: 500 })),
-      vignettes: this.safe(this.crud.getAll('vignette',        { limit: 500 })),
-      suivis:    this.safe(this.crud.getAll('suivi-technique', { limit: 500 })),
-      vidanges:  this.safe(this.crud.getAll('vidange',         { limit: 500 })),
-      repairs:   this.safe(this.crud.getAll('reparation',      { limit: 500 })),
+      cars:      safe(this.crud.getAll('voiture',         { limit: 500 })),
+      assur:     safe(this.crud.getAll('assurance',       { limit: 500 })),
+      vignettes: safe(this.crud.getAll('vignette',        { limit: 500 })),
+      suivis:    safe(this.crud.getAll('suivi-technique', { limit: 500 })),
+      vidanges:  safe(this.crud.getAll('vidange',         { limit: 500 })),
+      repairs:   safe(this.crud.getAll('reparation',      { limit: 500 })),
     }).pipe(
       map(({ cars, assur, vignettes, suivis, vidanges, repairs }: any) => {
-        const carList = this.toArr(cars);
+        const carList = toArr(cars);
         const carMap  = new Map<number, any>(carList.map((c: any) => [c.id, c]));
         const tasks: ComplianceTask[] = [];
         const NINETY_DAYS_FROM_NOW = Date.now() + 90 * 86_400_000;
@@ -107,11 +99,11 @@ export class ComplianceCenterComponent implements OnInit {
         };
 
         // Insurance
-        for (const a of this.toArr(assur)) {
+        for (const a of toArr(assur)) {
           const carId = a.voitureId ?? a.voiture?.id;
           const car   = carMap.get(carId);
           const expiry = a.dateFin ?? a.dateExpiration;
-          const days   = daysFrom(expiry);
+          const days   = daysUntil(expiry);
           if (days !== null && days > 90) continue;
           addTask({
             id: `ins-${a.id}`, vehicleId: carId,
@@ -124,11 +116,11 @@ export class ComplianceCenterComponent implements OnInit {
         }
 
         // Vignette
-        for (const v of this.toArr(vignettes)) {
+        for (const v of toArr(vignettes)) {
           const carId = v.voitureId ?? v.voiture?.id;
           const car   = carMap.get(carId);
           const expiry = v.dateFin ?? v.dateExpiration;
-          const days   = daysFrom(expiry);
+          const days   = daysUntil(expiry);
           if (days !== null && days > 90) continue;
           const thisYear = new Date().getFullYear();
           const isExpired = !expiry ? (v.annee && +v.annee < thisYear) : (days !== null && days < 0);
@@ -143,12 +135,12 @@ export class ComplianceCenterComponent implements OnInit {
         }
 
         // Technical visits
-        for (const s of this.toArr<SuiviTechnique>(suivis)) {
+        for (const s of toArr<SuiviTechnique>(suivis)) {
           const carId = s.voitureId;
           if (carId === null) continue; // no associated vehicle — nothing to display this against
           const car   = carMap.get(carId);
           const nextDate = s.dateFin;
-          const days   = daysFrom(nextDate);
+          const days   = daysUntil(nextDate);
           if (days !== null && days > 90) continue;
           addTask({
             id: `suivi-${s.id}`, vehicleId: carId,
@@ -161,7 +153,7 @@ export class ComplianceCenterComponent implements OnInit {
         }
 
         // Oil changes
-        for (const v of this.toArr<Vidange>(vidanges)) {
+        for (const v of toArr<Vidange>(vidanges)) {
           const carId = v.voitureId;
           if (carId === null) continue; // no associated vehicle — nothing to display this against
           const car   = carMap.get(carId);
@@ -188,12 +180,12 @@ export class ComplianceCenterComponent implements OnInit {
         }
 
         // Open repairs
-        for (const r of this.toArr(repairs)) {
+        for (const r of toArr(repairs)) {
           const isOpen = !['terminee','done','complete','completed'].includes((r.statut ?? '').toLowerCase());
           if (!isOpen) continue;
           const carId = r.voitureId ?? r.voiture?.id;
           const car   = carMap.get(carId);
-          const days  = daysFrom(r.datePrevu ?? r.date);
+          const days  = daysUntil(r.datePrevu ?? r.date);
           const u     = days !== null && days < 0 ? 'OVERDUE' : days !== null && days <= 7 ? 'CRITICAL' : 'WARNING';
           addTask({
             id: `rep-${r.id}`, vehicleId: carId,

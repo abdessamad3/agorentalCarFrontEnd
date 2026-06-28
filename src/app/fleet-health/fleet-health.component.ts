@@ -1,10 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { forkJoin, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { forkJoin } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { safe, toArr } from '../shared/utils/rx.utils';
 import { CrudService } from '../services/crud.service';
 import { TranslationService } from '../services/translation.service';
+import { daysUntil } from '../shared/utils/date.utils';
 
 export interface VehicleHealthRow {
   id: number;
@@ -17,13 +19,6 @@ export interface VehicleHealthRow {
   maintenanceScore: number;
   availabilityScore: number;
   issues: string[];
-}
-
-function expiryDays(dateStr: string | null | undefined): number {
-  if (!dateStr) return -999;
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return -999;
-  return Math.round((d.getTime() - Date.now()) / 86_400_000);
 }
 
 @Component({
@@ -48,26 +43,23 @@ export class FleetHealthComponent implements OnInit {
     this.load();
   }
 
-  private safe(obs: any) { return obs.pipe(catchError(() => of([]))); }
-  private toArr(r: any): any[] { return Array.isArray(r) ? r : (r?.data ?? []); }
-
   load() {
     this.loading = true;
     forkJoin({
-      cars:      this.safe(this.crud.getAll('voiture',         { limit: 500 })),
-      vidanges:  this.safe(this.crud.getAll('vidange',         { limit: 500 })),
-      repairs:   this.safe(this.crud.getAll('reparation',      { limit: 500 })),
-      assur:     this.safe(this.crud.getAll('assurance',       { limit: 500 })),
-      vignettes: this.safe(this.crud.getAll('vignette',        { limit: 500 })),
-      suivis:    this.safe(this.crud.getAll('suivi-technique', { limit: 500 })),
+      cars:      safe(this.crud.getAll('voiture',         { limit: 500 })),
+      vidanges:  safe(this.crud.getAll('vidange',         { limit: 500 })),
+      repairs:   safe(this.crud.getAll('reparation',      { limit: 500 })),
+      assur:     safe(this.crud.getAll('assurance',       { limit: 500 })),
+      vignettes: safe(this.crud.getAll('vignette',        { limit: 500 })),
+      suivis:    safe(this.crud.getAll('suivi-technique', { limit: 500 })),
     }).pipe(
       map(({ cars, vidanges, repairs, assur, vignettes, suivis }: any) => {
-        const carList = this.toArr(cars);
-        const vidList = this.toArr(vidanges);
-        const repList = this.toArr(repairs);
-        const asList  = this.toArr(assur);
-        const vigList = this.toArr(vignettes);
-        const suvList = this.toArr(suivis);
+        const carList = toArr(cars);
+        const vidList = toArr(vidanges);
+        const repList = toArr(repairs);
+        const asList  = toArr(assur);
+        const vigList = toArr(vignettes);
+        const suvList = toArr(suivis);
 
         return carList.map((car: any) => this.scoreVehicle(car, vidList, repList, asList, vigList, suvList));
       })
@@ -94,8 +86,8 @@ export class FleetHealthComponent implements OnInit {
     if (!latestAssur) {
       complianceScore -= 14; issues.push('No insurance record');
     } else {
-      const days = expiryDays(latestAssur.dateFin ?? latestAssur.dateExpiration);
-      if (days < 0)   { complianceScore -= 14; issues.push('Insurance expired'); }
+      const days = daysUntil(latestAssur.dateFin ?? latestAssur.dateExpiration);
+      if (days === null || days < 0)   { complianceScore -= 14; issues.push('Insurance expired'); }
       else if (days <= 30) { complianceScore -= 7;  issues.push(`Insurance expires in ${days}d`); }
     }
 
@@ -107,7 +99,7 @@ export class FleetHealthComponent implements OnInit {
     if (!latestVig || (latestVig.annee && +latestVig.annee < thisYear)) {
       complianceScore -= 13; issues.push('Vignette not up to date');
     } else {
-      const days = expiryDays(latestVig.dateFin ?? latestVig.dateExpiration);
+      const days = daysUntil(latestVig.dateFin ?? latestVig.dateExpiration);
       if (days !== null && days < 0) { complianceScore -= 13; issues.push('Vignette expired'); }
       else if (days !== null && days <= 30) { complianceScore -= 6; issues.push(`Vignette expires in ${days}d`); }
     }
@@ -119,8 +111,8 @@ export class FleetHealthComponent implements OnInit {
     if (!latestSuivi) {
       complianceScore -= 13; issues.push('No technical visit record');
     } else {
-      const days = expiryDays(latestSuivi.prochainDate ?? latestSuivi.dateProchaine);
-      if (days < 0)   { complianceScore -= 13; issues.push('Technical visit overdue'); }
+      const days = daysUntil(latestSuivi.prochainDate ?? latestSuivi.dateProchaine);
+      if (days === null || days < 0)   { complianceScore -= 13; issues.push('Technical visit overdue'); }
       else if (days <= 30) { complianceScore -= 6; issues.push(`Technical visit in ${days}d`); }
     }
 

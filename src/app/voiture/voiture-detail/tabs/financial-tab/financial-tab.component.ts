@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import Chart from 'chart.js/auto';
@@ -16,11 +16,12 @@ import { PayDepPanelComponent } from '../../../../shared/pay-dep-panel/pay-dep-p
   templateUrl: './financial-tab.component.html',
   styleUrls: ['../../voiture-detail.component.css'],
 })
-export class FinancialTabComponent implements OnInit, OnDestroy {
+export class FinancialTabComponent implements OnInit, OnChanges, OnDestroy {
   @Input() carId!: number;
   @Input() car!: any;
   @Input() reservations: any[] = [];
   @Input() dir = 'ltr';
+  @Input() creditRefresh = 0;
 
   finSummary: any = null;
   finTransactions: any[] = [];
@@ -61,6 +62,12 @@ export class FinancialTabComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.load();
     this.loadProfitability();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['creditRefresh'] && !changes['creditRefresh'].firstChange) {
+      this.loadProfitability();
+    }
   }
 
   ngOnDestroy(): void {

@@ -5,6 +5,7 @@ import { CrudService } from '../../services/crud.service';
 import { TranslationService } from '../../services/translation.service';
 import { forkJoin, of, Observable } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
+import { toArr } from '../../shared/utils/rx.utils';
 
 interface VehicleMaintenanceRow {
   id: number;
@@ -61,10 +62,10 @@ export class MaintenanceReportComponent implements OnInit {
       adblues:     safe(this.crud.getAll('adblue',     { limit: 2000 })),
     }).subscribe({
       next: ({ cars, reparations, vidanges, adblues }: any) => {
-        const carList  = this.toArr(cars);
-        const repList  = this.toArr(reparations);
-        const vidList  = this.toArr(vidanges);
-        const ablList  = this.toArr(adblues);
+        const carList  = toArr(cars);
+        const repList  = toArr(reparations);
+        const vidList  = toArr(vidanges);
+        const ablList  = toArr(adblues);
 
         const allDates = [...repList, ...vidList, ...ablList].map(i => new Date(i.date || i.dateDebut || i.creeAu || 0).getFullYear());
         const years = new Set<number>([new Date().getFullYear(), ...allDates.filter(y => !isNaN(y))]);
@@ -190,7 +191,6 @@ export class MaintenanceReportComponent implements OnInit {
     );
   }
 
-  private toArr(r: any): any[] { return Array.isArray(r) ? r : (r?.data ?? []); }
 
   exportCSV() {
     const headers = ['Vehicle','Plate','Repairs','Repair Cost','Oil Changes','Oil Cost','AdBlue','AdBlue Qty (L)','AdBlue Cost','Total Cost'];

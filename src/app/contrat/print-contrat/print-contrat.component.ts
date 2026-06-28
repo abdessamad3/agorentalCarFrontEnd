@@ -3,6 +3,7 @@ import {
   ViewEncapsulation, OnChanges, OnDestroy
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { CompanyService } from '../../services/company.service';
 
 @Component({
   selector: 'app-print-contrat',
@@ -15,6 +16,8 @@ import { CommonModule } from '@angular/common';
 export class PrintContratComponent implements OnChanges, OnDestroy {
   @Input() contractData: any = null;
   @Output() closed = new EventEmitter<void>();
+
+  constructor(private companySvc: CompanyService) {}
 
   ngOnChanges(): void {
     if (this.contractData) {
@@ -90,5 +93,22 @@ export class PrintContratComponent implements OnChanges, OnDestroy {
 
   get today(): string {
     return new Date().toLocaleDateString('fr-FR');
+  }
+
+  get bureauAdresse(): string   { return this.companySvc.getCurrentBureauAdresse(); }
+  get bureauTelephone(): string { return this.companySvc.getCurrentBureauTelephone(); }
+
+  private readonly fuelMap: Record<string, number> = {
+    vide: 0, quart: 0.25, moitie: 0.5, trois_quarts: 0.75, plein: 1
+  };
+
+  get fuelNeedle(): { x2: number; y2: number } {
+    const key = this.delivery?.fuelLevelOut ?? 'moitie';
+    const f = this.fuelMap[key] ?? 0.5;
+    const theta = (1 - f) * Math.PI;
+    return {
+      x2: Math.round(100 + 72 * Math.cos(theta)),
+      y2: Math.round(105 - 72 * Math.sin(theta))
+    };
   }
 }

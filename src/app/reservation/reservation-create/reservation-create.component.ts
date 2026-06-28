@@ -7,6 +7,8 @@ import { CrudService } from '../../services/crud.service';
 import { TranslationService } from '../../services/translation.service';
 import { AuthService } from '../../services/auth.service';
 import { UploadBtnComponent } from '../../shared/btn/upload-btn.component';
+import { ClientDocumentsComponent } from '../../client/client-documents/client-documents.component';
+import { NATIONALITES, NationaliteEntry } from '../../shared/constants/nationalites';
 import { environment } from '../../../environments/environment';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -24,7 +26,7 @@ interface ClientDoc {
 @Component({
   selector: 'app-reservation-create',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, UploadBtnComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, UploadBtnComponent, ClientDocumentsComponent],
   templateUrl: './reservation-create.component.html',
   styleUrls: ['./reservation-create.component.css']
 })
@@ -46,6 +48,14 @@ export class ReservationCreateComponent implements OnInit {
   showAddClientModal = false;
   newClientForm: FormGroup;
   addingClient = false;
+  addClientFormStep: 'info' | 'cards' | 'documents' = 'info';
+  addClientCreatedId: number | null = null;
+  nationaliteDropdownOpen = false;
+  readonly nationalitesList = NATIONALITES;
+  private readonly addClientInfoControls = [
+    'nom', 'prenom', 'telephone', 'nationalite', 'email', 'telephoneEtranger',
+    'dateNaissance', 'lieuNaissance', 'adresseMaroc', 'adresseEtranger',
+  ];
 
   expiryWarningDismissed = false;
   uploadedDocTypes = new Set<ExpiredDocType>();
@@ -137,10 +147,28 @@ export class ReservationCreateComponent implements OnInit {
     });
 
     this.newClientForm = this.fb.group({
-      nom:      ['', Validators.required],
-      prenom:   [''],
-      telephone:[''],
-      cin:      [''],
+      nom:                  ['', Validators.required],
+      prenom:               ['', Validators.required],
+      telephone:            ['', Validators.required],
+      cin:                  ['', Validators.required],
+      cinExpiration:        [''],
+      cinDelivreLe:         [''],
+      cinDelivreA:          [''],
+      passeport:            [''],
+      passeportExpiration:  [''],
+      passeportDelivreLe:   [''],
+      passeportDelivreA:    [''],
+      permisConduite:       ['', Validators.required],
+      permisExpiration:     [''],
+      permisDelivreLe:      [''],
+      permisDelivreA:       [''],
+      nationalite:          ['', Validators.required],
+      email:                ['', Validators.email],
+      dateNaissance:        [''],
+      lieuNaissance:        [''],
+      telephoneEtranger:    [''],
+      adresseMaroc:         ['', Validators.required],
+      adresseEtranger:      [''],
     });
   }
 
@@ -325,21 +353,79 @@ export class ReservationCreateComponent implements OnInit {
     });
   }
 
-  openAddClient() { this.showAddClientModal = true; this.newClientForm.reset(); }
-  closeAddClient() { this.showAddClientModal = false; }
+  openAddClient() {
+    this.showAddClientModal = true;
+    this.addClientFormStep = 'info';
+    this.addClientCreatedId = null;
+    this.newClientForm.reset();
+  }
+
+  closeAddClient() {
+    this.showAddClientModal = false;
+    this.addClientFormStep = 'info';
+    this.addClientCreatedId = null;
+  }
 
   saveNewClient() {
     if (this.newClientForm.invalid) return;
     this.addingClient = true;
     this.crud.create('client', this.newClientForm.value).subscribe({
-      next: (created: any) => {
-        this.clients.unshift(created);
-        this.selectClient(created);
-        this.closeAddClient();
+      next: (res: any) => {
         this.addingClient = false;
+        const id = res?.id ?? null;
+        this.addClientCreatedId = id;
+        const newClient = { ...this.newClientForm.value, id };
+        this.clients.unshift(newClient);
+        this.selectClient(newClient);
+        if (id) {
+          this.addClientFormStep = 'documents';
+        } else {
+          this.closeAddClient();
+        }
       },
       error: () => { this.addingClient = false; }
     });
+  }
+
+  private static normalizeStr(s: string): string {
+    return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  }
+
+  private nationaliteLabel(entry: NationaliteEntry): string {
+    const lang = this.ts.getCurrentLanguage();
+    return (lang === 'ar' ? entry.ar : lang === 'en' ? entry.en : entry.fr) || entry.fr;
+  }
+
+  get filteredNationalitesForAdd(): string[] {
+    const labels = this.nationalitesList.map(n => this.nationaliteLabel(n));
+    const q = ReservationCreateComponent.normalizeStr((this.newClientForm.get('nationalite')?.value || '').trim());
+    if (!q) return labels;
+    return labels.filter(label => ReservationCreateComponent.normalizeStr(label).includes(q));
+  }
+
+  selectNationaliteForAdd(n: string): void {
+    this.newClientForm.get('nationalite')?.setValue(n);
+    this.nationaliteDropdownOpen = false;
+  }
+
+  onNationaliteBlurForAdd(): void {
+    setTimeout(() => this.nationaliteDropdownOpen = false, 150);
+  }
+
+  get isAddClientInfoStepValid(): boolean {
+    return this.addClientInfoControls.every(name => this.newClientForm.get(name)?.valid ?? true);
+  }
+
+  goToAddClientCardsStep(): void {
+    if (!this.isAddClientInfoStepValid) {
+      this.addClientInfoControls.forEach(name => this.newClientForm.get(name)?.markAsTouched());
+      return;
+    }
+    this.addClientFormStep = 'cards';
+  }
+
+  backToAddClientInfoStep(): void {
+    this.addClientFormStep = 'info';
   }
 
   isVoitureConflicted(voitureId: number): boolean {

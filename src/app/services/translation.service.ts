@@ -26,7 +26,7 @@ export class TranslationService {
       booked: 'Booked',
 
       // Calendar
-      today: 'Today', thisMonth: 'This Month', fleetCalendar: 'Fleet Calendar',
+      today: 'Today', returningToday: 'Returning Today', thisMonth: 'This Month', fleetCalendar: 'Fleet Calendar',
       confirmed: 'Confirmed', inProgress: 'In Progress', pending: 'Pending',
       cancelled: 'Cancelled', more: 'more',
 
@@ -143,6 +143,22 @@ export class TranslationService {
       cancelInsuranceWarning: 'This marks the policy as cancelled (voided before/during its term) and keeps it in History. Use this instead of Delete when payments are already recorded against it.',
       depenses: 'Expenses', vehicleExpenses: 'Vehicle Expenses', bureauExpenses: 'Bureau Expenses', credits: 'Credits', infractions: 'Infractions',
       accessoires: 'Accessories', utilisateurs: 'Users', vignettes: 'Vignettes',
+
+      // Bureau expense page
+      beSubtitle: 'Overhead & office costs (rent, utilities, salaries…)',
+      beAddExpense: '+ Add Expense', beAddBureauExpense: '+ Add Bureau Expense',
+      beSearchPlaceholder: 'Search by type or description…',
+      beEmptyTitle: 'No bureau expenses recorded',
+      beEmptyMsg: 'Track rent, salaries, utilities, and other office overhead costs here.',
+      beExpenseType: 'Expense Type', beExpenseDate: 'Expense Date',
+      beAutoFromAccount: 'Auto (from your account)',
+      beExpenseDetails: 'Expense Details', beFinancial: 'Financial', beDates: 'Dates',
+      beExpenseRecord: 'This expense record will be permanently removed.',
+      beExpenseDateLabel: 'Expense date', beDescriptionNotes: 'Description / Notes',
+      // Expense type names
+      loyer: 'Rent', salaire: 'Salary', electricite: 'Electricity',
+      eau: 'Water', internet: 'Internet', fournitures: 'Office Supplies',
+      publicite: 'Advertising', nettoyage: 'Cleaning', vignetteBureau: 'Bureau Vignette', autre: 'Other',
 
       // Entity names (singular)
       reservation: 'Reservation', contrat: 'Contract', paiement: 'Payment',
@@ -344,6 +360,12 @@ export class TranslationService {
       installmentNum: 'Installment #', dueDate: 'Due Date',
       monthlyAmount: 'Amount', remainingBalance: 'Remaining Balance',
       installments: 'Installments',
+      creditPayments: 'Credit', noCreditRecord: 'No credit record for this vehicle',
+      financedAmount: 'Financed Amount', monthlyInstallment: 'Monthly Payment',
+      monthsRemaining: 'Months Remaining', lastMonthRemainder: 'Last Month Diff',
+      paymentProgress: 'Payment Progress', markPaid: 'Mark Paid',
+      amountDue: 'Amount Due', paidAt: 'Paid On',
+      due_soon: 'Due Soon', due_today: 'Due Today',
       brouillon: 'Draft',
       achatActif: 'Active', achatTermine: 'Completed',
       achatAnnule: 'Cancelled',
@@ -359,7 +381,7 @@ export class TranslationService {
       noInstallments: 'No installments to display.',
       totalFinanced: 'Financed', remainingDebt: 'Remaining Debt',
       monthlyPaymentTotal: 'Monthly Due', overduePayments: 'Overdue',
-      outstanding: 'outstanding', perMonth: 'per month', vehicles: 'vehicles',
+      outstanding: 'outstanding', perMonth: 'per month', vehicles: 'vehicles', starts: 'Starts',
 
       // ── Company Settings page ──────────────────────────────────────────────
       companySettingsDesc: 'Manage your company profile, localization, rental rules and notifications',
@@ -515,7 +537,7 @@ export class TranslationService {
       booked: 'Réservé',
 
       // Calendrier
-      today: "Aujourd'hui", thisMonth: 'Ce Mois', fleetCalendar: 'Calendrier Flotte',
+      today: "Aujourd'hui", returningToday: 'Retours du jour', thisMonth: 'Ce Mois', fleetCalendar: 'Calendrier Flotte',
       confirmed: 'Confirmé', inProgress: 'En Cours', pending: 'En Attente',
       cancelled: 'Annulé', more: 'de plus',
 
@@ -627,6 +649,22 @@ export class TranslationService {
       cancelInsuranceWarning: 'Ceci marque la police comme annulée (résiliée avant ou pendant sa durée) et la conserve dans l\'historique. À utiliser à la place de Supprimer lorsque des paiements ont déjà été enregistrés.',
       depenses: 'Dépenses', vehicleExpenses: 'Dépenses Véhicules', bureauExpenses: 'Dépenses Bureau', credits: 'Crédits', infractions: 'Infractions',
       accessoires: 'Accessoires', utilisateurs: 'Utilisateurs', vignettes: 'Vignettes',
+
+      // Bureau expense page
+      beSubtitle: 'Frais généraux (loyer, charges, salaires…)',
+      beAddExpense: '+ Ajouter une dépense', beAddBureauExpense: '+ Ajouter une dépense bureau',
+      beSearchPlaceholder: 'Rechercher par type ou description…',
+      beEmptyTitle: 'Aucune dépense bureau enregistrée',
+      beEmptyMsg: 'Suivez ici le loyer, les salaires, les charges et autres frais généraux.',
+      beExpenseType: 'Type de dépense', beExpenseDate: 'Date de dépense',
+      beAutoFromAccount: 'Auto (depuis votre compte)',
+      beExpenseDetails: 'Détails de la dépense', beFinancial: 'Finances', beDates: 'Dates',
+      beExpenseRecord: 'Cette dépense sera définitivement supprimée.',
+      beExpenseDateLabel: 'Date de dépense', beDescriptionNotes: 'Description / Notes',
+      // Expense type names
+      loyer: 'Loyer', salaire: 'Salaire', electricite: 'Électricité',
+      eau: 'Eau', internet: 'Internet', fournitures: 'Fournitures de bureau',
+      publicite: 'Publicité', nettoyage: 'Nettoyage', vignetteBureau: 'Vignette bureau', autre: 'Autre',
 
       reservation: 'Réservation', contrat: 'Contrat', paiement: 'Paiement',
       reparation: 'Réparation', vidange: 'Vidange', assurance: 'Assurance',
@@ -816,6 +854,12 @@ export class TranslationService {
       installmentNum: 'N° échéance', dueDate: 'Date échéance',
       monthlyAmount: 'Montant', remainingBalance: 'Solde restant',
       installments: 'Échéances',
+      creditPayments: 'Crédit', noCreditRecord: 'Aucun crédit enregistré pour ce véhicule',
+      financedAmount: 'Montant financé', monthlyInstallment: 'Mensualité',
+      monthsRemaining: 'Mois restants', lastMonthRemainder: 'Différence dernier mois',
+      paymentProgress: 'Avancement du paiement', markPaid: 'Marquer payé',
+      amountDue: 'Montant dû', paidAt: 'Payé le',
+      due_soon: 'Bientôt dû', due_today: 'Dû aujourd\'hui',
       brouillon: 'Brouillon',
       achatActif: 'Actif', achatTermine: 'Terminé',
       achatAnnule: 'Annulé',
@@ -831,7 +875,7 @@ export class TranslationService {
       noInstallments: 'Aucune échéance à afficher.',
       totalFinanced: 'Financés', remainingDebt: 'Reste dû',
       monthlyPaymentTotal: 'Mensualités', overduePayments: 'En retard',
-      outstanding: 'en cours', perMonth: 'par mois', vehicles: 'véhicules',
+      outstanding: 'en cours', perMonth: 'par mois', vehicles: 'véhicules', starts: 'Commence le',
 
       // ── Paramètres société ─────────────────────────────────────────────────
       companySettingsDesc: 'Gérez votre profil société, la localisation, les règles de location et les notifications',
@@ -987,7 +1031,7 @@ export class TranslationService {
       booked: 'محجوز',
 
       // التقويم
-      today: 'اليوم', thisMonth: 'هذا الشهر', fleetCalendar: 'تقويم الأسطول',
+      today: 'اليوم', returningToday: 'إرجاعات اليوم', thisMonth: 'هذا الشهر', fleetCalendar: 'تقويم الأسطول',
       confirmed: 'مؤكد', inProgress: 'جاري', pending: 'قيد الانتظار',
       cancelled: 'ملغى', more: 'المزيد',
 
@@ -1099,6 +1143,22 @@ export class TranslationService {
       cancelInsuranceWarning: 'هذا يحدد الوثيقة كملغاة (أُلغيت قبل أو أثناء مدتها) ويحتفظ بها في السجل. استخدم هذا بدلاً من الحذف عند وجود مدفوعات مسجلة بالفعل.',
       depenses: 'المصاريف', vehicleExpenses: 'مصاريف المركبات', bureauExpenses: 'مصاريف المكتب', credits: 'الائتمانات', infractions: 'المخالفات',
       accessoires: 'الملحقات', utilisateurs: 'المستخدمون', vignettes: 'الضريبة',
+
+      // Bureau expense page
+      beSubtitle: 'التكاليف العامة (الإيجار، الخدمات، الرواتب…)',
+      beAddExpense: '+ إضافة مصروف', beAddBureauExpense: '+ إضافة مصروف مكتب',
+      beSearchPlaceholder: 'بحث حسب النوع أو الوصف…',
+      beEmptyTitle: 'لا توجد مصاريف مكتب مسجلة',
+      beEmptyMsg: 'تتبع الإيجار والرواتب والخدمات وسائر التكاليف العامة هنا.',
+      beExpenseType: 'نوع المصروف', beExpenseDate: 'تاريخ المصروف',
+      beAutoFromAccount: 'تلقائي (من حسابك)',
+      beExpenseDetails: 'تفاصيل المصروف', beFinancial: 'المالية', beDates: 'التواريخ',
+      beExpenseRecord: 'سيتم حذف هذا السجل نهائياً.',
+      beExpenseDateLabel: 'تاريخ المصروف', beDescriptionNotes: 'الوصف / ملاحظات',
+      // Expense type names
+      loyer: 'إيجار', salaire: 'راتب', electricite: 'كهرباء',
+      eau: 'ماء', internet: 'إنترنت', fournitures: 'لوازم مكتبية',
+      publicite: 'إعلان', nettoyage: 'تنظيف', vignetteBureau: 'ملصق المكتب', autre: 'أخرى',
 
       reservation: 'الحجز', contrat: 'العقد', paiement: 'الدفع',
       reparation: 'الإصلاح', vidange: 'تغيير الزيت', assurance: 'التأمين',
@@ -1288,6 +1348,12 @@ export class TranslationService {
       installmentNum: 'رقم القسط', dueDate: 'تاريخ الاستحقاق',
       monthlyAmount: 'المبلغ', remainingBalance: 'الرصيد المتبقي',
       installments: 'الأقساط',
+      creditPayments: 'القرض', noCreditRecord: 'لا يوجد سجل قرض لهذه السيارة',
+      financedAmount: 'المبلغ الممول', monthlyInstallment: 'القسط الشهري',
+      monthsRemaining: 'الأشهر المتبقية', lastMonthRemainder: 'فرق الشهر الأخير',
+      paymentProgress: 'تقدم السداد', markPaid: 'تحديد كمدفوع',
+      amountDue: 'المبلغ المستحق', paidAt: 'تاريخ الدفع',
+      due_soon: 'قريباً', due_today: 'مستحق اليوم',
       brouillon: 'مسودة',
       achatActif: 'نشط', achatTermine: 'مكتمل',
       achatAnnule: 'ملغى',
@@ -1303,7 +1369,7 @@ export class TranslationService {
       noInstallments: 'لا توجد أقساط للعرض.',
       totalFinanced: 'ممولة', remainingDebt: 'الدين المتبقي',
       monthlyPaymentTotal: 'المستحق الشهري', overduePayments: 'متأخرة',
-      outstanding: 'جارية', perMonth: 'شهرياً', vehicles: 'سيارات',
+      outstanding: 'جارية', perMonth: 'شهرياً', vehicles: 'سيارات', starts: 'تبدأ في',
 
       // ── إعدادات الشركة ─────────────────────────────────────────────────────
       companySettingsDesc: 'إدارة ملف شركتك والمحلية وقواعد الإيجار والإشعارات',

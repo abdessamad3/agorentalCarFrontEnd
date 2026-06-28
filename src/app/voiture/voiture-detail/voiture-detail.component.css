@@ -1059,6 +1059,7 @@
 }
 
 @media (max-width: 700px) {
+  .lc-progress-bar { display: none; }
   .vd-page { padding: 0.85rem; }
   .tab-pane { padding: 1.1rem; }
   .kpi-cards { grid-template-columns: 1fr 1fr; }
@@ -2856,6 +2857,53 @@
 .owi-warn { color: #F2994A; background: #FFF8F0; }
 .owi-todo { color: #A0AEC0; background: #EDF2F7; }
 
+/* ══════════════════════════════════════════ ONBOARDING ACTION ROW */
+.ob-ws-activate-row {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.ob-btn-activate,
+.ob-btn-setup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.6rem 1.25rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+  width: fit-content;
+}
+.ob-btn-activate {
+  background: #27AE60;
+  color: #fff;
+}
+.ob-btn-activate:hover:not(:disabled) { background: #219150; }
+.ob-btn-setup {
+  background: #2F80ED;
+  color: #fff;
+}
+.ob-btn-setup:hover:not(:disabled) { background: #1a6dd4; }
+.ob-btn-activate:disabled,
+.ob-btn-setup:disabled { opacity: 0.55; cursor: not-allowed; }
+.ob-activate-error {
+  font-size: 0.8rem;
+  color: #C53030;
+  background: #FFF5F5;
+  border: 1px solid #FEB2B2;
+  border-radius: 6px;
+  padding: 0.4rem 0.7rem;
+}
+.ob-activate-hint {
+  font-size: 0.78rem;
+  color: #718096;
+  margin: 0;
+}
+
 /* ══════════════════════════════════════════ READINESS PANEL WRAP */
 .readiness-panel-wrap {
   margin-bottom: 1rem;
@@ -3458,3 +3506,54 @@
 .conf-sections { display: flex; flex-direction: column; gap: 0; }
 .conf-section-sep { height: 1px; background: var(--border, #E8EEFA); margin: 0.5rem 0; }
 .conf-type-pills { padding: 0.75rem 0 0.25rem; border-bottom: 1px solid var(--border, #E8EEFA); margin-bottom: 0.5rem; }
+
+/* ══════════════════════════════════════════════════════ CREDIT TAB */
+.credit-tab { padding: 1.25rem; display: flex; flex-direction: column; gap: 1.25rem; }
+.credit-loading { display: flex; align-items: center; gap: 0.5rem; color: var(--text-soft); padding: 2rem; justify-content: center; }
+.credit-empty { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; padding: 3rem; color: var(--text-soft); text-align: center; }
+.credit-empty p { margin: 0; font-size: 0.9rem; }
+
+.credit-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem; }
+.credit-kpi { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.9rem 1rem; display: flex; flex-direction: column; gap: 0.25rem; }
+.credit-kpi-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-soft); }
+.credit-kpi-value { font-size: 1.05rem; font-weight: 700; color: var(--text-dark); }
+.credit-kpi-accent { color: var(--blue); }
+.credit-kpi-warn { color: var(--orange); }
+
+.credit-status-badge { display: inline-flex; align-items: center; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+.cs-active { background: #d4edda; color: #155724; }
+.cs-completed { background: #cce5ff; color: #004085; }
+.cs-defaulted { background: #f8d7da; color: #721c24; }
+.cs-pending_approval { background: #fff3cd; color: #856404; }
+.cs-cancelled { background: #e2e3e5; color: #383d41; }
+
+.credit-progress-wrap { display: flex; flex-direction: column; gap: 0.4rem; }
+.credit-progress-label { display: flex; justify-content: space-between; font-size: 0.82rem; font-weight: 600; color: var(--text-mid); }
+.credit-progress-track { height: 10px; background: var(--border); border-radius: 10px; overflow: hidden; }
+.credit-progress-fill { height: 100%; background: linear-gradient(90deg, var(--blue), #27AE60); border-radius: 10px; transition: width 0.4s ease; }
+
+.credit-table-wrap { overflow-x: auto; }
+.credit-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.credit-table th { padding: 0.6rem 0.75rem; text-align: left; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-soft); background: var(--bg); border-bottom: 2px solid var(--border); white-space: nowrap; }
+.credit-table td { padding: 0.65rem 0.75rem; border-bottom: 1px solid var(--border); color: var(--text-dark); vertical-align: middle; }
+.credit-table tr:last-child td { border-bottom: none; }
+.credit-table tr.inst-paid td { color: var(--text-soft); }
+.credit-table tr.inst-overdue td { background: #fff5f5; }
+.credit-table tr.inst-due_today td { background: #fffbeb; }
+.credit-table tr.inst-due_soon td { background: #fffbeb; }
+
+.inst-status-badge { display: inline-flex; align-items: center; padding: 0.15rem 0.5rem; border-radius: 12px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
+.is-paid { background: #d4edda; color: #155724; }
+.is-pending { background: #e2e3e5; color: #383d41; }
+.is-due_soon { background: #fff3cd; color: #856404; }
+.is-due_today { background: #ffe8cc; color: #8a4700; }
+.is-overdue { background: #f8d7da; color: #721c24; }
+.is-partial { background: #cce5ff; color: #004085; }
+
+.btn-pay-inst { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.3rem 0.65rem; background: var(--blue); color: #fff; border: none; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: opacity 0.15s; }
+.btn-pay-inst:hover:not(:disabled) { opacity: 0.85; }
+.btn-pay-inst:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-cancel-inst { margin-left: 0.5rem; display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.25rem 0.6rem; background: transparent; color: #dc2626; border: 1px solid #dc2626; border-radius: 6px; font-size: 0.74rem; font-weight: 600; cursor: pointer; transition: background 0.15s, color 0.15s; }
+.btn-cancel-inst:hover:not(:disabled) { background: #dc2626; color: #fff; }
+.btn-cancel-inst:disabled { opacity: 0.5; cursor: not-allowed; }
+.inst-paid-check { display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.78rem; font-weight: 700; color: var(--green); }

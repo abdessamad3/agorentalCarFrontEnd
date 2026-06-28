@@ -1,5 +1,6 @@
 import { Component, Input, Output, EventEmitter, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { complianceSeverity as complianceSeverityUtil } from '../../../shared/utils/compliance.utils';
 
 interface ReadinessItem {
   label: string;
@@ -244,9 +245,10 @@ export class ReadinessPanelComponent implements OnChanges {
     this.vehicleAge = currentYear - vehicleYear;
     this.inspectionRequired = this.vehicleAge >= 3;
 
-    // Binary compliance scoring: active (not EXPIRED, not UNKNOWN) = full points, else 0
+    // Use shared severity classifier: ok/warning = pass, critical/expired/neutral = fail
     const compPass = (status: string | undefined): boolean => {
-      return !!status && status !== 'EXPIRED' && status !== 'UNKNOWN';
+      const sev = complianceSeverityUtil(status);
+      return sev === 'ok' || sev === 'warning';
     };
 
     this.assuranceStatus = comp?.assurance?.status;
@@ -289,44 +291,68 @@ export class ReadinessPanelComponent implements OnChanges {
       },
     ];
 
-    // ── Insurance (max 25) — binary ─────────────────────────────
+    // ── Insurance (max 25) ──────────────────────────────────────
+    const assuranceDays: number | null = comp?.assurance?.daysRemaining ?? null;
+    const assuranceSev   = complianceSeverityUtil(assuranceStatus);
+    const assuranceCrit  = assuranceSev === 'danger' && assuranceDays !== null && assuranceDays >= 0;
+    const assuranceExp   = assuranceSev === 'danger' && (assuranceDays === null || assuranceDays < 0);
     const insuranceItems: ReadinessItem[] = [
       {
         label: assuranceOk
           ? `Assurance valide — expire le ${this.fmtDate(comp?.assurance?.expiresAt)}`
-          : 'Assurance requise (expirée ou manquante)',
-        points: 25,
-        passed: assuranceOk,
-        blocking: !assuranceOk,
-        advisory: false,
+          : assuranceCrit
+            ? `Assurance en expiration imminente — ${assuranceDays}j`
+            : assuranceExp
+              ? 'Assurance expirée'
+              : 'Assurance manquante',
+        points:   25,
+        passed:   assuranceOk,
+        blocking: assuranceExp || assuranceSev === 'neutral',
+        advisory: assuranceCrit,
         category: 'insurance',
       },
     ];
 
-    // ── Vignette (max 20) — binary ──────────────────────────────
+    // ── Vignette (max 20) ────────────────────────────────────────
+    const vignetteDays: number | null = comp?.vignette?.daysRemaining ?? null;
+    const vignetteSev   = complianceSeverityUtil(vignetteStatus);
+    const vignetteCrit  = vignetteSev === 'danger' && vignetteDays !== null && vignetteDays >= 0;
+    const vignetteExp   = vignetteSev === 'danger' && (vignetteDays === null || vignetteDays < 0);
     const vignetteItems: ReadinessItem[] = [
       {
         label: vignetteOk
           ? `Vignette valide — ${currentYear}`
-          : 'Vignette requise (expirée ou manquante)',
-        points: 20,
-        passed: vignetteOk,
-        blocking: !vignetteOk,
-        advisory: false,
+          : vignetteCrit
+            ? `Vignette en expiration imminente — ${vignetteDays}j`
+            : vignetteExp
+              ? 'Vignette expirée'
+              : 'Vignette manquante',
+        points:   20,
+        passed:   vignetteOk,
+        blocking: vignetteExp || vignetteSev === 'neutral',
+        advisory: vignetteCrit,
         category: 'vignette',
       },
     ];
 
-    // ── Inspection (max 15, only if age >= 3) — binary ──────────
+    // ── Inspection (max 15, only if age >= 3) ───────────────────
+    const visiteDays: number | null = comp?.visite?.daysRemaining ?? null;
+    const visiteSev   = complianceSeverityUtil(visiteStatus);
+    const visiteCrit  = visiteSev === 'danger' && visiteDays !== null && visiteDays >= 0;
+    const visiteExp   = visiteSev === 'danger' && (visiteDays === null || visiteDays < 0);
     const inspectionItems: ReadinessItem[] = this.inspectionRequired ? [
       {
         label: visiteOk
           ? `Visite technique valide — expire le ${this.fmtDate(comp?.visite?.expiresAt)}`
-          : `Visite technique requise (véhicule de ${this.vehicleAge} ans)`,
-        points: 15,
-        passed: visiteOk,
-        blocking: !visiteOk,
-        advisory: false,
+          : visiteCrit
+            ? `Visite technique en expiration imminente — ${visiteDays}j`
+            : visiteExp
+              ? `Visite technique expirée (véhicule de ${this.vehicleAge} ans)`
+              : `Visite technique manquante (véhicule de ${this.vehicleAge} ans)`,
+        points:   15,
+        passed:   visiteOk,
+        blocking: visiteExp || visiteSev === 'neutral',
+        advisory: visiteCrit,
         category: 'inspection',
       },
     ] : [];

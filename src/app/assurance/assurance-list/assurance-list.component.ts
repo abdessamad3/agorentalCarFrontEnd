@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslationService } from '../../services/translation.service';
 import { CrudService } from '../../services/crud.service';
+import { EventBusService } from '../../services/event-bus.service';
 import { InsuranceModalComponent, InsuranceSavePayload } from '../../shared/insurance-modal/insurance-modal.component';
 import { PaginatorComponent } from '../../shared/paginator/paginator.component';
 
@@ -37,6 +38,7 @@ export class AssuranceListComponent implements OnInit {
   constructor(
     private crud: CrudService,
     private ts: TranslationService,
+    private bus: EventBusService,
   ) {}
 
 
@@ -84,10 +86,10 @@ export class AssuranceListComponent implements OnInit {
   }
 
   daysUntil(dateStr: string): number {
-    const d = new Date(dateStr);
-    d.setHours(0, 0, 0, 0);
+    const parts = dateStr.slice(0, 10).split('-').map(Number);
+    const d = new Date(parts[0], parts[1] - 1, parts[2]);
     const now = new Date(); now.setHours(0, 0, 0, 0);
-    return Math.ceil((d.getTime() - now.getTime()) / 86400000);
+    return Math.floor((d.getTime() - now.getTime()) / 86400000);
   }
 
   get stats() {
@@ -188,7 +190,7 @@ export class AssuranceListComponent implements OnInit {
       ? this.crud.update(this.endpoint, this.selected.id, body)
       : this.crud.create(this.endpoint, body);
     req.subscribe({
-      next: () => { this.closeModal(); this.load(); },
+      next: () => { this.closeModal(); this.load(); this.bus.paymentsChanged$.next(); },
       error: () => { this.isSubmitting = false; }
     });
   }
@@ -212,7 +214,7 @@ export class AssuranceListComponent implements OnInit {
 
     this.crud.customAction(`assurance/${this.selected.id}/renew`, body, 'Insurance renewed successfully')
       .subscribe({
-        next: () => { this.closeModal(); this.load(); },
+        next: () => { this.closeModal(); this.load(); this.bus.paymentsChanged$.next(); },
         error: () => { this.isSubmitting = false; }
       });
   }

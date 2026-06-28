@@ -21,6 +21,7 @@ export class OverviewTabComponent implements OnInit, OnChanges {
   @Input() effectiveStatusVal = 'disponible';
   @Input() docAlerts: any[] = [];
   @Input() dir = 'ltr';
+  @Input() creditRefresh = 0;
 
   kpiLoading = false;
   profitCurrent: any = null;
@@ -37,6 +38,7 @@ export class OverviewTabComponent implements OnInit, OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['carId'] && !changes['carId'].firstChange) this.loadKpis();
+    if (changes['creditRefresh'] && !changes['creditRefresh'].firstChange) this.loadKpis();
   }
 
   private loadKpis(): void {

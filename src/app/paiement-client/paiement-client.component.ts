@@ -6,6 +6,7 @@ import { CrudService } from '../services/crud.service';
 import { EventBusService } from '../services/event-bus.service';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { toArr } from '../shared/utils/rx.utils';
 import { BtnComponent } from '../shared/btn/btn.component';
 
 @Component({
@@ -54,16 +55,13 @@ export class PaiementClientComponent implements OnInit {
       history:      this.crud.getAll('paiement').pipe(catchError(() => of([]))),
       reservations: this.crud.getAll('reservation').pipe(catchError(() => of([]))),
     }).subscribe(({ history, reservations }) => {
-      this.items        = this.toArr(history);
-      this.reservations = this.toArr(reservations)
+      this.items        = toArr(history);
+      this.reservations = toArr(reservations)
         .filter((r: any) => !['cancelled', 'annulee', 'annule'].includes((r.reservationStatus || r.statut || '').toLowerCase()));
       this.loading = false;
     });
   }
 
-  private toArr(r: any): any[] {
-    return Array.isArray(r) ? r : (r?.data ?? []);
-  }
 
   get selectableReservations(): any[] {
     return this.reservations

@@ -33,6 +33,7 @@ export class BureauEditComponent implements OnInit {
     this.bureauForm = this.fb.group({
       nom: ['', Validators.required],
       adresse: [''],
+      telephone: [''],
       statut: ['actif', Validators.required],
       managerId: [null]
     });
@@ -60,6 +61,7 @@ export class BureauEditComponent implements OnInit {
         this.bureauForm.patchValue({
           nom: data.nom,
           adresse: data.adresse,
+          telephone: data.telephone ?? '',
           statut: data.statut,
           managerId: data.managerId ?? null
         });

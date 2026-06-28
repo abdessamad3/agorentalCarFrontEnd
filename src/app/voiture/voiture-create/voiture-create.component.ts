@@ -25,6 +25,9 @@ export class VoitureCreateComponent implements OnInit {
   selectedFiles: File[] = [];
   imagePreviews: { url: SafeUrl; name: string; size: string; isMain: boolean }[] = [];
   isDragging = false;
+
+  assuranceFile: File | null = null;
+  vignetteFile:  File | null = null;
   fournisseurs: any[] = [];
 
   // ── Supplier modal state ──────────────────────────────────────────────────
@@ -52,10 +55,19 @@ export class VoitureCreateComponent implements OnInit {
 
   // Compliance step state
   complianceSkipped: Record<string, boolean> = {};
+
+  // Snapshots — saved when navigating away from each compliance step because
+  // Angular removes FormControlName controls from the group when *ngIf hides them.
+  assuranceSnapshot:  any = {};
+  vignetteSnapshot:   any = {};
+  inspectionSnapshot: any = {};
   complianceError: string | null = null;
 
-  readonly FUEL_OPTIONS = ['Essence', 'Diesel', 'Hybride', 'Electrique', 'GPL'];
+  readonly FUEL_OPTIONS  = ['Essence', 'Diesel', 'Hybride', 'Electrique', 'GPL'];
   readonly CAT_OPTIONS   = ['Citadine', 'Berline', 'SUV', '4x4', 'Monospace', 'Cabriolet', 'Utilitaire', 'Coupé', 'Pick-up'];
+  readonly currentYear   = new Date().getFullYear();
+
+  creditCalc = { resteAFinancer: 0, dureeMois: 0, dernierMensualite: 0 };
 
   get isCreditType(): boolean {
     const t = this.form.get('typeFinancement')?.value;
@@ -106,11 +118,10 @@ export class VoitureCreateComponent implements OnInit {
       typeFinancement: ['comptant'],
       apport:          [0, Validators.min(0)],
       mensualite:      [0, Validators.min(0)],
+      tauxInteret:     [0, Validators.min(0)],
 
       // Step 2 — Pricing
-      prixJour:    [0, [Validators.required, Validators.min(0)]],
-      prixSemaine: [0, Validators.min(0)],
-      prixMois:    [0, Validators.min(0)],
+      prixJour:    ['', [Validators.required, Validators.min(0)]],
       caution:     [0, Validators.min(0)],
 
       // Step 4 — Accessories
@@ -136,14 +147,17 @@ export class VoitureCreateComponent implements OnInit {
       typeAssurance:  ['Tous Risques'],
       numeroContrat:  [''],
       montant:        [''],
-      dateDebut:      [''],
-      dateFin:        [''],
+      montantPaye:    [''],
+      dateDebut:      ['', Validators.required],
+      dateFin:        ['', Validators.required],
     });
 
+    const currentYear = new Date().getFullYear();
     this.vignetteForm = this.fb.group({
-      annee:      [new Date().getFullYear()],
-      dateLimite: [''],
-      montant:    [''],
+      annee:       [currentYear],
+      dateLimite:  [`${currentYear + 1}-01-31`],
+      montant:     [''],
+      montantPaye: [''],
     });
 
     this.inspectionForm = this.fb.group({
@@ -156,6 +170,25 @@ export class VoitureCreateComponent implements OnInit {
   ngOnInit(): void {
     this.ts.direction$.subscribe(d => this.dir = d);
     this.loadSuppliers();
+    this.vignetteForm.get('annee')!.valueChanges.subscribe(annee => {
+      const y = parseInt(annee, 10);
+      if (!isNaN(y) && y > 2000) {
+        this.vignetteForm.get('dateLimite')!.setValue(`${y + 1}-01-31`, { emitEvent: false });
+      }
+    });
+    ['prixAchat', 'apport', 'mensualite', 'tauxInteret'].forEach(f =>
+      this.form.get(f)?.valueChanges.subscribe(() => this.recalcCredit())
+    );
+  }
+
+  recalcCredit(): void {
+    const price    = +(this.form.get('prixAchat')?.value  ?? 0);
+    const apport   = +(this.form.get('apport')?.value     ?? 0);
+    const monthly  = +(this.form.get('mensualite')?.value ?? 0);
+    const reste    = Math.max(0, price - apport);
+    const duration = monthly > 0 ? Math.floor(reste / monthly) : 0;
+    const last     = monthly > 0 ? +(reste - duration * monthly).toFixed(2) : 0;
+    this.creditCalc = { resteAFinancer: reste, dureeMois: duration, dernierMensualite: last };
   }
 
   private loadSuppliers(): void {
@@ -174,15 +207,18 @@ export class VoitureCreateComponent implements OnInit {
                   this.form.get('annee')?.valid);
       case 'purchase':
         return !!(this.form.get('dateAchat')?.valid && this.form.get('prixAchat')?.valid);
+      case 'assurance':
+        return !!(this.assuranceForm.get('dateFin')?.valid && this.assuranceForm.get('dateDebut')?.valid);
       case 'pricing':
         return !!this.form.get('prixJour')?.valid;
       default:
-        return true; // compliance steps + documents/accessories/review are always skippable
+        return true;
     }
   }
 
   next(): void {
     if (this.currentStep < this.totalSteps - 1 && this.canProceed()) {
+      this.saveCurrentStepSnapshot();
       this.currentStep++;
     }
   }
@@ -196,8 +232,28 @@ export class VoitureCreateComponent implements OnInit {
   }
 
   skipComplianceStep(): void {
+    // Clear snapshot so the review and submission both treat this step as empty
+    switch (this.currentStepKey) {
+      case 'assurance':  this.assuranceSnapshot  = {}; break;
+      case 'vignette':   this.vignetteSnapshot   = {}; break;
+      case 'inspection': this.inspectionSnapshot = {}; break;
+    }
     this.complianceSkipped[this.currentStepKey] = true;
-    this.next();
+    if (this.currentStep < this.totalSteps - 1) this.currentStep++;
+  }
+
+  private saveCurrentStepSnapshot(): void {
+    switch (this.currentStepKey) {
+      case 'assurance':  this.assuranceSnapshot  = { ...this.assuranceForm.value };  break;
+      case 'vignette':   this.vignetteSnapshot   = { ...this.vignetteForm.value };   break;
+      case 'inspection': this.inspectionSnapshot = { ...this.inspectionForm.value }; break;
+    }
+  }
+
+  fmtDateStr(d: string | null | undefined): string {
+    if (!d) return '—';
+    const parts = String(d).slice(0, 10).split('-');
+    return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : d;
   }
 
   // ── Supplier modal ────────────────────────────────────────────────────────
@@ -242,6 +298,18 @@ export class VoitureCreateComponent implements OnInit {
   onFileSelect(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files) this.addFiles(Array.from(input.files));
+    input.value = '';
+  }
+
+  onAssuranceFileSelect(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files?.[0]) this.assuranceFile = input.files[0];
+    input.value = '';
+  }
+
+  onVignetteFileSelect(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files?.[0]) this.vignetteFile = input.files[0];
     input.value = '';
   }
 
@@ -327,7 +395,7 @@ export class VoitureCreateComponent implements OnInit {
     this.complianceError = null;
     const fd = new FormData();
 
-    const { immatNum1, immatLetter, immatNum2, fournisseurId, typeFinancement, apport, mensualite, ...rest } = this.form.value;
+    const { immatNum1, immatLetter, immatNum2, fournisseurId, typeFinancement, apport, mensualite, tauxInteret, ...rest } = this.form.value;
     const plateStr = [immatNum1, (immatLetter || '').toUpperCase(), immatNum2].filter(Boolean).join('-');
     if (plateStr) fd.append('immatriculation', plateStr);
 
@@ -356,10 +424,10 @@ export class VoitureCreateComponent implements OnInit {
   }
 
   private postComplianceRecords(voitureId: number): void {
-    const achatV  = this.form.value;
-    const assV    = this.assuranceForm.value;
-    const vigV    = this.vignetteForm.value;
-    const inspV   = this.inspectionForm.value;
+    const achatV = this.form.value;
+    const assV  = { ...this.assuranceForm.value };
+    const vigV  = { ...this.vignetteForm.value };
+    const inspV = { ...this.inspectionForm.value };
 
     const navigate = () => {
       this.isSubmitting = false;
@@ -377,23 +445,46 @@ export class VoitureCreateComponent implements OnInit {
           statut:          'actif',
           ...(achatV.fournisseurId ? { fournisseurId: achatV.fournisseurId } : {}),
           ...(this.isCreditType && achatV.mensualite > 0 ? { mensualite: achatV.mensualite } : {}),
+          ...(this.isCreditType && achatV.tauxInteret > 0 ? { tauxInteret: achatV.tauxInteret } : {}),
         }).pipe(catchError(() => of(null)))
       : of(null);
 
-    // Build assurance observable (skip if no meaningful data)
-    const hasAssurance = !!(assV.compagnie || assV.dateFin);
+    // Build assurance observable (skip if user skipped the step or left all fields empty)
+    const hasAssurance = !this.complianceSkipped['assurance'] && !!(
+      assV.compagnie || assV.dateFin || assV.dateDebut || assV.numeroContrat || assV.montant
+    );
     const postAssurance$: Observable<any> = hasAssurance
-      ? this.crud.create('assurance', { voitureId, ...this.compactObj(assV) }).pipe(catchError(() => of(null)))
+      ? this.crud.create('assurance', { voitureId, ...this.compactObj(assV) }).pipe(
+          switchMap((res: any) => {
+            if (this.assuranceFile && res?.id) {
+              const fd = new FormData();
+              fd.append('file', this.assuranceFile);
+              return this.crud.rawPost(`assurance/${res.id}/file`, fd).pipe(catchError(() => of(null)));
+            }
+            return of(res);
+          }),
+          catchError(() => of(null))
+        )
       : of(null);
 
-    // Build vignette observable
-    const hasVignette = !!(vigV.dateLimite || vigV.annee);
+    // Build vignette observable (default dateLimite is pre-filled, so also gate on skipped flag)
+    const hasVignette = !this.complianceSkipped['vignette'] && !!(vigV.dateLimite || vigV.annee);
     const postVignette$: Observable<any> = hasVignette
-      ? this.crud.create('vignette', { voitureId, ...this.compactObj(vigV) }).pipe(catchError(() => of(null)))
+      ? this.crud.create('vignette', { voitureId, ...this.compactObj(vigV) }).pipe(
+          switchMap((res: any) => {
+            if (this.vignetteFile && res?.id) {
+              const fd = new FormData();
+              fd.append('file', this.vignetteFile);
+              return this.crud.rawPost(`vignette/${res.id}/file`, fd).pipe(catchError(() => of(null)));
+            }
+            return of(res);
+          }),
+          catchError(() => of(null))
+        )
       : of(null);
 
-    // Build inspection observable (only for vehicles >= 3 years old)
-    const hasInspection = this.needsInspection && !!(inspV.dateFin || inspV.dateReglages);
+    // Build inspection observable (only for vehicles >= 3 years old and not skipped)
+    const hasInspection = !this.complianceSkipped['inspection'] && this.needsInspection && !!(inspV.dateFin || inspV.dateReglages);
     const postInspection$: Observable<any> = hasInspection
       ? this.crud.create('suivi-technique', { voitureId, ...this.compactObj(inspV) }).pipe(catchError(() => of(null)))
       : of(null);
