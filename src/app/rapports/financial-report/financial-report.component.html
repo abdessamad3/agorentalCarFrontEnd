@@ -3,39 +3,39 @@
   <!-- Header -->
   <div class="rp-header">
     <div>
-      <div class="rp-title">Financial Report</div>
-      <div class="rp-subtitle">Revenue, expenses, and payment collection overview</div>
+      <div class="rp-title">{{ t('frTitle') }}</div>
+      <div class="rp-subtitle">{{ t('frSubtitle') }}</div>
     </div>
     <div class="rp-actions">
       <button class="btn-export btn-csv" (click)="exportCSV()">
         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        CSV
+        {{ t('exportCsv') }}
       </button>
       <button class="btn-export btn-excel" (click)="exportExcel()">
         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Financial Excel
+        {{ t('financialExcel') }}
       </button>
       <button class="btn-export btn-excel btn-expense-xl" (click)="exportExpenseExcel()" [disabled]="expenseExporting">
         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        {{ expenseExporting ? 'Loading…' : 'Expense Excel' }}
+        {{ expenseExporting ? t('loading') : t('expenseExcel') }}
       </button>
       <button class="btn-export btn-print" (click)="print()">
         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-        Print
+        {{ t('printPdf') }}
       </button>
     </div>
   </div>
 
-  <div *ngIf="loading" class="rp-loading">Loading financial data…</div>
+  <div *ngIf="loading" class="rp-loading">{{ t('frLoading') }}</div>
 
   <ng-container *ngIf="!loading">
 
     <!-- Period switcher -->
     <div style="display:flex; align-items:center; gap:12px; margin-bottom:1.2rem; flex-wrap:wrap;">
       <div class="period-switcher">
-        <button class="period-btn" [class.period-btn-active]="viewMode==='monthly'"  (click)="setViewMode('monthly')">Monthly</button>
-        <button class="period-btn" [class.period-btn-active]="viewMode==='quarterly'" (click)="setViewMode('quarterly')">Quarterly</button>
-        <button class="period-btn" [class.period-btn-active]="viewMode==='yearly'"   (click)="setViewMode('yearly')">Yearly</button>
+        <button class="period-btn" [class.period-btn-active]="viewMode==='monthly'"  (click)="setViewMode('monthly')">{{ t('beMonthly') }}</button>
+        <button class="period-btn" [class.period-btn-active]="viewMode==='quarterly'" (click)="setViewMode('quarterly')">{{ t('quarterly') }}</button>
+        <button class="period-btn" [class.period-btn-active]="viewMode==='yearly'"   (click)="setViewMode('yearly')">{{ t('beYearly') }}</button>
       </div>
       <select class="rp-select" *ngIf="viewMode !== 'yearly'" [(ngModel)]="selectedYear" (ngModelChange)="onYearChange()">
         <option *ngFor="let y of availableYears" [value]="y">{{ y }}</option>
@@ -46,59 +46,59 @@
     <div class="rp-stats">
       <div class="stat-card sc-green">
         <div class="sc-num" style="font-size:1.2rem">{{ fmt(stats.revenue) }}</div>
-        <div class="sc-lbl">Revenue {{ selectedYear }}</div>
+        <div class="sc-lbl">{{ t('revenue') }} {{ selectedYear }}</div>
       </div>
       <div class="stat-card sc-red">
         <div class="sc-num" style="font-size:1.2rem">{{ fmt(stats.expenses) }}</div>
-        <div class="sc-lbl">Expenses {{ selectedYear }}</div>
+        <div class="sc-lbl">{{ t('expenses') }} {{ selectedYear }}</div>
       </div>
       <div class="stat-card" [ngClass]="stats.net >= 0 ? 'sc-blue' : 'sc-orange'">
         <div class="sc-num" [ngClass]="stats.net >= 0 ? 'positive' : 'negative'" style="font-size:1.2rem">
           {{ fmt(stats.net) }}
         </div>
-        <div class="sc-lbl">Net Profit</div>
+        <div class="sc-lbl">{{ t('netProfit') }}</div>
       </div>
       <div class="stat-card sc-teal">
         <div class="sc-num">{{ stats.reservations }}</div>
-        <div class="sc-lbl">Reservations</div>
+        <div class="sc-lbl">{{ t('reservations') }}</div>
       </div>
       <div class="stat-card sc-purple">
         <div class="sc-num">{{ stats.collectionRate }}%</div>
-        <div class="sc-lbl">Collection Rate</div>
+        <div class="sc-lbl">{{ t('collectionRate') }}</div>
       </div>
     </div>
 
     <!-- ── MONTHLY VIEW ── -->
     <ng-container *ngIf="viewMode === 'monthly'">
-      <div class="rp-section">Monthly Overview — {{ selectedYear }}</div>
+      <div class="rp-section">{{ t('monthlyOverview') }} — {{ selectedYear }}</div>
       <div class="bar-chart-wrap">
         <div class="bar-chart-title">
-          <span>Revenue vs Expenses</span>
+          <span>{{ t('revenueVsExpenses') }}</span>
           <div class="bar-chart-legend">
-            <span class="legend-item"><span class="legend-dot" style="background:#4299e1"></span>Revenue</span>
-            <span class="legend-item"><span class="legend-dot" style="background:#fc8181"></span>Expenses</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#4299e1"></span>{{ t('revenue') }}</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#fc8181"></span>{{ t('expenses') }}</span>
           </div>
         </div>
-        <div class="bar-chart">
+        <div class="bar-chart" dir="ltr">
           <div class="bar-group" *ngFor="let b of monthBars">
-            <div class="bar bar-rev" [style.height.px]="b.rH" [title]="'Revenue: ' + fmt(b.revenue)"></div>
-            <div class="bar bar-exp" [style.height.px]="b.eH" [title]="'Expenses: ' + fmt(b.expenses)"></div>
+            <div class="bar bar-rev" [style.height.px]="b.rH" [title]="t('revenue') + ': ' + fmt(b.revenue)"></div>
+            <div class="bar bar-exp" [style.height.px]="b.eH" [title]="t('expenses') + ': ' + fmt(b.expenses)"></div>
           </div>
         </div>
-        <div class="bar-labels">
+        <div class="bar-labels" dir="ltr">
           <span class="bar-label" *ngFor="let b of monthBars">{{ b.label }}</span>
         </div>
       </div>
-      <div class="rp-section">Monthly Breakdown — {{ selectedYear }}</div>
+      <div class="rp-section">{{ t('monthlyBreakdown') }} — {{ selectedYear }}</div>
       <div class="rp-table-wrap">
         <table class="rp-table">
           <thead>
             <tr>
-              <th>Month</th>
-              <th class="td-right">Revenue</th>
-              <th class="td-right">Expenses</th>
-              <th class="td-right">Net Profit</th>
-              <th class="td-right">Margin %</th>
+              <th>{{ t('thMonth') }}</th>
+              <th class="td-right">{{ t('revenue') }}</th>
+              <th class="td-right">{{ t('expenses') }}</th>
+              <th class="td-right">{{ t('netProfit') }}</th>
+              <th class="td-right">{{ t('margin') }} %</th>
             </tr>
           </thead>
           <tbody>
@@ -116,7 +116,7 @@
           </tbody>
           <tfoot>
             <tr style="font-weight:700; background:#f7fafc;">
-              <td>Total</td>
+              <td>{{ t('total') }}</td>
               <td class="td-right mono positive">{{ fmt(stats.revenue) }}</td>
               <td class="td-right mono negative">{{ fmt(stats.expenses) }}</td>
               <td class="td-right mono" [ngClass]="stats.net >= 0 ? 'positive' : 'negative'">{{ fmt(stats.net) }}</td>
@@ -133,35 +133,35 @@
 
     <!-- ── QUARTERLY VIEW ── -->
     <ng-container *ngIf="viewMode === 'quarterly'">
-      <div class="rp-section">Quarterly Overview — {{ selectedYear }}</div>
+      <div class="rp-section">{{ t('quarterlyOverview') }} — {{ selectedYear }}</div>
       <div class="bar-chart-wrap">
         <div class="bar-chart-title">
-          <span>Revenue vs Expenses by Quarter</span>
+          <span>{{ t('revenueVsExpensesByQ') }}</span>
           <div class="bar-chart-legend">
-            <span class="legend-item"><span class="legend-dot" style="background:#4299e1"></span>Revenue</span>
-            <span class="legend-item"><span class="legend-dot" style="background:#fc8181"></span>Expenses</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#4299e1"></span>{{ t('revenue') }}</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#fc8181"></span>{{ t('expenses') }}</span>
           </div>
         </div>
-        <div class="bar-chart" style="gap:12px">
+        <div class="bar-chart" dir="ltr" style="gap:12px">
           <div class="bar-group" *ngFor="let b of quarterBars" style="gap:4px">
-            <div class="bar bar-rev" [style.height.px]="b.rH" [title]="'Revenue: ' + fmt(b.revenue)"></div>
-            <div class="bar bar-exp" [style.height.px]="b.eH" [title]="'Expenses: ' + fmt(b.expenses)"></div>
+            <div class="bar bar-rev" [style.height.px]="b.rH" [title]="t('revenue') + ': ' + fmt(b.revenue)"></div>
+            <div class="bar bar-exp" [style.height.px]="b.eH" [title]="t('expenses') + ': ' + fmt(b.expenses)"></div>
           </div>
         </div>
-        <div class="bar-labels">
+        <div class="bar-labels" dir="ltr">
           <span class="bar-label" style="font-size:.75rem; font-weight:600; color:#4a5568" *ngFor="let b of quarterBars">{{ b.label }}</span>
         </div>
       </div>
-      <div class="rp-section">Quarterly Breakdown — {{ selectedYear }}</div>
+      <div class="rp-section">{{ t('quarterlyBreakdown') }} — {{ selectedYear }}</div>
       <div class="rp-table-wrap">
         <table class="rp-table">
           <thead>
             <tr>
-              <th>Quarter</th>
-              <th class="td-right">Revenue</th>
-              <th class="td-right">Expenses</th>
-              <th class="td-right">Net Profit</th>
-              <th class="td-right">Margin %</th>
+              <th>{{ t('thQuarter') }}</th>
+              <th class="td-right">{{ t('revenue') }}</th>
+              <th class="td-right">{{ t('expenses') }}</th>
+              <th class="td-right">{{ t('netProfit') }}</th>
+              <th class="td-right">{{ t('margin') }} %</th>
             </tr>
           </thead>
           <tbody>
@@ -177,7 +177,7 @@
           </tbody>
           <tfoot>
             <tr style="font-weight:700; background:#f7fafc;">
-              <td>Full Year {{ selectedYear }}</td>
+              <td>{{ t('fullYear') }} {{ selectedYear }}</td>
               <td class="td-right mono positive">{{ fmt(stats.revenue) }}</td>
               <td class="td-right mono negative">{{ fmt(stats.expenses) }}</td>
               <td class="td-right mono" [ngClass]="stats.net >= 0 ? 'positive' : 'negative'">{{ fmt(stats.net) }}</td>
@@ -194,16 +194,16 @@
 
     <!-- ── YEARLY VIEW ── -->
     <ng-container *ngIf="viewMode === 'yearly'">
-      <div class="rp-section">Year-over-Year Comparison</div>
+      <div class="rp-section">{{ t('yearOverYear') }}</div>
       <div class="rp-table-wrap">
         <table class="rp-table">
           <thead>
             <tr>
-              <th>Year</th>
-              <th class="td-right">Revenue</th>
-              <th class="td-right">Expenses</th>
-              <th class="td-right">Net Profit</th>
-              <th class="td-right">Margin %</th>
+              <th>{{ t('thYear') }}</th>
+              <th class="td-right">{{ t('revenue') }}</th>
+              <th class="td-right">{{ t('expenses') }}</th>
+              <th class="td-right">{{ t('netProfit') }}</th>
+              <th class="td-right">{{ t('margin') }} %</th>
             </tr>
           </thead>
           <tbody>
@@ -222,20 +222,20 @@
     </ng-container>
 
     <!-- Expense breakdown by type -->
-    <div class="rp-section" *ngIf="expenseByType.length">Expense Breakdown by Type</div>
+    <div class="rp-section" *ngIf="expenseByType.length">{{ t('expenseByType') }}</div>
     <div class="rp-table-wrap" *ngIf="expenseByType.length">
       <table class="rp-table">
         <thead>
           <tr>
-            <th>Expense Type</th>
-            <th class="td-right">Count</th>
-            <th class="td-right">Total</th>
-            <th class="td-right">% of Expenses</th>
+            <th>{{ t('expenseType') }}</th>
+            <th class="td-right">{{ t('thCount') }}</th>
+            <th class="td-right">{{ t('total') }}</th>
+            <th class="td-right">{{ t('pctOfExpenses') }}</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let e of expenseByType">
-            <td>{{ e.type }}</td>
+            <td>{{ t(e.type) }}</td>
             <td class="td-right">{{ e.count }}</td>
             <td class="td-right mono negative">{{ fmt(e.total) }}</td>
             <td class="td-right">
@@ -247,7 +247,7 @@
     </div>
 
     <div *ngIf="!hasData" class="rp-empty">
-      No data found for {{ selectedYear }}
+      {{ t('noDataFor') }} {{ selectedYear }}
     </div>
 
   </ng-container>

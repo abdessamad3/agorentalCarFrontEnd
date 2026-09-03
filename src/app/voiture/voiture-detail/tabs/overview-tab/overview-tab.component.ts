@@ -1,9 +1,11 @@
 import { Component, Input, OnInit, OnChanges, SimpleChanges } from '@angular/core';
+import { vehicleStatusClass } from '../../../../shared/utils/status.utils';
 import { CommonModule } from '@angular/common';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { CrudService } from '../../../../services/crud.service';
 import { TranslationService } from '../../../../services/translation.service';
+import { AuthService } from '../../../../services/auth.service';
 import { daysUntil as daysUntilUtil } from '../../../../shared/utils/date.utils';
 import { complianceScore as complianceScoreUtil } from '../../../../shared/utils/compliance.utils';
 
@@ -30,7 +32,10 @@ export class OverviewTabComponent implements OnInit, OnChanges {
   readonly currentYear = new Date().getFullYear();
   readonly Math = Math;
 
-  constructor(private ts: TranslationService, private crud: CrudService) {}
+  get isAdmin(): boolean { return this.auth.hasRole('ROLE_ADMIN'); }
+  get hasNonValidDoc(): boolean { return this.docAlerts.some(d => d.level !== ''); }
+
+  constructor(private ts: TranslationService, private crud: CrudService, private auth: AuthService) {}
 
   ngOnInit(): void {
     this.loadKpis();
@@ -60,6 +65,8 @@ export class OverviewTabComponent implements OnInit, OnChanges {
   get kpiRevenueLastYear(): number { return this.profitLastYear?.revenue ?? 0; }
   get kpiExpenses(): number { return this.profitCurrent?.totalCost ?? 0; }
   get kpiExpensesLastYear(): number { return this.profitLastYear?.totalCost ?? 0; }
+  get kpiExpensesUnpaid(): number { return this.profitCurrent?.unpaidCost ?? 0; }
+  get kpiExpensesUnpaidLastYear(): number { return this.profitLastYear?.unpaidCost ?? 0; }
   get kpiProfit(): number { return this.profitCurrent?.net ?? 0; }
   get kpiProfitLastYear(): number { return this.profitLastYear?.net ?? 0; }
 
@@ -77,21 +84,7 @@ export class OverviewTabComponent implements OnInit, OnChanges {
     return this.reservations.reduce((sum, r) => sum + +(r.total || r.montant || 0), 0);
   }
 
-  statusClass(s: string): string {
-    const map: Record<string, string> = {
-      brouillon:      'st-draft',
-      setup:          'st-setup',
-      disponible:     'st-green',
-      reserve:        'st-teal',
-      louee:          'st-blue',
-      maintenance:    'st-orange',
-      hors_service:   'st-red',
-      decommissioned: 'st-brown',
-      vendu:          'st-gray',
-      archive:        'st-dark',
-    };
-    return map[(s || '').toLowerCase()] ?? 'st-gray';
-  }
+  readonly statusClass = vehicleStatusClass;
 
   daysUntil(dateStr?: string | null): number | null { return daysUntilUtil(dateStr); }
 

@@ -1,21 +1,22 @@
-<div class="cd-root">
+﻿<div class="cd-root">
 
   <div class="cd-error" *ngIf="error">{{ error }}</div>
   <div class="cd-loading" *ngIf="loading">Loading documents…</div>
 
   <div class="cd-sections" *ngIf="!loading">
     <div class="cd-section" *ngFor="let dt of docTypes">
+
       <div class="cd-section-header">
         <span class="cd-section-title">{{ dt.label }}</span>
-        <app-upload-btn
-          label="+ Upload"
-          [title]="'Upload ' + dt.label"
-          accept=".jpg,.jpeg,.png,.webp,.pdf"
-          [multiple]="true"
-          [loading]="uploading === dt.type"
-          [disabled]="uploading !== null && uploading !== dt.type"
-          (filesSelected)="onFilesSelected($event, dt.type)">
-        </app-upload-btn>
+        <button class="cd-manage-btn" type="button" (click)="openModal(dt.type)">
+          ✏️ Gérer
+        </button>
+      </div>
+
+      <!-- Current expiration badge -->
+      <div class="cd-expiry-row" *ngIf="hasExpirationField(dt.type) && currentExpiration(dt.type)">
+        <span class="cd-expiry-label">Expires:</span>
+        <span class="cd-expiry-val">{{ currentExpiration(dt.type) | date:'dd/MM/yyyy' }}</span>
       </div>
 
       <div class="cd-empty" *ngIf="docsOf(dt.type).length === 0">No document</div>
@@ -38,7 +39,59 @@
           </div>
         </div>
       </div>
+
     </div>
   </div>
 
 </div>
+
+<!-- Manage modal -->
+<div class="cd-modal-overlay" *ngIf="editingType" (click)="closeModal()">
+  <div class="cd-modal" (click)="$event.stopPropagation()">
+
+    <div class="cd-modal-header">
+      <h3 class="cd-modal-title">{{ editingLabel }}</h3>
+      <button class="cd-modal-close" type="button" (click)="closeModal()">×</button>
+    </div>
+
+    <div class="cd-modal-body">
+
+      <!-- Expiration date (only for CIN / Passport / Permis) -->
+      <div class="cd-modal-section" *ngIf="editingType && hasExpirationField(editingType)">
+        <label class="cd-form-label">Expiration date</label>
+        <input class="cd-form-input"
+               type="date"
+               [(ngModel)]="editExpiration"
+               [min]="today" />
+        <div class="cd-save-error" *ngIf="saveError">{{ saveError }}</div>
+      </div>
+
+      <div class="cd-modal-divider" *ngIf="editingType && hasExpirationField(editingType)"></div>
+
+      <!-- Upload -->
+      <div class="cd-modal-section">
+        <label class="cd-form-label">Upload document</label>
+        <app-upload-btn
+          label="Choose file(s)"
+          accept=".jpg,.jpeg,.png,.webp,.pdf"
+          [multiple]="true"
+          [loading]="uploading === editingType"
+          (filesSelected)="onFilesSelectedInModal($event)">
+        </app-upload-btn>
+      </div>
+
+    </div>
+
+    <div class="cd-modal-footer">
+      <button class="cd-btn-cancel" type="button" (click)="closeModal()">{{ 'close' | translate }}</button>
+      <button *ngIf="editingType && hasExpirationField(editingType)"
+              class="cd-btn-save" type="button"
+              [disabled]="!editExpiration || saving"
+              (click)="saveExpiration()">
+        {{ saving ? 'Saving…' : 'Save date' }}
+      </button>
+    </div>
+
+  </div>
+</div>
+

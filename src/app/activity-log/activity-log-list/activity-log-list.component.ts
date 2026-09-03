@@ -32,7 +32,7 @@ export class ActivityLogListComponent implements OnInit {
   expandedId: number | null = null;
 
   readonly ENTITY_TYPES = ['Voiture', 'Client', 'Reservation', 'Assurance', 'Vignette', 'Depense', 'PaiementDepense'];
-  readonly ACTIONS       = ['CREATE', 'UPDATE', 'DELETE', 'ARCHIVE'];
+  readonly ACTIONS       = ['CREATE', 'UPDATE', 'DELETE', 'ARCHIVE', 'VIEW'];
 
   constructor(
     private svc: ActivityLogService,
@@ -98,6 +98,7 @@ export class ActivityLogListComponent implements OnInit {
       UPDATE:  'badge-update',
       DELETE:  'badge-delete',
       ARCHIVE: 'badge-archive',
+      VIEW:    'badge-view',
     } as Record<string, string>)[action] ?? '';
   }
 

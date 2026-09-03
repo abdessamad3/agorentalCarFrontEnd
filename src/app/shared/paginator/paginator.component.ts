@@ -1,5 +1,6 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+﻿import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PAGE_SIZE } from '../constants/pagination';
 
 @Component({
   selector: 'app-paginator',
@@ -10,7 +11,7 @@ import { CommonModule } from '@angular/common';
 })
 export class PaginatorComponent {
   @Input() page  = 1;
-  @Input() limit = 20;
+  @Input() limit = PAGE_SIZE;
   @Input() total = 0;
   @Output() pageChange = new EventEmitter<number>();
 

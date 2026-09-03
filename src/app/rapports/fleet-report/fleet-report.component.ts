@@ -3,13 +3,15 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CrudService } from '../../services/crud.service';
 import { TranslationService } from '../../services/translation.service';
+import { vehicleStatusLabel } from '../../shared/utils/status.utils';
+import { StatusPipe } from '../../shared/pipes/status.pipe';
 import { forkJoin, of, Observable } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-fleet-report',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, StatusPipe],
   templateUrl: './fleet-report.component.html',
   styleUrls: ['../../shared/styles/reports.css']
 })
@@ -22,6 +24,8 @@ export class FleetReportComponent implements OnInit {
 
   constructor(private crud: CrudService, private ts: TranslationService) {}
 
+  t(key: string): string { return this.ts.translate(key); }
+
   ngOnInit() {
     this.ts.direction$.subscribe(d => this.dir = d);
     this.load();
@@ -30,7 +34,7 @@ export class FleetReportComponent implements OnInit {
   load() {
     this.loading = true;
     this.loadAllCars().subscribe({
-      next: cars => { this.cars = cars; this.loading = false; },
+      next: cars => { this.cars = cars.filter(c => !['brouillon', 'setup'].includes(c.voitureStatus)); this.loading = false; },
       error: () => { this.loading = false; }
     });
   }
@@ -56,11 +60,11 @@ export class FleetReportComponent implements OnInit {
   get stats() {
     return {
       total:       this.cars.length,
-      available:   this.cars.filter(c => ['available','disponible'].includes(c.voitureStatus)).length,
-      rented:      this.cars.filter(c => ['rented','louee'].includes(c.voitureStatus)).length,
-      maintenance: this.cars.filter(c => c.voitureStatus === 'maintenance').length,
+      available:   this.cars.filter(c => (c.effectiveStatus ?? c.voitureStatus) === 'disponible').length,
+      rented:      this.cars.filter(c => (c.effectiveStatus ?? c.voitureStatus) === 'louee').length,
+      maintenance: this.cars.filter(c => (c.effectiveStatus ?? c.voitureStatus) === 'maintenance').length,
       expiredDocs: this.cars.filter(c =>
-        c.voitureStatus === 'hors_service' ||
+        (c.effectiveStatus ?? c.voitureStatus) === 'hors_service' ||
         c.compliance?.overall === 'EXPIRED' ||
         c.compliance?.overall === 'CRITICAL'
       ).length,
@@ -74,7 +78,7 @@ export class FleetReportComponent implements OnInit {
       r = r.filter(c => [c.marque, c.modele, c.immatriculation]
         .some(v => String(v || '').toLowerCase().includes(q)));
     }
-    if (this.filterStatus) r = r.filter(c => c.voitureStatus === this.filterStatus);
+    if (this.filterStatus) r = r.filter(c => (c.effectiveStatus ?? c.voitureStatus) === this.filterStatus);
     return r;
   }
 
@@ -94,38 +98,37 @@ export class FleetReportComponent implements OnInit {
   docLabel(date: string): string {
     if (!date) return '—';
     const d = this.docDays(date);
-    const fmt = new Date(date).toLocaleDateString('fr-FR');
-    if (d < 0) return `${fmt} (${Math.abs(d)}d exp.)`;
-    if (d === 0) return 'Today';
+    const lang = this.ts.getCurrentLanguage();
+    const locale = lang === 'ar' ? 'ar-MA' : lang === 'fr' ? 'fr-FR' : 'en-GB';
+    const fmt = new Date(date).toLocaleDateString(locale);
+    if (d < 0) return `${fmt} (${Math.abs(d)}d ${this.t('docExp')})`;
+    if (d === 0) return this.t('flToday');
     if (d <= 30) return `${fmt} (${d}d)`;
     return fmt;
   }
 
   statusPillClass(s: string): string {
     const m: Record<string, string> = {
-      available: 'sp-available', disponible: 'sp-available',
-      rented: 'sp-rented', louee: 'sp-rented',
-      maintenance: 'sp-maintenance',
-      sold: 'sp-sold', vendue: 'sp-sold',
+      disponible: 'sp-available',
+      louee: 'sp-rented', reserve: 'sp-rented',
+      maintenance: 'sp-maintenance', hors_service: 'sp-maintenance',
+      vendu: 'sp-sold',
+      archive: 'sp-other',
     };
     return m[s || ''] || 'sp-other';
   }
 
-  statusLabel(s: string): string {
-    const m: Record<string, string> = {
-      available: 'Available', disponible: 'Available',
-      rented: 'Rented', louee: 'Rented',
-      maintenance: 'Maintenance',
-      sold: 'Sold', vendue: 'Sold',
-    };
-    return m[s || ''] || s || '—';
-  }
+  statusLabel(s: string): string { return vehicleStatusLabel(s, this.ts.getCurrentLanguage()); }
 
   exportCSV() {
-    const headers = ['Marque','Modèle','Immat.','Année','Statut','Km','Carburant','Assurance exp.','Vignette exp.','Visite exp.'];
+    const headers = [
+      this.t('brand'), this.t('model'), this.t('thPlate'), this.t('thYear'),
+      this.t('status'), 'Km', this.t('thFuel'),
+      this.t('thInsuranceExp'), this.t('thVignetteExp'), this.t('thInspectionExp'),
+    ];
     const rows = this.filtered.map(c => [
       c.marque || '', c.modele || '', c.immatriculation || '', c.annee || '',
-      this.statusLabel(c.voitureStatus), c.kilometrage || '', c.typeCarburant || '',
+      this.statusLabel(c.effectiveStatus ?? c.voitureStatus), c.kilometrageActuel || '', c.typeCarburant ? this.t(c.typeCarburant) : '',
       c.compliance?.assurance?.expiresAt || '', c.compliance?.vignette?.expiresAt || '', c.compliance?.visite?.expiresAt || ''
     ]);
     this.downloadCSV('rapport-flotte.csv', headers, rows);

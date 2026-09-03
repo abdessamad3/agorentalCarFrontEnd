@@ -79,7 +79,11 @@ export class AppComponent implements OnInit {
       next: (res) => {
         const me = res?.data ?? res;
         if (!me?.bureau) return;
-        this.companyService.setCurrentBureau(me.bureau, me.companyNom || 'AGOCAR', me.companyLogo || null);
+        const rawLogo = me.companyLogo || null;
+        const logoUrl = rawLogo && !rawLogo.startsWith('http')
+          ? `${environment.serverUrl}${rawLogo}`
+          : rawLogo;
+        this.companyService.setCurrentBureau(me.bureau, me.companyNom || 'AGOCAR', logoUrl);
       },
       error: () => {}
     });

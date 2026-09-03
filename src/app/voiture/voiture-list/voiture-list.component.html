@@ -4,7 +4,7 @@
   <div class="page-header">
     <div class="page-header-left">
       <h1 class="page-title">{{ t('fleetManagement') }}</h1>
-      <p class="page-sub">{{ stats.total }} {{ t('totalFleet') }}</p>
+      <p class="page-sub">{{ visibleTotal }} {{ t('totalFleet') }}</p>
     </div>
     <div class="page-header-right">
       <a *ngIf="canManageVehicle" routerLink="/voiture/create" class="btn-primary-lg">
@@ -16,46 +16,46 @@
   <!-- ══ Stats Bar ════════════════════════════════════════════════════════ -->
   <div class="stats-bar">
     <div class="stat-card stat-total"    (click)="statusFilter='all'"            [class.stat-active]="statusFilter==='all'">
-      <span class="stat-num">{{ stats.total }}</span>
+      <span class="stat-num">{{ visibleTotal }}</span>
       <span class="stat-lbl">{{ t('totalFleet') }}</span>
     </div>
-    <div class="stat-card stat-draft"    (click)="statusFilter='brouillon'"      [class.stat-active]="statusFilter==='brouillon'">
+    <div *ngIf="stats.brouillon > 0 && isAdmin" class="stat-card stat-draft"    (click)="statusFilter='brouillon'"      [class.stat-active]="statusFilter==='brouillon'">
       <span class="stat-num">{{ stats.brouillon }}</span>
       <span class="stat-lbl">{{ t('brouillon') }}</span>
     </div>
-    <div class="stat-card stat-setup"    (click)="statusFilter='setup'"          [class.stat-active]="statusFilter==='setup'">
+    <div *ngIf="stats.setup > 0 && isAdmin"     class="stat-card stat-setup"    (click)="statusFilter='setup'"          [class.stat-active]="statusFilter==='setup'">
       <span class="stat-num">{{ stats.setup }}</span>
       <span class="stat-lbl">{{ t('setup') }}</span>
     </div>
-    <div class="stat-card stat-green"    (click)="statusFilter='disponible'"     [class.stat-active]="statusFilter==='disponible'">
+    <div *ngIf="stats.disponible > 0"     class="stat-card stat-green"    (click)="statusFilter='disponible'"     [class.stat-active]="statusFilter==='disponible'">
       <span class="stat-num">{{ stats.disponible }}</span>
       <span class="stat-lbl">{{ t('disponible') }}</span>
     </div>
-    <div class="stat-card stat-reserve"  (click)="statusFilter='reserve'"        [class.stat-active]="statusFilter==='reserve'">
+    <div *ngIf="stats.reserve > 0"        class="stat-card stat-reserve"  (click)="statusFilter='reserve'"        [class.stat-active]="statusFilter==='reserve'">
       <span class="stat-num">{{ stats.reserve }}</span>
       <span class="stat-lbl">{{ t('reserve') }}</span>
     </div>
-    <div class="stat-card stat-blue"     (click)="statusFilter='louee'"          [class.stat-active]="statusFilter==='louee'">
+    <div *ngIf="stats.louee > 0"          class="stat-card stat-blue"     (click)="statusFilter='louee'"          [class.stat-active]="statusFilter==='louee'">
       <span class="stat-num">{{ stats.louee }}</span>
       <span class="stat-lbl">{{ t('louee') }}</span>
     </div>
-    <div class="stat-card stat-orange"   (click)="statusFilter='maintenance'"    [class.stat-active]="statusFilter==='maintenance'">
+    <div *ngIf="stats.maintenance > 0"    class="stat-card stat-orange"   (click)="statusFilter='maintenance'"    [class.stat-active]="statusFilter==='maintenance'">
       <span class="stat-num">{{ stats.maintenance }}</span>
       <span class="stat-lbl">{{ t('maintenance') }}</span>
     </div>
-    <div class="stat-card stat-red"      (click)="statusFilter='hors_service'"   [class.stat-active]="statusFilter==='hors_service'">
+    <div *ngIf="stats.horsService > 0"    class="stat-card stat-red"      (click)="statusFilter='hors_service'"   [class.stat-active]="statusFilter==='hors_service'">
       <span class="stat-num">{{ stats.horsService }}</span>
       <span class="stat-lbl">{{ t('horsService') }}</span>
     </div>
-    <div class="stat-card stat-decom"    (click)="statusFilter='decommissioned'" [class.stat-active]="statusFilter==='decommissioned'">
+    <div *ngIf="stats.decommissioned > 0" class="stat-card stat-decom"    (click)="statusFilter='decommissioned'" [class.stat-active]="statusFilter==='decommissioned'">
       <span class="stat-num">{{ stats.decommissioned }}</span>
       <span class="stat-lbl">{{ t('decommissioned') }}</span>
     </div>
-    <div class="stat-card stat-sold"     (click)="statusFilter='vendu'"          [class.stat-active]="statusFilter==='vendu'">
+    <div *ngIf="stats.vendu > 0"          class="stat-card stat-sold"     (click)="statusFilter='vendu'"          [class.stat-active]="statusFilter==='vendu'">
       <span class="stat-num">{{ stats.vendu }}</span>
       <span class="stat-lbl">{{ t('vendu') }}</span>
     </div>
-    <div class="stat-card stat-arch"     (click)="statusFilter='archive'"        [class.stat-active]="statusFilter==='archive'">
+    <div *ngIf="stats.archive > 0"        class="stat-card stat-arch"     (click)="statusFilter='archive'"        [class.stat-active]="statusFilter==='archive'">
       <span class="stat-num">{{ stats.archive }}</span>
       <span class="stat-lbl">{{ t('archive') }}</span>
     </div>
@@ -66,13 +66,15 @@
 
     <!-- Row 1 – Status tabs -->
     <div class="filter-tabs-row">
-      <button *ngFor="let tab of STATUS_TABS"
-        class="tab-btn"
-        [class.active]="statusFilter === tab.key"
-        (click)="statusFilter = tab.key">
-        {{ t(tab.labelKey) }}
-        <span class="tab-count">{{ statCount(tab.key) }}</span>
-      </button>
+      <ng-container *ngFor="let tab of visibleStatusTabs">
+        <button *ngIf="tab.key === 'all' || statCount(tab.key) > 0"
+          class="tab-btn"
+          [class.active]="statusFilter === tab.key"
+          (click)="statusFilter = tab.key">
+          {{ t(tab.labelKey) }}
+          <span class="tab-count">{{ statCount(tab.key) }}</span>
+        </button>
+      </ng-container>
     </div>
 
     <div class="filter-sep"></div>
@@ -153,7 +155,7 @@
       <!-- Image + Status badge + Alert badge -->
       <div class="card-img-wrap" [routerLink]="['/voiture', car.id]">
         <img [src]="car._img" [alt]="car.marque + ' ' + car.modele" class="card-img" loading="lazy" (error)="car._img = imgUrl()" />
-        <span class="status-badge" [ngClass]="statusClass(effectiveStatus(car))">{{ statusLabel(effectiveStatus(car)) }}</span>
+        <span class="status-badge" [ngClass]="statusClass(effectiveStatus(car))">{{ effectiveStatus(car) | appStatus:'vehicle' }}</span>
         <span *ngIf="alertCount(car) > 0" class="alert-badge" [class.badge-danger]="alertLevel(car)==='danger'" [class.badge-warn]="alertLevel(car)==='warning'">
           ⚠ {{ alertCount(car) }}
         </span>
@@ -204,7 +206,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11">
             <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
           </svg>
-          Active repair
+          {{ t('activeRepairChip') }}
         </div>
 
         <!-- PHASE 8: sale readiness for decommissioned -->
@@ -212,7 +214,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11">
             <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
-          Pending sale
+          {{ t('pendingSaleChip') }}
         </div>
 
         <!-- Oil change badge -->
@@ -260,7 +262,7 @@
           <th>{{ t('car') }}</th>
           <th>{{ t('licensePlate') }}</th>
           <th>{{ t('status') }}</th>
-          <th>Health</th>
+          <th>{{ t('healthCol') }}</th>
           <th>{{ t('fuel') }}</th>
           <th>{{ t('mileage') }}</th>
           <th>{{ t('pricePerDay') }}</th>
@@ -283,7 +285,7 @@
           </td>
           <td><span *ngIf="car.immatriculation" class="plate-chip">{{ car.immatriculation }}</span><span *ngIf="!car.immatriculation" class="text-muted">—</span></td>
           <td>
-            <span class="status-badge-sm" [ngClass]="statusClass(effectiveStatus(car))">{{ statusLabel(effectiveStatus(car)) }}</span>
+            <span class="status-badge-sm" [ngClass]="statusClass(effectiveStatus(car))">{{ effectiveStatus(car) | appStatus:'vehicle' }}</span>
             <span *ngIf="car.availabilityForPeriod" class="avail-badge-sm" [ngClass]="availabilityClass(car)">
               {{ car.availabilityForPeriod === 'disponible' ? '✓' : '✗' }} {{ availabilityLabel(car) }}
             </span>
@@ -430,7 +432,6 @@
             <div class="fg"><label>{{ t('weeklyRate') }} (MAD)</label><input type="number" formControlName="prixSemaine" min="0" /></div>
             <div class="fg"><label>{{ t('monthlyRate') }} (MAD)</label><input type="number" formControlName="prixMois" min="0" /></div>
             <div class="fg"><label>{{ t('purchasePrice') }} (MAD)</label><input type="number" formControlName="prixAchat" min="0" /></div>
-            <div class="fg"><label>{{ t('deposit') }} (MAD)</label><input type="number" formControlName="caution" min="0" /></div>
             <div class="fg"><label>{{ t('purchaseDate') }}</label><input type="date" formControlName="dateAchat" /></div>
           </div>
         </div>

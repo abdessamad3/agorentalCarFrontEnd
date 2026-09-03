@@ -1,0 +1,18 @@
+<div class="am-backdrop" (click)="close()">
+  <div class="am-modal" [style.max-width]="maxWidth" [attr.dir]="dir || null" (click)="$event.stopPropagation()">
+
+    <div class="am-header">
+      <div class="am-title-row">
+        <div *ngIf="icon" class="am-icon-wrap am-icon-{{ iconColor }}">{{ icon }}</div>
+        <div>
+          <h2 class="am-title">{{ title }}</h2>
+          <p *ngIf="subtitle" class="am-subtitle">{{ subtitle }}</p>
+        </div>
+      </div>
+      <button class="am-close" type="button" (click)="close()">✕</button>
+    </div>
+
+    <ng-content></ng-content>
+
+  </div>
+</div>

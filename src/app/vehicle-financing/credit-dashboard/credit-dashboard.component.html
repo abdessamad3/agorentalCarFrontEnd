@@ -5,18 +5,18 @@
     <div class="rp-header-left">
       <div class="rp-header-icon">🏦</div>
       <div>
-        <div class="rp-title">Vehicle Financing Dashboard</div>
-        <div class="rp-subtitle">Overview of all financing contracts, debt and upcoming payments</div>
+        <div class="rp-title">{{ t('vehicleFinancingDashboard') }}</div>
+        <div class="rp-subtitle">{{ t('creditDashboardSubtitle') }}</div>
       </div>
     </div>
     <div class="rp-actions">
-      <button class="btn-export btn-csv" (click)="load()">↻ Refresh</button>
-      <a routerLink="/vehicle-financing" class="btn-export btn-print" style="text-decoration:none">📋 All Contracts</a>
-      <a routerLink="/vehicle-financing/create" class="btn-export btn-excel" style="text-decoration:none">＋ New Contract</a>
+      <button class="btn-export btn-csv" (click)="load()">{{ t('refresh') }}</button>
+      <a routerLink="/vehicle-financing" class="btn-export btn-print" style="text-decoration:none">📋 {{ t('allContractsLnk') }}</a>
+      <a routerLink="/vehicle-financing/create" class="btn-export btn-excel" style="text-decoration:none">＋ {{ t('newFinancingContract') }}</a>
     </div>
   </div>
 
-  <div *ngIf="loading" class="rp-loading"><span class="rp-loading-spinner"></span> Loading dashboard…</div>
+  <div *ngIf="loading" class="rp-loading"><span class="rp-loading-spinner"></span> {{ t('loadingCredit') }}</div>
 
   <ng-container *ngIf="!loading">
 
@@ -27,18 +27,18 @@
         style="background:#fffaf0;border:1px solid #f6ad55;border-radius:10px;padding:.75rem 1.25rem;display:flex;align-items:center;gap:.75rem">
         <span style="font-size:1.2rem">⏰</span>
         <span style="font-size:.875rem;font-weight:600;color:#c05621">
-          {{ stats.dueTodayInstallments }} installment(s) due TODAY — {{ fmtFull(stats.amountDueThisMonth) }} due this month
+          {{ stats.dueTodayInstallments }} {{ t('installmentsDueTodayMsg') }} — {{ fmtFull(stats.amountDueThisMonth) }} {{ t('dueThisMonthMsg') }}
         </span>
-        <a routerLink="/vehicle-financing" style="margin-left:auto;font-size:.78rem;color:#c05621;font-weight:700;text-decoration:underline">View →</a>
+        <a routerLink="/vehicle-financing" style="margin-left:auto;font-size:.78rem;color:#c05621;font-weight:700;text-decoration:underline">{{ t('manageLnk') }}</a>
       </div>
       <div *ngIf="stats.overdueContracts > 0"
         style="background:#fff5f5;border:1px solid #fc8181;border-radius:10px;padding:.75rem 1.25rem;display:flex;align-items:center;gap:.75rem">
         <span style="font-size:1.2rem">🔴</span>
         <span style="font-size:.875rem;font-weight:600;color:#c53030">
-          {{ stats.overdueContracts }} overdue installment(s) — {{ fmt(stats.overdueAmount) }} outstanding
+          {{ stats.overdueContracts }} {{ t('overdueInstallmentsCnt') }} — {{ fmt(stats.overdueAmount) }} {{ t('outstandingAmt') }}
         </span>
         <a routerLink="/vehicle-financing" [queryParams]="{status:'defaulted'}"
-          style="margin-left:auto;font-size:.78rem;color:#c53030;font-weight:700;text-decoration:underline">View →</a>
+          style="margin-left:auto;font-size:.78rem;color:#c53030;font-weight:700;text-decoration:underline">{{ t('manageLnk') }}</a>
       </div>
     </div>
 
@@ -46,19 +46,19 @@
     <div class="rp-stats">
       <div class="stat-card sc-blue">
         <div class="sc-num">{{ stats.totalFinancedVehicles }}</div>
-        <div class="sc-lbl">Financed Vehicles</div>
+        <div class="sc-lbl">{{ t('financedVehicles') }}</div>
       </div>
       <div class="stat-card sc-red">
         <div class="sc-num">{{ fmt(stats.totalRemainingDebt) }}</div>
-        <div class="sc-lbl">Total Remaining Debt</div>
+        <div class="sc-lbl">{{ t('totalRemainingDebt') }}</div>
       </div>
       <div class="stat-card sc-green">
         <div class="sc-num">{{ fmt(stats.totalAmountPaid) }}</div>
-        <div class="sc-lbl">Total Amount Paid</div>
+        <div class="sc-lbl">{{ t('totalAmountPaid') }}</div>
       </div>
       <div class="stat-card sc-purple">
         <div class="sc-num">{{ fmt(stats.totalFinancedAmount) }}</div>
-        <div class="sc-lbl">Total Financed</div>
+        <div class="sc-lbl">{{ t('totalFinancedAmt') }}</div>
       </div>
     </div>
 
@@ -66,26 +66,26 @@
     <div class="rp-stats" style="margin-top:.75rem">
       <div class="stat-card sc-green">
         <div class="sc-num">{{ stats.activeContracts }}</div>
-        <div class="sc-lbl">Active Contracts</div>
+        <div class="sc-lbl">{{ t('activeContractsKpi') }}</div>
       </div>
       <div class="stat-card sc-teal">
         <div class="sc-num">{{ stats.completedContracts }}</div>
-        <div class="sc-lbl">Completed</div>
+        <div class="sc-lbl">{{ t('completedContractsKpi') }}</div>
       </div>
       <div class="stat-card sc-orange">
         <div class="sc-num">{{ stats.dueSoonInstallments }}</div>
-        <div class="sc-lbl">Due Soon (≤7 days)</div>
+        <div class="sc-lbl">{{ t('dueSoon7d') }}</div>
       </div>
       <div class="stat-card sc-red">
         <div class="sc-num">{{ stats.dueTodayInstallments }}</div>
-        <div class="sc-lbl">Due Today</div>
+        <div class="sc-lbl">{{ t('dueTodayKpi') }}</div>
       </div>
     </div>
 
     <!-- Global repayment progress -->
     <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:1.25rem;margin-top:1.25rem;margin-bottom:1.25rem">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
-        <span style="font-weight:700;font-size:.9rem;color:#2d3748">Global Portfolio Repayment</span>
+        <span style="font-weight:700;font-size:.9rem;color:#2d3748">{{ t('globalPortfolioRepayment') }}</span>
         <span style="font-weight:800;font-size:1.1rem" [style.color]="progressColor(repaymentPct)">{{ repaymentPct }}%</span>
       </div>
       <div style="height:14px;background:#edf2f7;border-radius:7px;overflow:hidden">
@@ -94,9 +94,9 @@
           [style.background]="progressColor(repaymentPct)"></div>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:.75rem;color:#a0aec0;margin-top:.4rem">
-        <span>{{ fmt(stats.totalAmountPaid) }} paid</span>
-        <span>{{ fmt(stats.totalRemainingDebt) }} remaining</span>
-        <span>{{ fmt(stats.totalFinancedAmount) }} total</span>
+        <span>{{ fmt(stats.totalAmountPaid) }} {{ t('paidLbl') }}</span>
+        <span>{{ fmt(stats.totalRemainingDebt) }} {{ t('remainingLbl') }}</span>
+        <span>{{ fmt(stats.totalFinancedAmount) }} {{ t('totalLbl') }}</span>
       </div>
     </div>
 
@@ -105,9 +105,9 @@
 
       <!-- Institution breakdown -->
       <div class="exec-card">
-        <div class="exec-card-title">Debt by Institution</div>
-        <div class="exec-card-sub">Remaining balance per financing partner</div>
-        <div *ngIf="institutionBars.length === 0" class="exec-empty">No data</div>
+        <div class="exec-card-title">{{ t('debtByInstitution') }}</div>
+        <div class="exec-card-sub">{{ t('remainingBalancePerPartner') }}</div>
+        <div *ngIf="institutionBars.length === 0" class="exec-empty">{{ t('noData') || '—' }}</div>
         <div class="exec-rank-list" *ngIf="institutionBars.length > 0">
           <div *ngFor="let b of institutionBars; let i = index" class="exec-rank-row">
             <span class="exec-rank-medal">
@@ -115,7 +115,7 @@
             </span>
             <div class="exec-rank-info">
               <span class="exec-rank-name">{{ b.name }}</span>
-              <span class="exec-rank-plate">{{ b.count }} contract(s)</span>
+              <span class="exec-rank-plate">{{ b.count }} {{ t('contractsSuffix') }}</span>
             </div>
             <div class="exec-rank-bar-wrap">
               <div class="exec-rank-bar exec-bar-blue" [style.width]="b.pct + '%'"></div>
@@ -127,9 +127,9 @@
 
       <!-- Recent active contracts -->
       <div class="exec-card">
-        <div class="exec-card-title">Active Contracts</div>
-        <div class="exec-card-sub">Most recent financing contracts requiring action</div>
-        <div *ngIf="recentContracts.length === 0" class="exec-empty">No active contracts</div>
+        <div class="exec-card-title">{{ t('activeContractsSection') }}</div>
+        <div class="exec-card-sub">{{ t('recentContractsSubtitle') }}</div>
+        <div *ngIf="recentContracts.length === 0" class="exec-empty">{{ t('noActiveContracts') }}</div>
         <div class="exec-rank-list" *ngIf="recentContracts.length > 0">
           <div *ngFor="let c of recentContracts"
             style="display:flex;align-items:center;gap:.75rem;padding:.5rem 0;border-bottom:1px solid #f7fafc;cursor:pointer"
@@ -138,66 +138,66 @@
               <div style="font-weight:600;font-size:.82rem;color:#2d3748;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
                 {{ c.voiture }}
               </div>
-              <div style="font-size:.7rem;color:#a0aec0">{{ c.financialInstitution || 'No institution' }}</div>
+              <div style="font-size:.7rem;color:#a0aec0">{{ c.financialInstitution || t('noInstitution') }}</div>
             </div>
             <div style="text-align:right;min-width:90px">
               <div style="font-weight:700;font-size:.8rem;color:#c53030">{{ fmt(c.remainingBalance) }}</div>
-              <div style="font-size:.68rem;color:#a0aec0">remaining</div>
+              <div style="font-size:.68rem;color:#a0aec0">{{ t('remainingLbl') }}</div>
             </div>
             <span class="status-pill" [ngClass]="statusClass(c.status)" style="font-size:.68rem">{{ c.status }}</span>
           </div>
         </div>
         <a routerLink="/vehicle-financing" style="display:block;text-align:center;margin-top:.75rem;font-size:.78rem;color:#4299e1;text-decoration:none;font-weight:600">
-          View all contracts →
+          {{ t('viewAllContracts') }}
         </a>
       </div>
 
       <!-- Month summary -->
       <div class="exec-card">
-        <div class="exec-card-title">This Month</div>
-        <div class="exec-card-sub">Upcoming payment obligations</div>
+        <div class="exec-card-title">{{ t('thisMonthSection') }}</div>
+        <div class="exec-card-sub">{{ t('upcomingObligations') }}</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:.5rem">
           <div style="background:#fffff0;border-radius:10px;padding:.875rem;text-align:center">
-            <div style="font-size:.68rem;color:#a0aec0;margin-bottom:.3rem">Due This Month</div>
+            <div style="font-size:.68rem;color:#a0aec0;margin-bottom:.3rem">{{ t('dueTotalMonth') }}</div>
             <div style="font-weight:800;font-size:1.1rem;color:#d69e2e">{{ fmt(stats.amountDueThisMonth) }}</div>
           </div>
           <div style="background:#fff5f5;border-radius:10px;padding:.875rem;text-align:center">
-            <div style="font-size:.68rem;color:#a0aec0;margin-bottom:.3rem">Overdue Amount</div>
+            <div style="font-size:.68rem;color:#a0aec0;margin-bottom:.3rem">{{ t('overdueAmountLbl') }}</div>
             <div style="font-weight:800;font-size:1.1rem;color:#c53030">{{ fmt(stats.overdueAmount) }}</div>
           </div>
           <div style="background:#ebf8ff;border-radius:10px;padding:.875rem;text-align:center">
-            <div style="font-size:.68rem;color:#a0aec0;margin-bottom:.3rem">Due Soon</div>
+            <div style="font-size:.68rem;color:#a0aec0;margin-bottom:.3rem">{{ t('dueSoonLbl') }}</div>
             <div style="font-weight:800;font-size:1.1rem;color:#2b6cb0">{{ stats.dueSoonInstallments }}</div>
-            <div style="font-size:.68rem;color:#a0aec0">installments</div>
+            <div style="font-size:.68rem;color:#a0aec0">{{ t('installmentsLbl') }}</div>
           </div>
           <div style="background:#f0fff4;border-radius:10px;padding:.875rem;text-align:center">
-            <div style="font-size:.68rem;color:#a0aec0;margin-bottom:.3rem">Completed</div>
+            <div style="font-size:.68rem;color:#a0aec0;margin-bottom:.3rem">{{ t('completedLbl') }}</div>
             <div style="font-weight:800;font-size:1.1rem;color:#276749">{{ stats.completedContracts }}</div>
-            <div style="font-size:.68rem;color:#a0aec0">contracts</div>
+            <div style="font-size:.68rem;color:#a0aec0">{{ t('contractsLbl') }}</div>
           </div>
         </div>
       </div>
 
       <!-- Quick links -->
       <div class="exec-card">
-        <div class="exec-card-title">Quick Actions</div>
-        <div class="exec-card-sub">Navigate to key financing pages</div>
+        <div class="exec-card-title">{{ t('quickActionsSection') }}</div>
+        <div class="exec-card-sub">{{ t('navigateToFinancing') }}</div>
         <div style="display:flex;flex-direction:column;gap:.6rem;margin-top:.5rem">
           <a routerLink="/vehicle-financing/create"
             style="display:flex;align-items:center;gap:.75rem;padding:.65rem .875rem;background:#ebf8ff;border-radius:10px;text-decoration:none;color:#2b6cb0;font-weight:600;font-size:.85rem">
-            <span style="font-size:1.1rem">➕</span> New Financing Contract
+            <span style="font-size:1.1rem">➕</span> {{ t('newFinancingContract') }}
           </a>
           <a routerLink="/vehicle-financing"
             style="display:flex;align-items:center;gap:.75rem;padding:.65rem .875rem;background:#f0fff4;border-radius:10px;text-decoration:none;color:#276749;font-weight:600;font-size:.85rem">
-            <span style="font-size:1.1rem">📋</span> All Contracts
+            <span style="font-size:1.1rem">📋</span> {{ t('allContractsLnk') }}
           </a>
           <a routerLink="/vehicle-financing/institutions"
             style="display:flex;align-items:center;gap:.75rem;padding:.65rem .875rem;background:#faf5ff;border-radius:10px;text-decoration:none;color:#553c9a;font-weight:600;font-size:.85rem">
-            <span style="font-size:1.1rem">🏦</span> Manage Institutions
+            <span style="font-size:1.1rem">🏦</span> {{ t('manageInstitutions') }}
           </a>
           <a routerLink="/rapports/financial"
             style="display:flex;align-items:center;gap:.75rem;padding:.65rem .875rem;background:#fffaf0;border-radius:10px;text-decoration:none;color:#c05621;font-weight:600;font-size:.85rem">
-            <span style="font-size:1.1rem">📊</span> Financial Reports
+            <span style="font-size:1.1rem">📊</span> {{ t('financialReports') }}
           </a>
         </div>
       </div>

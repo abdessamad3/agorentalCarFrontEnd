@@ -16,6 +16,16 @@ const isAuthRoute = (url: string) =>
   url.includes('/auth/refresh') ||
   url.includes('/auth/logout');
 
+/** Returns true if the JWT access token is expired (or unparseable). */
+function isTokenExpired(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp ? Date.now() >= payload.exp * 1000 : false;
+  } catch {
+    return true;
+  }
+}
+
 function cloneWithToken(request: HttpRequest<unknown>, token: string): HttpRequest<unknown> {
   return request.clone({ setHeaders: { Authorization: `Bearer ${token}` } });
 }
@@ -33,7 +43,11 @@ export const jwtInterceptor: HttpInterceptorFn = (request, next) => {
   }
 
   const token = authService.getToken();
-  if (token) {
+  if (token && !isAuth) {
+    // Never send the access token on auth routes (/auth/refresh, /auth/login …).
+    // Lexik JWT authenticates every request in the api firewall; sending an expired
+    // token to /auth/refresh would cause Symfony to reject it with 401 before the
+    // route logic even runs, breaking the entire refresh flow.
     request = cloneWithToken(request, token);
   }
 
@@ -48,7 +62,14 @@ export const jwtInterceptor: HttpInterceptorFn = (request, next) => {
         const refreshToken = authService.getRefreshToken();
 
         if (refreshToken && !authService.refreshing$.getValue()) {
-          // Start refresh
+          // A proactive refresh may have completed while this request was in flight.
+          // If the stored token is now valid, retry immediately without another refresh.
+          const freshToken = authService.getToken();
+          if (freshToken && !isTokenExpired(freshToken)) {
+            return next(cloneWithToken(request, freshToken));
+          }
+
+          // Token is still expired — start a reactive refresh.
           authService.refreshing$.next(true);
 
           return authService.refreshAccessToken().pipe(
@@ -66,7 +87,7 @@ export const jwtInterceptor: HttpInterceptorFn = (request, next) => {
         }
 
         if (authService.refreshing$.getValue()) {
-          // Another request already started refresh — wait for it to finish
+          // Another refresh is already in flight — queue this request until it finishes.
           return authService.refreshing$.pipe(
             filter(isRefreshing => !isRefreshing),
             take(1),

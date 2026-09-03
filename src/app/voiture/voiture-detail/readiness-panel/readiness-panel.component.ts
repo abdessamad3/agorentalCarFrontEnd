@@ -365,12 +365,6 @@ export class ReadinessPanelComponent implements OnChanges {
         passed: +(c?.prixJour || 0) > 0,
         blocking: true, advisory: false, category: 'pricing',
       },
-      {
-        label: 'Caution configurée',
-        points: 3,
-        passed: c?.caution !== null && c?.caution !== undefined,
-        blocking: false, advisory: true, category: 'pricing',
-      },
     ];
 
     // ── Mileage (max 10) ────────────────────────────────────────

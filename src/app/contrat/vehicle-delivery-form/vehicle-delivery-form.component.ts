@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { CrudService } from '../../services/crud.service';
 import { ToastService } from '../../services/toast.service';
 import { AuthService } from '../../services/auth.service';
+import { TranslationService } from '../../services/translation.service';
 import { FuelGaugeComponent } from '../../shared/fuel-gauge/fuel-gauge.component';
 import { SignaturePadComponent } from '../../shared/signature-pad/signature-pad.component';
 import { BtnComponent } from '../../shared/btn/btn.component';
@@ -41,7 +42,10 @@ export class VehicleDeliveryFormComponent implements OnInit {
     private crud: CrudService,
     private toast: ToastService,
     private auth: AuthService,
+    private ts: TranslationService,
   ) {}
+
+  t(key: string): string { return this.ts.translate(key); }
 
   ngOnInit() {
     this.auth.getMySignature().subscribe({
@@ -81,11 +85,11 @@ export class VehicleDeliveryFormComponent implements OnInit {
 
     this.crud.create('vehicle-delivery', payload).subscribe({
       next: () => {
-        this.toast.show('Livraison confirmée. Contrat actif.', 'success');
+        this.toast.show(this.t('deliveryConfirmed'), 'success');
         this.saved.emit();
       },
       error: (err) => {
-        this.toast.show(err?.error?.error || 'Erreur lors de la livraison.', 'error');
+        this.toast.show(err?.error?.error || this.t('deliveryError'), 'error');
         this.isSubmitting = false;
       },
     });

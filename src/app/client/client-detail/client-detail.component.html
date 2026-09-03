@@ -53,38 +53,38 @@
       </div>
     </div>
 
-    <!-- Financial Summary (closed reservations only — authoritative debt figure) -->
-    <div class="financial-summary" *ngIf="financialSummary">
-      <h3 class="fs-title">Financial Summary</h3>
-      <div class="fs-grid">
-        <div class="fs-item">
-          <span class="fs-label">Total Rentals</span>
-          <span class="fs-value">{{ financialSummary.totalRentals }}</span>
+    <!-- Expired documents warning card -->
+    <div class="expired-card" *ngIf="client.cinExpired || client.passeportExpired || client.permisExpired">
+      <div class="expired-card-title">⚠️ Expired Documents</div>
+      <div class="expired-items">
+        <div class="expired-item" *ngIf="client.cinExpired">
+          <span class="expired-badge">CIN</span>
+          <span class="expired-date">expired {{ client.cinExpiration | date:'dd/MM/yyyy' }}</span>
         </div>
-        <div class="fs-item">
-          <span class="fs-label">Total Revenue</span>
-          <span class="fs-value">{{ financialSummary.totalRevenue | number:'1.0-2' }} MAD</span>
+        <div class="expired-item" *ngIf="client.passeportExpired">
+          <span class="expired-badge">Passport</span>
+          <span class="expired-date">expired {{ client.passeportExpiration | date:'dd/MM/yyyy' }}</span>
         </div>
-        <div class="fs-item">
-          <span class="fs-label">Total Paid</span>
-          <span class="fs-value">{{ financialSummary.totalPaid | number:'1.0-2' }} MAD</span>
+        <div class="expired-item" *ngIf="client.permisExpired">
+          <span class="expired-badge">Driver Licence</span>
+          <span class="expired-date">expired {{ client.permisExpiration | date:'dd/MM/yyyy' }}</span>
         </div>
-        <div class="fs-item">
-          <span class="fs-label">Outstanding Debt</span>
-          <span class="fs-value debt-badge" [ngClass]="debtRiskClass(financialSummary.outstandingDebt)"
-                *ngIf="financialSummary.outstandingDebt > 0">
-            {{ financialSummary.outstandingDebt | number:'1.0-2' }} MAD
-          </span>
-          <span class="fs-value" *ngIf="!financialSummary.outstandingDebt">0 MAD</span>
-        </div>
-        <div class="fs-item" *ngIf="financialSummary.overpayments > 0">
-          <span class="fs-label">Overpayments</span>
-          <span class="fs-value text-green">{{ financialSummary.overpayments | number:'1.0-2' }} MAD</span>
-        </div>
-        <div class="fs-item">
-          <span class="fs-label">Last Payment</span>
-          <span class="fs-value">{{ (financialSummary.lastPaymentDate | date:'dd/MM/yyyy') || '—' }}</span>
-        </div>
+      </div>
+    </div>
+
+    <!-- Rented cars photo strip -->
+    <div class="cars-section" *ngIf="rentedCars.length > 0">
+      <div class="cars-section-title">🚗 Cars Rented ({{ rentedCars.length }})</div>
+      <div class="cars-strip">
+        <a *ngFor="let v of rentedCars" class="car-card" [routerLink]="['/voiture', v.id]">
+          <div class="car-photo-wrap">
+            <img [src]="carImgUrl(v)" [alt]="v.marque + ' ' + v.modele" class="car-photo" (error)="onCarImgError($event)" />
+          </div>
+          <div class="car-card-info">
+            <div class="car-card-name">{{ v.marque }} {{ v.modele }}</div>
+            <div class="car-card-plate" *ngIf="v.immatriculation">{{ v.immatriculation }}</div>
+          </div>
+        </a>
       </div>
     </div>
 
@@ -93,18 +93,58 @@
       <button class="tab-btn" [class.active]="activeTab === 'reservations'" (click)="setTab('reservations')">
         Reservations <span class="tab-count">{{ reservations.length }}</span>
       </button>
-      <button class="tab-btn" [class.active]="activeTab === 'contrats'" (click)="setTab('contrats')">
-        Contracts <span class="tab-count">{{ contrats.length }}</span>
+      <button class="tab-btn" [class.active]="activeTab === 'documents'" (click)="setTab('documents')">
+        🪪 Documents
       </button>
+    </div>
+
+    <!-- Documents tab -->
+    <div *ngIf="activeTab === 'documents'" class="docs-section">
+      <app-client-documents [clientId]="client.id" [client]="client" (clientUpdated)="loadAll(client.id)"></app-client-documents>
     </div>
 
     <!-- Reservations tab -->
     <div *ngIf="activeTab === 'reservations'">
+
+      <!-- Filter bar -->
+      <div class="res-filter-bar" *ngIf="reservations.length > 0">
+        <select class="res-filter-select" [(ngModel)]="filterStatus">
+          <option value="">All statuses</option>
+          <option value="active">Active (confirmed + in progress)</option>
+          <option value="confirmed">Confirmed only</option>
+          <option value="in_progress">In Progress only</option>
+          <option value="pending">Pending</option>
+          <option value="terminee">Done</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+
+        <div class="res-date-range">
+          <input class="res-date-input" type="date" [(ngModel)]="filterDateFrom"
+                 [max]="filterDateTo || null" placeholder="From" title="Start date from" />
+          <span class="res-date-sep">→</span>
+          <input class="res-date-input" type="date" [(ngModel)]="filterDateTo"
+                 [min]="filterDateFrom || null" placeholder="To" title="Start date to" />
+        </div>
+
+        <span class="res-filter-count" *ngIf="hasActiveFilter">
+          {{ filteredReservations.length }} / {{ reservations.length }}
+        </span>
+        <button class="res-filter-clear" *ngIf="hasActiveFilter" (click)="clearFilters()">× Clear</button>
+      </div>
+
+      <!-- Empty: no reservations at all -->
       <div *ngIf="reservations.length === 0" class="empty-section">
         <span class="empty-icon">📅</span>
         <p>No reservations found for this client.</p>
       </div>
-      <div *ngIf="reservations.length > 0" class="table-container">
+
+      <!-- Empty: filter returned nothing -->
+      <div *ngIf="reservations.length > 0 && filteredReservations.length === 0" class="empty-section">
+        <span class="empty-icon">🔍</span>
+        <p>No reservations match this filter.</p>
+      </div>
+
+      <div *ngIf="filteredReservations.length > 0" class="table-container">
         <table class="detail-table">
           <thead>
             <tr>
@@ -120,64 +160,40 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let r of reservations">
-              <td class="id-cell">{{ r.id }}</td>
-              <td>
-                <span class="vehicle-name">{{ r.voiture?.marque }} {{ r.voiture?.modele }}</span>
-              </td>
-              <td class="date-cell">{{ r.dateDebut | date:'dd/MM/yyyy' }}</td>
-              <td class="date-cell">{{ r.dateFin | date:'dd/MM/yyyy' }}</td>
-              <td class="amount-cell">{{ r.total | number:'1.0-0' }} MAD</td>
-              <td class="amount-cell paid">{{ (r.montantPaye || 0) | number:'1.0-0' }} MAD</td>
-              <td class="amount-cell remaining"
-                  [class.zero]="(+r.total - +r.montantPaye) <= 0">
-                {{ (+r.total - +r.montantPaye) | number:'1.0-0' }} MAD
-              </td>
-              <td>
-                <span class="status-chip" [ngClass]="statusClass(r.reservationStatus)">
-                  {{ statusLabel(r.reservationStatus) }}
-                </span>
-              </td>
-              <td class="actions-cell">
-                <button class="btn-act" (click)="downloadInvoice(r)" title="Download Invoice">🧾</button>
-              </td>
-            </tr>
+            <ng-container *ngFor="let r of filteredReservations">
+              <tr>
+                <td class="id-cell">{{ r.id }}</td>
+                <td>
+                  <span class="vehicle-name">{{ r.voiture?.marque }} {{ r.voiture?.modele }}</span>
+                </td>
+                <td class="date-cell">{{ r.dateDebut | date:'dd/MM/yyyy' }}</td>
+                <td class="date-cell">{{ r.dateFin | date:'dd/MM/yyyy' }}</td>
+                <td class="amount-cell">{{ r.total | number:'1.0-0' }} MAD</td>
+                <td class="amount-cell paid">{{ (r.montantPaye || 0) | number:'1.0-0' }} MAD</td>
+                <td class="amount-cell remaining"
+                    [class.zero]="(+r.total - +r.montantPaye) <= 0">
+                  {{ (+r.total - +r.montantPaye) | number:'1.0-0' }} MAD
+                </td>
+                <td>
+                  <span class="status-chip" [ngClass]="statusClass(r.reservationStatus)">
+                    {{ r.reservationStatus | appStatus:'reservation' }}
+                  </span>
+                </td>
+                <td class="actions-cell">
+                  <button *ngIf="r.reservationStatus !== 'annulee' && r.reservationStatus !== 'cancelled'"
+                          class="btn-act" (click)="downloadInvoice(r)" title="Télécharger la facture">🧾</button>
+                  <button class="btn-act btn-act-pay"
+                          [class.btn-act-pay-active]="selectedResForPayment?.id === r.id"
+                          (click)="togglePaymentPanel(r)" title="Historique paiement">💳</button>
+                </td>
+              </tr>
+
+            </ng-container>
           </tbody>
         </table>
       </div>
     </div>
 
-    <!-- Contracts tab -->
-    <div *ngIf="activeTab === 'contrats'">
-      <div *ngIf="contrats.length === 0" class="empty-section">
-        <span class="empty-icon">📄</span>
-        <p>No contracts found for this client.</p>
-      </div>
-      <div *ngIf="contrats.length > 0" class="table-container">
-        <table class="detail-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Vehicle</th>
-              <th>Start</th>
-              <th>End</th>
-              <th>Amount</th>
-              <th>Created</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let c of contrats">
-              <td class="id-cell">{{ c.id }}</td>
-              <td>{{ c.voitureLabel || c.voiture?.marque }}</td>
-              <td class="date-cell">{{ c.dateDebut | date:'dd/MM/yyyy' }}</td>
-              <td class="date-cell">{{ c.dateFin | date:'dd/MM/yyyy' }}</td>
-              <td class="amount-cell">{{ c.montantTotal | number:'1.0-0' }} MAD</td>
-              <td class="date-cell">{{ c.creeAu | date:'dd/MM/yyyy' }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
 
   </ng-container>
 
@@ -187,4 +203,113 @@
     <a routerLink="/client" class="back-link">← Back to Clients</a>
   </div>
 
+</div>
+
+<!-- Payment History Drawer Modal -->
+<div class="pay-modal-overlay" *ngIf="selectedResForPayment" (click)="closePaymentModal()">
+  <div class="pay-modal-drawer" (click)="$event.stopPropagation()">
+
+    <!-- Header -->
+    <div class="pay-drawer-header">
+      <div class="pay-drawer-header-left">
+        <span class="pay-drawer-icon">💳</span>
+        <div>
+          <div class="pay-drawer-title">Historique paiements</div>
+          <div class="pay-drawer-subtitle">Réservation #{{ selectedResForPayment.id }}</div>
+        </div>
+      </div>
+      <button class="pay-drawer-close" (click)="closePaymentModal()">✕</button>
+    </div>
+
+    <!-- Summary boxes -->
+    <div class="pay-drawer-summary">
+      <div class="pay-sum-box pay-sum-box-total">
+        <div class="pay-sum-box-label">Total</div>
+        <div class="pay-sum-box-value">{{ selectedResForPayment.total | number:'1.0-0' }} MAD</div>
+      </div>
+      <div class="pay-sum-box pay-sum-box-paid">
+        <div class="pay-sum-box-label">Payé</div>
+        <div class="pay-sum-box-value">{{ (selectedResForPayment.montantPaye || 0) | number:'1.0-0' }} MAD</div>
+      </div>
+      <div class="pay-sum-box pay-sum-box-remaining">
+        <div class="pay-sum-box-label">Restant</div>
+        <div class="pay-sum-box-value">{{ (+selectedResForPayment.total - +selectedResForPayment.montantPaye) | number:'1.0-0' }} MAD</div>
+      </div>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="pay-drawer-progress-wrap">
+      <div class="pay-drawer-progress-bar">
+        <div class="pay-drawer-progress-fill" [style.width]="payProgressPct + '%'"></div>
+      </div>
+      <span class="pay-drawer-progress-pct">{{ payProgressPct }}%</span>
+    </div>
+
+    <!-- Installments list -->
+    <div class="pay-drawer-section-label">Versements</div>
+
+    <div *ngIf="paymentLoading[selectedResForPayment.id]" class="pay-drawer-loading">
+      <span class="pay-spinner"></span> Chargement…
+    </div>
+
+    <div *ngIf="!paymentLoading[selectedResForPayment.id] && paymentCache[selectedResForPayment.id] && paymentCache[selectedResForPayment.id].length === 0"
+         class="pay-drawer-empty">Aucun versement enregistré.</div>
+
+    <div *ngIf="!paymentLoading[selectedResForPayment.id] && paymentCache[selectedResForPayment.id] && paymentCache[selectedResForPayment.id].length > 0"
+         class="pay-drawer-list">
+      <div *ngFor="let p of paymentCache[selectedResForPayment.id]" class="pay-drawer-item">
+        <div class="pay-drawer-item-left">
+          <span class="pay-drawer-item-date">{{ p.datePaiement | date:'dd/MM/yyyy' }}</span>
+          <span class="pay-drawer-item-mode">{{ paymentModeLabel(p.modePaiement) }}</span>
+          <span class="pay-drawer-item-note" *ngIf="p.note">{{ p.note }}</span>
+        </div>
+        <div class="pay-drawer-item-right">
+          <span class="pay-drawer-item-amount">{{ p.montant | number:'1.0-0' }} MAD</span>
+          <span class="pay-status"
+            [class.pay-status-ok]="['payee','active'].includes(p.statut)"
+            [class.pay-status-pending]="['pending','en_attente','partiel'].includes(p.statut)"
+            [class.pay-status-bad]="['impaye','annulee','non_payee'].includes(p.statut)">
+            {{ p.statut }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add installment form -->
+    <div class="pay-drawer-add-section">
+      <div class="pay-drawer-section-label">Ajouter un versement</div>
+      <div class="pay-drawer-form">
+        <div class="pay-form-row">
+          <div class="pay-form-group">
+            <label class="pay-form-label">Montant (MAD)</label>
+            <input class="pay-form-input" type="number" [(ngModel)]="newPayment.montant" min="1" placeholder="0" />
+          </div>
+          <div class="pay-form-group">
+            <label class="pay-form-label">Date</label>
+            <input class="pay-form-input" type="date" [(ngModel)]="newPayment.datePaiement" />
+          </div>
+        </div>
+        <div class="pay-form-row">
+          <div class="pay-form-group">
+            <label class="pay-form-label">Mode</label>
+            <select class="pay-form-input" [(ngModel)]="newPayment.modePaiement">
+              <option value="especes">Espèces</option>
+              <option value="virement">Virement</option>
+              <option value="cheque">Chèque</option>
+              <option value="carte">Carte</option>
+            </select>
+          </div>
+          <div class="pay-form-group">
+            <label class="pay-form-label">Note</label>
+            <input class="pay-form-input" type="text" [(ngModel)]="newPayment.note" placeholder="Optionnel" />
+          </div>
+        </div>
+        <button class="pay-form-btn" (click)="addInstallment()" [disabled]="addingPayment">
+          <span *ngIf="addingPayment" class="pay-spinner"></span>
+          {{ addingPayment ? 'Enregistrement…' : '+ Ajouter le versement' }}
+        </button>
+      </div>
+    </div>
+
+  </div>
 </div>

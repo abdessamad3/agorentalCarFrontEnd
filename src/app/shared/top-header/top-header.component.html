@@ -12,22 +12,24 @@
       <a routerLink="/client" class="btn-outline-header">
         <span>+</span> {{ t('newClient') }}
       </a>
-      <a routerLink="/reservation/create" class="btn-filled-header">
+      <a routerLink="/location/new" class="btn-filled-header">
         <span>+</span> {{ t('newBooking') }}
       </a>
     </div>
+  </div>
 
+  <!-- KPI chips — inline on desktop, second row on tablet/mobile -->
+  <div class="header-kpis">
     <div class="profit-chip" [class.profit-positive]="netProfit >= 0" [class.profit-negative]="netProfit < 0">
       <span class="profit-icon">{{ netProfit >= 0 ? '📈' : '📉' }}</span>
       <span class="profit-label">{{ t('netProfit') }}:</span>
       <span class="profit-value">{{ netProfit | number:'1.0-0' }} MAD</span>
     </div>
-
-    <div class="pending-chip" *ngIf="pendingAmount > 0">
+    <a class="pending-chip" routerLink="/client-debts" *ngIf="pendingAmount > 0">
       <span class="pending-icon">💳</span>
       <span class="pending-label">{{ t('clientsOwed') }}:</span>
       <span class="pending-value">{{ pendingAmount | number:'1.0-0' }} MAD</span>
-    </div>
+    </a>
   </div>
 
   <!-- Right section -->
@@ -50,11 +52,13 @@
 
       <div class="notif-panel" *ngIf="notifPanelOpen" (click)="$event.stopPropagation()">
         <div class="notif-panel-header">
-          <span class="notif-panel-title">Notifications</span>
-          <button class="notif-mark-all" (click)="markAllRead()" *ngIf="unreadCount > 0">Mark all read</button>
+          <span class="notif-panel-title">{{ t('alertsPanel') }}</span>
+          <button class="notif-mark-all" (click)="markAllRead()" *ngIf="unreadCount > 0">
+            {{ t('notifMarkAllRead') }}
+          </button>
         </div>
 
-        <div class="notif-loading" *ngIf="notifLoading">Loading…</div>
+        <div class="notif-loading" *ngIf="notifLoading">{{ t('loading') }}</div>
 
         <div class="notif-list" *ngIf="!notifLoading">
           <div
@@ -74,13 +78,13 @@
           </div>
 
           <div class="notif-empty" *ngIf="!notifications.length">
-            <span>✅</span> All caught up
+            <span>✅</span> {{ t('notifAllCaughtUp') }}
           </div>
-
-          <a routerLink="/notifications" class="notif-view-all" (click)="notifPanelOpen = false">
-            View all notifications →
-          </a>
         </div>
+
+        <a routerLink="/notifications" class="notif-view-all" (click)="notifPanelOpen = false" *ngIf="!notifLoading">
+          {{ t('notifViewAll') }}
+        </a>
       </div>
     </div>
 

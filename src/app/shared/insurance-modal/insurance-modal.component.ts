@@ -1,6 +1,6 @@
 import {
   Component, Input, Output, EventEmitter,
-  OnChanges, SimpleChanges, HostListener
+  OnInit, OnChanges, SimpleChanges, HostListener
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -10,6 +10,7 @@ import {
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { payNotExceedTotal } from '../validators/pay-not-exceed-total.validator';
 import { UploadBtnComponent } from '../btn/upload-btn.component';
+import { ModalComponent } from '../modal/modal.component';
 
 export interface InsuranceSavePayload {
   value: {
@@ -30,11 +31,11 @@ export interface InsuranceSavePayload {
 @Component({
   selector: 'app-insurance-modal',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, TranslatePipe, UploadBtnComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, TranslatePipe, UploadBtnComponent, ModalComponent],
   templateUrl: './insurance-modal.component.html',
   styleUrls: ['./insurance-modal.component.css'],
 })
-export class InsuranceModalComponent implements OnChanges {
+export class InsuranceModalComponent implements OnInit, OnChanges {
   @Input() modalMode: 'add' | 'edit' | 'delete' | 'renew' | 'cancel' | null = null;
   @Input() carName = '';
   @Input() isSubmitting = false;
@@ -51,6 +52,7 @@ export class InsuranceModalComponent implements OnChanges {
     dateDebut: string; dateFin: string; montant: number | null;
     compagnie: string | null; typeAssurance: string | null;
     numeroContrat: string | null; montantPaye: number | null;
+    file: File | null;
   }>();
 
   form: FormGroup;
@@ -93,52 +95,62 @@ export class InsuranceModalComponent implements OnChanges {
     }, { validators: payNotExceedTotal() });
   }
 
+  ngOnInit(): void {
+    // Always run on first mount (component created fresh via *ngIf — all inputs guaranteed set)
+    this.setupForm();
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['modalMode']) {
-      if (this.modalMode === 'add') {
-        this.form.reset({ voitureId: null });
-        this.compagnieIsOther = false;
-        this.compagnieSelectValue = '';
-        this.selectedFile = null;
-        this.filePreview = null;
-      }
-      if (this.modalMode === 'edit' && this.editItem) {
-        const comp = this.editItem.compagnie || '';
-        const isKnown = this.MOROCCAN_INSURERS.includes(comp);
-        this.compagnieIsOther = !!comp && !isKnown;
-        this.compagnieSelectValue = this.compagnieIsOther ? '__other__' : comp;
-        this.form.patchValue({
-          voitureId:     this.editItem.voitureId ?? this.editItem.voiture?.id ?? null,
-          compagnie:     comp,
-          typeAssurance: this.editItem.typeAssurance || '',
-          numeroContrat: this.editItem.numeroContrat || '',
-          dateDebut:     this.editItem.dateDebut    ? this.editItem.dateDebut.split('T')[0]    : '',
-          dateFin:       this.editItem.dateFin      ? this.editItem.dateFin.split('T')[0]      : '',
-          dateFacture:   this.editItem.dateFacture  ? this.editItem.dateFacture.split('T')[0]  : null,
-          montant:       this.editItem.montant ?? null,
-          notes:         this.editItem.notes ?? '',
-        });
-        this.selectedFile = null;
-        this.filePreview = null;
-      }
-      if (this.modalMode === 'renew' && this.editItem) {
-        const oldEnd = this.editItem.dateFin ? new Date(this.editItem.dateFin) : new Date();
-        const ns = new Date(oldEnd); ns.setDate(ns.getDate() + 1);
-        const ne = new Date(ns);    ne.setFullYear(ne.getFullYear() + 1);
-        this.renewForm.reset({
-          dateDebut:     ns.toISOString().split('T')[0],
-          dateFin:       ne.toISOString().split('T')[0],
-          montant:       this.editItem.montant ?? null,
-          compagnie:     this.editItem.compagnie ?? null,
-          typeAssurance: this.editItem.typeAssurance ?? null,
-          numeroContrat: null,
-          montantPaye:   null,
-        });
-      }
-      if (!this.modalMode) {
-        this.selectedFile = null;
-        this.filePreview = null;
-      }
+    // Handle live changes while the component stays mounted (mode switch, item swap)
+    if (changes['modalMode'] || changes['editItem']) {
+      this.setupForm();
+    }
+  }
+
+  private setupForm(): void {
+    if (this.modalMode === 'add') {
+      this.form.reset({ voitureId: null });
+      this.compagnieIsOther = false;
+      this.compagnieSelectValue = '';
+      this.selectedFile = null;
+      this.filePreview = null;
+    } else if (this.modalMode === 'edit' && this.editItem) {
+      const comp = this.editItem.compagnie || '';
+      const isKnown = this.MOROCCAN_INSURERS.includes(comp);
+      this.compagnieIsOther = !!comp && !isKnown;
+      this.compagnieSelectValue = this.compagnieIsOther ? '__other__' : comp;
+      this.form.patchValue({
+        voitureId:     this.editItem.voitureId ?? null,
+        compagnie:     comp,
+        typeAssurance: this.editItem.typeAssurance || '',
+        numeroContrat: this.editItem.numeroContrat || '',
+        dateDebut:     this.editItem.dateDebut   ? this.editItem.dateDebut.split('T')[0]   : '',
+        dateFin:       this.editItem.dateFin     ? this.editItem.dateFin.split('T')[0]     : '',
+        dateFacture:   this.editItem.dateFacture ? this.editItem.dateFacture.split('T')[0] : null,
+        montant:       this.editItem.montant    ?? null,
+        montantPaye:   this.editItem.montantPaye ?? null,
+        notes:         this.editItem.notes ?? '',
+      });
+      this.selectedFile = null;
+      this.filePreview = null;
+    } else if (this.modalMode === 'renew' && this.editItem) {
+      const oldEnd = this.editItem.dateFin ? new Date(this.editItem.dateFin) : new Date();
+      const ns = new Date(oldEnd); ns.setDate(ns.getDate() + 1);
+      const ne = new Date(ns);    ne.setFullYear(ne.getFullYear() + 1);
+      this.renewForm.reset({
+        dateDebut:     ns.toISOString().split('T')[0],
+        dateFin:       ne.toISOString().split('T')[0],
+        montant:       this.editItem.montant ?? null,
+        compagnie:     this.editItem.compagnie ?? null,
+        typeAssurance: this.editItem.typeAssurance ?? null,
+        numeroContrat: null,
+        montantPaye:   null,
+      });
+      this.selectedFile = null;
+      this.filePreview = null;
+    } else if (!this.modalMode) {
+      this.selectedFile = null;
+      this.filePreview = null;
     }
   }
 
@@ -183,6 +195,7 @@ export class InsuranceModalComponent implements OnChanges {
       typeAssurance: v.typeAssurance || null,
       numeroContrat: v.numeroContrat || null,
       montantPaye:   v.montantPaye || null,
+      file:          this.selectedFile,
     });
   }
 

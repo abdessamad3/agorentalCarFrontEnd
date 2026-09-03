@@ -84,6 +84,7 @@
 .badge-update  { background: #dbeafe; color: #2563eb; }
 .badge-delete  { background: #fee2e2; color: #dc2626; }
 .badge-archive { background: #fef9c3; color: #ca8a04; }
+.badge-view    { background: #f3f4f6; color: #6b7280; }
 
 /* Expand button */
 .btn-expand {

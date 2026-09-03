@@ -3,16 +3,21 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { CrudService } from '../../services/crud.service';
+import { reservationStatusClass } from '../../shared/utils/status.utils';
+import { StatusPipe } from '../../shared/pipes/status.pipe';
 import { ToastService } from '../../services/toast.service';
 import { TranslationService } from '../../services/translation.service';
 import { ContratService } from '../../services/contrat.service';
+import { EventBusService } from '../../services/event-bus.service';
 import { complianceSeverity } from '../../shared/utils/compliance.utils';
 import { PrintContratComponent } from '../../contrat/print-contrat/print-contrat.component';
+import { ClientDocumentsComponent } from '../../client/client-documents/client-documents.component';
+import { VehicleMapComponent, VEHICLE_ZONES } from '../../shared/vehicle-map/vehicle-map.component';
 
 @Component({
   selector: 'app-location-dossier',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, PrintContratComponent],
+  imports: [CommonModule, FormsModule, RouterModule, PrintContratComponent, ClientDocumentsComponent, VehicleMapComponent, StatusPipe],
   templateUrl: './location-dossier.component.html',
   styleUrls: ['./location-dossier.component.css']
 })
@@ -23,6 +28,7 @@ export class LocationDossierComponent implements OnInit {
   error = '';
   activeTab: 'reservation' | 'depart' | 'paiements' | 'retour' | 'documents' | 'validation' = 'reservation';
   printContractData: any = null;
+  autoDownloadPdf = false;
 
   // ── Paiement form ────────────────────────────────────────────────────────
   newPaiement = { montant: 0, datePaiement: '', modePaiement: 'especes', note: '' };
@@ -48,6 +54,69 @@ export class LocationDossierComponent implements OnInit {
   showDommages     = false;
   showRetourNotes  = false;
 
+  readonly CAR_ZONES = VEHICLE_ZONES;
+
+  // ── Vehicle damage (departure read-only display) ─────────────────────────
+  departureDamages: any[] = [];
+  loadingDamages = false;
+
+  get departureOpenDamages(): any[] {
+    return this.departureDamages.filter(d => d.status === 'open');
+  }
+
+  get departureDamagedZones(): string[] {
+    return this.departureOpenDamages.map(d => d.zone);
+  }
+
+  isDepartureDamaged(partId: string): boolean {
+    return this.departureOpenDamages.some(d => d.zone === partId);
+  }
+
+  private loadCarDamages(): void {
+    const carId = this.dossier?.reservation?.voiture?.id;
+    if (!carId) return;
+    this.loadingDamages = true;
+    this.crud.getById('voiture', `${carId}/damages`).subscribe({
+      next: (data: any) => {
+        this.departureDamages = Array.isArray(data) ? data : (data?.damages ?? []);
+        this.loadingDamages = false;
+      },
+      error: () => { this.departureDamages = []; this.loadingDamages = false; }
+    });
+  }
+
+  // ── Cancel reservation ───────────────────────────────────────────────────
+  cancelling = false;
+  showCancelModal = false;
+
+  get canCancel(): boolean {
+    return this.status === 'pending' || this.status === 'confirmed' || this.status === 'confirmee';
+  }
+
+  openCancelModal(): void  { this.showCancelModal = true; }
+  closeCancelModal(): void { this.showCancelModal = false; }
+
+  confirmCancelReservation(): void {
+    this.showCancelModal = false;
+    this.cancelling = true;
+    this.crud.update('reservation', this.reservationId, { reservationStatus: 'annulee' }).subscribe({
+      next: () => {
+        this.toast.show(this.t('reservationCancelled'), 'info');
+        this.cancelling = false;
+        this.router.navigate(['/reservation']);
+      },
+      error: (err: any) => {
+        this.toast.show(err?.error?.error ?? this.t('error'), 'error');
+        this.cancelling = false;
+      }
+    });
+  }
+
+  // ── Driver edit ──────────────────────────────────────────────────────────
+  editingDriver: 'first' | 'second' | null = null;
+  driverForm: any = {};
+  savingDriver = false;
+
   // ── Constants ────────────────────────────────────────────────────────────
   readonly FUEL_LEVELS = ['vide', 'quart', 'moitie', 'trois_quarts', 'plein'];
   get FUEL_LABELS(): Record<string, string> {
@@ -70,12 +139,18 @@ export class LocationDossierComponent implements OnInit {
     private toast: ToastService,
     private ts: TranslationService,
     private contratSvc: ContratService,
+    private bus: EventBusService,
   ) {}
 
   t(key: string) { return this.ts.translate(key); }
 
+  private readonly VALID_TABS: ReadonlyArray<typeof this.activeTab> =
+    ['reservation','depart','paiements','retour','documents','validation'];
+
   ngOnInit() {
     this.reservationId = Number(this.route.snapshot.paramMap.get('id'));
+    const frag = this.route.snapshot.fragment as typeof this.activeTab | null;
+    if (frag && this.VALID_TABS.includes(frag)) this.activeTab = frag;
     this.load();
   }
 
@@ -84,6 +159,16 @@ export class LocationDossierComponent implements OnInit {
     this.error = '';
     this.crud.getById('location', `${this.reservationId}/full`).subscribe({
       next: (d: any) => {
+        const status = (
+          d?.reservation?.reservationStatus ||
+          d?.reservation?.statut ||
+          d?.reservationStatus ||
+          d?.statut || ''
+        ).toLowerCase();
+        if (['annulee', 'cancelled', 'annule'].includes(status)) {
+          this.router.navigate(['/reservation']);
+          return;
+        }
         this.dossier = d;
         this.syncForms();
         this.loading = false;
@@ -147,6 +232,7 @@ export class LocationDossierComponent implements OnInit {
         kilometrage:     vri.kilometrage ?? null,
         inspectedAt:     vri.inspectedAt ? vri.inspectedAt.slice(0, 16) : now,
         condition:       vri.condition ?? 'clean',
+        damagedParts:    vri.damagedParts ?? [],
         fuelCharge:      vri.fuelCharge ?? 0,
         lateCharge:      vri.lateCharge ?? 0,
         damageCharge:    vri.damageCharge ?? 0,
@@ -161,22 +247,24 @@ export class LocationDossierComponent implements OnInit {
         vd?.fuelLevelOut ?? 'vide', 'vide'
       );
       this.retourForm = {
-        fuelLevelIn: vd?.fuelLevelOut ?? 'vide',
-        kilometrage: null,
-        inspectedAt: now,
-        condition: 'clean',
-        fuelCharge: 0,
-        lateCharge: 0,
-        damageCharge: 0,
+        fuelLevelIn:  vd?.fuelLevelOut ?? 'vide',
+        kilometrage:  null,
+        inspectedAt:  now,
+        condition:    'clean',
+        damagedParts: [],
+        fuelCharge:      0,
+        lateCharge:      0,
+        damageCharge:    0,
         equipmentCharge: 0,
-        remiseMontant: 0,
-        remiseMotif: '',
-        notes: '',
+        remiseMontant:   0,
+        remiseMotif:     '',
+        notes:           '',
       };
       this.retourConfirmed = false;
     }
 
     this.newPaiement = { montant: 0, datePaiement: today, modePaiement: 'especes', note: '' };
+    this.loadCarDamages();
   }
 
   // ── Live computations ────────────────────────────────────────────────────
@@ -208,6 +296,37 @@ export class LocationDossierComponent implements OnInit {
       this.dossier?.reservation?.prixParJour ?? '0'
     );
     this.retourForm.lateCharge = daysLate * prix;
+  }
+
+  // ── Car damage diagram ───────────────────────────────────────────────────
+
+  get hasDamage(): boolean { return this.retourForm.condition !== 'clean'; }
+
+  setNoDamage(): void {
+    if (this.isRetourDone) return;
+    this.retourForm.condition    = 'clean';
+    this.retourForm.damagedParts = [];
+  }
+
+  setHasDamage(): void {
+    if (this.isRetourDone) return;
+    if (this.retourForm.condition === 'clean') this.retourForm.condition = 'minor_damage';
+  }
+
+  togglePart(partId: string): void {
+    if (this.isRetourDone) return;
+    const parts: string[] = this.retourForm.damagedParts ?? [];
+    const idx = parts.indexOf(partId);
+    if (idx === -1) parts.push(partId); else parts.splice(idx, 1);
+  }
+
+  isPartDamaged(partId: string): boolean {
+    return (this.retourForm.damagedParts ?? []).includes(partId);
+  }
+
+  carPartLabel(partId: string): string {
+    const zone = VEHICLE_ZONES.find(z => z.value === partId);
+    return zone ? this.t(zone.key) : partId;
   }
 
   get totalChargesBeforeRemise(): number {
@@ -289,23 +408,12 @@ export class LocationDossierComponent implements OnInit {
   get complianceOverall(): string { return this.dossier?.reservation?.voiture?.compliance?.overall ?? 'UNKNOWN'; }
   get isComplianceBlocked(): boolean { return ['EXPIRED', 'UNKNOWN'].includes(this.complianceOverall); }
 
-  setTab(tab: typeof this.activeTab) { this.activeTab = tab; }
-
-  statusLabel(s: string): string {
-    const m: Record<string, string> = {
-      confirmed: this.t('confirmed'), en_cours: this.t('statusEnCours'), terminee: this.t('statusTerminee'),
-      pending: this.t('pending'), annulee: this.t('cancelled'), termine_avant_terme: this.t('statusTermineAvantTerme'),
-    };
-    return m[s] ?? s;
+  setTab(tab: typeof this.activeTab) {
+    this.activeTab = tab;
+    this.router.navigate([], { relativeTo: this.route, fragment: tab, replaceUrl: true });
   }
 
-  statusClass(s: string): string {
-    const m: Record<string, string> = {
-      confirmed: 'chip-confirmed', en_cours: 'chip-active', terminee: 'chip-done',
-      pending: 'chip-pending', annulee: 'chip-cancelled', termine_avant_terme: 'chip-terminated'
-    };
-    return m[s] ?? '';
-  }
+  readonly statusClass = reservationStatusClass;
 
   complianceClass(s: string): string {
     const sev = complianceSeverity(s);
@@ -381,6 +489,7 @@ export class LocationDossierComponent implements OnInit {
       next: () => {
         this.toast.show(this.t('paymentAdded'), 'success');
         this.savingPaiement = false;
+        this.bus.paymentsChanged$.next();
         this.load();
       },
       error: (err: any) => {
@@ -392,7 +501,7 @@ export class LocationDossierComponent implements OnInit {
 
   deletePaiement(id: number) {
     this.crud.remove('paiement', id).subscribe({
-      next: () => { this.toast.show(this.t('paymentDeleted'), 'info'); this.load(); },
+      next: () => { this.toast.show(this.t('paymentDeleted'), 'info'); this.bus.paymentsChanged$.next(); this.load(); },
       error: (err: any) => this.toast.show(err?.error?.message ?? this.t('error'), 'error')
     });
   }
@@ -418,6 +527,7 @@ export class LocationDossierComponent implements OnInit {
       next: () => {
         this.toast.show(this.t('contractClosed'), 'success');
         this.savingRetour = false;
+        this.bus.paymentsChanged$.next();
         this.load();
       },
       error: (err: any) => {
@@ -446,27 +556,77 @@ export class LocationDossierComponent implements OnInit {
     });
   }
 
+  // ── Driver edit ──────────────────────────────────────────────────────────
+
+  openDriverEdit(which: 'first' | 'second') {
+    this.editingDriver = which;
+    if (which === 'first') {
+      const c = this.dossier?.reservation?.client ?? {};
+      this.driverForm = {
+        nom:                c.nom ?? '',
+        prenom:             c.prenom ?? '',
+        telephone:          c.telephone ?? '',
+        nationalite:        c.nationalite ?? '',
+        cin:                c.cin ?? '',
+        cinDelivreLe:       c.cinDelivreLe   ? c.cinDelivreLe.slice(0, 10)   : '',
+        cinDelivreA:        c.cinDelivreA    ?? '',
+        passeport:          c.passeport      ?? '',
+        passeportDelivreLe: c.passeportDelivreLe ? c.passeportDelivreLe.slice(0, 10) : '',
+        passeportDelivreA:  c.passeportDelivreA  ?? '',
+        dateNaissance:      c.dateNaissance  ? c.dateNaissance.slice(0, 10)  : '',
+        lieuNaissance:      c.lieuNaissance  ?? '',
+        adresseMaroc:       c.adresseMaroc   ?? c.adresse ?? '',
+        permisConduite:     c.permisConduite ?? '',
+        permisDelivreLe:    c.permisDelivreLe ? c.permisDelivreLe.slice(0, 10) : '',
+        permisDelivreA:     c.permisDelivreA  ?? '',
+      };
+    } else {
+      const d = this.dossier?.reservation?.deuxiemeChauffeur ?? {};
+      this.driverForm = {
+        nom:                d.nom            ?? '',
+        cin:                d.cin            ?? '',
+        passeport:          d.passeport      ?? '',
+        passeportDelivreLe: d.passeportDelivreLe ? d.passeportDelivreLe.slice(0, 10) : '',
+        passeportDelivreA:  d.passeportDelivreA  ?? '',
+        dateNaissance:      d.dateNaissance  ? d.dateNaissance.slice(0, 10)  : '',
+        permisConduite:     d.permisConduite ?? '',
+        permisDelivreLe:    d.permisDelivreLe ? d.permisDelivreLe.slice(0, 10) : '',
+        permisDelivreA:     d.permisDelivreA  ?? '',
+      };
+    }
+  }
+
+  cancelDriverEdit() {
+    this.editingDriver = null;
+    this.driverForm = {};
+  }
+
+  saveDriver() {
+    this.savingDriver = true;
+    if (this.editingDriver === 'first') {
+      const clientId = this.dossier?.reservation?.client?.id;
+      this.crud.update('client', clientId, this.driverForm).subscribe({
+        next: () => { this.savingDriver = false; this.editingDriver = null; this.load(); },
+        error: () => { this.savingDriver = false; },
+      });
+    } else {
+      const d2Id = this.dossier?.reservation?.deuxiemeChauffeur?.id;
+      this.crud.update('deuxieme-chauffeur', d2Id, this.driverForm).subscribe({
+        next: () => { this.savingDriver = false; this.editingDriver = null; this.load(); },
+        error: () => { this.savingDriver = false; },
+      });
+    }
+  }
+
   // ── PDF ──────────────────────────────────────────────────────────────────
 
   downloadContratPdf() {
-    const contratId = this.dossier?.contrat?.id;
-    if (!contratId) { this.toast.show(this.t('noSignedContract'), 'error'); return; }
-    // /api/contrat/{id}/pdf is behind the JWT firewall — a plain window.open() navigation
-    // can't carry the Authorization header (browsers have no way to attach custom headers to
-    // a raw navigation), so it always 403'd. Fetch it as an authenticated blob instead, same
-    // pattern already used in contrat-list/contrat-detail/contrat-form.
-    this.contratSvc.downloadPdf(contratId).subscribe({
-      next: (blob: Blob) => {
-        const url  = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href  = url;
-        link.download = `contrat-${this.dossier?.contrat?.numero || contratId}.pdf`;
-        link.click();
-        setTimeout(() => URL.revokeObjectURL(url), 5000);
-      },
-      error: () => this.toast.show(this.t('pdfGenerationError'), 'error'),
-    });
+    if (!this.dossier?.contrat) { this.toast.show(this.t('noSignedContract'), 'error'); return; }
+    this.openPrintContrat();
+    this.autoDownloadPdf = true;
   }
+
+  onPrintClosed() { this.printContractData = null; this.autoDownloadPdf = false; }
 
   // ── Print (branded template — same one used in contrat-list) ───────────────
 
@@ -475,6 +635,7 @@ export class LocationDossierComponent implements OnInit {
    *  just sourced from `dossier` (already in memory here) instead of a fresh `contrat/:id/full`
    *  fetch. */
   openPrintContrat(): void {
+    this.autoDownloadPdf = false;
     const c    = this.dossier?.contrat;
     if (!c) { this.toast.show(this.t('noSignedContract'), 'error'); return; }
 
@@ -512,12 +673,12 @@ export class LocationDossierComponent implements OnInit {
         dateNaissance: cli.dateNaissance,
         lieuNaissance: cli.lieuNaissance,
         nationalite: cli.nationalite,
-        adresse: cli.adresseMaroc,
+        adresseMaroc: cli.adresseMaroc,
         adresseEtranger: cli.adresseEtranger,
         telephone: cli.telephone,
         telephoneEtranger: cli.telephoneEtranger,
         cin: cli.cin,
-        permisConduire: cli.permisConduite,
+        permisConduite: cli.permisConduite,
         permisDelivreLe: cli.permisDelivreLe,
         permisDelivreA: cli.permisDelivreA,
         passeport: cli.passeport,
@@ -529,10 +690,10 @@ export class LocationDossierComponent implements OnInit {
         nom: d2.nom,
         dateNaissance: d2.dateNaissance,
         nationalite: d2.nationalite,
-        adresse: d2.adresseMaroc,
+        adresseMaroc: d2.adresseMaroc,
         telephone: d2.telephone,
         cin: d2.cin,
-        permisConduire: d2.permisConduite,
+        permisConduite: d2.permisConduite,
         permisDelivreLe: d2.permisDelivreLe,
         permisDelivreA: d2.permisDelivreA,
         passeport: d2.passeport,

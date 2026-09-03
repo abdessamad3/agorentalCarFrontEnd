@@ -1,4 +1,5 @@
 import { Component, OnInit, HostListener } from '@angular/core';
+import { vehicleStatusClass } from '../../shared/utils/status.utils';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
@@ -8,9 +9,11 @@ import { VoitureService } from '../../services/voiture.service';
 import { CrudService } from '../../services/crud.service';
 import { TranslationService } from '../../services/translation.service';
 import { EventBusService } from '../../services/event-bus.service';
+import { AuthService } from '../../services/auth.service';
+import { ActivityLogService } from '../../services/activity-log.service';
 import { environment } from '../../../environments/environment';
 import { daysUntil as daysUntilUtil } from '../../shared/utils/date.utils';
-import { complianceSeverity as complianceSeverityUtil, complianceScore as complianceScoreUtil, ComplianceSeverity } from '../../shared/utils/compliance.utils';
+import { complianceSeverity as complianceSeverityUtil, complianceScore as complianceScoreUtil, complianceDaysRemaining as complianceDaysRemainingUtil, ComplianceSeverity } from '../../shared/utils/compliance.utils';
 import { OverviewTabComponent }    from './tabs/overview-tab/overview-tab.component';
 import { FinancialTabComponent }   from './tabs/financial-tab/financial-tab.component';
 import { HistoryTabComponent }     from './tabs/history-tab/history-tab.component';
@@ -21,6 +24,7 @@ import { ConformiteTabComponent }  from './tabs/conformite-tab/conformite-tab.co
 import { TechnicalTabComponent }   from './tabs/technical-tab/technical-tab.component';
 import { UploadBtnComponent }      from '../../shared/btn/upload-btn.component';
 import { PaginatorComponent }      from '../../shared/paginator/paginator.component';
+import { DamageTabComponent }      from './tabs/damage-tab/damage-tab.component';
 
 const PLACEHOLDER = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjUwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iODAwIiBoZWlnaHQ9IjUwMCIgZmlsbD0iI2VkZjJmNyIvPjx0ZXh0IHg9IjQwMCIgeT0iMjUwIiBmaWxsPSIjYTBhZWMwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiBmb250LXNpemU9IjgwIj7wn5qlPC90ZXh0Pjwvc3ZnPg==`;
 
@@ -32,7 +36,7 @@ const PLACEHOLDER = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9I
     OverviewTabComponent, FinancialTabComponent,
     HistoryTabComponent, DocumentsTabComponent,
     ReadinessPanelComponent, LifecyclePanelComponent, ConformiteTabComponent,
-    TechnicalTabComponent, UploadBtnComponent, PaginatorComponent,
+    TechnicalTabComponent, UploadBtnComponent, PaginatorComponent, DamageTabComponent,
   ],
   templateUrl: './voiture-detail.component.html',
   styleUrls: ['./voiture-detail.component.css'],
@@ -86,9 +90,10 @@ export class VoitureDetailComponent implements OnInit {
     { key: 'financial',     labelKey: 'financialInfo',  icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
     { key: 'reservations',  labelKey: 'reservations',   icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
     { key: 'conformite',    labelKey: 'conformite',     icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z' },
-    { key: 'sale',          labelKey: 'saleDecommission',   icon: 'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138' },
+    { key: 'sale',          labelKey: 'saleDecommission',   icon: 'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138', adminOnly: true },
     { key: 'maintenance',   labelKey: 'maintenance',    icon: 'M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z' },
-    { key: 'history',       labelKey: 'history',        icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
+    { key: 'damage',        labelKey: 'damage',         icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z' },
+    { key: 'history',       labelKey: 'history',        icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', adminOnly: true },
     { key: 'credit',        labelKey: 'creditPayments', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
   ];
 
@@ -119,6 +124,8 @@ export class VoitureDetailComponent implements OnInit {
     return this.creditInstallments.slice(start, start + this.creditPageSize);
   }
 
+  get isAdmin(): boolean { return this.auth.hasRole('ROLE_ADMIN'); }
+
   constructor(
     private route: ActivatedRoute,
     private voitureService: VoitureService,
@@ -127,6 +134,8 @@ export class VoitureDetailComponent implements OnInit {
     public router: Router,
     private fb: FormBuilder,
     private bus: EventBusService,
+    private auth: AuthService,
+    private activityLog: ActivityLogService,
   ) {
     this.saleForm = this.fb.group({
       dateVente: [new Date().toISOString().substring(0, 10)],
@@ -157,7 +166,6 @@ export class VoitureDetailComponent implements OnInit {
       prixSemaine:       [0],
       prixMois:          [0],
       prixAchat:         [0],
-      caution:           [0],
       dateAchat:         [''],
     });
   }
@@ -165,8 +173,9 @@ export class VoitureDetailComponent implements OnInit {
   ngOnInit(): void {
     this.ts.direction$.subscribe(d => this.dir = d);
     const id  = +this.route.snapshot.paramMap.get('id')!;
-    const tab = this.route.snapshot.queryParamMap.get('tab');
+    const tab = this.route.snapshot.fragment ?? this.route.snapshot.queryParamMap.get('tab');
     if (tab) this.activeTab = tab;
+    this.activityLog.logView('Voiture', id);
     this.load(id);
   }
 
@@ -175,6 +184,10 @@ export class VoitureDetailComponent implements OnInit {
     this.voitureService.getVoitureById(id).subscribe({
       next: (data) => {
         this.car = data;
+        if (data.effectiveStatus && data.voitureStatus &&
+            data.effectiveStatus.toLowerCase() !== data.voitureStatus.toLowerCase()) {
+          this.crud.create('voiture/sync-statuses', {}).pipe(catchError(() => of(null))).subscribe();
+        }
         this.buildGallery();
         this.loading = false;
         this.loadSupportData(id);
@@ -248,6 +261,7 @@ export class VoitureDetailComponent implements OnInit {
 
   setActiveTab(key: string): void {
     this.activeTab = key;
+    this.router.navigate([], { relativeTo: this.route, fragment: key, replaceUrl: true });
     (document.querySelector('.page-content') as HTMLElement | null)?.scrollTo({ top: 0 });
     if (key === 'credit' && !this.vehicleCredit && this.car?.id) {
       this.loadCredit(this.car.id);
@@ -351,21 +365,7 @@ export class VoitureDetailComponent implements OnInit {
     return this.effectiveStatus as LifecycleState;
   }
 
-  statusClass(s: string): string {
-    const map: Record<string, string> = {
-      brouillon:      'st-draft',
-      setup:          'st-setup',
-      disponible:     'st-green',
-      reserve:        'st-teal',
-      louee:          'st-blue',
-      maintenance:    'st-orange',
-      hors_service:   'st-red',
-      decommissioned: 'st-brown',
-      vendu:          'st-gray',
-      archive:        'st-dark',
-    };
-    return map[(s || '').toLowerCase()] ?? 'st-gray';
-  }
+  readonly statusClass = vehicleStatusClass;
 
   get lifecycleLabel(): string {
     return this.effectiveStatus;
@@ -386,11 +386,11 @@ export class VoitureDetailComponent implements OnInit {
     switch (this.effectiveStatus) {
       case 'disponible':
       case 'reserve':
-        return { label: 'New Reservation', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', route: '/reservation/create', color: 'ha-reserve' };
+        return { label: 'New Reservation', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', route: '/location/new', color: 'ha-reserve' };
       case 'louee':
         return { label: 'Record Return', icon: 'M9 11l3 3L22 4M20.618 6.382A9 9 0 113.382 17.618', action: 'return', color: 'ha-primary' };
       case 'maintenance':
-        return { label: 'Close Repair', icon: 'M5 13l4 4L19 7', action: 'close-repair', color: 'ha-warn' };
+        return null;
       case 'hors_service':
         return { label: 'Add Insurance', icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', action: 'add-insurance', color: 'ha-danger' };
       case 'decommissioned':
@@ -519,8 +519,7 @@ export class VoitureDetailComponent implements OnInit {
     ].map(item => {
       const info = c?.[item.key];
       const status: string = info?.status ?? 'UNKNOWN';
-      const expiresAt: string | null = info?.expiresAt ?? null;
-      const days: number | null = info?.daysRemaining ?? daysUntilUtil(expiresAt);
+      const days: number | null = complianceDaysRemainingUtil(info);
       const sev = complianceSeverityUtil(status);
       const level: '' | 'warning' | 'danger' = sev === 'danger' ? 'danger' : sev === 'warning' ? 'warning' : '';
       return { ...item, status, days, level };
@@ -635,12 +634,12 @@ export class VoitureDetailComponent implements OnInit {
   get lifecycleSteps(): { label: string; sublabel: string; done: boolean; active: boolean }[] {
     const idx = this.lifecycleStepIndex();
     const steps = [
-      { label: 'Purchased',   sublabel: 'Vehicle acquired'       },
-      { label: 'Setup',       sublabel: 'Config & compliance'    },
-      { label: 'Active Fleet',sublabel: 'Available for rental'   },
-      { label: 'Rented',      sublabel: 'Generating revenue'     },
-      { label: 'Decommission',sublabel: 'Exiting active fleet'   },
-      { label: 'Sold',        sublabel: 'Fleet disposal complete' },
+      { label: 'Acheté',       sublabel: 'Véhicule acquis'           },
+      { label: 'Setup',        sublabel: 'Config & conformité'      },
+      { label: 'Flotte active',sublabel: 'Disponible à la location' },
+      { label: 'Loué',         sublabel: 'En cours de location'     },
+      { label: 'Déclassé',     sublabel: 'Sortie de flotte active'  },
+      { label: 'Vendu',        sublabel: 'Cession finalisée'        },
     ];
     return steps.map((s, i) => ({
       ...s,
@@ -687,12 +686,12 @@ export class VoitureDetailComponent implements OnInit {
     }
 
     if (this.effectiveStatus === 'louee') {
-      blockers.push('Vehicle is currently on an active rental — cannot sell while rented');
+      blockers.push('Ce véhicule est actuellement en location active — impossible de vendre pendant une location');
     }
 
     const nonSellable = ['brouillon', 'setup', 'reserve', 'archive'];
     if (nonSellable.includes(this.effectiveStatus)) {
-      blockers.push(`Vehicle is in "${this.lifecycleLabel}" state — must reach Available or Decommissioned first`);
+      blockers.push(`Le véhicule est en état "${this.lifecycleLabel}" — il doit être Disponible ou Déclassé avant la vente`);
     }
 
     return blockers;
@@ -866,7 +865,7 @@ export class VoitureDetailComponent implements OnInit {
       kilometrageActuel: this.car.kilometrageActuel || 0,
       prixJour: this.car.prixJour || 0,      prixSemaine: this.car.prixSemaine || 0,
       prixMois: this.car.prixMois || 0,      prixAchat: this.car.prixAchat || 0,
-      caution: this.car.caution || 0,        dateAchat: this.car.dateAchat || '',
+      dateAchat: this.car.dateAchat || '',
     });
     this.editGallery = Array.isArray(this.car.galleryImages)
       ? this.car.galleryImages.map((g: any) => ({ id: g.id, path: this.imgUrlFor(g.path) }))

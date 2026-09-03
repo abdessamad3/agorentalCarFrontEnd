@@ -7,7 +7,7 @@
     <div class="header-body">
       <div class="header-title-row">
         <h1 class="contract-number">{{ contrat?.numero }}</h1>
-        <span class="status-badge" [ngClass]="'status-' + status">{{ statusLabel }}</span>
+        <span class="status-badge" [ngClass]="'status-' + status">{{ status | appStatus:'reservation' }}</span>
       </div>
 
       <div class="header-meta-grid">
@@ -354,3 +354,11 @@
   (saved)="onReturnSaved()"
   (closed)="onReturnClosed()">
 </app-vehicle-return-form>
+
+<!-- Print overlay — silent auto-download when triggered from downloadPdf() -->
+<app-print-contrat
+  *ngIf="printContractData"
+  [contractData]="printContractData"
+  [autoDownload]="autoDownloadPdf"
+  (closed)="onPrintClosed()">
+</app-print-contrat>

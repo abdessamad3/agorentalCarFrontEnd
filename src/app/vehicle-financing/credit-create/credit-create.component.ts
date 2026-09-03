@@ -50,17 +50,21 @@ export class CreditCreateComponent implements OnInit {
   errorMsg = '';
 
   readonly durationOptions = [12, 24, 36, 48, 60, 72, 84];
-  readonly statusOptions = [
-    { value: 'draft',            label: 'Draft' },
-    { value: 'pending_approval', label: 'Pending Approval' },
-    { value: 'active',           label: 'Active (generates installments)' },
-  ];
+  get statusOptions() {
+    return [
+      { value: 'draft',            label: this.t('creditDraft') },
+      { value: 'pending_approval', label: this.t('creditPendingApproval') },
+      { value: 'active',           label: this.t('creditActive') + ' (' + this.t('activateToGenerate') + ')' },
+    ];
+  }
 
   constructor(
     private crud: CrudService,
     private ts: TranslationService,
     private router: Router,
   ) {}
+
+  t(key: string): string { return this.ts.translate(key); }
 
   ngOnInit() {
     this.ts.direction$.subscribe(d => this.dir = d);

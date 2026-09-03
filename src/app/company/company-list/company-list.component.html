@@ -1,24 +1,24 @@
-<div class="list-container">
+<div class="list-container" [attr.dir]="dir">
 
   <!-- Header -->
   <div class="header">
     <div class="header-left">
-      <h1>🏢 Companies</h1>
-      <p class="subtitle">Manage companies, their managers and staff.</p>
+      <h1>{{ t('companies') }}</h1>
+      <p class="header-subtitle" style="margin:0;font-size:.82rem;color:#718096">{{ t('companySubtitle') }}</p>
     </div>
-    <app-btn *ngIf="isAdmin" variant="primary" (click)="openCreate()">+ Add Company</app-btn>
+    <app-btn *ngIf="isAdmin" variant="primary" (click)="openCreate()">{{ t('addCompany') }}</app-btn>
   </div>
 
   <!-- States -->
-  <div *ngIf="loading" class="loading-state"><p>Loading companies…</p></div>
+  <div *ngIf="loading" class="loading-state"><p>{{ t('loading') }}</p></div>
   <div *ngIf="error && !loading" class="error-state">
     <p>{{ error }}</p>
-    <button (click)="load()" class="btn-retry">Retry</button>
+    <button (click)="load()" class="btn-retry">{{ t('retry') }}</button>
   </div>
   <div *ngIf="!loading && companies.length === 0 && !error" class="empty-state">
     <span class="empty-icon">🏛️</span>
-    <div class="empty-title">No companies yet</div>
-    <div class="empty-message">Add companies to manage multi-tenant access and branding.</div>
+    <div class="empty-title">{{ t('noCompanies') }}</div>
+    <div class="empty-message">{{ t('noCompaniesMsg') }}</div>
   </div>
 
   <!-- Table -->
@@ -26,12 +26,12 @@
     <table class="bureaus-table">
       <thead>
         <tr>
-          <th>Logo</th>
-          <th>Company Name</th>
-          <th>Manager</th>
-          <th>Staff</th>
-          <th>Created</th>
-          <th>Actions</th>
+          <th>{{ t('companyLogo') }}</th>
+          <th>{{ t('companyName') }}</th>
+          <th>{{ t('managerLabel') }}</th>
+          <th>{{ t('staffLabel') }}</th>
+          <th>{{ t('created') }}</th>
+          <th>{{ t('actions') }}</th>
         </tr>
       </thead>
       <tbody>
@@ -47,20 +47,24 @@
             <span *ngIf="!c.manager" style="color:#aaa">—</span>
           </td>
           <td>
-            <span *ngIf="c.staff?.length" class="status-badge status-actif">{{ c.staff.length }} member(s)</span>
+            <span *ngIf="c.staff?.length" class="status-badge status-actif">
+              {{ c.staff.length }} {{ t('members') }}
+            </span>
             <span *ngIf="!c.staff?.length" style="color:#aaa">—</span>
           </td>
           <td class="date-cell">{{ c.creeAu | date:'shortDate' }}</td>
           <td class="actions-cell">
             <span *ngIf="!isAdmin" style="color:#aaa">—</span>
             <ng-container *ngIf="isAdmin">
-              <app-btn variant="icon-edit" (click)="openEdit(c)" title="Edit"></app-btn>
-              <app-btn variant="icon-delete" (click)="openDelete(c)" title="Delete"></app-btn>
+              <app-btn variant="icon-edit"   (click)="openEdit(c)"    [title]="t('edit')"></app-btn>
+              <app-btn variant="icon-delete" (click)="openDelete(c.id)" [title]="t('delete')"></app-btn>
             </ng-container>
           </td>
         </tr>
       </tbody>
     </table>
+    <app-paginator [page]="page" [limit]="limit" [total]="total" (pageChange)="onPageChange($event)">
+    </app-paginator>
   </div>
 </div>
 
@@ -71,7 +75,7 @@
     <!-- CREATE / EDIT -->
     <ng-container *ngIf="modalMode === 'create' || modalMode === 'edit'">
       <div class="modal-header">
-        <h2>{{ modalMode === 'create' ? 'Add Company' : 'Edit Company' }}</h2>
+        <h2>{{ modalMode === 'create' ? t('addCompany') : t('editCompany') }}</h2>
         <button class="modal-close" (click)="closeModal()">&times;</button>
       </div>
       <form [formGroup]="form" (ngSubmit)="save()">
@@ -79,43 +83,55 @@
 
           <!-- Logo -->
           <div class="form-group">
-            <label>Logo <span style="color:#aaa;font-weight:400">(optional)</span></label>
+            <label>{{ t('companyLogo') }} <span style="color:#aaa;font-weight:400">({{ t('optional') }})</span></label>
             <div style="display:flex;align-items:center;gap:12px;">
               <img *ngIf="logoPreview" [src]="logoPreview" alt="logo"
                 style="width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;" />
-              <div *ngIf="!logoPreview" style="width:56px;height:56px;background:#f1f5f9;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;">🏢</div>
+              <div *ngIf="!logoPreview"
+                style="width:56px;height:56px;background:#f1f5f9;border-radius:8px;
+                       display:flex;align-items:center;justify-content:center;font-size:22px;">🏢</div>
               <div style="display:flex;flex-direction:column;gap:6px;">
-                <app-upload-btn label="Upload" accept="image/*" (fileSelected)="onLogoChange($event)"></app-upload-btn>
-                <button *ngIf="logoPreview" type="button" class="btn-danger" style="font-size:12px;padding:4px 10px;" (click)="removeLogo()">Remove</button>
+                <app-upload-btn [label]="t('uploadLogo')" accept="image/*" (fileSelected)="onLogoChange($event)">
+                </app-upload-btn>
+                <button *ngIf="logoPreview" type="button" class="btn-danger"
+                        style="font-size:12px;padding:4px 10px;" (click)="removeLogo()">
+                  {{ t('remove') }}
+                </button>
               </div>
             </div>
           </div>
 
           <!-- Name -->
           <div class="form-group">
-            <label>Company Name <span class="required">*</span></label>
-            <input type="text" formControlName="nom" placeholder="Company name"
+            <label>{{ t('companyName') }} <span class="required">*</span></label>
+            <input type="text" formControlName="nom" [placeholder]="t('companyName')"
               [class.invalid]="form.get('nom')?.invalid && form.get('nom')?.touched" />
-            <span *ngIf="form.get('nom')?.invalid && form.get('nom')?.touched" class="field-error">Name is required</span>
+            <span *ngIf="form.get('nom')?.invalid && form.get('nom')?.touched" class="field-error">
+              {{ t('required') }}
+            </span>
           </div>
 
           <!-- Manager -->
           <div class="form-group">
-            <label>Manager <span class="required">*</span></label>
+            <label>{{ t('managerLabel') }} <span class="required">*</span></label>
             <select formControlName="managerId"
               [class.invalid]="form.get('managerId')?.invalid && form.get('managerId')?.touched">
-              <option [ngValue]="null">— Select a manager —</option>
+              <option [ngValue]="null">{{ t('selectManager') }}</option>
               <option *ngFor="let u of managers" [ngValue]="u.id">{{ userName(u) }} ({{ u.email }})</option>
             </select>
-            <span *ngIf="form.get('managerId')?.invalid && form.get('managerId')?.touched" class="field-error">Manager is required</span>
-            <small *ngIf="managers.length === 0" style="color:#f59e0b;">No users with Manager role found. Assign ROLE_MANAGER to a user first.</small>
+            <span *ngIf="form.get('managerId')?.invalid && form.get('managerId')?.touched" class="field-error">
+              {{ t('managerRequired') }}
+            </span>
+            <small *ngIf="managers.length === 0" style="color:#f59e0b;">{{ t('noManagersAvailable') }}</small>
           </div>
 
           <!-- Staff -->
           <div class="form-group">
-            <label>Staff <span style="color:#aaa;font-weight:400">(optional)</span></label>
+            <label>{{ t('staffLabel') }} <span style="color:#aaa;font-weight:400">({{ t('optional') }})</span></label>
             <div style="max-height:140px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:6px;padding:8px;">
-              <div *ngIf="staffOptions.length === 0" style="color:#aaa;font-size:13px;">No users available</div>
+              <div *ngIf="staffOptions.length === 0" style="color:#aaa;font-size:13px;">
+                {{ t('noUsersAvailable') }}
+              </div>
               <label *ngFor="let u of staffOptions"
                 style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-size:13px;">
                 <input type="checkbox" [checked]="hasStaff(u.id)" (change)="toggleStaff(u.id)" />
@@ -126,9 +142,9 @@
 
         </div>
         <div class="modal-footer">
-          <app-btn variant="secondary" (click)="closeModal()">Cancel</app-btn>
+          <app-btn variant="secondary" (click)="closeModal()">{{ t('cancel') }}</app-btn>
           <app-btn variant="primary" type="submit" [disabled]="form.invalid || isSubmitting">
-            {{ isSubmitting ? 'Saving…' : (modalMode === 'create' ? 'Create' : 'Save') }}
+            {{ isSubmitting ? t('saving') : (modalMode === 'create' ? t('add') : t('save')) }}
           </app-btn>
         </div>
       </form>
@@ -137,15 +153,17 @@
     <!-- DELETE -->
     <ng-container *ngIf="modalMode === 'delete'">
       <div class="modal-header">
-        <h2>Delete Company</h2>
+        <h2>{{ t('deleteCompany') }}</h2>
         <button class="modal-close" (click)="closeModal()">&times;</button>
       </div>
       <div class="modal-body">
-        <p class="delete-warning">Delete <strong>{{ selected?.nom }}</strong>? This cannot be undone.</p>
+        <p class="delete-warning">
+          {{ t('confirmDelete') }} <strong>{{ selected?.nom }}</strong>?
+        </p>
       </div>
       <div class="modal-footer">
-        <app-btn variant="secondary" (click)="closeModal()">Cancel</app-btn>
-        <app-btn variant="danger" (click)="confirmDelete()">Delete</app-btn>
+        <app-btn variant="secondary" (click)="closeModal()">{{ t('cancel') }}</app-btn>
+        <app-btn variant="danger" (click)="confirmDelete()">{{ t('delete') }}</app-btn>
       </div>
     </ng-container>
 

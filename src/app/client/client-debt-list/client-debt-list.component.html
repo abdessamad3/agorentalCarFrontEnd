@@ -1,0 +1,238 @@
+<div class="debt-page" [attr.dir]="dir">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-top">
+      <h1 class="page-title">💸 {{ t('clientDebtors') }}</h1>
+      <button class="btn-refresh" (click)="load()" [disabled]="loading">↻</button>
+    </div>
+
+    <!-- Stats bar -->
+    <div class="stats-bar" *ngIf="!loading && debtors.length > 0">
+      <div class="stat-card stat-total">
+        <span class="stat-icon">💰</span>
+        <div class="stat-body">
+          <div class="stat-value">{{ grandTotal | number:'1.0-0' }} MAD</div>
+          <div class="stat-label">{{ t('totalOwed') }}</div>
+        </div>
+      </div>
+      <div class="stat-card stat-count">
+        <span class="stat-icon">👥</span>
+        <div class="stat-body">
+          <div class="stat-value">{{ debtors.length }}</div>
+          <div class="stat-label">{{ t('debtors') }}</div>
+        </div>
+      </div>
+      <div class="stat-card stat-high" *ngIf="highRiskCount > 0">
+        <span class="stat-icon">🔴</span>
+        <div class="stat-body">
+          <div class="stat-value">{{ highRiskCount }}</div>
+          <div class="stat-label">{{ t('highRisk') || 'High Risk' }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="search-bar" *ngIf="!loading && debtors.length > 0">
+    <span class="search-icon">🔍</span>
+    <input
+      type="text"
+      [(ngModel)]="search"
+      [placeholder]="t('searchByNameOrPhone')"
+      class="search-input"
+    />
+    <button class="search-clear" *ngIf="search" (click)="search = ''">✕</button>
+  </div>
+
+  <!-- Loading -->
+  <div class="state-msg" *ngIf="loading">
+    <div class="spinner"></div>
+    <span>{{ t('loading') || 'Loading...' }}</span>
+  </div>
+
+  <!-- Error -->
+  <div class="state-error" *ngIf="error && !loading">⚠️ {{ error }}</div>
+
+  <!-- Empty — no debts at all -->
+  <div class="empty-state" *ngIf="!loading && !error && debtors.length === 0">
+    <div class="empty-icon">🎉</div>
+    <div class="empty-text">{{ t('noDebtors') }}</div>
+  </div>
+
+  <!-- Empty — search returned nothing -->
+  <div class="empty-state" *ngIf="!loading && debtors.length > 0 && filtered.length === 0">
+    <div class="empty-icon">🔍</div>
+    <div class="empty-text">{{ t('noResults') || 'No results found' }}</div>
+  </div>
+
+  <!-- Debtor cards -->
+  <div class="debtor-list" *ngIf="!loading && filtered.length > 0">
+    <div
+      *ngFor="let c of filtered; let i = index"
+      class="debtor-card"
+      [class.card-high]="debtRiskLevel(c.totalOwed) === 'high'"
+      [class.card-medium]="debtRiskLevel(c.totalOwed) === 'medium'"
+    >
+      <!-- Card header — click to expand -->
+      <div class="card-header" (click)="toggleExpand(c.clientId)">
+        <div class="rank-num">#{{ i + 1 }}</div>
+        <div class="client-avatar">{{ (c.nom || '?')[0].toUpperCase() }}</div>
+
+        <div class="client-info">
+          <div class="client-name">{{ c.nom }} {{ c.prenom }}</div>
+          <div class="client-meta">
+            <span class="meta-phone">📞 {{ c.telephone || '—' }}</span>
+            <span *ngIf="c.cin" class="cin-tag">🪪 {{ c.cin }}</span>
+          </div>
+        </div>
+
+        <div class="card-right">
+          <div class="debt-amount">{{ c.totalOwed | number:'1.0-0' }} MAD</div>
+          <div class="card-right-meta">
+            <span class="risk-badge" [ngClass]="'debt-risk-' + debtRiskLevel(c.totalOwed)">
+              {{ riskLabel(c.totalOwed) }}
+            </span>
+            <button class="btn-profile" (click)="$event.stopPropagation(); goProfile(c.clientId)">
+              👤
+            </button>
+            <span class="expand-chevron">{{ expandedId === c.clientId ? '▲' : '▼' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Expanded: reservation breakdown + per-row payment button -->
+      <div class="reservation-panel" *ngIf="expandedId === c.clientId">
+        <div class="res-table-wrap">
+          <table class="res-table">
+            <thead>
+              <tr>
+                <th>{{ t('reservation') || '#' }}</th>
+                <th>{{ t('startDate') || 'Start' }}</th>
+                <th>{{ t('endDate') || 'End' }}</th>
+                <th class="col-num">{{ t('total') }}</th>
+                <th class="col-num">{{ t('paid') || 'Paid' }}</th>
+                <th class="col-num col-remaining">{{ t('remaining') || 'Remaining' }}</th>
+                <th class="col-action">{{ t('actions') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of c.reservations">
+                <td class="res-id">#{{ r.id }}</td>
+                <td class="res-date">{{ r.dateDebut | date:'dd/MM/yy' }}</td>
+                <td class="res-date">{{ r.dateFin   | date:'dd/MM/yy' }}</td>
+                <td class="col-num">{{ r.total       | number:'1.0-0' }}</td>
+                <td class="col-num paid-cell">{{ r.montantPaye | number:'1.0-0' }}</td>
+                <td class="col-num remaining-cell col-remaining">{{ r.remaining | number:'1.0-0' }}</td>
+                <td class="col-action">
+                  <button
+                    class="btn-pay-row"
+                    (click)="openPayment(r, c.nom + ' ' + c.prenom)"
+                    [title]="t('registerPayment') || 'Register Payment'"
+                  >
+                    💳 {{ t('addPayment') || 'Pay' }}
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ Payment modal ══════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" *ngIf="payModalOpen" (click)="closePayModal()">
+  <div class="pay-modal" (click)="$event.stopPropagation()" [attr.dir]="dir">
+
+    <div class="pay-modal-header">
+      <div>
+        <div class="pay-modal-title">💳 {{ t('addPayment') || 'Register Payment' }}</div>
+        <div class="pay-modal-sub" *ngIf="payReservation">
+          {{ t('reservation') }} #{{ payReservation.id }} — {{ payClientName }}
+        </div>
+      </div>
+      <button class="modal-close" (click)="closePayModal()">✕</button>
+    </div>
+
+    <form [formGroup]="payForm" (ngSubmit)="submitPayment()">
+      <div class="pay-modal-body">
+
+        <!-- Amount + date -->
+        <div class="pay-row">
+          <div class="pay-group">
+            <label class="pay-label">
+              {{ t('montantPaye') || 'Amount' }} (MAD) <span class="req">*</span>
+            </label>
+            <input
+              type="number"
+              formControlName="montant"
+              class="pay-input"
+              min="0.01"
+              [max]="payReservation?.remaining ?? null"
+              step="0.01"
+              placeholder="0.00"
+            />
+            <div class="pay-hint" *ngIf="payReservation">
+              {{ t('remaining') || 'Remaining' }}: <strong>{{ payReservation.remaining | number:'1.0-0' }} MAD</strong>
+            </div>
+            <div class="pay-field-error" *ngIf="payForm.get('montant')?.invalid && payForm.get('montant')?.touched">
+              {{ t('amountExceedsRemaining') || 'Amount cannot exceed remaining balance' }}
+            </div>
+          </div>
+
+          <div class="pay-group">
+            <label class="pay-label">
+              {{ t('paymentDate') || 'Payment Date' }} <span class="req">*</span>
+            </label>
+            <input
+              type="date"
+              formControlName="datePaiement"
+              class="pay-input"
+            />
+          </div>
+        </div>
+
+        <!-- Mode -->
+        <div class="pay-group">
+          <label class="pay-label">{{ t('modePaiement') || 'Payment Method' }}</label>
+          <select formControlName="modePaiement" class="pay-select">
+            <option *ngFor="let m of PAY_MODES" [value]="m.value">{{ m.label }}</option>
+          </select>
+        </div>
+
+        <!-- Note -->
+        <div class="pay-group">
+          <label class="pay-label">{{ t('note') || 'Note' }}</label>
+          <input
+            type="text"
+            formControlName="note"
+            class="pay-input"
+            [placeholder]="t('note') || 'Optional note…'"
+          />
+        </div>
+
+        <!-- API error -->
+        <div class="pay-api-error" *ngIf="payError">⚠️ {{ payError }}</div>
+
+      </div>
+
+      <div class="pay-modal-footer">
+        <button type="button" class="btn-cancel" (click)="closePayModal()">
+          {{ t('cancel') || 'Cancel' }}
+        </button>
+        <button
+          type="submit"
+          class="btn-submit"
+          [disabled]="payForm.invalid || paySubmitting"
+        >
+          <span *ngIf="paySubmitting">{{ t('saving') || 'Saving…' }}</span>
+          <span *ngIf="!paySubmitting">✔ {{ t('save') || 'Save Payment' }}</span>
+        </button>
+      </div>
+    </form>
+
+  </div>
+</div>

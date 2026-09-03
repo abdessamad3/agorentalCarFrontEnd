@@ -68,12 +68,10 @@ export class ForecastReportComponent implements OnInit {
     forkJoin({
       reservations: safe(this.crud.getAll('reservation', { limit: 3000 })),
       depenses:     safe(this.crud.getAll('depense',     { limit: 3000 })),
-      reparations:  safe(this.crud.getAll('reparation',  { limit: 2000 })),
     }).pipe(
-      map(({ reservations, depenses, reparations }: any) => {
+      map(({ reservations, depenses }: any) => {
         const resList  = toArr(reservations);
         const expList  = toArr(depenses);
-        const repList  = toArr(reparations);
 
         // Build monthly aggregates from history
         const revMap: Map<string, number> = new Map();
@@ -86,8 +84,8 @@ export class ForecastReportComponent implements OnInit {
           const key = isoYM(d);
           revMap.set(key, (revMap.get(key) ?? 0) + parseFloat(r.total ?? 0));
         }
-        for (const e of [...expList, ...repList]) {
-          const d = new Date(e.date ?? e.creeAu ?? 0);
+        for (const e of expList) {
+          const d = new Date(e.dateDebut ?? e.creeAu ?? 0);
           if (isNaN(d.getTime())) continue;
           const key = isoYM(d);
           expMap.set(key, (expMap.get(key) ?? 0) + parseFloat(e.montant ?? 0));

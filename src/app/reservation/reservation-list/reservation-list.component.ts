@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
+﻿import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -8,14 +8,17 @@ import { CrudService } from '../../services/crud.service';
 import { ExportService } from '../../services/export.service';
 import { InvoiceService } from '../../services/invoice.service';
 import { PaginatorComponent } from '../../shared/paginator/paginator.component';
+import { BtnComponent } from '../../shared/btn/btn.component';
 import { Router } from '@angular/router';
 import { Subject, forkJoin, of } from 'rxjs';
 import { debounceTime, switchMap, takeUntil, catchError } from 'rxjs/operators';
+import { PAGE_SIZE } from '../../shared/constants/pagination';
+import { StatusPipe } from '../../shared/pipes/status.pipe';
 
 @Component({
   selector: 'app-reservation-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, TranslatePipe, PaginatorComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, TranslatePipe, PaginatorComponent, BtnComponent, StatusPipe],
   templateUrl: './reservation-list.component.html',
   styleUrls: ['./reservation-list.component.css']
 })
@@ -28,7 +31,7 @@ export class ReservationListComponent implements OnInit, OnDestroy {
   error = '';
   dir = 'ltr';
   search = '';
-  page = 1; limit = 20; total = 0;
+  page = 1; limit = PAGE_SIZE; total = 0;
 
   modalMode: 'view' | 'form' | 'delete' | null = null;
   selected: any = null;
@@ -38,6 +41,8 @@ export class ReservationListComponent implements OnInit, OnDestroy {
   isEditing = false;
   readonly objectEntries = Object.entries;
   readonly endpoint = 'reservation';
+
+  filterStatus = '';
 
   private searchSubject = new Subject<void>();
   private destroy$ = new Subject<void>();
@@ -55,7 +60,7 @@ export class ReservationListComponent implements OnInit, OnDestroy {
       voitureId:         ['', Validators.required],
       dateDebut:         [''],
       dateFin:           [''],
-      reservationStatus: ['confirmed'],
+      reservationStatus: ['confirmee'],
       modePaiement:      ['especes'],
       total:             [0],
       montantPaye:       [0, [Validators.min(0)]],
@@ -69,7 +74,9 @@ export class ReservationListComponent implements OnInit, OnDestroy {
       debounceTime(300),
       switchMap(() => {
         this.loading = true; this.error = '';
-        return this.crud.getPage(this.endpoint, { page: this.page, limit: this.limit, search: this.search }).pipe(
+        const params: Record<string, any> = { page: this.page, limit: this.limit, search: this.search };
+        if (this.filterStatus) params['status'] = this.filterStatus;
+        return this.crud.getPage(this.endpoint, params).pipe(
           catchError(() => { this.error = this.ts.translate('loadError'); return of(null); })
         );
       }),
@@ -95,18 +102,45 @@ export class ReservationListComponent implements OnInit, OnDestroy {
   load() {
     this.loading = true;
     this.error = '';
-    this.crud.getPage(this.endpoint, { page: this.page, limit: this.limit, search: this.search }).subscribe({
-      next: r => { this.items = r.data ?? []; this.total = r.meta?.total ?? this.items.length; this.loading = false; },
+    const params: Record<string, any> = { page: this.page, limit: this.limit, search: this.search };
+    if (this.filterStatus) params['status'] = this.filterStatus;
+    this.crud.getPage(this.endpoint, params).subscribe({
+      next: r => {
+        this.items = r.data ?? [];
+        this.total = r.meta?.total ?? this.items.length;
+        this.loading = false;
+        this.autoCleanExpiredPending();
+      },
       error: () => { this.error = this.ts.translate('loadError'); this.loading = false; }
     });
   }
 
+  private autoCleanExpiredPending(): void {
+    const now = new Date();
+    const expired = this.items.filter(r => {
+      const s = (r.reservationStatus || r.statut || '').toLowerCase();
+      return (s === 'pending' || s === 'en_attente') && new Date(r.dateDebut) < now;
+    });
+    if (!expired.length) return;
+    forkJoin(expired.map(r => this.crud.update(this.endpoint, r.id, { reservationStatus: 'annulee' })
+      .pipe(catchError(() => of(null)))
+    )).subscribe(() => this.load());
+  }
+
+  isUrgentPending(r: any): boolean {
+    const s = (r.reservationStatus || r.statut || '').toLowerCase();
+    if (s !== 'pending' && s !== 'en_attente') return false;
+    const hoursUntil = (new Date(r.dateDebut).getTime() - Date.now()) / (1000 * 60 * 60);
+    return hoursUntil >= 0 && hoursUntil <= 24;
+  }
+
   onSearch(): void { this.page = 1; this.searchSubject.next(); }
+  onFilterChange(): void { this.page = 1; this.load(); }
   onPageChange(p: number): void { this.page = p; this.load(); }
 
   get filteredItems(): any[] { return this.items; }
 
-  private getStatus(r: any): string {
+  getStatus(r: any): string {
     return (r.reservationStatus || r.statut || '').toLowerCase();
   }
 
@@ -138,12 +172,30 @@ export class ReservationListComponent implements OnInit, OnDestroy {
     });
   }
 
+  get histCompleted(): any[] {
+    return this.historicalRecords.filter(r =>
+      ['terminee', 'terminee_avant_terme', 'completed', 'done', 'termine'].includes(this.getStatus(r))
+    );
+  }
+
+  get histUnclosed(): any[] {
+    return this.historicalRecords.filter(r => {
+      const s = this.getStatus(r);
+      return !['terminee', 'terminee_avant_terme', 'completed', 'done', 'termine',
+               'annulee', 'cancelled', 'annule'].includes(s);
+    });
+  }
+
+  get histCancelled(): any[] {
+    return this.historicalRecords.filter(r => this.isCancelled(r));
+  }
+
   openView(item: any) { this.selected = item; this.modalMode = 'view'; }
 
   openAdd() {
     this.selected  = null;
     this.isEditing = false;
-    this.form.reset({ reservationStatus: 'confirmed', modePaiement: 'especes', total: 0, montantPaye: 0 });
+    this.form.reset({ reservationStatus: 'confirmee', modePaiement: 'especes', total: 0, montantPaye: 0 });
     this.modalMode = 'form';
   }
 
@@ -155,7 +207,7 @@ export class ReservationListComponent implements OnInit, OnDestroy {
       voitureId:         item.voiture?.id ?? item.voitureId ?? '',
       dateDebut:         item.dateDebut   ?? '',
       dateFin:           item.dateFin     ?? '',
-      reservationStatus: item.reservationStatus || item.statut || 'confirmed',
+      reservationStatus: item.reservationStatus || item.statut || 'confirmee',
       modePaiement:      item.modePaiement || 'especes',
       total:             item.total ?? item.montant ?? 0,
       montantPaye:       item.montantPaye ?? 0,
@@ -206,14 +258,14 @@ export class ReservationListComponent implements OnInit, OnDestroy {
     return s === 'annulee' || s === 'cancelled';
   }
 
-  statusLabel(r: any): string {
-    const s = this.getStatus(r);
-    if (['confirmed', 'confirmee'].includes(s))                    return this.t('confirmed');
-    if (['pending', 'en_attente'].includes(s))                     return this.t('pending');
-    if (['cancelled', 'annulee', 'annule'].includes(s))            return this.t('cancelled');
-    if (['active', 'en_cours', 'encours'].includes(s))             return this.t('inProgress');
-    if (['completed', 'terminee', 'done', 'termine'].includes(s))  return this.t('done');
-    return s;
+  restoringId: number | null = null;
+
+  restoreReservation(r: any): void {
+    this.restoringId = r.id;
+    this.crud.update(this.endpoint, r.id, { reservationStatus: 'confirmee' }).subscribe({
+      next:  () => { this.restoringId = null; this.load(); },
+      error: () => { this.restoringId = null; }
+    });
   }
 
   getAccessoireLabels(r: any): string {
@@ -235,12 +287,14 @@ export class ReservationListComponent implements OnInit, OnDestroy {
   }
 
   remaining(r: any): number {
+    if (this.isCancelled(r)) return 0;
     const total = parseFloat(r.total || r.montant || 0);
     const paid  = parseFloat(r.montantPaye || 0);
     return Math.max(0, total - paid);
   }
 
   paymentStatusKey(r: any): 'paid' | 'partial' | 'unpaid' {
+    if (this.isCancelled(r)) return 'paid';
     const total = parseFloat(r.total || r.montant || 0);
     const paid  = parseFloat(r.montantPaye || 0);
     if (total > 0 && paid >= total) return 'paid';

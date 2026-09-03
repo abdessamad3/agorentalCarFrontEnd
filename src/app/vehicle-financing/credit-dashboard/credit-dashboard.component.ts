@@ -55,6 +55,8 @@ export class CreditDashboardComponent implements OnInit {
 
   constructor(private crud: CrudService, private ts: TranslationService) {}
 
+  t(key: string): string { return this.ts.translate(key); }
+
   ngOnInit() {
     this.ts.direction$.subscribe(d => this.dir = d);
     this.load();

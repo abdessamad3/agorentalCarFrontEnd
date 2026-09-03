@@ -10,7 +10,7 @@
     </div>
     <div class="exp-kpi-body">
       <div class="exp-kpi-val">{{ levelIcon(insLevel) }}
-        <span class="exp-kpi-curr" style="font-size:0.85rem"> {{ expiryLabel(compliance.assurance?.expiresAt) }}</span>
+        <span class="exp-kpi-curr" style="font-size:0.85rem"> {{ expiryLabel(compliance.assurance) }}</span>
       </div>
       <div class="exp-kpi-lbl">{{ t('assurances') }}</div>
     </div>
@@ -25,14 +25,14 @@
     </div>
     <div class="exp-kpi-body">
       <div class="exp-kpi-val">{{ levelIcon(vigLevel) }}
-        <span class="exp-kpi-curr" style="font-size:0.85rem"> {{ expiryLabel(compliance.vignette?.expiresAt) }}</span>
+        <span class="exp-kpi-curr" style="font-size:0.85rem"> {{ expiryLabel(compliance.vignette) }}</span>
       </div>
       <div class="exp-kpi-lbl">{{ t('vignettes') }}</div>
     </div>
   </div>
 
-  <!-- Suivi Technique -->
-  <div class="exp-kpi-card" [ngClass]="levelCardClass(suiviLevel)">
+  <!-- Suivi Technique (only for cars ≥ 3 years old) -->
+  <div *ngIf="showTechnicalInspection" class="exp-kpi-card" [ngClass]="levelCardClass(suiviLevel)">
     <div class="exp-kpi-icon-wrap">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="20" height="20">
         <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
@@ -40,7 +40,7 @@
     </div>
     <div class="exp-kpi-body">
       <div class="exp-kpi-val">{{ levelIcon(suiviLevel) }}
-        <span class="exp-kpi-curr" style="font-size:0.85rem"> {{ expiryLabel(compliance.visite?.expiresAt) }}</span>
+        <span class="exp-kpi-curr" style="font-size:0.85rem"> {{ expiryLabel(compliance.visite) }}</span>
       </div>
       <div class="exp-kpi-lbl">{{ t('technicalDoc') }}</div>
     </div>
@@ -91,7 +91,7 @@
 </app-vignette-tab>
 
 <app-suivi-tab
-  *ngIf="selectedSection === 'suivi'"
+  *ngIf="showTechnicalInspection && selectedSection === 'suivi'"
   [carId]="carId"
   [car]="car"
   [dir]="dir"

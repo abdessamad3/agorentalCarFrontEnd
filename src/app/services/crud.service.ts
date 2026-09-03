@@ -196,6 +196,20 @@ export class CrudService {
     return this.http.post(`${environment.apiUrl}/document/upload`, form);
   }
 
+  /** Upload a file to a resource-specific file endpoint: POST /api/{resource}/{id}/file */
+  uploadFile(resource: string, id: number, file: File, fieldName = 'file'): Observable<any> {
+    const fd = new FormData();
+    fd.append(fieldName, file);
+    return this.http.post(`${environment.apiUrl}/${resource}/${id}/file`, fd);
+  }
+
+  /** Upload a justificatif (PDF/image) for a depense. */
+  uploadDepenseJustificatif(depenseId: number, file: File): Observable<any> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post(`${environment.apiUrl}/depense/${depenseId}/justificatif`, form);
+  }
+
   // ── Private helpers ───────────────────────────────────────────────────────
 
   private injectBureau(endpoint: string, params: Record<string, any>): Record<string, any> {

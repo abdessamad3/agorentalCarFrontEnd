@@ -1,10 +1,11 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+﻿import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { TranslationService } from '../../services/translation.service';
 import { CrudService } from '../../services/crud.service';
 import { PaginatorComponent } from '../../shared/paginator/paginator.component';
 import { UploadBtnComponent } from '../../shared/btn/upload-btn.component';
+import { PAGE_SIZE } from '../../shared/constants/pagination';
 
 export interface Installment {
   id: number;
@@ -42,7 +43,7 @@ export class MensualiteListComponent implements OnInit {
   filterAchat  = '';
   search       = '';
   page  = 1;
-  limit = 20;
+  limit = PAGE_SIZE;
   total = 0;
 
   modalMode: 'pay' | 'invoice-preview' | null = null;

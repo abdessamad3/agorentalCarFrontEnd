@@ -151,6 +151,12 @@ export const routes: Routes = [
     data: { roles: ['ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_STAFF'], breadcrumbs: ['Rentals', 'Clients'] }
   },
   {
+    path: 'client-debts',
+    loadComponent: () => import('./client/client-debt-list/client-debt-list.component').then(m => m.ClientDebtListComponent),
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ROLE_ADMIN', 'ROLE_MANAGER'], breadcrumbs: ['Rentals', 'Client Debts'] }
+  },
+  {
     path: 'client/:id',
     loadComponent: () => import('./client/client-detail/client-detail.component').then(m => m.ClientDetailComponent),
     canActivate: [authGuard, roleGuard],
@@ -197,10 +203,22 @@ export const routes: Routes = [
     data: { roles: ['ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_STAFF'], breadcrumbs: ['Rentals', 'Contracts'] }
   },
   {
+    path: 'contrat/new',
+    loadComponent: () => import('./contrat/contrat-form/contrat-form.component').then(m => m.ContratFormComponent),
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_STAFF'], breadcrumbs: ['Rentals', 'Contracts', 'New'] }
+  },
+  {
     path: 'contrat/:id/print',
     loadComponent: () => import('./contrat/contrat-print-page/contrat-print-page.component').then(m => m.ContratPrintPageComponent),
     canActivate: [authGuard, roleGuard],
     data: { roles: ['ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_STAFF'] }
+  },
+  {
+    path: 'contrat/:id/edit',
+    loadComponent: () => import('./contrat/contrat-form/contrat-form.component').then(m => m.ContratFormComponent),
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_STAFF'], breadcrumbs: ['Rentals', 'Contracts', 'Edit'] }
   },
   {
     path: 'contrat/:id',
@@ -398,7 +416,7 @@ export const routes: Routes = [
     path: 'company',
     loadComponent: () => import('./company/company-list/company-list.component').then(m => m.CompanyListComponent),
     canActivate: [authGuard, roleGuard],
-    data: { roles: ['ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_STAFF'], breadcrumbs: ['Administration', 'Companies'] }
+    data: { roles: ['ROLE_ADMIN'], breadcrumbs: ['Administration', 'Companies'] }
   },
   {
     path: 'parametres',
@@ -437,6 +455,14 @@ export const routes: Routes = [
     loadComponent: () => import('./notifications-inbox/notifications-inbox.component').then(m => m.NotificationsInboxComponent),
     canActivate: [authGuard],
     data: { breadcrumbs: ['Notifications'] }
+  },
+
+  // ── Inspection 3D demo ────────────────────────────────────────────────────
+  {
+    path: 'inspection-demo',
+    loadComponent: () => import('./inspection-demo/inspection-demo.component').then(m => m.InspectionDemoComponent),
+    canActivate: [authGuard],
+    data: { breadcrumbs: ['Inspection 3D'] }
   },
 
   // Catch all

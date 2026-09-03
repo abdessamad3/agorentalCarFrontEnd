@@ -5,8 +5,8 @@
     <div class="al-title">
       <span class="al-icon">📋</span>
       <div>
-        <h1>Activity Log</h1>
-        <p>{{ total }} record(s) found</p>
+        <h1>{{ t('activityLog') }}</h1>
+        <p>{{ total }} {{ t('recordsFound') }}</p>
       </div>
     </div>
   </div>
@@ -14,23 +14,23 @@
   <!-- Filters -->
   <div class="al-filters">
     <select [(ngModel)]="entityType" class="al-select">
-      <option value="">All entities</option>
+      <option value="">{{ t('allEntities') }}</option>
       <option *ngFor="let e of ENTITY_TYPES" [value]="e">{{ e }}</option>
     </select>
 
     <select [(ngModel)]="action" class="al-select">
-      <option value="">All actions</option>
+      <option value="">{{ t('allActions') }}</option>
       <option *ngFor="let a of ACTIONS" [value]="a">{{ a }}</option>
     </select>
 
     <div class="al-date-range">
-      <input type="date" [(ngModel)]="dateFrom" class="al-input" placeholder="From">
+      <input type="date" [(ngModel)]="dateFrom" class="al-input" [placeholder]="t('from')">
       <span class="al-dash">→</span>
-      <input type="date" [(ngModel)]="dateTo"   class="al-input" placeholder="To">
+      <input type="date" [(ngModel)]="dateTo"   class="al-input" [placeholder]="t('to')">
     </div>
 
-    <button class="btn-primary" (click)="applyFilters()">Filter</button>
-    <button class="btn-ghost"   (click)="resetFilters()">Reset</button>
+    <button class="btn-primary" (click)="applyFilters()">{{ t('applyFilters') }}</button>
+    <button class="btn-ghost"   (click)="resetFilters()">{{ t('reset') }}</button>
   </div>
 
   <!-- Error -->
@@ -38,7 +38,7 @@
 
   <!-- Loading -->
   <div *ngIf="loading" class="al-loading">
-    <div class="spinner"></div> Loading…
+    <div class="spinner"></div> {{ t('loading') }}
   </div>
 
   <!-- Table -->
@@ -46,13 +46,13 @@
     <table class="al-table">
       <thead>
         <tr>
-          <th>Date</th>
-          <th>User</th>
-          <th>Action</th>
-          <th>Entity</th>
+          <th>{{ t('date') }}</th>
+          <th>{{ t('user') }}</th>
+          <th>{{ t('actions') }}</th>
+          <th>{{ t('entity') }}</th>
           <th>#ID</th>
-          <th>Bureau</th>
-          <th>Changes</th>
+          <th>{{ t('bureau') }}</th>
+          <th>{{ t('changes') }}</th>
           <th></th>
         </tr>
       </thead>
@@ -79,7 +79,7 @@
                 <span class="al-summary">{{ (log.newData | json).slice(0,60) }}…</span>
               </ng-container>
               <ng-container *ngIf="log.action === 'DELETE' || log.action === 'ARCHIVE'">
-                <span class="al-deleted">Snapshot saved</span>
+                <span class="al-deleted">{{ t('snapshotSaved') }}</span>
               </ng-container>
             </td>
             <td>
@@ -97,9 +97,9 @@
                 <table class="al-diff-table">
                   <thead>
                     <tr>
-                      <th>Field</th>
-                      <th *ngIf="log.oldData">Old value</th>
-                      <th *ngIf="log.newData">New value</th>
+                      <th>{{ t('field') }}</th>
+                      <th *ngIf="log.oldData">{{ t('oldValue') }}</th>
+                      <th *ngIf="log.newData">{{ t('newValue') }}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -116,7 +116,7 @@
         </ng-container>
 
         <tr *ngIf="logs.length === 0">
-          <td colspan="8" class="al-empty">No activity logs found.</td>
+          <td colspan="8" class="al-empty">{{ t('noActivityFound') }}</td>
         </tr>
       </tbody>
     </table>
@@ -131,7 +131,7 @@
             [class.active]="p === page">{{ p }}</button>
     <button (click)="goToPage(page + 1)" [disabled]="page === pages">›</button>
     <button (click)="goToPage(pages)"    [disabled]="page === pages">»</button>
-    <span class="al-page-info">Page {{ page }} / {{ pages }}</span>
+    <span class="al-page-info">{{ t('pageLbl') }} {{ page }} / {{ pages }}</span>
   </div>
 
 </div>

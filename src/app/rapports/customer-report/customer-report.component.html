@@ -7,18 +7,18 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       </div>
       <div>
-        <div class="rp-title">Customer Analytics</div>
-        <div class="rp-subtitle">Best customers, rental activity, and outstanding debt</div>
+        <div class="rp-title">{{ t('crTitle') }}</div>
+        <div class="rp-subtitle">{{ t('crSubtitle') }}</div>
       </div>
     </div>
     <div class="rp-actions">
       <button class="btn-export btn-csv" (click)="exportCSV()">
         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Export CSV
+        {{ t('exportCsv') }}
       </button>
       <button class="btn-export btn-print" (click)="print()">
         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-        Print
+        {{ t('printPdf') }}
       </button>
     </div>
   </div>
@@ -26,7 +26,7 @@
   <!-- Loading -->
   <div *ngIf="loading" class="rp-loading">
     <div class="rp-loading-spinner"></div>
-    <span>Loading customer data…</span>
+    <span>{{ t('crLoading') }}</span>
   </div>
 
   <ng-container *ngIf="!loading">
@@ -35,27 +35,27 @@
     <div class="rp-stats">
       <div class="stat-card sc-blue">
         <div class="sc-num">{{ stats.totalClients }}</div>
-        <div class="sc-lbl">Total Customers</div>
+        <div class="sc-lbl">{{ t('totalCustomers') }}</div>
       </div>
       <div class="stat-card sc-teal">
         <div class="sc-num">{{ stats.totalRentals }}</div>
-        <div class="sc-lbl">Total Rentals</div>
+        <div class="sc-lbl">{{ t('totalRentals') }}</div>
       </div>
       <div class="stat-card sc-green">
         <div class="sc-num" style="font-size:1.1rem">{{ fmt(stats.totalRevenue) }}</div>
-        <div class="sc-lbl">Total Revenue (MAD)</div>
+        <div class="sc-lbl">{{ t('totalRevenue') }} (MAD)</div>
       </div>
       <div class="stat-card sc-purple">
         <div class="sc-num" style="font-size:1.1rem">{{ fmt(stats.totalPaid) }}</div>
-        <div class="sc-lbl">Total Collected (MAD)</div>
+        <div class="sc-lbl">{{ t('totalCollected') }} (MAD)</div>
       </div>
       <div class="stat-card sc-red">
         <div class="sc-num" style="font-size:1.1rem">{{ fmt(stats.totalOutstanding) }}</div>
-        <div class="sc-lbl">Outstanding Debt (MAD)</div>
+        <div class="sc-lbl">{{ t('outstandingDebt') }} (MAD)</div>
       </div>
       <div class="stat-card sc-orange">
         <div class="sc-num">{{ stats.withDebt }}</div>
-        <div class="sc-lbl">Customers with Debt</div>
+        <div class="sc-lbl">{{ t('customersWithDebt') }}</div>
       </div>
     </div>
 
@@ -63,12 +63,12 @@
     <div class="rp-toolbar">
       <div class="rp-search-wrap">
         <svg class="rp-search-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input class="rp-search" type="text" [(ngModel)]="search" placeholder="Search by name or phone…" />
+        <input class="rp-search" type="text" [(ngModel)]="search" [placeholder]="t('crSearchPlaceholder')" />
       </div>
     </div>
 
     <!-- ── Top by Revenue ── -->
-    <div class="rp-section">💰 Top Customers by Revenue</div>
+    <div class="rp-section">💰 {{ t('topByRevenue') }}</div>
     <div class="exec-card" style="margin-bottom:1.25rem" *ngIf="topByRevenue.length > 0">
       <div class="exec-rank-list">
         <div *ngFor="let c of topByRevenue; let i = index" class="exec-rank-row">
@@ -84,7 +84,7 @@
           <div class="exec-rank-stats">
             <span class="exec-rank-val positive">{{ fmt(c.revenue) }} MAD</span>
             <span class="exec-rank-margin" *ngIf="c.outstanding > 0.5" style="color:#c53030">
-              {{ fmt(c.outstanding) }} outstanding
+              {{ fmt(c.outstanding) }} {{ t('thOutstanding') }}
             </span>
           </div>
         </div>
@@ -92,7 +92,7 @@
     </div>
 
     <!-- ── Top by Rentals ── -->
-    <div class="rp-section">🏆 Top Customers by Rentals</div>
+    <div class="rp-section">🏆 {{ t('topByRentals') }}</div>
     <div class="exec-card" style="margin-bottom:1.25rem" *ngIf="topByRentals.length > 0">
       <div class="exec-rank-list">
         <div *ngFor="let c of topByRentals; let i = index" class="exec-rank-row">
@@ -106,7 +106,7 @@
               [style.width.%]="barPct(c.reservations, topByRentals[0].reservations)"></div>
           </div>
           <div class="exec-rank-stats">
-            <span class="exec-rank-val">{{ c.reservations }} rentals</span>
+            <span class="exec-rank-val">{{ c.reservations }} {{ t('thRentals') }}</span>
             <span class="exec-rank-margin positive">{{ fmt(c.revenue) }} MAD</span>
           </div>
         </div>
@@ -114,19 +114,19 @@
     </div>
 
     <!-- ── Outstanding Debt ── -->
-    <div class="rp-section">⚠️ Outstanding Debt</div>
+    <div class="rp-section">⚠️ {{ t('outstandingDebt') }}</div>
     <div *ngIf="withDebt.length > 0; else noDebt">
       <div class="rp-table-wrap">
         <table class="rp-table">
           <thead>
             <tr>
-              <th>Customer</th>
-              <th>Phone</th>
-              <th class="td-right"># Rentals</th>
-              <th class="td-right">Total Revenue</th>
-              <th class="td-right">Collected</th>
-              <th class="td-right">Outstanding</th>
-              <th class="td-right">% Paid</th>
+              <th>{{ t('thCustomer') }}</th>
+              <th>{{ t('thPhone') }}</th>
+              <th class="td-right">{{ t('thRentalsNum') }}</th>
+              <th class="td-right">{{ t('totalRevenue') }}</th>
+              <th class="td-right">{{ t('thCollected') }}</th>
+              <th class="td-right">{{ t('thOutstanding') }}</th>
+              <th class="td-right">{{ t('thPctPaid') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -148,7 +148,7 @@
           </tbody>
           <tfoot>
             <tr style="font-weight:700; background:#f7fafc;">
-              <td colspan="3">Total ({{ withDebt.length }} customers)</td>
+              <td colspan="3">{{ t('total') }} ({{ withDebt.length }} {{ t('customersLabel') }})</td>
               <td class="td-right mono positive">{{ fmt(debtTotals.revenue) }}</td>
               <td class="td-right mono positive">{{ fmt(debtTotals.paid) }}</td>
               <td class="td-right mono negative">{{ fmt(debtTotals.outstanding) }}</td>
@@ -161,12 +161,12 @@
     <ng-template #noDebt>
       <div class="rp-empty">
         <div style="font-size:2rem; margin-bottom:.5rem">✅</div>
-        <div style="font-weight:600; color:#2d3748">No outstanding debt</div>
-        <div>All customers are fully settled</div>
+        <div style="font-weight:600; color:#2d3748">{{ t('noOutstandingDebt') }}</div>
+        <div>{{ t('allSettled') }}</div>
       </div>
     </ng-template>
 
-    <div *ngIf="stats.totalClients === 0" class="rp-empty">No customer data found.</div>
+    <div *ngIf="stats.totalClients === 0" class="rp-empty">{{ t('noCustomerData') }}</div>
 
   </ng-container>
 </div>

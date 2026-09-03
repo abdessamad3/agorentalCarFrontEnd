@@ -1,4 +1,4 @@
-<div class="pct-overlay" *ngIf="contractData">
+<div class="pct-overlay" [class.pct-silent]="autoDownload" *ngIf="contractData">
 
   <!-- ── Non-print toolbar ── -->
   <div class="pct-toolbar">
@@ -11,13 +11,22 @@
       Aper&ccedil;u &mdash; Contrat N&deg;&nbsp;{{contractNum}}
     </div>
     <div class="pct-tb-btns">
+      <button class="pct-btn-pdf" (click)="downloadPdf()" [disabled]="downloading">
+        <span *ngIf="downloading" class="pct-spin"></span>
+        <svg *ngIf="!downloading" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        {{ downloading ? 'Génération…' : 'Télécharger PDF' }}
+      </button>
       <button class="pct-btn-print" (click)="print()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="6 9 6 2 18 2 18 9"/>
           <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
           <rect x="6" y="14" width="12" height="8"/>
         </svg>
-        Imprimer / T&eacute;l&eacute;charger PDF
+        Imprimer
       </button>
       <button class="pct-btn-close" (click)="close()">&#10005; Fermer</button>
     </div>
@@ -31,31 +40,28 @@
 
       <!-- HEADER -->
       <div class="pct-hdr">
+        <!-- A — Logo -->
         <div class="pct-hdr-logo">
-          <svg width="36" height="36" viewBox="0 0 80 80">
-            <ellipse cx="40" cy="40" rx="36" ry="36" fill="none" stroke="#b8860b" stroke-width="5"/>
-            <text x="40" y="27" text-anchor="middle" font-family="Arial" font-size="13" font-weight="900" fill="#b8860b">A.G.O</text>
-            <path d="M15 35 Q40 49 65 35" fill="none" stroke="#b8860b" stroke-width="2"/>
-            <text x="40" y="48" text-anchor="middle" font-family="Arial" font-size="8" fill="#333">RENT</text>
-            <text x="40" y="58" text-anchor="middle" font-family="Arial" font-size="8" fill="#333">CAR</text>
-          </svg>
-          <div>
-            <div class="pct-brand-name">A.G.O</div>
+          <img *ngIf="logoUrl" [src]="logoUrl" class="pct-logo-img" alt="logo">
+          <div *ngIf="!logoUrl" class="pct-logo-fallback">
+            <div class="pct-brand-name">{{ companyName }}</div>
             <div class="pct-brand-sub">RENT CAR</div>
           </div>
         </div>
+        <!-- B — Title -->
         <div class="pct-hdr-title">
-          <div class="pct-title-fr">LOCATION DE VOITURES</div>
-          <div class="pct-title-ar">&#1603;&#1600;&#1585;&#1575;&#1569; &#1575;&#1604;&#1600;&#1587;&#1600;&#1610;&#1600;&#1575;&#1585;&#1575;&#1578;</div>
+          <div class="pct-title-fr">Location de Voitures</div>
+          <div class="pct-title-ar">&#1603;&#1585;&#1575;&#1569; &#1575;&#1604;&#1587;&#1610;&#1575;&#1585;&#1575;&#1578;</div>
         </div>
+        <!-- C — Contract meta -->
         <div class="pct-hdr-meta">
           <div class="pct-meta-row">
             <span><b>CONTRAT&nbsp;:</b>&nbsp;{{contractNum}}</span>
-            <span class="pct-rtl"><b>&#1593;&#1602;&#1600;&#1583;&nbsp;:</b></span>
+            <span class="pct-rtl"><b>&#1593;&#1602;&#1583;&nbsp;:</b></span>
           </div>
           <div class="pct-meta-row">
             <span><b>Le&nbsp;:</b>&nbsp;{{today}}</span>
-            <span><b>&agrave;&nbsp;:</b></span>
+            <span><b>&agrave;&nbsp;:</b>&nbsp;{{ bureauAdresse || v(contractData?.faitA) }}</span>
           </div>
           <p class="pct-meta-notice">Ce Contrat doit accompagner le v&eacute;hicule pendant toute la dur&eacute;e de location, afin d&apos;&ecirc;tre pr&eacute;sent&eacute; &agrave; toute r&eacute;quisition des services de police ou de gendarmerie.</p>
         </div>
@@ -169,7 +175,7 @@
           <div class="pct-acc">
             <span class="pct-acc-item"><span class="pct-box" [class.pct-checked]="delivery?.hasExtincteur"></span>&nbsp;Extincteur</span>
             <span class="pct-acc-item"><span class="pct-box" [class.pct-checked]="delivery?.hasLavage"></span>&nbsp;Lavage</span>
-            <span class="pct-acc-item"><span class="pct-box" [class.pct-checked]="delivery?.hasPlaqueEmpanne"></span>&nbsp;Plaque d&apos;empanne</span>
+            <span class="pct-acc-item"><span class="pct-box" [class.pct-checked]="delivery?.hasPlaqueDepannage"></span>&nbsp;Plaque d&apos;empanne</span>
           </div>
           <div class="pct-acc">
             <span class="pct-acc-item"><span class="pct-box" [class.pct-checked]="delivery?.hasCric"></span>&nbsp;Cric</span>
@@ -201,11 +207,11 @@
               <line x1="100" y1="105" [attr.x2]="fuelNeedle.x2" [attr.y2]="fuelNeedle.y2" stroke="#000" stroke-width="2.5" stroke-linecap="round"/>
             </svg>
             <div class="pct-fuel-scale">
-              <div class="pct-fs"></div>
-              <div class="pct-fs"></div>
-              <div class="pct-fs"></div>
-              <div class="pct-fs"></div>
-              <div class="pct-fs pct-fs-last"></div>
+              <div class="pct-fs" [class.pct-fs-filled]="fuelBoxCount >= 5"></div>
+              <div class="pct-fs" [class.pct-fs-filled]="fuelBoxCount >= 4"></div>
+              <div class="pct-fs" [class.pct-fs-filled]="fuelBoxCount >= 3"></div>
+              <div class="pct-fs" [class.pct-fs-filled]="fuelBoxCount >= 2"></div>
+              <div class="pct-fs pct-fs-last" [class.pct-fs-filled]="fuelBoxCount >= 1"></div>
             </div>
           </div>
 
@@ -234,6 +240,18 @@
               <line x1="400" y1="75" x2="400" y2="255" stroke="#000" stroke-width="2" />
               <text x="25" y="172" font-size="14" font-weight="bold">AVANT</text>
               <text x="742" y="172" font-size="14" font-weight="bold">ARRIÈRE</text>
+
+              <!-- Damage markers from vehicle delivery inspection -->
+              <ng-container *ngFor="let dmg of deliveryDamages">
+                <circle
+                  [attr.cx]="carZoneCenter(dmg.zone).cx"
+                  [attr.cy]="carZoneCenter(dmg.zone).cy"
+                  r="20" fill="#ef4444" opacity="0.9"/>
+                <text
+                  [attr.x]="carZoneCenter(dmg.zone).cx"
+                  [attr.y]="carZoneCenter(dmg.zone).cy + 8"
+                  text-anchor="middle" font-size="22" fill="white" font-weight="bold">!</text>
+              </ng-container>
             </svg>
           </div>
 

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslationService } from '../../services/translation.service';
@@ -6,6 +6,7 @@ import { CrudService } from '../../services/crud.service';
 import { EventBusService } from '../../services/event-bus.service';
 import { InsuranceModalComponent, InsuranceSavePayload } from '../../shared/insurance-modal/insurance-modal.component';
 import { PaginatorComponent } from '../../shared/paginator/paginator.component';
+import { PAGE_SIZE } from '../../shared/constants/pagination';
 
 @Component({
   selector: 'app-assurance-list',
@@ -26,7 +27,7 @@ export class AssuranceListComponent implements OnInit {
   sortCol = 'dateFin';
   sortAsc = true;
   showArchived = false;
-  page = 1; limit = 20; total = 0;
+  page = 1; limit = PAGE_SIZE; total = 0;
 
   modalMode: 'add' | 'edit' | 'view' | 'delete' | 'renew' | null = null;
   selected: any = null;
@@ -199,6 +200,7 @@ export class AssuranceListComponent implements OnInit {
     dateDebut: string; dateFin: string; montant: number | null;
     compagnie: string | null; typeAssurance: string | null;
     numeroContrat: string | null; montantPaye: number | null;
+    file: File | null;
   }): void {
     if (!this.selected?.id) return;
     this.isSubmitting = true;
@@ -214,7 +216,20 @@ export class AssuranceListComponent implements OnInit {
 
     this.crud.customAction(`assurance/${this.selected.id}/renew`, body, 'Insurance renewed successfully')
       .subscribe({
-        next: () => { this.closeModal(); this.load(); this.bus.paymentsChanged$.next(); },
+        next: (res: any) => {
+          this.closeModal();
+          const finish = () => { this.load(); this.bus.paymentsChanged$.next(); };
+          const newId = res?.newId;
+          if (data.file && newId) {
+            this.crud.uploadDocumentFile('insurance', newId, data.file).subscribe({
+              next: (up: any) => {
+                if (up?.path) this.crud.update('assurance', newId, { filePath: up.path }).subscribe({ next: finish, error: finish });
+                else finish();
+              },
+              error: finish,
+            });
+          } else { finish(); }
+        },
         error: () => { this.isSubmitting = false; }
       });
   }

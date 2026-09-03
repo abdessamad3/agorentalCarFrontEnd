@@ -47,6 +47,14 @@ export class MaintenanceReportComponent implements OnInit {
 
   constructor(private crud: CrudService, private ts: TranslationService) {}
 
+  t(key: string): string { return this.ts.translate(key); }
+
+  eventTypeLabel(type: string): string {
+    if (type === 'Repair') return this.t('evRepair');
+    if (type === 'Oil Change') return this.t('evOilChange');
+    return type;
+  }
+
   ngOnInit() {
     this.ts.direction$.subscribe(d => this.dir = d);
     this.load();
@@ -120,7 +128,11 @@ export class MaintenanceReportComponent implements OnInit {
         date: v.date || '',
         vehicle: carMap[v.voitureId] || v.voiture || `#${v.voitureId}`,
         type: 'Oil Change',
-        description: `${v.filtreAir ? 'Air filter ' : ''}${v.filtreHuile ? 'Oil filter ' : ''}${v.filtreCarburant ? 'Fuel filter' : ''}`.trim() || '—',
+        description: [
+          v.filtreAir       ? this.t('airFilter')  : null,
+          v.filtreHuile     ? this.t('oilFilter')  : null,
+          v.filtreCarburant ? this.t('fuelFilter') : null,
+        ].filter(Boolean).join(', ') || '—',
         cost: parseFloat(v.cout) || 0,
       })),
       ...abls.filter(a => this.inYear(a.date)).map(a => ({
@@ -193,7 +205,13 @@ export class MaintenanceReportComponent implements OnInit {
 
 
   exportCSV() {
-    const headers = ['Vehicle','Plate','Repairs','Repair Cost','Oil Changes','Oil Cost','AdBlue','AdBlue Qty (L)','AdBlue Cost','Total Cost'];
+    const headers = [
+      this.t('thVehicles'), this.t('thPlate'),
+      this.t('repairs'), this.t('thRepairCost'),
+      this.t('oilChanges'), this.t('thOilCost'),
+      'AdBlue', `AdBlue Qty (L)`, this.t('thAdBlueCost'),
+      this.t('totalCost'),
+    ];
     const rows = this.filteredVehicles.map(r => [
       r.label, r.immatriculation,
       r.repairs, this.fmt(r.repairCost),

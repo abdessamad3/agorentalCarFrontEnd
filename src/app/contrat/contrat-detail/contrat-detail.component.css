@@ -44,10 +44,23 @@
   display: inline-block; padding: 3px 10px; border-radius: 12px;
   font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
 }
-.status-confirmed { background: #dbeafe; color: #1d4ed8; }
-.status-en_cours  { background: #dcfce7; color: #15803d; }
-.status-terminee  { background: #f3f4f6; color: #6b7280; }
-.status-annulee   { background: #fee2e2; color: #dc2626; }
+.status-confirmed  { background: #dbeafe; color: #1d4ed8; }
+.status-pending    { background: #fef9c3; color: #854d0e; }
+.status-en_cours   { background: #dcfce7; color: #15803d; }
+.status-terminee   { background: #f3f4f6; color: #6b7280; }
+.status-annulee    { background: #fee2e2; color: #dc2626; }
+
+.conflict-banner {
+  margin-top: 0.75rem;
+  padding: 0.6rem 1rem;
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  border-radius: 8px;
+  color: #9a3412;
+  font-size: 0.83rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
 
 .header-meta-grid {
   display: grid;

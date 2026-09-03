@@ -12,7 +12,7 @@ import { catchError, map, switchMap } from 'rxjs/operators';
 import { UploadBtnComponent } from '../shared/btn/upload-btn.component';
 
 type NotifStatus = 'expired' | 'critical' | 'warning' | 'ok';
-type NotifSource = 'assurance' | 'vignette' | 'visite' | 'contrat' | 'vidange';
+type NotifSource = 'assurance' | 'vignette' | 'visite' | 'contrat' | 'vidange' | 'reservation';
 
 interface Notif {
   id: number;
@@ -94,6 +94,8 @@ export class NotificationsComponent implements OnInit {
     });
   }
 
+  urgentPendingReservations: any[] = [];
+
   private loadAll(): void {
     this.loading = true;
     forkJoin({
@@ -103,8 +105,9 @@ export class NotificationsComponent implements OnInit {
       visites:      safe(this.crud.getAll('suivi-technique', { limit: 2000 })),
       contrats:     safe(this.crud.getAll('contrat',         { limit: 2000 })),
       oilReminders: safe(this.crud.getAll('dashboard/oil-reminders')),
+      reservations: safe(this.crud.getAll('reservation',     { limit: 500 })),
     }).subscribe({
-      next: ({ cars, assurances, vignettes, visites, contrats, oilReminders }: any) => {
+      next: ({ cars, assurances, vignettes, visites, contrats, oilReminders, reservations }: any) => {
         this.carsData = toArr(cars);
         const carMap: Record<number, string> = {};
         this.carBureauMap = {};
@@ -124,7 +127,16 @@ export class NotificationsComponent implements OnInit {
         ).sort((a, b) => a.daysLeft - b.daysLeft);
 
         const oilNotifs = this.mapVidanges(oilReminders);
-        this.all     = [...dateNotifs, ...oilNotifs];
+        this.all = [...dateNotifs, ...oilNotifs];
+
+        // Pending reservations within 24h of departure
+        this.urgentPendingReservations = toArr(reservations).filter((r: any) => {
+          const s = (r.reservationStatus || r.statut || '').toLowerCase();
+          if (s !== 'pending' && s !== 'en_attente') return false;
+          const hoursUntil = (new Date(r.dateDebut).getTime() - Date.now()) / (1000 * 60 * 60);
+          return hoursUntil >= 0 && hoursUntil <= 24;
+        });
+
         this.loading = false;
       },
       error: () => { this.loading = false; }
@@ -186,22 +198,24 @@ export class NotificationsComponent implements OnInit {
 
   actionLabel(source: NotifSource): string {
     const m: Record<NotifSource, string> = {
-      assurance: 'Renew Insurance',
-      vignette:  'Pay Vignette',
-      visite:    'Create Inspection',
-      contrat:   'View Contract',
-      vidange:   'View Car',
+      assurance:   'Renew Insurance',
+      vignette:    'Pay Vignette',
+      visite:      'Create Inspection',
+      contrat:     'View Contract',
+      vidange:     'View Car',
+      reservation: 'Open Dossier',
     };
     return m[source];
   }
 
   actionClass(source: NotifSource): string {
     const m: Record<NotifSource, string> = {
-      assurance: 'cc-btn-ins',
-      vignette:  'cc-btn-vig',
-      visite:    'cc-btn-insp',
-      contrat:   'cc-btn-view',
-      vidange:   'cc-btn-view',
+      assurance:   'cc-btn-ins',
+      vignette:    'cc-btn-vig',
+      visite:      'cc-btn-insp',
+      contrat:     'cc-btn-view',
+      vidange:     'cc-btn-view',
+      reservation: 'cc-btn-view',
     };
     return m[source];
   }
@@ -212,8 +226,9 @@ export class NotificationsComponent implements OnInit {
 
   sourceLabel(s: NotifSource): string {
     const m: Record<NotifSource, string> = {
-      assurance: 'Insurance', vignette: 'Vignette', visite: 'Inspection',
-      contrat: 'Contract', vidange: 'Oil Change',
+      assurance:   'Insurance', vignette: 'Vignette', visite: 'Inspection',
+      contrat:     'Contract',  vidange:  'Oil Change',
+      reservation: 'Reservation',
     };
     return m[s];
   }
@@ -221,14 +236,16 @@ export class NotificationsComponent implements OnInit {
   sourceIcon(s: NotifSource): string {
     const m: Record<NotifSource, string> = {
       assurance: '🛡️', vignette: '📄', visite: '🔬', contrat: '📋', vidange: '🛢️',
+      reservation: '📅',
     };
     return m[s];
   }
 
   sourceRoute(s: NotifSource): string {
     const m: Record<NotifSource, string> = {
-      assurance: '/assurance', vignette: '/vignette', visite: '/suivi-technique',
-      contrat: '/contrat', vidange: '/voiture',
+      assurance:   '/assurance', vignette: '/vignette', visite: '/suivi-technique',
+      contrat:     '/contrat',   vidange:  '/voiture',
+      reservation: '/reservation',
     };
     return m[s];
   }
@@ -238,17 +255,25 @@ export class NotificationsComponent implements OnInit {
   }
 
   statusLabel(s: NotifStatus): string {
-    const m: Record<NotifStatus, string> = {
-      expired: 'Expired', critical: 'Critical', warning: 'Due Soon', ok: 'OK',
+    const lang = this.ts.getCurrentLanguage();
+    const m: Record<NotifStatus, Record<string, string>> = {
+      expired:  { fr: 'En retard',    en: 'Overdue',   ar: 'متأخر' },
+      critical: { fr: 'Critique',     en: 'Critical',  ar: 'حرج' },
+      warning:  { fr: 'Bientôt dû',   en: 'Due Soon',  ar: 'مستحق قريباً' },
+      ok:       { fr: 'OK',           en: 'OK',        ar: 'بخير' },
     };
-    return m[s];
+    return m[s]?.[lang] ?? m[s]?.['fr'] ?? s;
   }
 
   daysLabel(days: number): string {
-    if (days < 0)   return `${Math.abs(days)}d overdue`;
-    if (days === 0) return 'Today';
-    if (days === 1) return 'Tomorrow';
-    return `in ${days}d`;
+    const lang = this.ts.getCurrentLanguage();
+    if (days < 0) {
+      const n = Math.abs(days);
+      return lang === 'ar' ? `${n}أ متأخر` : lang === 'fr' ? `${n}j de retard` : `${n}d overdue`;
+    }
+    if (days === 0) return lang === 'ar' ? 'اليوم' : lang === 'fr' ? "Aujourd'hui" : 'Today';
+    if (days === 1) return lang === 'ar' ? 'غداً' : lang === 'fr' ? 'Demain' : 'Tomorrow';
+    return lang === 'ar' ? `خلال ${days}أ` : lang === 'fr' ? `dans ${days}j` : `in ${days}d`;
   }
 
   // ── PDF export ──────────────────────────────────────────────────────────────

@@ -122,6 +122,38 @@
 .btn-pay-dep-submit:hover:not(:disabled) { background: var(--navy-mid); }
 .btn-pay-dep-submit:disabled { opacity: 0.55; cursor: not-allowed; }
 
+/* ── Receipt cell in history ── */
+.pay-dep-receipt-cell { text-align: center; }
+.pay-dep-receipt-link {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 6px;
+  background: #eff6ff; color: #2563eb; text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+.pay-dep-receipt-link:hover { background: #dbeafe; color: #1d4ed8; }
+.pay-dep-no-receipt { color: var(--text-muted); font-size: 0.8rem; }
+
+/* ── Receipt upload in add form ── */
+.pay-dep-receipt-upload { margin-bottom: 0.75rem; }
+.pay-dep-upload-label {
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  padding: 0.4rem 0.85rem; border: 1.5px dashed var(--border);
+  border-radius: var(--radius-sm); cursor: pointer;
+  font-size: 0.78rem; color: var(--text-soft);
+  background: #fff; transition: border-color 0.15s, color 0.15s;
+  max-width: 100%; overflow: hidden;
+}
+.pay-dep-upload-label:hover { border-color: var(--blue); color: var(--blue); }
+.pay-dep-upload-label.has-file { border-color: #16a34a; color: #16a34a; border-style: solid; }
+.pay-dep-upload-label span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
+.pay-dep-receipt-clear {
+  background: none; border: none; cursor: pointer;
+  color: #6b7280; font-size: 0.75rem; padding: 0 0.2rem;
+  line-height: 1; flex-shrink: 0;
+}
+.pay-dep-receipt-clear:hover { color: var(--red); }
+.pay-dep-receipt-error { display: block; font-size: 0.7rem; color: var(--red); margin-top: 0.2rem; }
+
 .pay-dep-paid-banner {
   display: flex; align-items: center; gap: 0.5rem;
   padding: 0.75rem 1rem; margin: 0.5rem 1.25rem 1.25rem;

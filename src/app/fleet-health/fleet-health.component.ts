@@ -8,6 +8,8 @@ import { CrudService } from '../services/crud.service';
 import { TranslationService } from '../services/translation.service';
 import { daysUntil } from '../shared/utils/date.utils';
 
+export interface IssueItem { key: string; n?: number; km?: number; }
+
 export interface VehicleHealthRow {
   id: number;
   label: string;
@@ -18,7 +20,7 @@ export interface VehicleHealthRow {
   complianceScore: number;
   maintenanceScore: number;
   availabilityScore: number;
-  issues: string[];
+  issues: IssueItem[];
 }
 
 @Component({
@@ -38,9 +40,18 @@ export class FleetHealthComponent implements OnInit {
 
   constructor(private crud: CrudService, private ts: TranslationService) {}
 
+  t(key: string): string { return this.ts.translate(key); }
+
+  issueLabel(i: IssueItem): string {
+    const lbl = this.t(i.key);
+    if (i.key === 'issueOpenRepairs')  return `${i.n} ${lbl}`;
+    if (i.km  !== undefined) return `${lbl} ${i.km.toLocaleString()} km`;
+    if (i.n   !== undefined) return `${lbl} ${i.n} ${this.t('daysLeft')}`;
+    return lbl;
+  }
+
   ngOnInit() {
-    this.ts.direction$.subscribe(d => this.dir = d);
-    this.load();
+    this.ts.direction$.subscribe(d => { this.dir = d; this.load(); });
   }
 
   load() {
@@ -73,7 +84,7 @@ export class FleetHealthComponent implements OnInit {
     car: any,
     vidanges: any[], repairs: any[], assur: any[], vignettes: any[], suivis: any[]
   ): VehicleHealthRow {
-    const issues: string[] = [];
+    const issues: IssueItem[] = [];
     let complianceScore   = 40;
     let maintenanceScore  = 30;
     let availabilityScore = 30;
@@ -84,11 +95,11 @@ export class FleetHealthComponent implements OnInit {
       .filter(a => (a.voitureId ?? a.voiture?.id) === car.id)
       .sort((a, b) => new Date(b.dateFin ?? 0).getTime() - new Date(a.dateFin ?? 0).getTime())[0];
     if (!latestAssur) {
-      complianceScore -= 14; issues.push('No insurance record');
+      complianceScore -= 14; issues.push({ key: 'issueNoInsurance' });
     } else {
       const days = daysUntil(latestAssur.dateFin ?? latestAssur.dateExpiration);
-      if (days === null || days < 0)   { complianceScore -= 14; issues.push('Insurance expired'); }
-      else if (days <= 30) { complianceScore -= 7;  issues.push(`Insurance expires in ${days}d`); }
+      if (days === null || days < 0)   { complianceScore -= 14; issues.push({ key: 'issueInsuranceExpired' }); }
+      else if (days <= 30) { complianceScore -= 7;  issues.push({ key: 'issueInsuranceExpiresIn', n: days }); }
     }
 
     // Vignette (13 pts)
@@ -97,11 +108,11 @@ export class FleetHealthComponent implements OnInit {
       .filter(v => (v.voitureId ?? v.voiture?.id) === car.id)
       .sort((a, b) => (b.annee ?? 0) - (a.annee ?? 0))[0];
     if (!latestVig || (latestVig.annee && +latestVig.annee < thisYear)) {
-      complianceScore -= 13; issues.push('Vignette not up to date');
+      complianceScore -= 13; issues.push({ key: 'issueVignetteOutdated' });
     } else {
       const days = daysUntil(latestVig.dateFin ?? latestVig.dateExpiration);
-      if (days !== null && days < 0) { complianceScore -= 13; issues.push('Vignette expired'); }
-      else if (days !== null && days <= 30) { complianceScore -= 6; issues.push(`Vignette expires in ${days}d`); }
+      if (days !== null && days < 0) { complianceScore -= 13; issues.push({ key: 'issueVignetteExpired' }); }
+      else if (days !== null && days <= 30) { complianceScore -= 6; issues.push({ key: 'issueVignetteExpiresIn', n: days }); }
     }
 
     // Technical visit (13 pts)
@@ -109,11 +120,11 @@ export class FleetHealthComponent implements OnInit {
       .filter(s => (s.voitureId ?? s.voiture?.id) === car.id)
       .sort((a, b) => new Date(b.prochainDate ?? b.dateVisite ?? 0).getTime() - new Date(a.prochainDate ?? a.dateVisite ?? 0).getTime())[0];
     if (!latestSuivi) {
-      complianceScore -= 13; issues.push('No technical visit record');
+      complianceScore -= 13; issues.push({ key: 'issueNoTechVisit' });
     } else {
       const days = daysUntil(latestSuivi.prochainDate ?? latestSuivi.dateProchaine);
-      if (days === null || days < 0)   { complianceScore -= 13; issues.push('Technical visit overdue'); }
-      else if (days <= 30) { complianceScore -= 6; issues.push(`Technical visit in ${days}d`); }
+      if (days === null || days < 0)   { complianceScore -= 13; issues.push({ key: 'issueTechOverdue' }); }
+      else if (days <= 30) { complianceScore -= 6; issues.push({ key: 'issueTechIn', n: days }); }
     }
 
     // ── Maintenance (30 pts) ───────────────────────────────────
@@ -122,14 +133,14 @@ export class FleetHealthComponent implements OnInit {
       .filter(v => (v.voitureId ?? v.voiture?.id) === car.id)
       .sort((a, b) => new Date(b.dateDerniere ?? 0).getTime() - new Date(a.dateDerniere ?? 0).getTime())[0];
     if (!latestVid) {
-      maintenanceScore -= 8; issues.push('No oil change record');
+      maintenanceScore -= 8; issues.push({ key: 'issueNoOilRecord' });
     } else {
       const currentKm = car.kilometrage ?? 0;
       const nextKm    = latestVid.kmSuivant;
       if (nextKm && currentKm > nextKm) {
-        maintenanceScore -= 15; issues.push(`Oil change overdue by ${(currentKm - nextKm).toLocaleString()} km`);
+        maintenanceScore -= 15; issues.push({ key: 'issueOilOverdue', km: currentKm - nextKm });
       } else if (nextKm && (nextKm - currentKm) <= 500) {
-        maintenanceScore -= 8;  issues.push(`Oil change due in ${(nextKm - currentKm).toLocaleString()} km`);
+        maintenanceScore -= 8;  issues.push({ key: 'issueOilDueIn', km: nextKm - currentKm });
       }
     }
 
@@ -142,15 +153,15 @@ export class FleetHealthComponent implements OnInit {
     if (openRepairs.length > 0) {
       const deduction = Math.min(15, openRepairs.length * 5);
       maintenanceScore -= deduction;
-      issues.push(`${openRepairs.length} open repair(s)`);
+      issues.push({ key: 'issueOpenRepairs', n: openRepairs.length });
     }
 
     // ── Availability (30 pts) ──────────────────────────────────
     const status = (car.voitureStatus ?? '').toLowerCase();
-    if (['vendu', 'sold'].includes(status))         { availabilityScore -= 30; issues.push('Vehicle sold'); }
-    else if (['archive', 'archived'].includes(status)) { availabilityScore -= 20; issues.push('Vehicle archived'); }
-    else if (['hors_service'].includes(status))     { availabilityScore -= 20; issues.push('Out of service'); }
-    else if (['maintenance'].includes(status))      { availabilityScore -= 10; issues.push('In maintenance'); }
+    if (['vendu', 'sold'].includes(status))             { availabilityScore -= 30; issues.push({ key: 'issueVehicleSold' }); }
+    else if (['archive', 'archived'].includes(status)) { availabilityScore -= 20; issues.push({ key: 'issueVehicleArchived' }); }
+    else if (['hors_service'].includes(status))         { availabilityScore -= 20; issues.push({ key: 'issueOutOfService' }); }
+    else if (['maintenance'].includes(status))          { availabilityScore -= 10; issues.push({ key: 'issueInMaintenance' }); }
 
     const score = Math.max(0, complianceScore + maintenanceScore + availabilityScore);
     const grade: VehicleHealthRow['grade'] =

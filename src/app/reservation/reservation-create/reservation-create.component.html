@@ -71,14 +71,10 @@
                 <div class="ewa-dates-row">
                   <div class="ewa-date-field">
                     <label>{{ t('newExpirationDate') }}</label>
-                    <input type="date" [(ngModel)]="expiredDocUpdates[doc.type].expiration" [ngModelOptions]="{standalone: true}" />
-                  </div>
-                  <div class="ewa-date-field">
-                    <label>{{ t('newIssueDate') }}</label>
-                    <input type="date" [(ngModel)]="expiredDocUpdates[doc.type].issueDate" [ngModelOptions]="{standalone: true}" />
+                    <input type="date" [(ngModel)]="expiredDocUpdates[doc.type].expiration" [ngModelOptions]="{standalone: true}" [min]="today" />
                   </div>
                   <button type="button" class="ewa-save-dates-btn"
-                    [disabled]="savingDocType === doc.type || (!expiredDocUpdates[doc.type].expiration && !expiredDocUpdates[doc.type].issueDate)"
+                    [disabled]="savingDocType === doc.type || !expiredDocUpdates[doc.type].expiration"
                     (click)="saveExpiredDocDates(doc.type)">
                     {{ savingDocType === doc.type ? t('saving') : t('saveDates') }}
                   </button>

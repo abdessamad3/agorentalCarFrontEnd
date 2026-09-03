@@ -1,6 +1,6 @@
 <div class="rp-page" [dir]="dir">
 
-  <div *ngIf="loading" class="rp-loading"><span class="rp-loading-spinner"></span> Loading…</div>
+  <div *ngIf="loading" class="rp-loading"><span class="rp-loading-spinner"></span> {{ t('loadingCredit') }}</div>
 
   <ng-container *ngIf="!loading && credit">
 
@@ -11,15 +11,15 @@
         <div>
           <div class="rp-title">{{ credit.voiture }}</div>
           <div class="rp-subtitle">
-            {{ credit.immatriculation }} &nbsp;·&nbsp; {{ credit.financialInstitution || 'No institution' }}
+            {{ credit.immatriculation }} &nbsp;·&nbsp; {{ credit.financialInstitution || t('noInstitution') }}
             <span *ngIf="credit.contractNumber"> &nbsp;·&nbsp; #{{ credit.contractNumber }}</span>
           </div>
         </div>
       </div>
       <div class="rp-actions">
-        <button class="btn-export btn-print" (click)="openStatusModal()">⚙ Status</button>
-        <button class="btn-export btn-csv" (click)="openPaymentModal()">💳 Register Payment</button>
-        <a routerLink="/vehicle-financing" class="btn-export btn-print" style="text-decoration:none">← Back</a>
+        <button class="btn-export btn-print" (click)="openStatusModal()">{{ t('statusBtn') }}</button>
+        <button class="btn-export btn-csv" (click)="openPaymentModal()">{{ t('registerPaymentLnk') }}</button>
+        <a routerLink="/vehicle-financing" class="btn-export btn-print" style="text-decoration:none">{{ t('backBtn') }}</a>
       </div>
     </div>
 
@@ -27,36 +27,36 @@
     <div class="rp-stats" style="margin-bottom:1.25rem">
       <div class="stat-card sc-blue">
         <div class="sc-num">{{ fmt(credit.financedAmount) }}</div>
-        <div class="sc-lbl">Financed Amount</div>
+        <div class="sc-lbl">{{ t('financedAmount') }}</div>
       </div>
       <div class="stat-card sc-red">
         <div class="sc-num">{{ fmt(credit.remainingBalance) }}</div>
-        <div class="sc-lbl">Remaining Debt</div>
+        <div class="sc-lbl">{{ t('remainingDebt') }}</div>
       </div>
       <div class="stat-card sc-green">
         <div class="sc-num">{{ fmt(credit.totalPaid) }}</div>
-        <div class="sc-lbl">Total Paid</div>
+        <div class="sc-lbl">{{ t('totalPaidKpi') }}</div>
       </div>
       <div class="stat-card sc-purple">
         <div class="sc-num">{{ fmt(credit.monthlyInstallment) }}</div>
-        <div class="sc-lbl">Monthly Installment</div>
+        <div class="sc-lbl">{{ t('monthlyInstallmentLbl') }}</div>
       </div>
       <div class="stat-card sc-orange">
         <div class="sc-num">{{ credit.paidInstallments ?? 0 }}/{{ credit.installmentCount ?? credit.durationMonths }}</div>
-        <div class="sc-lbl">Installments Paid</div>
+        <div class="sc-lbl">{{ t('installmentsPaid') }}</div>
       </div>
       <div class="stat-card" [ngClass]="credit.status === 'completed' ? 'sc-green' : 'sc-teal'">
         <div class="sc-num">
-          <span class="status-pill" [ngClass]="statusClass(credit.status)" style="font-size:.8rem">{{ credit.status }}</span>
+          <span class="status-pill" [ngClass]="statusClass(credit.status)" style="font-size:.8rem">{{ credit.status | appStatus:'credit' }}</span>
         </div>
-        <div class="sc-lbl">Contract Status</div>
+        <div class="sc-lbl">{{ t('status') }}</div>
       </div>
     </div>
 
     <!-- Progress bar -->
     <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:1rem 1.5rem;margin-bottom:1.25rem">
       <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:.5rem">
-        <span style="font-weight:600;color:#4a5568">Repayment Progress</span>
+        <span style="font-weight:600;color:#4a5568">{{ t('repaymentProgress') }}</span>
         <span style="font-weight:700" [style.color]="progressColor(credit.progressPct ?? 0)">{{ credit.progressPct ?? 0 }}%</span>
       </div>
       <div style="height:12px;background:#edf2f7;border-radius:6px;overflow:hidden">
@@ -65,47 +65,47 @@
           [style.background]="progressColor(credit.progressPct ?? 0)"></div>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:.72rem;color:#a0aec0;margin-top:.4rem">
-        <span>{{ fmt(credit.totalPaid) }} paid</span>
-        <span>{{ fmt(credit.remainingBalance) }} remaining</span>
-        <span>{{ fmt(credit.totalCost) }} total cost</span>
+        <span>{{ fmt(credit.totalPaid) }} {{ t('paidLbl') }}</span>
+        <span>{{ fmt(credit.remainingBalance) }} {{ t('remainingLbl') }}</span>
+        <span>{{ fmt(credit.totalCost) }} {{ t('totalCostLbl') }}</span>
       </div>
     </div>
 
     <!-- Contract info summary -->
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.75rem;margin-bottom:1.25rem">
       <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:.875rem 1rem">
-        <div style="font-size:.72rem;color:#a0aec0;margin-bottom:.2rem">Start / End</div>
+        <div style="font-size:.72rem;color:#a0aec0;margin-bottom:.2rem">{{ t('startEnd') }}</div>
         <div style="font-size:.82rem;font-weight:600">{{ credit.startDate }} → {{ credit.endDate }}</div>
       </div>
       <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:.875rem 1rem">
-        <div style="font-size:.72rem;color:#a0aec0;margin-bottom:.2rem">Interest Rate</div>
-        <div style="font-size:.82rem;font-weight:600">{{ credit.interestRate }}% / year</div>
+        <div style="font-size:.72rem;color:#a0aec0;margin-bottom:.2rem">{{ t('interestRateLbl') }}</div>
+        <div style="font-size:.82rem;font-weight:600">{{ credit.interestRate }}% / {{ t('yearly') || 'an' }}</div>
       </div>
       <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:.875rem 1rem">
-        <div style="font-size:.72rem;color:#a0aec0;margin-bottom:.2rem">Duration</div>
-        <div style="font-size:.82rem;font-weight:600">{{ credit.durationMonths }} months</div>
+        <div style="font-size:.72rem;color:#a0aec0;margin-bottom:.2rem">{{ t('durationLbl') }}</div>
+        <div style="font-size:.82rem;font-weight:600">{{ credit.durationMonths }} {{ t('monthsAtRate').replace(' @','') }}</div>
       </div>
       <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:.875rem 1rem">
-        <div style="font-size:.72rem;color:#a0aec0;margin-bottom:.2rem">Vehicle Price / Down Payment</div>
+        <div style="font-size:.72rem;color:#a0aec0;margin-bottom:.2rem">{{ t('vehiclePriceDownPayment') }}</div>
         <div style="font-size:.82rem;font-weight:600">{{ fmt(credit.vehiclePrice) }} / {{ fmt(credit.downPayment) }}</div>
       </div>
       <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:.875rem 1rem">
-        <div style="font-size:.72rem;color:#a0aec0;margin-bottom:.2rem">Due Day / First Payment</div>
-        <div style="font-size:.82rem;font-weight:600">{{ credit.dueDay }}th of month &nbsp;·&nbsp; {{ credit.firstPaymentDate }}</div>
+        <div style="font-size:.72rem;color:#a0aec0;margin-bottom:.2rem">{{ t('dueDayFirstPayment') }}</div>
+        <div style="font-size:.82rem;font-weight:600">{{ credit.dueDay }}e &nbsp;·&nbsp; {{ credit.firstPaymentDate }}</div>
       </div>
       <div *ngIf="credit.overdueInstallments > 0"
         style="background:#fff5f5;border:1px solid #fc8181;border-radius:10px;padding:.875rem 1rem">
-        <div style="font-size:.72rem;color:#c53030;margin-bottom:.2rem">⚠ Overdue</div>
-        <div style="font-size:.82rem;font-weight:700;color:#c53030">{{ credit.overdueInstallments }} overdue installment(s)</div>
+        <div style="font-size:.72rem;color:#c53030;margin-bottom:.2rem">{{ t('overdueWarning') }}</div>
+        <div style="font-size:.82rem;font-weight:700;color:#c53030">{{ credit.overdueInstallments }} {{ t('overdueInstallmentsCnt') }}</div>
       </div>
     </div>
 
     <!-- Tabs -->
     <div style="display:flex;gap:4px;background:#f7fafc;border:1px solid #e2e8f0;border-radius:10px;padding:4px;margin-bottom:1rem;width:fit-content">
       <button *ngFor="let tab of [
-        {key:'installments', label:'📅 Schedule (' + installments.length + ')'},
-        {key:'payments',     label:'💳 Payments (' + payments.length + ')'},
-        {key:'documents',    label:'📎 Documents (' + documents.length + ')'}
+        {key:'installments', label: t('scheduleTab') + ' (' + installments.length + ')'},
+        {key:'payments',     label: t('paymentsTab') + ' (' + payments.length + ')'},
+        {key:'documents',    label: t('documentsTab') + ' (' + documents.length + ')'}
       ]"
         (click)="activeTab = $any(tab.key)"
         style="padding:.45rem 1rem;border:none;border-radius:7px;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .15s"
@@ -119,49 +119,49 @@
     <!-- ── Installment Schedule ── -->
     <div *ngIf="activeTab === 'installments'">
       <div *ngIf="installments.length === 0" class="rp-empty">
-        No installments yet. Activate the contract to generate the schedule.
+        {{ t('noInstallmentsYet') }} {{ t('activateToGenerate') }}
       </div>
       <div class="rp-table-wrap" *ngIf="installments.length > 0">
         <table class="rp-table">
           <thead>
             <tr>
-              <th class="td-center">#</th>
-              <th>Due Date</th>
-              <th class="td-right">Principal</th>
-              <th class="td-right">Interest</th>
-              <th class="td-right">Amount Due</th>
-              <th class="td-right">Paid</th>
-              <th class="td-right">Remaining</th>
-              <th>Status</th>
-              <th class="td-center">Action</th>
+              <th class="td-center">{{ t('colNum') }}</th>
+              <th>{{ t('colDueDate') }}</th>
+              <th class="td-right">{{ t('colPrincipal') }}</th>
+              <th class="td-right">{{ t('colInterest') }}</th>
+              <th class="td-right">{{ t('colAmountDue') }}</th>
+              <th class="td-right">{{ t('colPaidCol') }}</th>
+              <th class="td-right">{{ t('colRemaining') }}</th>
+              <th>{{ t('status') }}</th>
+              <th class="td-center">{{ t('colAction') }}</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let i of installments"
-              [style.background]="i.status === 'overdue' ? '#fff5f5' : i.status === 'due_today' ? '#fffaf0' : 'transparent'">
-              <td class="td-center" style="font-weight:700;color:#718096">{{ i.installmentNumber }}</td>
+            <tr *ngFor="let inst of installments"
+              [style.background]="inst.status === 'overdue' ? '#fff5f5' : inst.status === 'due_today' ? '#fffaf0' : 'transparent'">
+              <td class="td-center" style="font-weight:700;color:#718096">{{ inst.installmentNumber }}</td>
               <td>
-                {{ i.dueDate }}
-                <span *ngIf="i.daysUntilDue !== null && i.status !== 'paid'" style="font-size:.68rem;margin-left:.3rem"
-                  [style.color]="i.daysUntilDue! < 0 ? '#c53030' : i.daysUntilDue! <= 7 ? '#dd6b20' : '#a0aec0'">
-                  ({{ i.daysUntilDue! < 0 ? (-i.daysUntilDue!) + 'd overdue' : i.daysUntilDue + 'd left' }})
+                {{ inst.dueDate }}
+                <span *ngIf="inst.daysUntilDue !== null && inst.status !== 'paid'" style="font-size:.68rem;margin-left:.3rem"
+                  [style.color]="inst.daysUntilDue! < 0 ? '#c53030' : inst.daysUntilDue! <= 7 ? '#dd6b20' : '#a0aec0'">
+                  ({{ inst.daysUntilDue! < 0 ? (-inst.daysUntilDue!) + ' ' + t('daysOverdueLbl') : inst.daysUntilDue + ' ' + t('daysLeftLbl') }})
                 </span>
               </td>
-              <td class="td-right">{{ fmt(i.principalAmount) }}</td>
-              <td class="td-right" style="color:#dd6b20">{{ fmt(i.interestAmount) }}</td>
-              <td class="td-right" style="font-weight:600">{{ fmt(i.amountDue) }}</td>
-              <td class="td-right" style="color:#276749">{{ fmt(i.amountPaid) }}</td>
-              <td class="td-right" [style.color]="i.remainingAmount > 0 ? '#c53030' : '#276749'" style="font-weight:600">
-                {{ fmt(i.remainingAmount) }}
+              <td class="td-right">{{ fmt(inst.principalAmount) }}</td>
+              <td class="td-right" style="color:#dd6b20">{{ fmt(inst.interestAmount) }}</td>
+              <td class="td-right" style="font-weight:600">{{ fmt(inst.amountDue) }}</td>
+              <td class="td-right" style="color:#276749">{{ fmt(inst.amountPaid) }}</td>
+              <td class="td-right" [style.color]="inst.remainingAmount > 0 ? '#c53030' : '#276749'" style="font-weight:600">
+                {{ fmt(inst.remainingAmount) }}
               </td>
               <td>
-                <span class="doc-badge" [ngClass]="installmentStatusClass(i.status)">{{ i.status }}</span>
+                <span class="doc-badge" [ngClass]="installmentStatusClass(inst.status)">{{ inst.status | appStatus:'payment' }}</span>
               </td>
               <td class="td-center">
-                <button *ngIf="i.status !== 'paid'"
+                <button *ngIf="inst.status !== 'paid'"
                   style="background:#ebf8ff;border:none;border-radius:6px;padding:.25rem .6rem;font-size:.72rem;cursor:pointer;color:#2b6cb0;font-weight:600"
-                  (click)="openPaymentModal(i)">Pay</button>
-                <span *ngIf="i.status === 'paid'" style="color:#276749;font-size:.8rem">✓ Paid</span>
+                  (click)="openPaymentModal(inst)">{{ t('payBtn') }}</button>
+                <span *ngIf="inst.status === 'paid'" style="color:#276749;font-size:.8rem">✓ {{ t('paidLbl') }}</span>
               </td>
             </tr>
           </tbody>
@@ -172,21 +172,21 @@
     <!-- ── Payments ── -->
     <div *ngIf="activeTab === 'payments'">
       <div style="display:flex;justify-content:flex-end;margin-bottom:.75rem">
-        <button class="btn-export btn-excel" (click)="openPaymentModal()">＋ Register Payment</button>
+        <button class="btn-export btn-excel" (click)="openPaymentModal()">＋ {{ t('registerPaymentLnk') }}</button>
       </div>
-      <div *ngIf="payments.length === 0" class="rp-empty">No payments registered yet</div>
+      <div *ngIf="payments.length === 0" class="rp-empty">{{ t('noPaymentsRegistered') }}</div>
       <div class="rp-table-wrap" *ngIf="payments.length > 0">
         <table class="rp-table">
           <thead>
             <tr>
-              <th>Date</th>
-              <th class="td-right">Amount</th>
-              <th>Type</th>
-              <th>Method</th>
-              <th>Reference</th>
-              <th>Installment</th>
-              <th>Attachments</th>
-              <th class="td-center">Delete</th>
+              <th>{{ t('colDate') }}</th>
+              <th class="td-right">{{ t('colAmount') }}</th>
+              <th>{{ t('colType') }}</th>
+              <th>{{ t('colMethod') }}</th>
+              <th>{{ t('colReference') }}</th>
+              <th>{{ t('colInstallment') }}</th>
+              <th>{{ t('colAttachments') }}</th>
+              <th class="td-center">{{ t('delete') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -219,9 +219,9 @@
     <!-- ── Documents ── -->
     <div *ngIf="activeTab === 'documents'">
       <div style="display:flex;justify-content:flex-end;margin-bottom:.75rem">
-        <button class="btn-export btn-excel" (click)="openDocModal()">📎 Upload Document</button>
+        <button class="btn-export btn-excel" (click)="openDocModal()">{{ t('uploadDocBtn') }}</button>
       </div>
-      <div *ngIf="documents.length === 0" class="rp-empty">No documents uploaded yet</div>
+      <div *ngIf="documents.length === 0" class="rp-empty">{{ t('noDocumentsYet') }}</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.75rem" *ngIf="documents.length > 0">
         <div *ngFor="let d of documents"
           style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:1rem;display:flex;flex-direction:column;gap:.5rem">
@@ -236,7 +236,7 @@
           <div style="font-size:.7rem;color:#a0aec0">{{ d.uploadedAt }}</div>
           <a [href]="fileUrl(d.filePath)" target="_blank"
             style="text-align:center;background:#ebf8ff;color:#2b6cb0;border-radius:7px;padding:.35rem;font-size:.78rem;text-decoration:none;font-weight:600">
-            ⬇ Download / View
+            {{ t('downloadViewLnk') }}
           </a>
         </div>
       </div>
@@ -249,31 +249,31 @@
 <div *ngIf="showPaymentModal" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem">
   <div style="background:#fff;border-radius:16px;padding:2rem;width:100%;max-width:500px;max-height:90vh;overflow-y:auto">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
-      <h3 style="margin:0;font-size:1.1rem;font-weight:700">Register Payment</h3>
+      <h3 style="margin:0;font-size:1.1rem;font-weight:700">{{ t('registerPaymentTitle') }}</h3>
       <button (click)="showPaymentModal=false" style="background:none;border:none;font-size:1.4rem;cursor:pointer">✕</button>
     </div>
 
     <div style="display:grid;gap:1rem">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
         <div>
-          <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.3rem;color:#4a5568">Amount (MAD) *</label>
+          <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.3rem;color:#4a5568">{{ t('amountMadLbl') }}</label>
           <input [(ngModel)]="paymentForm.amount" type="number" min="0" class="rp-search" style="width:100%;box-sizing:border-box" />
         </div>
         <div>
-          <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.3rem;color:#4a5568">Payment Date *</label>
+          <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.3rem;color:#4a5568">{{ t('paymentDateLbl') }}</label>
           <input [(ngModel)]="paymentForm.paymentDate" type="date" class="rp-search" style="width:100%;box-sizing:border-box" />
         </div>
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
         <div>
-          <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.3rem;color:#4a5568">Payment Type</label>
+          <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.3rem;color:#4a5568">{{ t('paymentTypeLbl') }}</label>
           <select [(ngModel)]="paymentForm.paymentType" class="rp-select" style="width:100%">
-            <option *ngFor="let t of paymentTypes" [value]="t.value">{{ t.label }}</option>
+            <option *ngFor="let pt of paymentTypes" [value]="pt.value">{{ pt.label }}</option>
           </select>
         </div>
         <div>
-          <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.3rem;color:#4a5568">Method</label>
+          <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.3rem;color:#4a5568">{{ t('paymentMethodLbl') }}</label>
           <select [(ngModel)]="paymentForm.paymentMethod" class="rp-select" style="width:100%">
             <option *ngFor="let m of paymentMethods" [value]="m.value">{{ m.label }}</option>
           </select>
@@ -281,28 +281,28 @@
       </div>
 
       <div>
-        <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.3rem;color:#4a5568">Link to Installment (optional)</label>
+        <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.3rem;color:#4a5568">{{ t('linkToInstallment') }}</label>
         <select [(ngModel)]="paymentForm.installmentId" class="rp-select" style="width:100%">
-          <option [ngValue]="null">— Auto assign —</option>
-          <option *ngFor="let i of installments" [ngValue]="i.id" [disabled]="i.status === 'paid'">
-            #{{ i.installmentNumber }} – {{ i.dueDate }} – {{ fmt(i.remainingAmount) }} remaining
+          <option [ngValue]="null">{{ t('autoAssign') }}</option>
+          <option *ngFor="let inst of installments" [ngValue]="inst.id" [disabled]="inst.status === 'paid'">
+            #{{ inst.installmentNumber }} – {{ inst.dueDate }} – {{ fmt(inst.remainingAmount) }} {{ t('remainingLbl') }}
           </option>
         </select>
       </div>
 
       <div>
-        <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.3rem;color:#4a5568">Reference Number</label>
-        <input [(ngModel)]="paymentForm.referenceNumber" class="rp-search" style="width:100%;box-sizing:border-box" placeholder="Bank transfer ref, check #…" />
+        <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.3rem;color:#4a5568">{{ t('referenceNumber') }}</label>
+        <input [(ngModel)]="paymentForm.referenceNumber" class="rp-search" style="width:100%;box-sizing:border-box" placeholder="Ref virement, chèque #…" />
       </div>
 
       <div>
-        <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.3rem;color:#4a5568">Attachments (receipts, proof)</label>
+        <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.3rem;color:#4a5568">{{ t('attachmentsLbl') }}</label>
         <app-upload-btn label="+ Upload" accept=".pdf,.jpg,.jpeg,.png" [multiple]="true" (filesSelected)="onPaymentFiles($event)"></app-upload-btn>
-        <div style="font-size:.72rem;color:#a0aec0;margin-top:.25rem">{{ paymentFiles.length ? paymentFiles.length + ' file(s) selected' : 'PDF, JPG, PNG — multiple files allowed' }}</div>
+        <div style="font-size:.72rem;color:#a0aec0;margin-top:.25rem">{{ paymentFiles.length ? paymentFiles.length + ' fichier(s)' : 'PDF, JPG, PNG' }}</div>
       </div>
 
       <div>
-        <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.3rem;color:#4a5568">Notes</label>
+        <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.3rem;color:#4a5568">{{ t('notesLbl') }}</label>
         <textarea [(ngModel)]="paymentForm.notes" class="rp-search" style="width:100%;box-sizing:border-box;height:50px;resize:vertical"></textarea>
       </div>
     </div>
@@ -312,11 +312,11 @@
     </div>
 
     <div style="display:flex;justify-content:flex-end;gap:.75rem;margin-top:1.5rem">
-      <button (click)="showPaymentModal=false" style="padding:.5rem 1.25rem;border:1px solid #e2e8f0;background:#fff;border-radius:8px;cursor:pointer">Cancel</button>
+      <button (click)="showPaymentModal=false" style="padding:.5rem 1.25rem;border:1px solid #e2e8f0;background:#fff;border-radius:8px;cursor:pointer">{{ t('cancel') }}</button>
       <button (click)="submitPayment()" [disabled]="savingPayment"
         style="padding:.5rem 1.5rem;background:#48bb78;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600"
         [style.opacity]="savingPayment ? '.6' : '1'">
-        {{ savingPayment ? 'Saving…' : 'Register Payment' }}
+        {{ savingPayment ? t('saving') : t('registerPaymentBtn') }}
       </button>
     </div>
   </div>
@@ -326,22 +326,22 @@
 <div *ngIf="showDocModal" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem">
   <div style="background:#fff;border-radius:16px;padding:2rem;width:100%;max-width:440px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
-      <h3 style="margin:0;font-size:1.1rem;font-weight:700">Upload Document</h3>
+      <h3 style="margin:0;font-size:1.1rem;font-weight:700">{{ t('uploadDocumentTitle') }}</h3>
       <button (click)="showDocModal=false" style="background:none;border:none;font-size:1.4rem;cursor:pointer">✕</button>
     </div>
     <div style="display:grid;gap:1rem">
       <div>
-        <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.3rem;color:#4a5568">Document Type</label>
+        <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.3rem;color:#4a5568">{{ t('documentType') }}</label>
         <select [(ngModel)]="docForm.documentType" class="rp-select" style="width:100%">
-          <option *ngFor="let t of docTypes" [value]="t.value">{{ t.label }}</option>
+          <option *ngFor="let dt of docTypes" [value]="dt.value">{{ dt.label }}</option>
         </select>
       </div>
       <div>
-        <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.3rem;color:#4a5568">File *</label>
+        <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.3rem;color:#4a5568">{{ t('fileRequired') }}</label>
         <app-upload-btn [label]="docFile ? docFile.name : '+ Upload'" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" (fileSelected)="onDocFile($event)"></app-upload-btn>
       </div>
       <div>
-        <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.3rem;color:#4a5568">Notes</label>
+        <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.3rem;color:#4a5568">{{ t('notesLbl') }}</label>
         <textarea [(ngModel)]="docForm.notes" class="rp-search" style="width:100%;box-sizing:border-box;height:50px;resize:vertical"></textarea>
       </div>
     </div>
@@ -349,11 +349,11 @@
       {{ docError }}
     </div>
     <div style="display:flex;justify-content:flex-end;gap:.75rem;margin-top:1.5rem">
-      <button (click)="showDocModal=false" style="padding:.5rem 1.25rem;border:1px solid #e2e8f0;background:#fff;border-radius:8px;cursor:pointer">Cancel</button>
+      <button (click)="showDocModal=false" style="padding:.5rem 1.25rem;border:1px solid #e2e8f0;background:#fff;border-radius:8px;cursor:pointer">{{ t('cancel') }}</button>
       <button (click)="submitDocument()" [disabled]="savingDoc"
         style="padding:.5rem 1.5rem;background:#4299e1;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600"
         [style.opacity]="savingDoc ? '.6' : '1'">
-        {{ savingDoc ? 'Uploading…' : 'Upload' }}
+        {{ savingDoc ? t('uploading') : t('uploadDocBtn') }}
       </button>
     </div>
   </div>
@@ -363,18 +363,18 @@
 <div *ngIf="showStatusModal" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem">
   <div style="background:#fff;border-radius:16px;padding:2rem;width:100%;max-width:360px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
-      <h3 style="margin:0;font-size:1.1rem;font-weight:700">Change Contract Status</h3>
+      <h3 style="margin:0;font-size:1.1rem;font-weight:700">{{ t('changeContractStatusTitle') }}</h3>
       <button (click)="showStatusModal=false" style="background:none;border:none;font-size:1.4rem;cursor:pointer">✕</button>
     </div>
     <select [(ngModel)]="newStatus" class="rp-select" style="width:100%;margin-bottom:1.25rem">
       <option *ngFor="let s of contractStatuses" [value]="s.value">{{ s.label }}</option>
     </select>
     <div style="font-size:.75rem;color:#a0aec0;margin-bottom:1.25rem">
-      Setting to "Active" generates installments if none exist yet.
+      {{ t('settingActiveHint') }}
     </div>
     <div style="display:flex;justify-content:flex-end;gap:.75rem">
-      <button (click)="showStatusModal=false" style="padding:.5rem 1.25rem;border:1px solid #e2e8f0;background:#fff;border-radius:8px;cursor:pointer">Cancel</button>
-      <button (click)="updateStatus()" style="padding:.5rem 1.5rem;background:#4299e1;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600">Update</button>
+      <button (click)="showStatusModal=false" style="padding:.5rem 1.25rem;border:1px solid #e2e8f0;background:#fff;border-radius:8px;cursor:pointer">{{ t('cancel') }}</button>
+      <button (click)="updateStatus()" style="padding:.5rem 1.5rem;background:#4299e1;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600">{{ t('updateBtn') }}</button>
     </div>
   </div>
 </div>

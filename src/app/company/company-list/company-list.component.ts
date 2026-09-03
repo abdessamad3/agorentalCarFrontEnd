@@ -1,44 +1,57 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+﻿import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { ToastService } from '../../services/toast.service';
+import { TranslationService } from '../../services/translation.service';
 import { BtnComponent } from '../../shared/btn/btn.component';
 import { UploadBtnComponent } from '../../shared/btn/upload-btn.component';
+import { PaginatorComponent } from '../../shared/paginator/paginator.component';
 import { AuthService } from '../../services/auth.service';
+import { PAGE_SIZE } from '../../shared/constants/pagination';
 
 @Component({
   selector: 'app-company-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, BtnComponent, UploadBtnComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, BtnComponent, UploadBtnComponent, PaginatorComponent],
   templateUrl: './company-list.component.html',
   styleUrls: ['../../shared/styles/crud-list.css', './company-list.component.css']
 })
-export class CompanyListComponent implements OnInit {
+export class CompanyListComponent implements OnInit, OnDestroy {
   companies: any[] = [];
   users: any[] = [];
   loading = true;
-  error = '';
+  error   = '';
   isAdmin = false;
+  dir     = 'ltr';
+
+  page  = 1;
+  limit = PAGE_SIZE;
+  total = 0;
 
   modalMode: 'create' | 'edit' | 'delete' | null = null;
-  selected: any = null;
+  selected:    any  = null;
+  deleteId:    number | null = null;
   isSubmitting = false;
   logoPreview: string | null = null;
   private logoFile: File | null = null;
-  private blobUrl: string | null = null;
+  private blobUrl:  string | null = null;
 
   form: FormGroup;
 
-  private readonly api = `${environment.apiUrl}/company`;
+  private readonly api      = `${environment.apiUrl}/company`;
   private readonly usersApi = `${environment.apiUrl}/utilisateur`;
+  private destroy$          = new Subject<void>();
 
   constructor(
-    private http: HttpClient,
-    private toast: ToastService,
-    private fb: FormBuilder,
-    private authService: AuthService
+    private http:        HttpClient,
+    private toast:       ToastService,
+    private fb:          FormBuilder,
+    private authService: AuthService,
+    private ts:          TranslationService,
   ) {
     this.form = this.fb.group({
       nom:       ['', Validators.required],
@@ -49,28 +62,50 @@ export class CompanyListComponent implements OnInit {
 
   ngOnInit() {
     this.isAdmin = this.authService.hasRole('ROLE_ADMIN');
+    this.ts.direction$.pipe(takeUntil(this.destroy$)).subscribe(d => this.dir = d);
     this.load();
     this.loadUsers();
   }
 
+  ngOnDestroy() { this.destroy$.next(); this.destroy$.complete(); }
+
+  t(key: string): string { return this.ts.translate(key); }
+
   load() {
     this.loading = true;
-    this.http.get<any[]>(this.api).subscribe({
-      next: (res) => { this.companies = Array.isArray(res) ? res : []; this.loading = false; },
-      error: () => { this.error = 'Failed to load companies.'; this.loading = false; }
+    this.error   = '';
+    this.http.get<any>(this.api, { params: { page: this.page, limit: this.limit } }).subscribe({
+      next: (res) => {
+        if (res?.data) {
+          this.companies = res.data;
+          this.total     = res.meta?.total ?? 0;
+        } else {
+          this.companies = Array.isArray(res) ? res : [];
+          this.total     = this.companies.length;
+        }
+        this.loading = false;
+      },
+      error: () => { this.error = this.t('loadError'); this.loading = false; }
     });
   }
 
   loadUsers() {
-    this.http.get<any>(`${this.usersApi}?limit=100`).subscribe({
+    this.http.get<any>(`${this.usersApi}?limit=200`).subscribe({
       next: (r) => { this.users = Array.isArray(r) ? r : (r?.data ?? []); }
     });
   }
 
+  onPageChange(p: number) { this.page = p; this.load(); }
+
+  // Managers: users with ROLE_MANAGER or ROLE_ADMIN
   get managers(): any[] {
-    return this.users.filter(u => (u.roles || []).includes('ROLE_MANAGER'));
+    return this.users.filter(u => {
+      const roles: string[] = u.roles || [];
+      return roles.includes('ROLE_MANAGER') || roles.includes('ROLE_ADMIN');
+    });
   }
 
+  // Staff options: all non-admin users
   get staffOptions(): any[] {
     return this.users.filter(u => !(u.roles || []).includes('ROLE_ADMIN'));
   }
@@ -78,7 +113,7 @@ export class CompanyListComponent implements OnInit {
   onLogoChange(file: File) {
     this.logoFile = file;
     if (this.blobUrl) URL.revokeObjectURL(this.blobUrl);
-    this.blobUrl = URL.createObjectURL(file);
+    this.blobUrl    = URL.createObjectURL(file);
     this.logoPreview = this.blobUrl;
   }
 
@@ -100,17 +135,18 @@ export class CompanyListComponent implements OnInit {
   }
 
   openCreate() {
-    this.selected = null;
+    this.selected    = null;
+    this.deleteId    = null;
     this.logoPreview = null;
-    this.logoFile = null;
+    this.logoFile    = null;
     this.form.reset({ nom: '', managerId: null, staffIds: [] });
     this.modalMode = 'create';
   }
 
   openEdit(company: any) {
-    this.selected = company;
+    this.selected    = company;
     this.logoPreview = company.logo ? environment.serverUrl + company.logo : null;
-    this.logoFile = null;
+    this.logoFile    = null;
     this.form.patchValue({
       nom:       company.nom,
       managerId: company.manager?.id ?? null,
@@ -119,18 +155,20 @@ export class CompanyListComponent implements OnInit {
     this.modalMode = 'edit';
   }
 
-  openDelete(company: any) {
-    this.selected = company;
+  openDelete(id: number) {
+    this.deleteId = id;
+    this.selected = this.companies.find(c => c.id === id) ?? null;
     this.modalMode = 'delete';
   }
 
   closeModal() {
-    this.modalMode = null;
-    this.selected = null;
+    this.modalMode   = null;
+    this.selected    = null;
+    this.deleteId    = null;
     this.isSubmitting = false;
     if (this.blobUrl) { URL.revokeObjectURL(this.blobUrl); this.blobUrl = null; }
     this.logoPreview = null;
-    this.logoFile = null;
+    this.logoFile    = null;
   }
 
   @HostListener('document:keydown.escape') onEscape() { this.closeModal(); }
@@ -145,30 +183,30 @@ export class CompanyListComponent implements OnInit {
       const fd = new FormData();
       fd.append('logoFile', this.logoFile);
       this.http.post(`${this.api}/${id}/logo`, fd).subscribe({
-        next: () => { this.closeModal(); this.load(); },
+        next:  () => { this.closeModal(); this.load(); },
         error: () => { this.closeModal(); this.load(); }
       });
     };
 
     if (this.modalMode === 'create') {
       this.http.post<any>(this.api, payload).subscribe({
-        next: (res) => { this.toast.show('Company created', 'success'); uploadLogoThen(res.id); },
-        error: (err) => { this.isSubmitting = false; this.toast.show(err?.error?.error || 'Error', 'error'); }
+        next:  (res) => { this.toast.show(this.t('companyCreated'), 'success'); uploadLogoThen(res.id); },
+        error: (err) => { this.isSubmitting = false; this.toast.show(err?.error?.error || this.t('error'), 'error'); }
       });
     } else {
       if (!this.selected?.logo && !this.logoFile) payload['logo'] = null;
       this.http.put(`${this.api}/${this.selected.id}`, payload).subscribe({
-        next: () => { this.toast.show('Company updated', 'success'); uploadLogoThen(this.selected.id); },
-        error: (err) => { this.isSubmitting = false; this.toast.show(err?.error?.error || 'Error', 'error'); }
+        next:  () => { this.toast.show(this.t('companyUpdated'), 'success'); uploadLogoThen(this.selected.id); },
+        error: (err) => { this.isSubmitting = false; this.toast.show(err?.error?.error || this.t('error'), 'error'); }
       });
     }
   }
 
   confirmDelete() {
-    if (!this.selected) return;
-    this.http.delete(`${this.api}/${this.selected.id}`).subscribe({
-      next: () => { this.toast.show('Company deleted', 'info'); this.closeModal(); this.load(); },
-      error: (err) => { this.toast.show(err?.error?.error || 'Error', 'error'); this.closeModal(); }
+    if (!this.deleteId) return;
+    this.http.delete(`${this.api}/${this.deleteId}`).subscribe({
+      next:  () => { this.toast.show(this.t('companyDeleted'), 'info'); this.closeModal(); this.load(); },
+      error: (err) => { this.toast.show(err?.error?.error || this.t('error'), 'error'); this.closeModal(); }
     });
   }
 

@@ -42,6 +42,15 @@
         <div class="mob-stat-lbl">{{ t('returningToday') }}</div>
       </div>
     </div>
+    <div class="mob-stat-card stat-clickable" [class.mob-stat-urgent]="urgentPendingCount > 0" (click)="openStatModal('urgentPending')">
+      <div class="mob-stat-icon msic-orange">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <div>
+        <div class="mob-stat-num">{{ urgentPendingCount }}</div>
+        <div class="mob-stat-lbl">En attente &lt;24h</div>
+      </div>
+    </div>
   </div>
 
   <!-- Mobile Header -->
@@ -140,11 +149,12 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
       </div>
       <div class="mob-empty-title">{{ t('noBookingsForDay') }}</div>
-      <a routerLink="/reservation/create" class="mob-empty-cta">{{ t('newBooking') }}</a>
+      <a routerLink="/location/new" class="mob-empty-cta">{{ t('newBooking') }}</a>
     </div>
     <div *ngIf="dayViewCell && dayViewCell.bookings.length > 0" class="mob-day-list">
       <div *ngFor="let b of dayViewCell.bookings"
-           class="mob-day-item" [ngClass]="'mob-dmi-' + bookingStatusClass(b)">
+           class="mob-day-item res-link" [ngClass]="'mob-dmi-' + bookingStatusClass(b)"
+           [routerLink]="['/location', b.id]">
         <div class="mob-dmi-accent"></div>
         <div class="mob-dmi-body">
           <div class="mob-dmi-top">
@@ -152,7 +162,7 @@
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
               {{ getVoitureLabel(b) }}
             </span>
-            <span class="mob-dmi-badge" [ngClass]="'mob-badge-' + bookingStatusClass(b)">{{ b.reservationStatus || b.statut }}</span>
+            <span class="mob-dmi-badge" [ngClass]="'mob-badge-' + bookingStatusClass(b)">{{ (b.reservationStatus || b.statut) | appStatus:'reservation' }}</span>
           </div>
           <div class="mob-dmi-mid">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -181,7 +191,8 @@
         <span class="mob-agd-count">{{ group.items.length }}</span>
       </div>
       <div *ngFor="let b of group.items"
-           class="mob-agenda-item" [ngClass]="'mob-agi-' + bookingStatusClass(b)">
+           class="mob-agenda-item res-link" [ngClass]="'mob-agi-' + bookingStatusClass(b)"
+           [routerLink]="['/location', b.id]">
         <div class="mob-agi-accent"></div>
         <div class="mob-agi-body">
           <div class="mob-agi-top">
@@ -189,7 +200,7 @@
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
               {{ getVoitureLabel(b) }}
             </span>
-            <span class="mob-agi-badge" [ngClass]="'mob-badge-' + bookingStatusClass(b)">{{ b.reservationStatus || b.statut }}</span>
+            <span class="mob-agi-badge" [ngClass]="'mob-badge-' + bookingStatusClass(b)">{{ (b.reservationStatus || b.statut) | appStatus:'reservation' }}</span>
           </div>
           <div class="mob-agi-client">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -250,6 +261,15 @@
         <span class="stat-lbl">{{ t('returningToday') }}</span>
       </div>
     </div>
+    <div class="stat-card stat-clickable" [class.stat-card-urgent]="urgentPendingCount > 0" (click)="openStatModal('urgentPending')">
+      <div class="stat-icon icon-orange">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <div class="stat-info">
+        <span class="stat-num">{{ urgentPendingCount }}</span>
+        <span class="stat-lbl">En attente &lt;24h</span>
+      </div>
+    </div>
   </div>
 
   <!-- Calendar Card -->
@@ -276,7 +296,7 @@
         <button class="fpill fpill-teal"   [class.fpill-on]="filterStatus === 'available'" (click)="setFilter('available')">{{ t('available') }}</button>
       </div>
 
-      <a routerLink="/reservation/create" class="btn-new">
+      <a routerLink="/location/new" class="btn-new">
         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         <span class="btn-new-text">{{ t('newBooking') }}</span>
       </a>
@@ -365,7 +385,8 @@
     </div>
     <div class="dm-body">
       <div *ngFor="let b of selectedDay.bookings"
-           class="dm-item" [ngClass]="'dmi-' + bookingStatusClass(b)">
+           class="dm-item res-link" [ngClass]="'dmi-' + bookingStatusClass(b)"
+           [routerLink]="['/location', b.id]" (click)="closeDay()">
         <div class="dmi-accent"></div>
         <div class="dmi-content">
           <div class="dmi-top">
@@ -373,7 +394,7 @@
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
               {{ getVoitureLabel(b) }}
             </span>
-            <span class="dmi-badge" [ngClass]="'badge-' + bookingStatusClass(b)">{{ b.reservationStatus || b.statut }}</span>
+            <span class="dmi-badge" [ngClass]="'badge-' + bookingStatusClass(b)">{{ (b.reservationStatus || b.statut) | appStatus:'reservation' }}</span>
           </div>
           <div class="dmi-bottom">
             <span class="dmi-client">
@@ -385,12 +406,18 @@
               {{ b.dateDebut | date:'dd MMM' }} — {{ b.dateFin | date:'dd MMM yyyy' }}
             </span>
           </div>
+          <div class="dmi-actions" *ngIf="bookingStatusClass(b) === 'pending'">
+            <button class="dmi-btn-confirm" [disabled]="confirmingId === b.id"
+                    (click)="confirmReservation(b, $event)">✓ Confirmer</button>
+            <button class="dmi-btn-cancel" [disabled]="cancellingId === b.id"
+                    (click)="cancelReservation(b, $event)">✕ Annuler</button>
+          </div>
         </div>
       </div>
     </div>
     <div class="dm-footer">
       <button class="dm-close-btn" (click)="closeDay()">{{ t('close') }}</button>
-      <a routerLink="/reservation/create" class="dm-add-btn" (click)="closeDay()">
+      <a routerLink="/location/new" class="dm-add-btn" (click)="closeDay()">
         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         {{ t('newBooking') }}
       </a>
@@ -414,7 +441,8 @@
       </div>
       <div class="mob-bs-body">
         <div *ngFor="let b of bottomSheetDay.bookings"
-             class="mob-bs-item" [ngClass]="'mob-bsi-' + bookingStatusClass(b)">
+             class="mob-bs-item res-link" [ngClass]="'mob-bsi-' + bookingStatusClass(b)"
+             [routerLink]="['/location', b.id]" (click)="closeBottomSheet()">
           <div class="mob-bsi-accent"></div>
           <div class="mob-bsi-content">
             <div class="mob-bsi-top">
@@ -422,7 +450,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
                 {{ getVoitureLabel(b) }}
               </span>
-              <span class="mob-bsi-badge" [ngClass]="'mob-badge-' + bookingStatusClass(b)">{{ b.reservationStatus || b.statut }}</span>
+              <span class="mob-bsi-badge" [ngClass]="'mob-badge-' + bookingStatusClass(b)">{{ (b.reservationStatus || b.statut) | appStatus:'reservation' }}</span>
             </div>
             <div class="mob-bsi-client">
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -432,12 +460,18 @@
               <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               {{ b.dateDebut | date:'dd MMM' }} — {{ b.dateFin | date:'dd MMM yyyy' }}
             </div>
+            <div class="dmi-actions" *ngIf="bookingStatusClass(b) === 'pending'">
+              <button class="dmi-btn-confirm" [disabled]="confirmingId === b.id"
+                      (click)="confirmReservation(b, $event)">✓ Confirmer</button>
+              <button class="dmi-btn-cancel" [disabled]="cancellingId === b.id"
+                      (click)="cancelReservation(b, $event)">✕ Annuler</button>
+            </div>
           </div>
         </div>
       </div>
       <div class="mob-bs-footer">
         <button class="mob-bs-cancel" (click)="closeBottomSheet()">{{ t('close') }}</button>
-        <a routerLink="/reservation/create" class="mob-bs-add" (click)="closeBottomSheet()">
+        <a routerLink="/location/new" class="mob-bs-add" (click)="closeBottomSheet()">
           <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           {{ t('newBooking') }}
         </a>
@@ -448,7 +482,7 @@
 
 <!-- Mobile FAB -->
 <div *ngIf="isMobile" class="mob-fab-wrap">
-  <a routerLink="/reservation/create" class="mob-fab-primary" [title]="t('newBooking')">
+  <a routerLink="/location/new" class="mob-fab-primary" [title]="t('newBooking')">
     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
   </a>
 </div>
@@ -466,7 +500,8 @@
           [class.sm-ti-green]="statModal === 'active'"
           [class.sm-ti-blue]="statModal === 'thisMonth'"
           [class.sm-ti-navy]="statModal === 'available'"
-          [class.sm-ti-purple]="statModal === 'returnToday'">
+          [class.sm-ti-purple]="statModal === 'returnToday'"
+          [class.sm-ti-orange]="statModal === 'urgentPending'">
           <ng-container *ngIf="statModal === 'active'">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
           </ng-container>
@@ -479,6 +514,9 @@
           <ng-container *ngIf="statModal === 'returnToday'">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
           </ng-container>
+          <ng-container *ngIf="statModal === 'urgentPending'">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </ng-container>
         </div>
         <div>
           <h3 class="sm-title">
@@ -486,12 +524,14 @@
             <ng-container *ngIf="statModal === 'thisMonth'">{{ t('thisMonth') }}</ng-container>
             <ng-container *ngIf="statModal === 'available'">{{ t('availableCars') }}</ng-container>
             <ng-container *ngIf="statModal === 'returnToday'">{{ t('returningToday') }}</ng-container>
+            <ng-container *ngIf="statModal === 'urgentPending'">⚠ En attente — départ dans &lt;24h</ng-container>
           </h3>
           <span class="sm-count">
             <ng-container *ngIf="statModal === 'active'">{{ activeRentalsList.length }} {{ t('reservations') }}</ng-container>
             <ng-container *ngIf="statModal === 'thisMonth'">{{ thisMonthList.length }} {{ t('reservations') }}</ng-container>
             <ng-container *ngIf="statModal === 'available'">{{ availableCarsList.length }} {{ t('vehicles') }}</ng-container>
             <ng-container *ngIf="statModal === 'returnToday'">{{ returnTodayList.length }} {{ t('reservations') }}</ng-container>
+            <ng-container *ngIf="statModal === 'urgentPending'">{{ urgentPendingList.length }} {{ t('reservations') }}</ng-container>
           </span>
         </div>
       </div>
@@ -506,7 +546,8 @@
       <!-- Active Rentals -->
       <ng-container *ngIf="statModal === 'active'">
         <div *ngIf="!activeRentalsList.length" class="sm-empty">{{ t('noData') }}</div>
-        <div *ngFor="let r of activeRentalsList" class="sm-item">
+        <div *ngFor="let r of activeRentalsList" class="sm-item res-link"
+             [routerLink]="['/location', r.id]" (click)="closeStatModal()">
           <div class="sm-item-accent sm-accent-active"></div>
           <div class="sm-item-main">
             <div class="sm-item-row1">
@@ -530,7 +571,8 @@
       <!-- This Month -->
       <ng-container *ngIf="statModal === 'thisMonth'">
         <div *ngIf="!thisMonthList.length" class="sm-empty">{{ t('noData') }}</div>
-        <div *ngFor="let r of thisMonthList" class="sm-item">
+        <div *ngFor="let r of thisMonthList" class="sm-item res-link"
+             [routerLink]="['/location', r.id]" (click)="closeStatModal()">
           <div class="sm-item-accent" [ngClass]="'sm-accent-' + bookingStatusClass(r)"></div>
           <div class="sm-item-main">
             <div class="sm-item-row1">
@@ -538,7 +580,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
                 {{ getVoitureLabel(r) }}
               </span>
-              <span class="sm-badge" [ngClass]="'sm-badge-' + bookingStatusClass(r)">{{ r.reservationStatus || r.statut }}</span>
+              <span class="sm-badge" [ngClass]="'sm-badge-' + bookingStatusClass(r)">{{ (r.reservationStatus || r.statut) | appStatus:'reservation' }}</span>
             </div>
             <div class="sm-item-row2">
               <span class="sm-client">
@@ -574,7 +616,8 @@
       <!-- Returns Today -->
       <ng-container *ngIf="statModal === 'returnToday'">
         <div *ngIf="!returnTodayList.length" class="sm-empty">{{ t('noData') }}</div>
-        <div *ngFor="let r of returnTodayList" class="sm-item">
+        <div *ngFor="let r of returnTodayList" class="sm-item res-link"
+             [routerLink]="['/location', r.id]" (click)="closeStatModal()">
           <div class="sm-item-accent sm-accent-return"></div>
           <div class="sm-item-main">
             <div class="sm-item-row1">
@@ -590,6 +633,31 @@
                 {{ getClientName(r) }}
               </span>
               <span class="sm-dates">{{ r.dateDebut | date:'dd MMM' }} — {{ r.dateFin | date:'dd MMM yyyy' }}</span>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Urgent Pending -->
+      <ng-container *ngIf="statModal === 'urgentPending'">
+        <div *ngIf="!urgentPendingList.length" class="sm-empty">Aucune réservation en attente urgente.</div>
+        <div *ngFor="let r of urgentPendingList" class="sm-item res-link sm-item-urgent"
+             [routerLink]="['/location', r.id]" (click)="closeStatModal()">
+          <div class="sm-item-accent sm-accent-urgent"></div>
+          <div class="sm-item-main">
+            <div class="sm-item-row1">
+              <span class="sm-vehicle">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                {{ getVoitureLabel(r) }}
+              </span>
+              <span class="sm-badge sm-badge-urgent">⚠ &lt;24h</span>
+            </div>
+            <div class="sm-item-row2">
+              <span class="sm-client">
+                <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                {{ getClientName(r) }}
+              </span>
+              <span class="sm-dates">Départ: {{ r.dateDebut | date:'dd MMM HH:mm' }}</span>
             </div>
           </div>
         </div>

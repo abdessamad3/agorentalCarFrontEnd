@@ -11,6 +11,7 @@ export interface PaiementDepense {
   paymentType: string | null;
   paymentMethod: string | null;
   paymentReference: string | null;
+  filePath: string | null;
   depenseId: number;
   creeAu: string;
 }
@@ -26,8 +27,15 @@ export class PaiementDepenseService {
     return this.http.get<PaiementDepense[]>(this.base, { params });
   }
 
-  create(payload: { depenseId: number; montant: number; datePaiement: string; note?: string; paymentMethod?: string }): Observable<any> {
-    return this.http.post(this.base, payload);
+  create(payload: { depenseId: number; montant: number; datePaiement: string; note?: string; paymentMethod?: string }, receipt?: File | null): Observable<any> {
+    const fd = new FormData();
+    fd.append('depenseId', payload.depenseId.toString());
+    fd.append('montant', payload.montant.toString());
+    fd.append('datePaiement', payload.datePaiement);
+    if (payload.note) fd.append('note', payload.note);
+    if (payload.paymentMethod) fd.append('paymentMethod', payload.paymentMethod);
+    if (receipt) fd.append('receipt', receipt);
+    return this.http.post(this.base, fd);
   }
 
   delete(id: number): Observable<any> {

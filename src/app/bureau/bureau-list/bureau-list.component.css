@@ -330,6 +330,8 @@
 }
 
 @media (max-width: 768px) {
+  .table-container { display: block; overflow-x: auto; }
+
   .list-container {
     padding: 1rem;
   }

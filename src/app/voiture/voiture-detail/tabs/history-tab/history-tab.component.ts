@@ -1,14 +1,15 @@
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { TranslationService } from '../../../../services/translation.service';
 import { ActivityLogService, ActivityLogEntry } from '../../../../services/activity-log.service';
+import { StatusPipe } from '../../../../shared/pipes/status.pipe';
 
 @Component({
   selector: 'app-history-tab',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, StatusPipe],
   templateUrl: './history-tab.component.html',
   styleUrls: ['../../voiture-detail.component.css'],
 })
@@ -19,8 +20,11 @@ export class HistoryTabComponent implements OnChanges {
   @Input() dir = 'ltr';
   @Input() carId: number | null = null;
   @Input() mode: 'reservations' | 'history' = 'reservations';
+  @Input() effectiveStatus: string = '';
 
   search = '';
+  showStatusAlert = false;
+  private statusAlertTimer: any;
 
   activityLogs: ActivityLogEntry[] = [];
   activityLoading = false;
@@ -29,7 +33,22 @@ export class HistoryTabComponent implements OnChanges {
   constructor(
     private ts: TranslationService,
     private activityLogSvc: ActivityLogService,
+    private router: Router,
   ) {}
+
+  get bookingAllowed(): boolean {
+    return ['disponible', 'reserve'].includes((this.effectiveStatus || '').toLowerCase());
+  }
+
+  tryNewBooking(): void {
+    if (this.bookingAllowed) {
+      this.router.navigate(['/location/new'], this.carId ? { queryParams: { voitureId: this.carId } } : {});
+    } else {
+      clearTimeout(this.statusAlertTimer);
+      this.showStatusAlert = true;
+      this.statusAlertTimer = setTimeout(() => { this.showStatusAlert = false; }, 5000);
+    }
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if ((changes['carId'] || changes['mode']) && this.carId && this.mode === 'history') {
@@ -47,7 +66,7 @@ export class HistoryTabComponent implements OnChanges {
   }
 
   actionLabel(action: string): string {
-    return ({ CREATE: 'Created', UPDATE: 'Updated', DELETE: 'Deleted', ARCHIVE: 'Archived' } as any)[action] ?? action;
+    return ({ CREATE: 'Créé', UPDATE: 'Modifié', DELETE: 'Supprimé', ARCHIVE: 'Archivé' } as any)[action] ?? action;
   }
 
   actionClass(action: string): string {
@@ -83,18 +102,6 @@ export class HistoryTabComponent implements OnChanges {
     if (['terminee', 'completed', 'done', 'termine'].includes(s))   return 'rs-done';
     if (['annulee', 'cancelled', 'annule'].includes(s))             return 'rs-cancelled';
     return 'rs-pending';
-  }
-
-  statusLabel(r: any): string {
-    const s = (r.reservationStatus || r.statut || '').toLowerCase();
-    const map: Record<string, string> = {
-      confirmed: this.t('confirmed'), confirmee: this.t('confirmed'),
-      en_cours: this.t('inProgress'), active: this.t('inProgress'),
-      terminee: this.t('done'), completed: this.t('done'), done: this.t('done'),
-      annulee: this.t('cancelled'), cancelled: this.t('cancelled'),
-      en_attente: this.t('pending'),
-    };
-    return map[s] || s;
   }
 
   duration(r: any): number {

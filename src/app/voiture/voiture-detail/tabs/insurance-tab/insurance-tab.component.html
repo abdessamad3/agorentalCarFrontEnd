@@ -41,8 +41,8 @@
         <span class="ins-current-lbl">{{ t('endDate') }}</span>
         <span class="ins-current-val">
           {{ current.dateFin ? (current.dateFin | date:'dd/MM/yyyy') : '—' }}
-          <span *ngIf="daysUntil(current.dateFin) !== null && daysUntil(current.dateFin)! >= 0 && daysUntil(current.dateFin)! <= 30" class="exp-badge exp-warn">{{ daysUntil(current.dateFin) }}d</span>
-          <span *ngIf="daysUntil(current.dateFin) !== null && daysUntil(current.dateFin)! < 0" class="exp-badge exp-danger">{{ t('expired') }}</span>
+          <span *ngIf="currentDaysRemaining !== null && currentDaysRemaining! >= 0 && currentDaysRemaining! <= 30" class="exp-badge exp-warn">{{ currentDaysRemaining }}d</span>
+          <span *ngIf="currentDaysRemaining !== null && currentDaysRemaining! < 0" class="exp-badge exp-danger">{{ t('expired') }}</span>
         </span>
       </div>
       <div class="ins-current-field">

@@ -8,13 +8,14 @@ import { TranslationService } from '../../../../services/translation.service';
 import { environment } from '../../../../../environments/environment';
 import { DocBtnComponent } from '../../../../shared/btn/doc-btn.component';
 import { UploadBtnComponent } from '../../../../shared/btn/upload-btn.component';
+import { TranslatePipe } from '../../../../pipes/translate.pipe';
 import { PayDepPanelComponent } from '../../../../shared/pay-dep-panel/pay-dep-panel.component';
 import { payNotExceedTotal } from '../../../../shared/validators/pay-not-exceed-total.validator';
 
 @Component({
   selector: 'app-documents-tab',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, DocBtnComponent, UploadBtnComponent, PayDepPanelComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, DocBtnComponent, UploadBtnComponent, PayDepPanelComponent, TranslatePipe],
   templateUrl: './documents-tab.component.html',
   styleUrls: ['../../voiture-detail.component.css'],
 })
@@ -53,7 +54,6 @@ export class DocumentsTabComponent implements OnInit {
   expQuickPeriod   = '';
   expAllTypesLoaded   = false;
   expAllTypesLoading  = false;
-  expExportOpen = false;
 
   // ── Expense drawer ──────────────────────────────────────────────────────
   expDrawerRecord: any = null;
@@ -69,7 +69,8 @@ export class DocumentsTabComponent implements OnInit {
   expModalForm!: FormGroup;
   expModalType        = '';
   expModalPickedType  = '';
-  expFile: File | null = null;
+  expFiles: File[] = [];
+  expExistingFilePaths: string[] = [];
   expTableUploading: Set<number> = new Set();
 
   // ── Repair modal ────────────────────────────────────────────────────────
@@ -79,6 +80,8 @@ export class DocumentsTabComponent implements OnInit {
   repairSubmitting  = false;
   repairDeleteId: number | null = null;
   repairIsEditing   = false;
+  repairFiles: File[] = [];
+  repairExistingFilePaths: string[] = [];
 
   // ── PayDep panel ────────────────────────────────────────────────────────
   payDepPanelOpen  = false;
@@ -434,7 +437,9 @@ export class DocumentsTabComponent implements OnInit {
     const type = this.expenseTypeSelected;
     if (type === 'repairs') { this.openAddRepair(); return; }
     this.expModalType = type; this.expModalIsEditing = false; this.expModalRecord = null;
-    this.expModalForm = this.buildExpenseForm(type, null); this.expModal = 'form';
+    this.expModalForm = this.buildExpenseForm(type, null);
+    this.expFiles = []; this.expExistingFilePaths = [];
+    this.expModal = 'form';
   }
 
   confirmExpenseTypePick(): void {
@@ -442,14 +447,19 @@ export class DocumentsTabComponent implements OnInit {
     if (!type) return;
     if (type === 'repairs') { this.closeExpModal(); this.openAddRepair(); return; }
     this.expModalType = type; this.expModalIsEditing = false; this.expModalRecord = null;
-    this.expModalForm = this.buildExpenseForm(type, null); this.expModal = 'form';
+    this.expModalForm = this.buildExpenseForm(type, null);
+    this.expFiles = []; this.expExistingFilePaths = [];
+    this.expModal = 'form';
   }
 
   openExpenseEdit(r: any): void {
     const type = r._type || this.expenseTypeSelected;
     if (type === 'repairs') { this.openEditRepair(r); return; }
     this.expModalType = type; this.expModalIsEditing = true; this.expModalRecord = r;
-    this.expModalForm = this.buildExpenseForm(type, r); this.expModal = 'form';
+    this.expModalForm = this.buildExpenseForm(type, r);
+    this.expFiles = [];
+    this.expExistingFilePaths = r.filePaths?.length ? [...r.filePaths] : (r.filePath ? [r.filePath] : []);
+    this.expModal = 'form';
   }
 
   openExpenseDelete(id: number, type?: string): void {
@@ -461,13 +471,48 @@ export class DocumentsTabComponent implements OnInit {
   closeExpModal(): void {
     this.expModal = null; this.expModalRecord = null; this.expModalDeleteId = null;
     this.expModalSubmitting = false; this.expModalIsEditing = false;
-    this.expModalError = null; this.expModalType = ''; this.expFile = null;
+    this.expModalError = null; this.expModalType = '';
+    this.expFiles = []; this.expExistingFilePaths = [];
   }
 
   openExpenseDrawer(r: any, type?: string): void { this.expDrawerRecord = r; this.expDrawerType = r._type || type || this.expenseTypeSelected; }
   closeExpenseDrawer(): void { this.expDrawerRecord = null; this.expDrawerType = ''; }
 
-  onExpFileChange(file: File): void { this.expFile = file; }
+  onExpFilesAdded(files: File[]): void { this.expFiles = [...this.expFiles, ...files]; }
+  removeExpFile(i: number): void { this.expFiles.splice(i, 1); }
+  removeExpExistingFile(i: number): void { this.expExistingFilePaths.splice(i, 1); }
+
+  onRepairFilesAdded(files: File[]): void { this.repairFiles = [...this.repairFiles, ...files]; }
+  removeRepairFile(i: number): void { this.repairFiles.splice(i, 1); }
+  removeRepairExistingFile(i: number): void { this.repairExistingFilePaths.splice(i, 1); }
+
+  getFilePaths(r: any): string[] {
+    if (r?.filePaths?.length) return r.filePaths;
+    if (r?.filePath) return [r.filePath];
+    return [];
+  }
+
+  private uploadFilesAndUpdateRecord(
+    docType: string,
+    crudEndpoint: string,
+    recordId: number,
+    newFiles: File[],
+    existingPaths: string[],
+  ): void {
+    const uploadedPaths: string[] = [];
+    const uploadNext = (i: number): void => {
+      if (i >= newFiles.length) {
+        const allPaths = [...existingPaths, ...uploadedPaths];
+        this.crud.update(crudEndpoint, recordId, { filePaths: allPaths }).subscribe();
+        return;
+      }
+      this.crud.uploadDocumentFile(docType, recordId, newFiles[i]).subscribe({
+        next: (res: any) => { if (res?.path) uploadedPaths.push(res.path); uploadNext(i + 1); },
+        error: () => uploadNext(i + 1),
+      });
+    };
+    uploadNext(0);
+  }
 
   get adblueReste():    number { return Math.max(0, +(this.expModalForm?.get('montant')?.value ?? 0) - +(this.expModalForm?.get('montantPaye')?.value ?? 0)); }
   get oilChangeReste(): number { return Math.max(0, +(this.expModalForm?.get('montant')?.value ?? 0) - +(this.expModalForm?.get('montantPaye')?.value ?? 0)); }
@@ -483,22 +528,22 @@ export class DocumentsTabComponent implements OnInit {
     const payload: any = { voitureId: this.car.id };
     Object.entries(v).forEach(([k, val]) => { if (val !== null && val !== '') payload[k] = val; });
     if (this.expModalIsEditing && (+(this.expModalRecord?.paiementCount ?? 0)) > 0) delete payload.montantPaye;
+    payload.filePaths = [...this.expExistingFilePaths];
+    const newFiles      = [...this.expFiles];
+    const existingPaths = [...this.expExistingFilePaths];
     const req = this.expModalIsEditing
       ? this.crud.update(config.endpoint, this.expModalRecord.id, payload)
       : this.crud.create(config.endpoint, payload);
     req.subscribe({
       next: (created: any) => {
-        const file      = this.expFile;
         const editingId = this.expModalIsEditing ? this.expModalRecord?.id : null;
         const recordId  = created?.id ?? editingId;
         this.closeExpModal();
         this.expenseLoadedTypes.delete(type);
         this.loadExpenseType(type);
         if (this.expenseTypeSelected === 'all') { this.expAllTypesLoaded = false; this.loadAllExpenseTypes(); }
-        if (file && recordId && type === 'oil-changes') {
-          this.crud.uploadDocumentFile('vidange', recordId, file).subscribe({
-            next: (res: any) => { if (res?.path) this.crud.update('vidange', recordId, { filePath: res.path }).subscribe(); }
-          });
+        if (newFiles.length && recordId) {
+          this.uploadFilesAndUpdateRecord(config.endpoint, config.endpoint, recordId, newFiles, existingPaths);
         }
       },
       error: () => { this.expModalSubmitting = false; },
@@ -517,11 +562,12 @@ export class DocumentsTabComponent implements OnInit {
 
   private buildExpenseForm(type: string, r: any): FormGroup {
     const d = (s: string | undefined) => (s || '').split('T')[0];
+    const today = new Date().toISOString().split('T')[0];
     switch (type) {
       case 'adblue':
-        return this.fb.group({ date: [d(r?.date), Validators.required], quantite: [r?.quantite ?? null], dateFacture: [r?.dateFacture ? d(r.dateFacture) : null], montant: [r?.montant ?? null], montantPaye: [r?.montantPaye ?? null] }, { validators: payNotExceedTotal('montant', 'montantPaye') });
+        return this.fb.group({ date: [r ? d(r.date) : today, Validators.required], quantite: [r?.quantite ?? null], dateFacture: [r?.dateFacture ? d(r.dateFacture) : null], montant: [r?.montant ?? null], montantPaye: [r?.montantPaye ?? null] }, { validators: payNotExceedTotal('montant', 'montantPaye') });
       case 'oil-changes':
-        return this.fb.group({ date: [d(r?.date), Validators.required], kilometrage: [r?.kilometrage ?? null], intervalleKm: [r?.intervalleKm ?? 10000], dateFacture: [r?.dateFacture ? d(r.dateFacture) : null], montant: [r?.montant ?? null], montantPaye: [r?.montantPaye ?? null] }, { validators: payNotExceedTotal('montant', 'montantPaye') });
+        return this.fb.group({ date: [r ? d(r.date) : today, Validators.required], kilometrage: [r?.kilometrage ?? null], intervalleKm: [r?.intervalleKm ?? 10000], dateFacture: [r?.dateFacture ? d(r.dateFacture) : null], montant: [r?.montant ?? null], montantPaye: [r?.montantPaye ?? null] }, { validators: payNotExceedTotal('montant', 'montantPaye') });
       default:
         return this.fb.group({});
     }
@@ -529,12 +575,16 @@ export class DocumentsTabComponent implements OnInit {
 
   // ── Repair CRUD ───────────────────────────────────────────────────────────
   openAddRepair(): void {
+    const today = new Date().toISOString().split('T')[0];
     this.repairSelected = null; this.repairIsEditing = false;
-    this.repairForm.reset({ statut: 'en_cours' }); this.repairModalMode = 'form';
+    this.repairFiles = []; this.repairExistingFilePaths = [];
+    this.repairForm.reset({ statut: 'en_cours', dateDebut: today }); this.repairModalMode = 'form';
   }
 
   openEditRepair(r: any): void {
     this.repairSelected = r; this.repairIsEditing = true;
+    this.repairFiles = [];
+    this.repairExistingFilePaths = r.filePaths?.length ? [...r.filePaths] : [];
     this.repairForm.patchValue({
       descriptionTechnique: r.descriptionTechnique || '',
       dateDebut:   (r.dateDebut   || '').split('T')[0],
@@ -552,6 +602,7 @@ export class DocumentsTabComponent implements OnInit {
   closeRepairModal(): void {
     this.repairModalMode = null; this.repairSelected = null;
     this.repairDeleteId = null; this.repairSubmitting = false; this.repairIsEditing = false;
+    this.repairFiles = []; this.repairExistingFilePaths = [];
   }
 
   saveRepair(): void {
@@ -564,11 +615,21 @@ export class DocumentsTabComponent implements OnInit {
     if (v.montant != null && v.montant !== '') payload.montant     = parseFloat(v.montant);
     if (v.paye    != null && v.paye    !== '') payload.montantPaye = parseFloat(v.paye);
     if (v.statut) payload.statut = v.statut;
+    payload.filePaths = [...this.repairExistingFilePaths];
+    const newFiles      = [...this.repairFiles];
+    const existingPaths = [...this.repairExistingFilePaths];
     const req = this.repairIsEditing
       ? this.crud.update('reparation', this.repairSelected.id, payload)
       : this.crud.create('reparation', payload);
     req.subscribe({
-      next: () => { this.closeRepairModal(); this.carRefresh.emit(); },
+      next: (created: any) => {
+        const recordId = this.repairIsEditing ? this.repairSelected.id : created?.id;
+        this.closeRepairModal();
+        this.carRefresh.emit();
+        if (newFiles.length && recordId) {
+          this.uploadFilesAndUpdateRecord('reparation', 'reparation', recordId, newFiles, existingPaths);
+        }
+      },
       error: () => { this.repairSubmitting = false; },
     });
   }
@@ -661,4 +722,92 @@ export class DocumentsTabComponent implements OnInit {
   }
 
   get carTitle(): string { return this.car ? `${this.car.marque} ${this.car.modele}` : ''; }
+
+  // ── Export / Print ─────────────────────────────────────────────────────
+  private buildExportRows(): { date: string; cat: string; catIcon: string; detail: string; total: number; paid: number; rem: number; status: string }[] {
+    const rows: any[] = [];
+    for (const r of this.reparations) {
+      const total = r.montantTotal != null ? +r.montantTotal : (r.montant != null ? +r.montant : 0);
+      const paid  = r.montantPaye  != null ? +r.montantPaye  : 0;
+      rows.push({ date: (r.dateDebut || '').split('T')[0], cat: this.t('reparations'), catIcon: '🔧', detail: r.descriptionTechnique || '—', total, paid, rem: Math.max(0, total - paid), status: this.repairStatusLabel(r) });
+    }
+    for (const r of (this.expenseDataMap['adblue'] || [])) {
+      const total = r.montant != null ? +r.montant : 0;
+      const paid  = r.montantPaye != null ? +r.montantPaye : 0;
+      rows.push({ date: (r.date || '').split('T')[0], cat: this.t('adblue'), catIcon: '💧', detail: r.quantite != null ? r.quantite + ' L' : '—', total, paid, rem: Math.max(0, total - paid), status: this.payDepStatusLabel(r) });
+    }
+    for (const r of (this.expenseDataMap['oil-changes'] || [])) {
+      const total = r.montant != null ? +r.montant : 0;
+      const paid  = r.montantPaye != null ? +r.montantPaye : 0;
+      rows.push({ date: (r.date || '').split('T')[0], cat: this.t('vidanges'), catIcon: '🛢️', detail: r.kilometrage != null ? r.kilometrage + ' km' : '—', total, paid, rem: Math.max(0, total - paid), status: this.payDepStatusLabel(r) });
+    }
+    return rows.sort((a, b) => b.date.localeCompare(a.date));
+  }
+
+  async exportExpenseExcel(): Promise<void> {
+    const ExcelJS = await import('exceljs');
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Maintenance');
+    ws.columns = [
+      { header: 'Date',          key: 'date',   width: 13 },
+      { header: 'Category',      key: 'cat',    width: 16 },
+      { header: 'Detail',        key: 'detail', width: 32 },
+      { header: 'Total (MAD)',   key: 'total',  width: 14 },
+      { header: 'Paid (MAD)',    key: 'paid',   width: 14 },
+      { header: 'Remaining',     key: 'rem',    width: 14 },
+      { header: 'Status',        key: 'status', width: 14 },
+    ];
+    ws.getRow(1).font = { bold: true };
+    ws.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2E8F0' } };
+    for (const r of this.buildExportRows()) {
+      ws.addRow(r);
+    }
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf as BlobPart], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `maintenance_${this.car?.immatriculation || this.carId}_${new Date().toISOString().split('T')[0]}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  printExpenseReport(): void {
+    const lang   = this.ts.getCurrentLanguage();
+    const locale = lang === 'ar' ? 'ar-MA' : lang === 'fr' ? 'fr-FR' : 'en-US';
+    const dir    = lang === 'ar' ? 'rtl' : 'ltr';
+    const rows   = this.buildExportRows().map(r => `
+      <tr>
+        <td>${r.date || '—'}</td>
+        <td>${r.catIcon} ${r.cat}</td>
+        <td>${r.detail}</td>
+        <td class="num">${r.total > 0 ? r.total.toLocaleString(locale) + ' MAD' : '—'}</td>
+        <td class="num">${r.paid > 0 ? r.paid.toLocaleString(locale) + ' MAD' : '—'}</td>
+        <td class="num ${r.rem > 0 ? 'rem' : 'ok'}">${r.rem > 0 ? r.rem.toLocaleString(locale) + ' MAD' : '✓'}</td>
+        <td>${r.status}</td>
+      </tr>`).join('');
+    const html = `<!DOCTYPE html><html lang="${lang}" dir="${dir}"><head><meta charset="utf-8">
+<title>Maintenance — ${this.car?.immatriculation || ''}</title>
+<style>
+  body{font-family:Arial,sans-serif;font-size:12px;margin:2rem;color:#1e293b}
+  h2{margin:0 0 .2rem}p{margin:0 0 1.5rem;color:#64748b;font-size:11px}
+  table{width:100%;border-collapse:collapse}
+  th{background:#f1f5f9;padding:.45rem .75rem;text-align:start;font-size:10px;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #e2e8f0}
+  td{padding:.45rem .75rem;border-bottom:1px solid #f1f5f9;font-size:11px}
+  .num{text-align:end}.ok{color:#16a34a}.rem{color:#dc2626}
+  @media print{body{margin:.5rem}}
+</style></head><body>
+<h2>🔧 ${this.t('maintenance')} — ${this.car?.marque || ''} ${this.car?.modele || ''}</h2>
+<p>${this.car?.immatriculation || ''} &nbsp;·&nbsp; ${new Date().toLocaleString(locale)}</p>
+<table><thead><tr>
+  <th>Date</th><th>${this.t('category')}</th><th>${this.t('description')}</th>
+  <th style="text-align:end">${this.t('totalAmount')}</th>
+  <th style="text-align:end">${this.t('totalPaid')}</th>
+  <th style="text-align:end">${this.t('remaining')}</th>
+  <th>${this.t('status')}</th>
+</tr></thead><tbody>${rows}</tbody></table>
+</body></html>`;
+    const win = window.open('', '_blank', 'width=960,height=680');
+    if (win) { win.document.write(html); win.document.close(); win.print(); }
+  }
 }

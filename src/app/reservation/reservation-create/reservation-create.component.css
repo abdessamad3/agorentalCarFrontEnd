@@ -499,7 +499,7 @@
 .btn-secondary:hover { background: #f7fafc; }
 
 /* Wide modal for the client wizard */
-.modal-wide { width: 600px; }
+.modal-wide { max-width: 600px; width: 100%; }
 
 /* Step indicator */
 .step-indicator {

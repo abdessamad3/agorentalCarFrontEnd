@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
+﻿import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { TranslatePipe } from '../../pipes/translate.pipe';
@@ -9,6 +9,7 @@ import { BtnComponent } from '../../shared/btn/btn.component';
 import { PaginatorComponent } from '../../shared/paginator/paginator.component';
 import { Subject, of } from 'rxjs';
 import { debounceTime, switchMap, takeUntil, catchError } from 'rxjs/operators';
+import { PAGE_SIZE } from '../../shared/constants/pagination';
 
 @Component({
   selector: 'app-depense-list',
@@ -20,7 +21,7 @@ import { debounceTime, switchMap, takeUntil, catchError } from 'rxjs/operators';
 export class DepenseListComponent implements OnInit, OnDestroy {
   items: any[] = [];
   loading = true; error = ''; dir = 'ltr'; search = '';
-  page = 1; limit = 20; total = 0;
+  page = 1; limit = PAGE_SIZE; total = 0;
   modalMode: 'form' | 'delete' | null = null;
   selected: any = null; form: FormGroup; isSubmitting = false; deleteId: number | null = null; isEditing = false;
   readonly endpoint = 'depense';
@@ -28,6 +29,11 @@ export class DepenseListComponent implements OnInit, OnDestroy {
 
   drawerOpen = false;
   drawerItem: any = null;
+
+  pendingFile: File | null = null;
+  pendingFileName = '';
+  uploadingFile = false;
+  fileError = '';
 
   private searchSubject = new Subject<void>();
   private destroy$ = new Subject<void>();
@@ -73,11 +79,25 @@ export class DepenseListComponent implements OnInit, OnDestroy {
   onPageChange(p: number): void { this.page = p; this.load(); }
 
   openView(item: any)   { this.drawerItem = item; this.drawerOpen = true; }
-  openAdd()             { this.selected = null; this.isEditing = false; this.form.reset({ montant: 0 }); this.modalMode = 'form'; }
-  openEdit(item: any)   { this.selected = item; this.isEditing = true; this.form.patchValue(item); this.modalMode = 'form'; }
+  openAdd()             { this.selected = null; this.isEditing = false; this.form.reset({ montant: 0 }); this.clearFile(); this.modalMode = 'form'; }
+  openEdit(item: any)   { this.selected = item; this.isEditing = true; this.form.patchValue(item); this.clearFile(); this.modalMode = 'form'; }
   openDelete(id: number){ this.deleteId = id; this.modalMode = 'delete'; }
-  closeModal()          { this.modalMode = null; this.selected = null; this.deleteId = null; this.isSubmitting = false; this.isEditing = false; }
+  closeModal()          { this.modalMode = null; this.selected = null; this.deleteId = null; this.isSubmitting = false; this.isEditing = false; this.clearFile(); }
   closeDrawer()         { this.drawerOpen = false; this.drawerItem = null; }
+
+  clearFile() { this.pendingFile = null; this.pendingFileName = ''; this.fileError = ''; }
+
+  onFileChange(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    this.fileError = '';
+    if (!file) { this.clearFile(); return; }
+    if (file.size > 10 * 1024 * 1024) { this.fileError = 'Max 10 MB'; this.clearFile(); return; }
+    const allowed = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+    if (!allowed.includes(file.type)) { this.fileError = 'PDF, JPEG ou PNG seulement'; this.clearFile(); return; }
+    this.pendingFile = file;
+    this.pendingFileName = file.name;
+  }
 
   @HostListener('document:keydown.escape') onEscape() { this.closeModal(); this.closeDrawer(); }
 
@@ -87,7 +107,21 @@ export class DepenseListComponent implements OnInit, OnDestroy {
     const req = this.isEditing
       ? this.crud.update(this.endpoint, this.selected.id, this.form.value)
       : this.crud.create(this.endpoint, this.form.value);
-    req.subscribe({ next: () => { this.closeModal(); this.load(); this.bus.paymentsChanged$.next(); }, error: () => { this.isSubmitting = false; } });
+    req.subscribe({
+      next: (res: any) => {
+        const id = this.isEditing ? this.selected.id : res?.id;
+        if (this.pendingFile && id) {
+          this.uploadingFile = true;
+          this.crud.uploadDepenseJustificatif(id, this.pendingFile).subscribe({
+            next: () => { this.uploadingFile = false; this.closeModal(); this.load(); this.bus.paymentsChanged$.next(); },
+            error: () => { this.uploadingFile = false; this.closeModal(); this.load(); this.bus.paymentsChanged$.next(); }
+          });
+        } else {
+          this.closeModal(); this.load(); this.bus.paymentsChanged$.next();
+        }
+      },
+      error: () => { this.isSubmitting = false; }
+    });
   }
 
   confirmDelete() {

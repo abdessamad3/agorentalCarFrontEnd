@@ -1,29 +1,36 @@
 <!-- ── Profitability Card ── -->
 <div class="prof-card">
   <div class="prof-card-header">
-    <span class="prof-card-title">📊 Profitability · {{ profitYear === 'all' ? 'All time' : profitYear }}</span>
+    <span class="prof-card-title">📊 {{ t('profitability') }} · {{ profitYear === 'all' ? t('allTime') : profitYear }}{{ profitMonthName ? ' · ' + profitMonthName : '' }}</span>
     <div class="prof-card-header-right">
       <select class="prof-year-select" [(ngModel)]="profitYear" (ngModelChange)="onProfitYearChange()">
         <option *ngFor="let y of profitYearOptions" [ngValue]="y">{{ y }}</option>
-        <option [ngValue]="'all'">All time</option>
+        <option [ngValue]="'all'">{{ t('allTime') }}</option>
       </select>
-      <span class="prof-card-badge" *ngIf="profitRow" [class.prof-badge-pos]="profitRow.net >= 0" [class.prof-badge-neg]="profitRow.net < 0">
-        {{ profitRow.net >= 0 ? 'Profitable' : 'Loss' }}
+      <select class="prof-year-select" [(ngModel)]="profitMonth">
+        <option [ngValue]="'all'">{{ t('allMonths') }}</option>
+        <option *ngFor="let m of MONTH_NAMES; let i = index" [ngValue]="i + 1">{{ m }}</option>
+      </select>
+      <span class="prof-card-badge"
+        *ngIf="(profitMonth === 'all' && profitRow) || (profitMonth !== 'all' && monthlyRowForDisplay)"
+        [class.prof-badge-pos]="activeNet >= 0"
+        [class.prof-badge-neg]="activeNet < 0">
+        {{ activeNet >= 0 ? t('profitable') : t('loss') }}
       </span>
     </div>
   </div>
 
-  <div class="fin-tx-empty" *ngIf="!profitLoading && !profitRow">{{ t('noData') }}</div>
+  <div class="fin-tx-empty" *ngIf="profitMonth === 'all' && !profitLoading && !profitRow">{{ t('noData') }}</div>
 
-  <div class="prof-metrics" *ngIf="profitRow">
+  <div class="prof-metrics" *ngIf="profitMonth === 'all' && profitRow">
 
     <!-- Revenue -->
     <div class="prof-metric prof-metric-rev">
       <div class="pm-icon">💰</div>
       <div class="pm-body">
         <div class="pm-val">{{ profitRow.revenue | number:'1.0-0' }} <span class="pm-curr">MAD</span></div>
-        <div class="pm-lbl">Revenue</div>
-        <div class="pm-sub">{{ profitRow.rentals }} rental{{ profitRow.rentals === 1 ? '' : 's' }}</div>
+        <div class="pm-lbl">{{ t('revenue') }}</div>
+        <div class="pm-sub">{{ profitRow.rentals }} {{ profitRow.rentals === 1 ? t('rental') : t('rentals') }}</div>
       </div>
     </div>
 
@@ -32,7 +39,7 @@
       <div class="pm-icon">📉</div>
       <div class="pm-body">
         <div class="pm-val">{{ profitRow.totalCost | number:'1.0-0' }} <span class="pm-curr">MAD</span></div>
-        <div class="pm-lbl">Total Expense Paid</div>
+        <div class="pm-lbl">{{ t('totalExpensePaid') }}</div>
         <div class="pm-breakdown">
           <span *ngIf="profitRow.insuranceCost > 0">🛡️ {{ profitRow.insuranceCost | number:'1.0-0' }}</span>
           <span *ngIf="profitRow.repairCost > 0">🔧 {{ profitRow.repairCost | number:'1.0-0' }}</span>
@@ -47,7 +54,7 @@
       <div class="pm-icon">🧾</div>
       <div class="pm-body">
         <div class="pm-val">{{ profitRow.unpaidCost | number:'1.0-0' }} <span class="pm-curr">MAD</span></div>
-        <div class="pm-lbl">Total Expense Unpaid</div>
+        <div class="pm-lbl">{{ t('totalExpenseUnpaid') }}</div>
       </div>
     </div>
 
@@ -58,29 +65,58 @@
         <div class="pm-val" [class.pm-pos]="profitRow.net >= 0" [class.pm-neg]="profitRow.net < 0">
           {{ profitRow.net >= 0 ? '+' : '' }}{{ profitRow.net | number:'1.0-0' }} <span class="pm-curr">MAD</span>
         </div>
-        <div class="pm-lbl">Net Profit</div>
-        <div class="pm-sub">Margin {{ profitRow.margin }}%</div>
+        <div class="pm-lbl">{{ t('netProfit') }}</div>
+        <div class="pm-sub">{{ t('margin') }} {{ profitRow.margin }}%</div>
       </div>
     </div>
 
-    <!-- ROI -->
-    <div class="prof-metric prof-metric-roi">
+    <!-- ROI (admin only) -->
+    <div class="prof-metric prof-metric-roi" *ngIf="isAdmin">
       <div class="pm-icon">🎯</div>
       <div class="pm-body">
         <div class="pm-val" [class.pm-pos]="roi >= 0" [class.pm-neg]="roi < 0">
           {{ roi | number:'1.1-1' }}<span class="pm-curr">%</span>
         </div>
-        <div class="pm-lbl">ROI</div>
-        <div class="pm-sub">{{ car?.prixAchat ? 'vs. purchase price' : 'vs. total costs' }}</div>
+        <div class="pm-lbl">{{ t('roi') }}</div>
+        <div class="pm-sub">{{ car?.prixAchat ? t('vsPurchasePrice') : t('vsTotalCosts') }}</div>
       </div>
     </div>
 
   </div>
-</div>
-<div class="prof-loading" *ngIf="profitLoading">Computing profitability…</div>
 
-<!-- Rate Cards -->
-<div class="fin-rates">
+  <!-- Monthly breakdown -->
+  <div class="prof-metrics" *ngIf="profitMonth !== 'all' && monthlyRowForDisplay">
+    <div class="prof-metric prof-metric-rev">
+      <div class="pm-icon">💰</div>
+      <div class="pm-body">
+        <div class="pm-val">{{ (monthlyRowForDisplay.income || 0) | number:'1.0-0' }} <span class="pm-curr">MAD</span></div>
+        <div class="pm-lbl">{{ t('revenue') }}</div>
+      </div>
+    </div>
+    <div class="prof-metric prof-metric-exp">
+      <div class="pm-icon">📉</div>
+      <div class="pm-body">
+        <div class="pm-val">{{ (monthlyRowForDisplay.expenses || 0) | number:'1.0-0' }} <span class="pm-curr">MAD</span></div>
+        <div class="pm-lbl">{{ t('totalExpenses') }}</div>
+      </div>
+    </div>
+    <div class="prof-metric" [class.prof-metric-net-pos]="activeNet >= 0" [class.prof-metric-net-neg]="activeNet < 0">
+      <div class="pm-icon">{{ activeNet >= 0 ? '📈' : '📉' }}</div>
+      <div class="pm-body">
+        <div class="pm-val" [class.pm-pos]="activeNet >= 0" [class.pm-neg]="activeNet < 0">
+          {{ activeNet >= 0 ? '+' : '' }}{{ activeNet | number:'1.0-0' }} <span class="pm-curr">MAD</span>
+        </div>
+        <div class="pm-lbl">{{ t('netProfit') }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="fin-tx-empty" *ngIf="profitMonth !== 'all' && !monthlyRowForDisplay && !profitLoading">{{ t('noData') }}</div>
+
+</div>
+<div class="prof-loading" *ngIf="profitLoading">{{ t('computingProfitability') }}</div>
+
+<!-- Rate Cards (admin only) -->
+<div class="fin-rates" *ngIf="isAdmin">
   <div class="fin-rate-card frc-day">
     <div class="frc-period">{{ t('pricePerDay') }}</div>
     <div class="frc-amount">{{ (car.prixJour || 0) | number:'1.0-0' }}<span class="frc-curr"> MAD</span></div>
@@ -96,16 +132,23 @@
     <div class="frc-amount">{{ (car.prixMois || 0) | number:'1.0-0' }}<span class="frc-curr"> MAD</span></div>
     <div class="frc-sub">{{ t('monthly') }}</div>
   </div>
-  <div class="fin-rate-card frc-deposit">
-    <div class="frc-period">{{ t('deposit') }}</div>
-    <div class="frc-amount">{{ (car.caution || 0) | number:'1.0-0' }}<span class="frc-curr"> MAD</span></div>
-    <div class="frc-sub">{{ t('deposit') }}</div>
-  </div>
 </div>
 
 
 <!-- Transactions -->
 <div class="fin-tx-section">
+
+  <div class="fin-tx-actions" *ngIf="finTransactions.length > 0">
+    <button class="fta-btn fta-excel" (click)="exportExcel()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      {{ t('exportExcel') }}
+    </button>
+    <button class="fta-btn fta-print" (click)="printReport()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      {{ t('printReport') }}
+    </button>
+  </div>
+
   <div class="efb2-toolbar">
     <!-- Type pills -->
     <div class="efb2-type-pills">
@@ -149,14 +192,17 @@
 
   <div *ngIf="!finLoading">
     <div *ngIf="finTransactions.length === 0" class="fin-tx-empty">{{ t('noTransactions') }}</div>
-    <table class="fin-tx-table" *ngIf="finTransactions.length > 0">
+
+    <!-- Desktop table -->
+    <table class="fin-tx-table exp-desktop-only" *ngIf="finTransactions.length > 0">
       <thead>
         <tr>
           <th>{{ t('date') }}</th>
           <th>{{ t('type') }}</th>
           <th>{{ t('description') }}</th>
           <th>{{ t('totalAmount') }}</th>
-          <th>{{ t('status') }}</th>
+          <th>{{ t('reservationStatusCol') }}</th>
+          <th>{{ t('paymentStatus') }}</th>
           <th>{{ t('actions') }}</th>
         </tr>
       </thead>
@@ -168,7 +214,14 @@
           <td [class.fin-tx-income]="tx.direction === 'income'" [class.fin-tx-expense]="tx.direction === 'expense'">
             {{ tx.direction === 'income' ? '+' : '-' }}{{ tx.amount | number:'1.0-0' }} MAD
           </td>
-          <td><span class="tx-badge" [ngClass]="txStatusClass(tx)">{{ tx.status || '—' }}</span></td>
+          <td>
+            <span *ngIf="tx.type === 'income'" class="tx-badge" [ngClass]="txResStatusClass(tx)">{{ tx.reservationStatus || '—' }}</span>
+            <span *ngIf="tx.type !== 'income'" class="text-muted">—</span>
+          </td>
+          <td>
+            <span *ngIf="tx.type === 'income'" class="tx-badge" [ngClass]="txPayStatusClass(tx)">{{ tx.paymentStatus || '—' }}</span>
+            <span *ngIf="tx.type !== 'income'" class="tx-badge" [ngClass]="txStatusClass(tx)">{{ tx.status | appStatus:'payment' }}</span>
+          </td>
           <td class="itab-actions">
             <a *ngIf="tx.filePath" class="ia-btn ia-download" [href]="fileUrl(tx.filePath)" [download]="downloadFileName(tx.filePath)">📎 {{ t('download') }}</a>
             <button *ngIf="tx.depenseId" class="ia-btn ia-pay" (click)="openPayPanel(tx)">💳 {{ t('payments') }}</button>
@@ -177,6 +230,41 @@
         </tr>
       </tbody>
     </table>
+
+    <!-- Mobile cards -->
+    <div class="exp-cards-mobile" *ngIf="finTransactions.length > 0">
+      <div *ngFor="let tx of finTransactions" class="exp-card">
+        <div class="exp-card-head">
+          <div class="exp-card-cat">
+            <span class="fin-tx-type">{{ tx.type }}</span>
+          </div>
+          <span *ngIf="tx.type === 'income'" class="tx-badge" [ngClass]="txPayStatusClass(tx)">{{ tx.paymentStatus || '—' }}</span>
+          <span *ngIf="tx.type !== 'income'" class="tx-badge" [ngClass]="txStatusClass(tx)">{{ tx.status | appStatus:'payment' }}</span>
+        </div>
+
+        <div class="exp-card-detail">{{ tx.description || '—' }}</div>
+
+        <div class="exp-card-meta">
+          <span class="exp-card-date">📅 {{ tx.date | date:'dd/MM/yy' }}</span>
+          <span *ngIf="tx.type === 'income' && tx.reservationStatus"
+                class="tx-badge exp-card-date" [ngClass]="txResStatusClass(tx)">
+            {{ tx.reservationStatus }}
+          </span>
+        </div>
+
+        <div class="fin-card-amount"
+             [class.fin-tx-income]="tx.direction === 'income'"
+             [class.fin-tx-expense]="tx.direction === 'expense'">
+          {{ tx.direction === 'income' ? '+' : '-' }}{{ tx.amount | number:'1.0-0' }} MAD
+        </div>
+
+        <div class="exp-card-actions" *ngIf="tx.filePath || tx.depenseId">
+          <a *ngIf="tx.filePath" class="ia-btn ia-download" [href]="fileUrl(tx.filePath)" [download]="downloadFileName(tx.filePath)">📎 {{ t('download') }}</a>
+          <button *ngIf="tx.depenseId" class="ia-btn ia-pay" (click)="openPayPanel(tx)">💳 {{ t('payments') }}</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 

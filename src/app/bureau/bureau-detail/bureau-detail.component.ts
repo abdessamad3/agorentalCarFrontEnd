@@ -1,13 +1,15 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { StatusPipe } from '../../shared/pipes/status.pipe';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BureauService } from '../../services/bureauservice.service';
 import { ToastService } from '../../services/toast.service';
+import { ActivityLogService } from '../../services/activity-log.service';
 
 @Component({
   selector: 'app-bureau-detail',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, StatusPipe],
   templateUrl: './bureau-detail.component.html',
   styleUrls: ['./bureau-detail.component.css']
 })
@@ -21,11 +23,13 @@ export class BureauDetailComponent implements OnInit {
     private route: ActivatedRoute,
     public router: Router,
     private toast: ToastService,
+    private activityLog: ActivityLogService,
   ) {}
 
   ngOnInit(): void {
     this.route.params.subscribe(params => {
       if (params['id']) {
+        this.activityLog.logView('Bureau', +params['id']);
         this.loadBureau(params['id']);
       }
     });

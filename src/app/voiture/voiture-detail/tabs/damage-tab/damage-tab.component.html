@@ -1,12 +1,268 @@
 <div class="itab-wrap">
   <div class="itab-header">
     <h2 class="itab-title">⚠️ {{ t('damage') }}</h2>
+    <div style="display:flex;gap:.5rem;align-items:center">
+      <button class="itab-refresh" (click)="load()" [title]="t('retry')">↻</button>
+      <button class="dmg-add-btn" (click)="openAddForm()" *ngIf="!showAddForm">+ {{ t('addDamage') }}</button>
+    </div>
   </div>
-  <div class="itab-empty" style="margin-top:3rem">
-    <span style="font-size:3rem">🚧</span>
-    <p style="font-weight:600;margin-top:.75rem">{{ t('damage') }}</p>
-    <p style="color:var(--text-muted);font-size:.85rem;max-width:320px;text-align:center;margin-top:.25rem">
-      Damage tracking coming soon.
-    </p>
+
+  <!-- ── Add Damage Form ───────────────────────────────────────────── -->
+  <div *ngIf="showAddForm" class="dmg-add-form">
+    <h3 class="dmg-list-title" style="margin-bottom:.75rem">🔧 {{ t('recordNewDamage') }}</h3>
+    <div class="dmg-add-row">
+      <div class="dmg-add-field">
+        <label>{{ t('damageZone') }} <span style="color:var(--danger)">*</span></label>
+        <select [(ngModel)]="addZone" class="dmg-add-select">
+          <option value="">{{ t('selectZone') }}</option>
+          <option *ngFor="let z of ZONES" [value]="z.value">{{ t(z.key) }}</option>
+        </select>
+      </div>
+      <div class="dmg-add-field">
+        <label>{{ t('damageSeverity') }}</label>
+        <select [(ngModel)]="addSeverity" class="dmg-add-select">
+          <option *ngFor="let s of SEVERITIES" [value]="s.value">{{ t(s.key) }}</option>
+        </select>
+      </div>
+    </div>
+    <div class="dmg-add-row" style="margin-top:.6rem">
+      <div class="dmg-add-field" style="flex:2">
+        <label>{{ t('damageDescription') }}</label>
+        <textarea [(ngModel)]="addDescription" class="dmg-add-textarea" rows="2"></textarea>
+      </div>
+      <div class="dmg-add-field" style="flex:1">
+        <label>{{ t('estimatedCost') }} <span style="color:var(--text-muted);font-size:.8rem">({{ t('optional') }})</span></label>
+        <input type="number" [(ngModel)]="addEstimatedCost" min="0" step="0.01" placeholder="0.00 MAD" class="dmg-add-select" />
+      </div>
+    </div>
+    <div *ngIf="addError" class="itab-alert itab-alert-error" style="margin-top:.5rem">{{ addError }}</div>
+    <div class="dmg-add-actions">
+      <button class="dmg-cancel-btn" (click)="closeAddForm()" [disabled]="adding">{{ t('cancel') }}</button>
+      <button class="dmg-repair-btn" (click)="submitDamage()" [disabled]="adding || !addZone">
+        <span *ngIf="adding" class="spin"></span>
+        <span *ngIf="!adding">{{ t('saveDamage') }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="itab-loading">
+    <span class="spin"></span> {{ t('loading') }}
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error && !loading" class="itab-alert itab-alert-error">{{ error }}</div>
+
+  <div *ngIf="!loading && !error">
+
+    <!-- ── Summary badges ──────────────────────────────────────────── -->
+    <div class="dmg-summary-row" *ngIf="damages.length > 0">
+      <span class="dmg-badge dmg-badge-open" *ngIf="openDamages.length > 0">
+        ⚠️ {{ openDamages.length }} {{ t('pending') }}
+      </span>
+      <span class="dmg-badge dmg-badge-repaired" *ngIf="repairedDamages.length > 0">
+        ✅ {{ repairedDamages.length }} {{ t('done') }}
+      </span>
+      <span class="dmg-all-clear" *ngIf="openDamages.length === 0">
+        ✅ {{ t('allDamageRepaired') }}
+      </span>
+    </div>
+
+    <!-- Repair error -->
+    <div *ngIf="repairError" class="itab-alert itab-alert-error" style="margin-bottom:1rem">
+      {{ repairError }}
+    </div>
+
+    <!-- ── SVG Car Diagram (always visible after load) ────────────── -->
+    <div class="dmg-diagram-section">
+      <p class="dmg-diagram-title" *ngIf="openDamages.length > 0">{{ t('damagedZonesTitle') }}</p>
+      <p class="dmg-diagram-title" *ngIf="openDamages.length === 0" style="color:var(--text-muted)">{{ t('vehicleConditionTitle') }}</p>
+      <div class="dmg-car-wrap">
+        <app-vehicle-map [damagedZones]="damagedZonesList" mode="readonly"></app-vehicle-map>
+      </div>
+      <!-- No-damage caption -->
+      <div *ngIf="damages.length === 0" style="text-align:center;margin-top:1rem;padding-bottom:.5rem">
+        <span style="font-size:1.5rem">✅</span>
+        <p style="font-weight:600;margin-top:.4rem">{{ t('noDamageRecords') }}</p>
+        <p style="color:var(--text-muted);font-size:.85rem;margin-top:.2rem">{{ t('vehicleClean') }}</p>
+      </div>
+    </div>
+
+    <!-- ── Open damage list ────────────────────────────────────────── -->
+    <div *ngIf="openDamages.length > 0" class="dmg-list-section">
+      <h3 class="dmg-list-title">🔧 {{ t('pendingRepairs') }}</h3>
+      <div class="dmg-table-wrap">
+        <table class="dmg-table">
+          <thead>
+            <tr>
+              <th>{{ t('damageZone') }}</th>
+              <th>{{ t('damageSeverity') }}</th>
+              <th>{{ t('date') }}</th>
+              <th>{{ t('reservations') }}</th>
+              <th>{{ t('estimatedCost') }}</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let d of openDamages">
+              <td><span class="dmg-zone-pill dmg-zone-open">{{ partLabel(d.zone) }}</span></td>
+              <td><span class="dmg-sev dmg-sev-{{ d.severity }}">{{ t('sev' + (d.severity | titlecase)) }}</span></td>
+              <td>{{ d.creeAu | date:'dd/MM/yyyy' }}</td>
+              <td>
+                <span *ngIf="d.reservationId">#{{ d.reservationId }}</span>
+                <span *ngIf="!d.reservationId" style="color:var(--text-muted)">—</span>
+              </td>
+              <td>
+                <span *ngIf="d.estimatedCost">{{ d.estimatedCost }} MAD</span>
+                <span *ngIf="!d.estimatedCost" style="color:var(--text-muted)">—</span>
+              </td>
+              <td>
+                <button class="dmg-repair-btn"
+                  [disabled]="repairFormId !== null"
+                  (click)="openRepairForm(d)">
+                  {{ t('markRepaired') }}
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Repaired history ────────────────────────────────────────── -->
+    <div *ngIf="repairedDamages.length > 0" class="dmg-list-section" style="margin-top:1.5rem">
+      <h3 class="dmg-list-title" style="color:var(--text-muted)">✅ {{ t('repairHistory') }}</h3>
+      <div class="dmg-table-wrap">
+        <table class="dmg-table">
+          <thead>
+            <tr>
+              <th>{{ t('damageZone') }}</th>
+              <th>{{ t('damageSeverity') }}</th>
+              <th>{{ t('date') }}</th>
+              <th>{{ t('done') }}</th>
+              <th>{{ t('estimatedCost') }}</th>
+              <th>{{ t('actualRepairCost') }}</th>
+              <th>{{ t('paymentHistory') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let d of repairedDamages" class="dmg-row-repaired">
+              <td><span class="dmg-zone-pill dmg-zone-done">{{ partLabel(d.zone) }}</span></td>
+              <td><span class="dmg-sev dmg-sev-{{ d.severity }}">{{ t('sev' + (d.severity | titlecase)) }}</span></td>
+              <td>{{ d.creeAu | date:'dd/MM/yyyy' }}</td>
+              <td>{{ d.repairedAt | date:'dd/MM/yyyy' }}</td>
+              <td>
+                <span *ngIf="d.estimatedCost">{{ d.estimatedCost }} MAD</span>
+                <span *ngIf="!d.estimatedCost" style="color:var(--text-muted)">—</span>
+              </td>
+              <td>
+                <span *ngIf="d.reparationId" class="dmg-zone-pill dmg-zone-done" style="font-size:.75rem">
+                  ✅ #{{ d.reparationId }}
+                </span>
+                <span *ngIf="!d.reparationId" style="color:var(--text-muted)">—</span>
+              </td>
+              <td>
+                <button *ngIf="d.depenseId" class="dmg-pay-hist-btn" (click)="openPayPanel(d)" [title]="t('paymentHistory')">
+                  <span class="dmg-pay-hist-icon">💳</span>
+                  <span class="dmg-pay-hist-pct" *ngIf="d.repairMontant && d.repairMontant > 0">
+                    {{ d.repairMontantPaye! | number:'1.0-0' }}/{{ d.repairMontant | number:'1.0-0' }}
+                  </span>
+                </button>
+                <span *ngIf="!d.depenseId" style="color:var(--text-muted)">—</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 </div>
+
+<!-- ── Repair Modal ─────────────────────────────────────────────────────────── -->
+<app-modal
+  *ngIf="repairDamage"
+  [title]="t('confirmRepair')"
+  [subtitle]="t('markRepaired')"
+  icon="🔧"
+  iconColor="green"
+  maxWidth="480px"
+  [dir]="dir"
+  (closed)="cancelRepairForm()">
+
+  <div class="am-body">
+    <!-- Zone + severity badge -->
+    <div class="dmg-modal-zone-row">
+      <span class="dmg-zone-pill dmg-zone-open">{{ partLabel(repairDamage.zone) }}</span>
+      <span class="dmg-sev dmg-sev-{{ repairDamage.severity }}">
+        {{ t('sev' + (repairDamage.severity | titlecase)) }}
+      </span>
+      <span *ngIf="repairDamage.estimatedCost" class="dmg-modal-est">
+        ≈ {{ repairDamage.estimatedCost }} MAD
+      </span>
+    </div>
+
+    <div class="dmg-modal-fields">
+      <!-- Actual cost -->
+      <div class="dmg-modal-field">
+        <label>
+          {{ t('actualRepairCost') }}
+          <span class="dmg-modal-opt">({{ t('optional') }})</span>
+        </label>
+        <div class="dmg-modal-input-wrap">
+          <span class="dmg-modal-currency">MAD</span>
+          <input type="number" class="dmg-modal-input" [(ngModel)]="repairAmountPaid"
+            min="0" step="0.01" placeholder="0.00" [disabled]="submittingRepair" />
+        </div>
+      </div>
+
+      <!-- Receipt upload -->
+      <div class="dmg-modal-field">
+        <label>
+          {{ t('repairReceipt') }}
+          <span class="dmg-modal-opt">({{ t('optional') }})</span>
+        </label>
+        <label class="dmg-modal-upload" [class.has-file]="repairFile">
+          <input type="file" accept="image/*,.pdf" (change)="onRepairFileChange($event)"
+            style="display:none" [disabled]="submittingRepair" />
+          <span class="dmg-modal-upload-icon">{{ repairFile ? '📄' : '📎' }}</span>
+          <span class="dmg-modal-upload-text">
+            {{ repairFile ? repairFile.name : 'PDF · JPG · PNG · max 10 MB' }}
+          </span>
+          <span *ngIf="!repairFile" class="dmg-modal-upload-cta">{{ t('chooseFile') }}</span>
+          <span *ngIf="repairFile" class="dmg-modal-upload-remove"
+            (click)="$event.preventDefault(); repairFile = null">✕</span>
+        </label>
+      </div>
+    </div>
+
+    <div *ngIf="repairFormError" class="itab-alert itab-alert-error" style="margin-top:.9rem">
+      {{ repairFormError }}
+    </div>
+  </div>
+
+  <div class="am-footer">
+    <button class="dmg-cancel-btn" (click)="cancelRepairForm()" [disabled]="submittingRepair">
+      {{ t('cancel') }}
+    </button>
+    <button class="am-btn-confirm am-btn-confirm-green" (click)="submitRepair()" [disabled]="submittingRepair">
+      <span *ngIf="submittingRepair" class="spin" style="width:14px;height:14px;border-width:2px"></span>
+      <span>{{ submittingRepair ? t('loading') : t('confirmRepair') }}</span>
+    </button>
+  </div>
+
+</app-modal>
+
+<!-- ── Repair Payment Panel ──────────────────────────────────────────────────── -->
+<app-pay-dep-panel
+  *ngIf="payPanelDamage"
+  [open]="payPanelOpen"
+  [depenseId]="payPanelDamage.depenseId"
+  [montantTotal]="payPanelDamage.repairMontant ?? 0"
+  [montantPaye]="payPanelDamage.repairMontantPaye ?? 0"
+  [title]="partLabel(payPanelDamage.zone)"
+  [dir]="dir"
+  [dateFacture]="null"
+  (closed)="closePayPanel()"
+  (paymentChanged)="onRepairPaymentChanged()">
+</app-pay-dep-panel>

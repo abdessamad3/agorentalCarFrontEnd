@@ -1,24 +1,26 @@
-import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
+﻿import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { TranslationService } from '../../services/translation.service';
 import { CrudService } from '../../services/crud.service';
 import { BtnComponent } from '../../shared/btn/btn.component';
 import { PaginatorComponent } from '../../shared/paginator/paginator.component';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 import { Subject, of } from 'rxjs';
 import { debounceTime, switchMap, takeUntil, catchError } from 'rxjs/operators';
+import { PAGE_SIZE } from '../../shared/constants/pagination';
 
 @Component({
   selector: 'app-fournisseur-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, BtnComponent, PaginatorComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, BtnComponent, PaginatorComponent, TranslatePipe],
   templateUrl: './fournisseur-list.component.html',
   styleUrls: ['../../shared/styles/crud-list.css']
 })
 export class FournisseurListComponent implements OnInit, OnDestroy {
   items: any[] = [];
   loading = true; error = ''; dir = 'ltr'; search = '';
-  page = 1; limit = 20; total = 0;
+  page = 1; limit = PAGE_SIZE; total = 0;
   modalMode: 'form' | 'delete' | null = null;
   selected: any = null; form: FormGroup; isSubmitting = false;
   deleteId: number | null = null; isEditing = false;

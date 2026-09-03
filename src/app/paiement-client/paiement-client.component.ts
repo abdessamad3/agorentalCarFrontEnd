@@ -134,5 +134,42 @@ export class PaiementClientComponent implements OnInit {
     });
   }
 
+  get totalOutstanding(): number {
+    return this.reservations
+      .filter((r: any) => !['annulee','cancelled','annule'].includes((r.reservationStatus || r.statut || '').toLowerCase()))
+      .reduce((s: number, r: any) => s + Math.max(0, parseFloat(r.total || 0) - parseFloat(r.montantPaye || 0)), 0);
+  }
+
+  clientInitials(item: any): string {
+    const nom    = item.reservation?.client?.nom    || '';
+    const prenom = item.reservation?.client?.prenom || '';
+    return ((nom[0] || '') + (prenom[0] || '')).toUpperCase() || '?';
+  }
+
+  avatarColor(item: any): string {
+    const palette = ['#3182ce','#38a169','#d69e2e','#805ad5','#e53e3e','#dd6b20','#319795'];
+    const name = item.reservation?.client?.nom || '';
+    return palette[name.charCodeAt(0) % palette.length] || palette[0];
+  }
+
+  isFullyPaid(item: any): boolean {
+    const total = parseFloat(item.reservation?.total || 0);
+    const paid  = parseFloat(item.reservation?.montantPaye || 0);
+    return total > 0 && paid >= total;
+  }
+
+  paymentPct(item: any): number {
+    const total = parseFloat(item.reservation?.total || 0);
+    const paid  = parseFloat(item.reservation?.montantPaye || 0);
+    if (total <= 0) return 0;
+    return Math.min(100, Math.round((paid / total) * 100));
+  }
+
+  remaining(item: any): number {
+    const total = parseFloat(item.reservation?.total || 0);
+    const paid  = parseFloat(item.reservation?.montantPaye || 0);
+    return Math.max(0, total - paid);
+  }
+
   t(key: string) { return this.ts.translate(key); }
 }

@@ -9,15 +9,79 @@
     <app-btn variant="primary" (click)="openAdd()">{{ t('beAddExpense') }}</app-btn>
   </div>
 
-  <!-- Search -->
-  <div class="search-filter-bar">
-    <div class="search-input">
-      <input type="text" [(ngModel)]="search" (ngModelChange)="onSearch()" [placeholder]="t('beSearchPlaceholder')" />
+  <!-- Summary cards -->
+  <div class="be-summary" *ngIf="summary">
+    <div class="be-card">
+      <div class="be-card-label">{{ t('beThisMonthPlanned') }}</div>
+      <div class="be-card-value">{{ fmt(summary.thisMonthPlanned) }} MAD</div>
+    </div>
+    <div class="be-card be-card-paid">
+      <div class="be-card-label">{{ t('bePaidLabel') }}</div>
+      <div class="be-card-value">{{ fmt(summary.thisMonthPaid) }} MAD</div>
+    </div>
+    <div class="be-card be-card-pending">
+      <div class="be-card-label">{{ t('pending') }}</div>
+      <div class="be-card-value">{{ fmt(summary.thisMonthPending) }} MAD</div>
+    </div>
+    <div class="be-card be-card-overdue" *ngIf="summary.overdueCount > 0">
+      <div class="be-card-label">
+        ⚠ {{ t('beOverdue') }}
+        <span class="be-card-count">{{ summary.overdueCount }}</span>
+      </div>
+      <div class="be-card-value">{{ fmt(summary.overdueAmount) }} MAD</div>
+    </div>
+    <div class="be-card be-card-year">
+      <div class="be-card-label">{{ t('beYearTotal') }}</div>
+      <div class="be-card-value">{{ fmt(summary.yearTotal) }} MAD</div>
     </div>
   </div>
 
-  <div *ngIf="loading" class="loading-state"><p>{{ t('loading') }}</p></div>
-  <div *ngIf="error && !loading" class="error-state">
+  <!-- Tab bar -->
+  <div class="be-tabs">
+    <button [class.be-tab-active]="activeTab==='all'"     (click)="setTab('all')">{{ t('beTabAll') }}</button>
+    <button [class.be-tab-active]="activeTab==='monthly'" (click)="setTab('monthly')">{{ t('beMonthly') }}</button>
+    <button [class.be-tab-active]="activeTab==='yearly'"  (click)="setTab('yearly')">{{ t('beYearly') }}</button>
+    <button [class.be-tab-active]="activeTab==='onetime'" (click)="setTab('onetime')">{{ t('beTabOnetime') }}</button>
+  </div>
+
+  <!-- Search + Filters -->
+  <div class="search-filter-bar">
+    <div class="search-input">
+      <input type="text" [(ngModel)]="search" (ngModelChange)="onSearch()"
+             [placeholder]="t('beSearchPlaceholder')" />
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <select class="filter-select" [(ngModel)]="filterStatus" (ngModelChange)="onFilterChange()">
+      <option value="">{{ t('beAllStatuses') }}</option>
+      <option value="payee">{{ t('bePaidLabel') }}</option>
+      <option value="pending">{{ t('pending') }}</option>
+      <option value="partiel">{{ t('partial') }}</option>
+    </select>
+    <select class="filter-select" [(ngModel)]="filterType" (ngModelChange)="onFilterChange()">
+      <option value="">{{ t('beAllTypes') }}</option>
+      <option *ngFor="let et of expenseTypes" [value]="et.value">{{ et.label }}</option>
+    </select>
+    <select class="filter-select" [(ngModel)]="filterMonth" (ngModelChange)="onFilterChange()">
+      <option value="">{{ t('beAllMonths') }}</option>
+      <option *ngFor="let m of months" [value]="m.value">{{ m.label }}</option>
+    </select>
+    <select class="filter-select" [(ngModel)]="filterYear" (ngModelChange)="onFilterChange()">
+      <option value="">{{ t('beAllYears') }}</option>
+      <option *ngFor="let y of years" [value]="y">{{ y }}</option>
+    </select>
+    <select *ngIf="isAdmin" class="filter-select" [(ngModel)]="filterBureauId" (ngModelChange)="onFilterChange()">
+      <option value="">{{ t('beAllBureaus') }}</option>
+      <option *ngFor="let b of bureaux" [value]="b.id">{{ b.nom }}</option>
+    </select>
+    <button *ngIf="hasActiveFilter" class="filter-clear-btn" type="button" (click)="clearFilters()">
+      ✕ {{ t('resetFilters') }}
+    </button>
+  </div>
+
+  <div *ngIf="loading"             class="loading-state"><p>{{ t('loading') }}</p></div>
+  <div *ngIf="error && !loading"   class="error-state">
     <p>{{ error }}</p>
     <button (click)="load()" class="btn-retry">{{ t('retry') }}</button>
   </div>
@@ -30,7 +94,7 @@
     <button class="empty-action" (click)="openAdd()">{{ t('beAddBureauExpense') }}</button>
   </div>
 
-  <!-- Table -->
+  <!-- ════ Table (desktop) ════════════════════════════════════════════════════ -->
   <div *ngIf="!loading && !error && items.length > 0" class="table-container">
     <table class="bureaus-table">
       <thead>
@@ -39,52 +103,154 @@
           <th>{{ t('bureau') }}</th>
           <th>{{ t('type') }}</th>
           <th>{{ t('description') }}</th>
-          <th class="td-right">{{ t('montant') }} (MAD)</th>
+          <th class="td-right">{{ t('bePlanned') }}</th>
+          <th class="td-right">{{ t('bePaidCol') }}</th>
           <th>{{ t('status') }}</th>
+          <th>Doc</th>
           <th>{{ t('actions') }}</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let item of paged" class="bureau-row">
+        <tr *ngFor="let item of paged" class="bureau-row" [ngClass]="rowClass(item)">
+
           <td style="white-space:nowrap">{{ item.dateDebut | date:'dd/MM/yyyy' }}</td>
+
           <td>
             <span *ngIf="item.bureauNom" style="font-size:.85rem;font-weight:600">{{ item.bureauNom }}</span>
             <span *ngIf="!item.bureauNom" style="color:#a0aec0">—</span>
           </td>
+
           <td>
             <span class="badge" style="background:#faf5ff;color:#6b21a8;font-size:.75rem;padding:2px 8px;border-radius:12px">
               {{ typeLabel(item.typeDepense) }}
             </span>
           </td>
-          <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.82rem;color:#718096">
+
+          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.82rem;color:#718096">
             {{ item.description || '—' }}
           </td>
+
+          <!-- Planned amount -->
           <td class="td-right" style="font-weight:700;font-family:monospace">
-            {{ (+item.montant).toLocaleString('fr-FR', {minimumFractionDigits:2}) }}
-          </td>
-          <td>
-            <span [class]="'badge ' + statutClass(item.statut)"
-              style="font-size:.72rem;padding:2px 8px;border-radius:12px">
-              {{ t(item.statut) }}
+            {{ fmt(item.montant) }}
+            <span *ngIf="item.isAutoGenerated && (+item.montant) === 0"
+                  style="display:block;font-size:.65rem;font-weight:600;color:#d97706;font-family:sans-serif">
+              {{ t('beMontantRequis') }}
             </span>
           </td>
-          <td class="actions-cell">
-            <app-btn variant="icon-view"   (click)="openView(item)"       [title]="t('view')"></app-btn>
-            <app-btn variant="icon-edit"   (click)="openEdit(item)"       [title]="t('edit')"></app-btn>
-            <app-btn variant="icon-delete" (click)="openDelete(item.id)"  [title]="t('delete')"></app-btn>
+
+          <!-- Paid amount -->
+          <td class="td-right" style="font-family:monospace">
+            <ng-container *ngIf="item.statut === 'payee' || item.statut === 'partiel'; else noPaid">
+              <span [style.color]="hasMontantDiff(item) ? '#d97706' : '#22543d'" style="font-weight:600">
+                {{ fmt(paidAmount(item)) }}
+              </span>
+              <span *ngIf="hasMontantDiff(item)"
+                    style="display:block;font-size:.65rem;color:#d97706;font-family:sans-serif">
+                {{ +paidAmount(item) < +item.montant ? '▼' : '▲' }}
+                {{ fmt(Math.abs(+paidAmount(item) - +item.montant)) }}
+              </span>
+            </ng-container>
+            <ng-template #noPaid>
+              <span style="color:#cbd5e0">—</span>
+            </ng-template>
           </td>
+
+          <!-- Status -->
+          <td>
+            <span [class]="'badge ' + statutClass(item.statut, item)"
+                  style="font-size:.72rem;padding:2px 8px;border-radius:12px">
+              {{ statutLabel(item.statut, item) }}
+            </span>
+          </td>
+
+          <!-- Doc -->
+          <td style="text-align:center;vertical-align:middle">
+            <app-btn *ngIf="item.justificatifUrl" variant="icon-invoice"
+              (click)="openDoc(item.justificatifUrl)" [title]="t('downloadJustificatif')">
+            </app-btn>
+            <span *ngIf="!item.justificatifUrl" style="color:#cbd5e0;font-size:.8rem">—</span>
+          </td>
+
+          <!-- Actions -->
+          <td class="actions-cell">
+            <button *ngIf="item.isAutoGenerated && !item.dismissedAt"
+                    class="btn-dismiss" type="button"
+                    (click)="dismiss(item)" [title]="t('beDismiss')">✕</button>
+            <button class="btn-pay" type="button"
+                    (click)="openPayPanel(item)" [title]="t('paiements')">💳</button>
+            <app-btn variant="icon-view"   (click)="openView(item)"      [title]="t('view')"></app-btn>
+            <app-btn variant="icon-edit"   (click)="openEdit(item)"      [title]="t('edit')"></app-btn>
+            <app-btn variant="icon-delete" (click)="openDelete(item.id)" [title]="t('delete')"></app-btn>
+          </td>
+
         </tr>
       </tbody>
     </table>
-    <app-paginator [page]="page" [limit]="limit" [total]="total" (pageChange)="onPageChange($event)"></app-paginator>
+    <app-paginator [page]="page" [limit]="limit" [total]="total" (pageChange)="onPageChange($event)">
+    </app-paginator>
   </div>
+
+  <!-- ════ Cards (mobile) ═════════════════════════════════════════════════════ -->
+  <div *ngIf="!loading && !error && items.length > 0" class="mobile-cards">
+    <div *ngFor="let item of paged" class="expense-card" [ngClass]="rowClass(item)">
+
+      <!-- Top: date + bureau -->
+      <div class="ec-top">
+        <span class="ec-date">{{ item.dateDebut | date:'dd/MM/yyyy' }}</span>
+        <span *ngIf="item.bureauNom" class="ec-bureau">{{ item.bureauNom }}</span>
+      </div>
+
+      <!-- Type + amount -->
+      <div class="ec-main">
+        <span class="badge" style="background:#faf5ff;color:#6b21a8;font-size:.73rem;padding:2px 10px;border-radius:12px">
+          {{ typeLabel(item.typeDepense) }}
+        </span>
+        <div class="ec-amount-block">
+          <span class="ec-amount">{{ fmt(item.montant) }} MAD</span>
+          <span *ngIf="item.isAutoGenerated && (+item.montant) === 0" class="ec-warn">{{ t('beMontantRequis') }}</span>
+          <span *ngIf="hasMontantDiff(item)" class="ec-paid-diff">
+            {{ t('bePaidLabel') }}: {{ fmt(paidAmount(item)) }} MAD
+          </span>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <p *ngIf="item.description" class="ec-desc">{{ item.description }}</p>
+
+      <!-- Footer: status + actions -->
+      <div class="ec-footer">
+        <span [class]="'badge ' + statutClass(item.statut, item)"
+              style="font-size:.72rem;padding:2px 10px;border-radius:12px">
+          {{ statutLabel(item.statut, item) }}
+        </span>
+        <div class="ec-actions">
+          <app-btn *ngIf="item.justificatifUrl" variant="icon-invoice"
+            (click)="openDoc(item.justificatifUrl)" [title]="t('downloadJustificatif')">
+          </app-btn>
+          <button class="btn-pay" type="button"
+                  (click)="openPayPanel(item)" [title]="t('paiements')">💳</button>
+          <button *ngIf="item.isAutoGenerated && !item.dismissedAt"
+                  class="btn-dismiss" type="button"
+                  (click)="dismiss(item)" [title]="t('beDismiss')">✕</button>
+          <app-btn variant="icon-view"   (click)="openView(item)"      [title]="t('view')"></app-btn>
+          <app-btn variant="icon-edit"   (click)="openEdit(item)"      [title]="t('edit')"></app-btn>
+          <app-btn variant="icon-delete" (click)="openDelete(item.id)" [title]="t('delete')"></app-btn>
+        </div>
+      </div>
+
+    </div>
+    <app-paginator [page]="page" [limit]="limit" [total]="total" (pageChange)="onPageChange($event)">
+    </app-paginator>
+  </div>
+
 </div>
 
-<!-- Modal -->
+<!-- ════ Modals ══════════════════════════════════════════════════════════════ -->
 <div *ngIf="modalMode" class="modal-overlay" (click)="closeModal()">
   <div class="modal" (click)="$event.stopPropagation()">
 
-    <!-- Form -->
+    <!-- ── Add / Edit form ──────────────────────────────────────────────── -->
     <ng-container *ngIf="modalMode === 'form'">
       <div class="modal-header">
         <h2>{{ isEditing ? t('edit') : t('add') }} {{ t('bureauExpenses') }}</h2>
@@ -93,7 +259,7 @@
       <form [formGroup]="form" (ngSubmit)="save()">
         <div class="modal-body">
 
-          <!-- Bureau (admin only) + Type -->
+          <!-- Bureau + Type -->
           <div class="form-row">
             <div *ngIf="isAdmin" class="form-group" style="flex:1">
               <label>{{ t('bureau') }}</label>
@@ -111,32 +277,66 @@
             </div>
           </div>
 
-          <!-- Amount + Date -->
-          <div class="form-row">
-            <div class="form-group">
-              <label>{{ t('montant') }} (MAD) <span class="required">*</span></label>
-              <input type="number" formControlName="montant" min="0.01" step="0.01" />
+          <!-- Recurring options -->
+          <ng-container *ngIf="showFrequencyFields">
+            <div class="form-row">
+              <div class="form-group" style="flex:1">
+                <label>{{ t('beFrequency') }}</label>
+                <select formControlName="frequency">
+                  <option value="monthly">{{ t('bePerMonth') }}</option>
+                  <option value="yearly">{{ t('bePerYear') }}</option>
+                </select>
+              </div>
+              <div class="form-group" style="flex:1">
+                <label>{{ t('bePriceType') }}</label>
+                <select formControlName="priceType">
+                  <option value="fixed">{{ t('beFixed') }}</option>
+                  <option value="variable">{{ t('beVariable') }}</option>
+                </select>
+              </div>
             </div>
-            <div class="form-group">
-              <label>{{ t('beExpenseDate') }} <span class="required">*</span></label>
-              <input type="date" formControlName="dateDebut" />
+            <div class="form-row" *ngIf="form.value.frequency === 'monthly'">
+              <div class="form-group" style="flex:1">
+                <label>{{ t('beStartMonth') }}</label>
+                <select formControlName="periodMonth">
+                  <option *ngFor="let m of months" [value]="m.value">{{ m.label }}</option>
+                </select>
+              </div>
+              <div class="form-group" style="flex:1">
+                <label>{{ t('annee') }}</label>
+                <select formControlName="periodYear">
+                  <option *ngFor="let y of years" [value]="y">{{ y }}</option>
+                </select>
+              </div>
             </div>
-          </div>
-
-          <!-- Status + Payment date -->
-          <div class="form-row">
-            <div class="form-group">
-              <label>{{ t('status') }}</label>
-              <select formControlName="statut">
-                <option value="pending">{{ t('pending') }}</option>
-                <option value="paid">{{ t('paid') }}</option>
-                <option value="partial">{{ t('partial') }}</option>
+            <div class="form-group" *ngIf="form.value.frequency === 'yearly'">
+              <label>{{ t('annee') }}</label>
+              <select formControlName="periodYear">
+                <option *ngFor="let y of years" [value]="y">{{ y }}</option>
               </select>
             </div>
-            <div class="form-group">
-              <label>{{ t('datePaiement') }}</label>
-              <input type="date" formControlName="datePaiement" />
-            </div>
+          </ng-container>
+
+          <!-- Amount -->
+          <div class="form-group">
+            <label>{{ t('montant') }} (MAD) <span class="required">*</span></label>
+            <input type="number" formControlName="montant"
+                   [min]="isVariablePrice ? 0 : 0.01" step="0.01"
+                   [attr.placeholder]="isVariablePrice ? t('beVariablePlaceholder') : null" />
+            <span *ngIf="isVariablePrice" style="font-size:.75rem;color:#9ca3af;margin-top:2px">
+              {{ t('beVariableHint') }}
+            </span>
+          </div>
+
+          <!-- Update template price checkbox -->
+          <div *ngIf="showUpdateTemplateCheckbox"
+               class="form-group" style="flex-direction:row;align-items:center;gap:8px">
+            <input type="checkbox" id="updateTemplatePrice"
+                   [(ngModel)]="updateTemplatePrice" [ngModelOptions]="{standalone:true}"
+                   style="width:auto;margin:0" />
+            <label for="updateTemplatePrice" style="font-weight:500;color:#374151;margin:0;cursor:pointer">
+              {{ t('beUpdateTemplate') }}
+            </label>
           </div>
 
           <!-- Invoice date + Description -->
@@ -151,17 +351,44 @@
             </div>
           </div>
 
+          <!-- Justificatif -->
+          <div class="form-group" style="margin-top:8px">
+            <label style="display:flex;align-items:center;gap:6px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+              </svg>
+              {{ t('justificatif') }}
+            </label>
+            <div *ngIf="isEditing && selected?.justificatifUrl" class="justif-current">
+              <span class="justif-filename">📎 {{ t('currentDoc') }}</span>
+              <a [href]="selected.justificatifUrl" target="_blank" class="justif-link">{{ t('viewJustificatif') }}</a>
+              <a [href]="selected.justificatifUrl" download class="justif-link">{{ t('downloadJustificatif') }}</a>
+            </div>
+            <label class="file-upload-label">
+              <input type="file" accept=".pdf,image/jpeg,image/png,image/webp"
+                     (change)="onFileChange($event)" style="display:none" />
+              <span class="file-upload-btn">
+                {{ pendingFileName || (isEditing && selected?.justificatifUrl
+                    ? t('replaceJustificatif') : t('uploadJustificatif')) }}
+              </span>
+            </label>
+            <span *ngIf="fileError" style="color:#e53e3e;font-size:.75rem">{{ fileError }}</span>
+          </div>
+
         </div>
         <div class="modal-footer">
           <app-btn variant="secondary" (click)="closeModal()">{{ t('cancel') }}</app-btn>
-          <app-btn variant="primary" type="submit" [disabled]="form.invalid || isSubmitting">
-            {{ isSubmitting ? t('saving') : t('save') }}
+          <app-btn variant="primary" type="submit"
+                   [disabled]="form.invalid || isSubmitting || uploadingFile">
+            {{ (uploadingFile || isSubmitting) ? t('saving') : t('save') }}
           </app-btn>
         </div>
       </form>
     </ng-container>
 
-    <!-- Delete -->
+    <!-- ── Delete ────────────────────────────────────────────────────────── -->
     <ng-container *ngIf="modalMode === 'delete'">
       <div class="modal-header">
         <h2>{{ t('confirmDelete') }}</h2>
@@ -172,26 +399,33 @@
       </div>
       <div class="modal-footer">
         <app-btn variant="secondary" (click)="closeModal()">{{ t('cancel') }}</app-btn>
-        <app-btn variant="danger" (click)="confirmDelete()">{{ t('delete') }}</app-btn>
+        <app-btn variant="danger"    (click)="confirmDelete()">{{ t('delete') }}</app-btn>
       </div>
     </ng-container>
 
   </div>
 </div>
 
-<!-- Drawer: View details -->
+<!-- ════ Drawer: View details ════════════════════════════════════════════════ -->
 <div class="drawer-backdrop" [class.visible]="drawerOpen" (click)="closeDrawer()"></div>
 <div class="drawer" [class.open]="drawerOpen">
   <ng-container *ngIf="drawerItem">
     <div class="drawer-header">
       <span class="drawer-title">{{ t('beExpenseDetails') }}</span>
       <button class="drawer-close" (click)="closeDrawer()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6"  x2="6"  y2="18"/>
+          <line x1="6"  y1="6"  x2="18" y2="18"/>
+        </svg>
       </button>
     </div>
     <div class="drawer-body">
+
+      <!-- Bureau + Type -->
       <div class="drawer-section">
-        <div class="drawer-section-head">{{ t('bureau') }}</div>
+        <div class="drawer-section-head">{{ t('beIdentification') }}</div>
         <div class="drawer-row">
           <span class="drawer-lbl">{{ t('bureau') }}</span>
           <span class="drawer-val">{{ drawerItem.bureauNom || '—' }}</span>
@@ -200,49 +434,143 @@
           <span class="drawer-lbl">{{ t('type') }}</span>
           <span class="drawer-val">{{ typeLabel(drawerItem.typeDepense) }}</span>
         </div>
-      </div>
-      <div class="drawer-section">
-        <div class="drawer-section-head">{{ t('beFinancial') }}</div>
-        <div class="drawer-row">
-          <span class="drawer-lbl">{{ t('montant') }}</span>
-          <span class="drawer-val" style="font-weight:700;color:#e53e3e">
-            {{ (+drawerItem.montant).toLocaleString('fr-FR', {minimumFractionDigits:2}) }} MAD
-          </span>
+        <div class="drawer-row" *ngIf="drawerItem.templateFrequency">
+          <span class="drawer-lbl">{{ t('beRecurrence') }}</span>
+          <span class="drawer-val">{{ drawerItem.templateFrequency === 'monthly' ? t('beMonthly') : t('beYearly') }}</span>
         </div>
         <div class="drawer-row">
           <span class="drawer-lbl">{{ t('status') }}</span>
-          <span class="drawer-val">{{ t(drawerItem.statut) }}</span>
+          <span [class]="'drawer-val badge ' + statutClass(drawerItem.statut, drawerItem)"
+                style="font-size:.75rem;padding:2px 10px;border-radius:12px">
+            {{ statutLabel(drawerItem.statut, drawerItem) }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Financial -->
+      <div class="drawer-section">
+        <div class="drawer-section-head">{{ t('beFinancial') }}</div>
+        <div class="drawer-row">
+          <span class="drawer-lbl">{{ t('beMontantPrevu') }}</span>
+          <span class="drawer-val" style="font-weight:700">{{ fmt(drawerItem.montant) }} MAD</span>
+        </div>
+        <ng-container *ngIf="drawerItem.statut === 'payee' || drawerItem.statut === 'partiel'">
+          <div class="drawer-row">
+            <span class="drawer-lbl">{{ t('montantPaye') }}</span>
+            <span class="drawer-val" [style.color]="hasMontantDiff(drawerItem) ? '#d97706' : '#22543d'"
+                  style="font-weight:700">
+              {{ fmt(paidAmount(drawerItem)) }} MAD
+            </span>
+          </div>
+          <div class="drawer-row" *ngIf="hasMontantDiff(drawerItem)">
+            <span class="drawer-lbl">{{ t('beDifference') }}</span>
+            <span class="drawer-val" style="color:#d97706;font-weight:600">
+              {{ +paidAmount(drawerItem) < +drawerItem.montant ? '▼' : '▲' }}
+              {{ fmt(Math.abs(+paidAmount(drawerItem) - +drawerItem.montant)) }} MAD
+            </span>
+          </div>
+          <div class="drawer-row" *ngIf="drawerItem.statut === 'partiel'">
+            <span class="drawer-lbl">{{ t('beRestePayer') }}</span>
+            <span class="drawer-val" style="color:#e53e3e;font-weight:600">
+              {{ fmt(Math.max(0, +drawerItem.montant - +paidAmount(drawerItem))) }} MAD
+            </span>
+          </div>
+        </ng-container>
+      </div>
+
+      <!-- Dates -->
+      <div class="drawer-section">
+        <div class="drawer-section-head">{{ t('beDates') }}</div>
+        <div class="drawer-row">
+          <span class="drawer-lbl">{{ t('date') }}</span>
+          <span class="drawer-val">{{ drawerItem.dateDebut | date:'dd/MM/yyyy' }}</span>
         </div>
         <div class="drawer-row" *ngIf="drawerItem.datePaiement">
           <span class="drawer-lbl">{{ t('paidAt') }}</span>
           <span class="drawer-val">{{ drawerItem.datePaiement | date:'dd/MM/yyyy' }}</span>
         </div>
-      </div>
-      <div class="drawer-section">
-        <div class="drawer-section-head">{{ t('beDates') }}</div>
-        <div class="drawer-row">
-          <span class="drawer-lbl">{{ t('beExpenseDateLabel') }}</span>
-          <span class="drawer-val">{{ drawerItem.dateDebut | date:'dd/MM/yyyy' }}</span>
-        </div>
         <div class="drawer-row" *ngIf="drawerItem.dateFacture">
           <span class="drawer-lbl">{{ t('invoiceDate') }}</span>
           <span class="drawer-val">{{ drawerItem.dateFacture | date:'dd/MM/yyyy' }}</span>
+        </div>
+        <div class="drawer-row" *ngIf="drawerItem.periodMonth">
+          <span class="drawer-lbl">{{ t('bePeriode') }}</span>
+          <span class="drawer-val">{{ months[drawerItem.periodMonth - 1].label }} {{ drawerItem.periodYear }}</span>
         </div>
         <div class="drawer-row" *ngIf="drawerItem.description">
           <span class="drawer-lbl">{{ t('notes') }}</span>
           <span class="drawer-val">{{ drawerItem.description }}</span>
         </div>
       </div>
+
+      <!-- Document -->
+      <div class="drawer-section" *ngIf="drawerItem.justificatifUrl">
+        <div class="drawer-section-head">{{ t('justificatif') }}</div>
+        <div class="drawer-row justif-actions-row">
+          <a [href]="drawerItem.justificatifUrl" target="_blank" class="justif-drawer-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            {{ t('viewJustificatif') }}
+          </a>
+          <a [href]="drawerItem.justificatifUrl" download class="justif-drawer-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            {{ t('downloadJustificatif') }}
+          </a>
+        </div>
+      </div>
+      <div class="drawer-section" *ngIf="!drawerItem.justificatifUrl">
+        <div class="drawer-section-head">{{ t('justificatif') }}</div>
+        <div class="drawer-row">
+          <span class="drawer-val" style="color:#a0aec0;font-style:italic">{{ t('noJustificatif') }}</span>
+        </div>
+      </div>
+
     </div>
     <div class="drawer-footer">
       <button class="btn-outline-danger" (click)="openDelete(drawerItem.id); closeDrawer()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+          <path d="M10 11v6"/><path d="M14 11v6"/>
+        </svg>
         {{ t('delete') }}
       </button>
-      <button class="btn-primary-sm" (click)="openEdit(drawerItem); closeDrawer()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-        {{ t('edit') }}
-      </button>
+      <div style="display:flex;gap:8px">
+        <button class="btn-pay-sm" (click)="openPayPanel(drawerItem); closeDrawer()">💳 {{ t('bePaymentsBtn') }}</button>
+        <button class="btn-primary-sm" (click)="openEdit(drawerItem); closeDrawer()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+          {{ t('edit') }}
+        </button>
+      </div>
     </div>
   </ng-container>
 </div>
+
+<!-- ════ Payment panel (paiement-depense) ═══════════════════════════════════ -->
+<app-pay-dep-panel
+  *ngIf="payPanelOpen"
+  [open]="payPanelOpen"
+  [depenseId]="payPanelItem?.id ?? null"
+  [montantTotal]="+(payPanelItem?.montant ?? 0)"
+  [montantPaye]="paidAmount(payPanelItem)"
+  [title]="typeLabel(payPanelItem?.typeDepense) + (payPanelItem?.bureauNom ? ' — ' + payPanelItem.bureauNom : '')"
+  [dateFacture]="payPanelItem?.dateFacture ?? null"
+  [dir]="dir"
+  (closed)="closePayPanel()"
+  (paymentChanged)="onPaymentChanged()">
+</app-pay-dep-panel>

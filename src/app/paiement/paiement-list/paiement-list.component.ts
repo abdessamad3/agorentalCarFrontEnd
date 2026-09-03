@@ -1,17 +1,19 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+﻿import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { TranslationService } from '../../services/translation.service';
+import { StatusPipe } from '../../shared/pipes/status.pipe';
 import { CrudService } from '../../services/crud.service';
 import { BtnComponent } from '../../shared/btn/btn.component';
 import { PaginatorComponent } from '../../shared/paginator/paginator.component';
 import { Paiement } from '../../models/paiement.model';
+import { PAGE_SIZE } from '../../shared/constants/pagination';
 
 @Component({
   selector: 'app-paiement-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, TranslatePipe, BtnComponent, PaginatorComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, TranslatePipe, BtnComponent, PaginatorComponent, StatusPipe],
   templateUrl: './paiement-list.component.html',
   styleUrls: ['../../shared/styles/crud-list.css']
 })
@@ -19,7 +21,7 @@ export class PaiementListComponent implements OnInit {
   items: Paiement[] = [];
   contrats: any[] = [];
   loading = true; error = ''; dir = 'ltr'; search = '';
-  page = 1; limit = 20; total = 0;
+  page = 1; limit = PAGE_SIZE; total = 0;
   modalMode: 'view' | 'form' | 'delete' | null = null;
   selected: any = null; form: FormGroup; isSubmitting = false; deleteId: number | null = null; isEditing = false;
   readonly endpoint = 'paiement';

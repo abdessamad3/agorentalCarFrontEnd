@@ -54,14 +54,6 @@ export class MaintenancePlanningComponent implements OnInit {
   filterType: TaskType | 'ALL' = 'ALL';
   search = '';
 
-  readonly PRIORITY_LABELS: Record<TaskPriority, string> = {
-    OVERDUE:  'Overdue',
-    CRITICAL: 'Critical (≤7 days)',
-    WARNING:  'Warning (≤30 days)',
-    UPCOMING: 'Upcoming (≤90 days)',
-    OK:       'OK',
-  };
-
   readonly PRIORITY_COLORS: Record<TaskPriority, string> = {
     OVERDUE:  '#c53030',
     CRITICAL: '#e53e3e',
@@ -70,19 +62,32 @@ export class MaintenancePlanningComponent implements OnInit {
     OK:       '#276749',
   };
 
-  readonly TYPE_LABELS: Record<TaskType, string> = {
-    oil_change:       '🛢️ Oil Change',
-    technical_visit:  '🔍 Technical Visit',
-    repair:           '🔧 Repair',
-    insurance:        '🛡️ Insurance',
-    vignette:         '🏷️ Vignette',
-  };
+  get PRIORITY_LABELS(): Record<TaskPriority, string> {
+    return {
+      OVERDUE:  this.t('priorOverdue').replace(/^🔴\s*/, ''),
+      CRITICAL: this.t('priorCritical7d').replace(/^🟠\s*/, ''),
+      WARNING:  this.t('priorWarning30d').replace(/^🟡\s*/, ''),
+      UPCOMING: this.t('priorUpcoming90d').replace(/^🔵\s*/, ''),
+      OK:       'OK',
+    };
+  }
+
+  get TYPE_LABELS(): Record<TaskType, string> {
+    return {
+      oil_change:      this.t('typeOilChangeLbl'),
+      technical_visit: this.t('typeTechVisit'),
+      repair:          this.t('typeRepairLbl'),
+      insurance:       this.t('typeInsuranceLbl'),
+      vignette:        this.t('typeVignetteLbl'),
+    };
+  }
 
   constructor(private crud: CrudService, private ts: TranslationService) {}
 
+  t(key: string): string { return this.ts.translate(key); }
+
   ngOnInit() {
-    this.ts.direction$.subscribe(d => this.dir = d);
-    this.load();
+    this.ts.direction$.subscribe(d => { this.dir = d; this.load(); });
   }
 
   private carLabel(car: any): string {
@@ -134,8 +139,10 @@ export class MaintenancePlanningComponent implements OnInit {
             dueDate:       nextDate,
             remainingKm:   remKm,
             description:   remKm !== null
-              ? `${remKm > 0 ? remKm.toLocaleString() + ' km remaining' : 'Overdue by ' + Math.abs(remKm).toLocaleString() + ' km'}`
-              : 'Schedule oil change',
+              ? (remKm > 0
+                  ? `${remKm.toLocaleString()} ${this.t('kmLeftSuffix')}`
+                  : `${Math.abs(remKm).toLocaleString()} ${this.t('kmOverdueSuffix')}`)
+              : this.t('typeOilChangeLbl'),
             sourceId: v.id,
           });
         }
@@ -157,7 +164,7 @@ export class MaintenancePlanningComponent implements OnInit {
             daysUntil:     days,
             dueDate:       s.prochainDate ?? s.dateProchaine ?? null,
             remainingKm:   null,
-            description:   `Technical inspection${s.resultat ? ' — last result: ' + s.resultat : ''}`,
+            description:   s.resultat ? `${this.t('typeTechVisit')} — ${s.resultat}` : this.t('typeTechVisit'),
             sourceId: s.id,
           });
         }
@@ -180,7 +187,7 @@ export class MaintenancePlanningComponent implements OnInit {
             daysUntil:     days,
             dueDate:       r.datePrevu ?? r.date ?? null,
             remainingKm:   null,
-            description:   r.description ?? r.typeReparation ?? 'Open repair',
+            description:   r.description ?? r.typeReparation ?? this.t('typeRepairLbl'),
             cost:          parseFloat(r.montant ?? 0) || undefined,
             sourceId: r.id,
           });
@@ -203,7 +210,7 @@ export class MaintenancePlanningComponent implements OnInit {
             daysUntil:     days,
             dueDate:       a.dateFin ?? a.dateExpiration ?? null,
             remainingKm:   null,
-            description:   `Insurance renewal${a.compagnie ? ' — ' + a.compagnie : ''}`,
+            description:   a.compagnie ? `${this.t('typeInsuranceLbl')} — ${a.compagnie}` : this.t('typeInsuranceLbl'),
             cost:          parseFloat(a.montant ?? 0) || undefined,
             sourceId: a.id,
           });
@@ -226,7 +233,7 @@ export class MaintenancePlanningComponent implements OnInit {
             daysUntil:     days,
             dueDate:       v.dateFin ?? v.dateExpiration ?? null,
             remainingKm:   null,
-            description:   `Vignette renewal${v.annee ? ' — ' + v.annee : ''}`,
+            description:   v.annee ? `${this.t('typeVignetteLbl')} — ${v.annee}` : this.t('typeVignetteLbl'),
             cost:          parseFloat(v.montant ?? 0) || undefined,
             sourceId: v.id,
           });
@@ -270,12 +277,12 @@ export class MaintenancePlanningComponent implements OnInit {
 
   daysLabel(task: MaintenanceTask): string {
     if (task.remainingKm !== null) {
-      if (task.remainingKm <= 0) return `${Math.abs(task.remainingKm).toLocaleString()} km overdue`;
-      return `${task.remainingKm.toLocaleString()} km left`;
+      if (task.remainingKm <= 0) return `${Math.abs(task.remainingKm).toLocaleString()} ${this.t('kmOverdueSuffix')}`;
+      return `${task.remainingKm.toLocaleString()} ${this.t('kmLeftSuffix')}`;
     }
     if (task.daysUntil === null) return '—';
-    if (task.daysUntil < 0)  return `${Math.abs(task.daysUntil)}d overdue`;
-    if (task.daysUntil === 0) return 'Today';
+    if (task.daysUntil < 0)  return `${Math.abs(task.daysUntil)} ${this.t('daysOverdueSuffix')}`;
+    if (task.daysUntil === 0) return this.t('today') || 'Aujourd\'hui';
     return `${task.daysUntil}d`;
   }
 

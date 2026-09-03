@@ -1,7 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CrudService } from '../../services/crud.service';
+import { TranslationService } from '../../services/translation.service';
+import { StatusPipe } from '../../shared/pipes/status.pipe';
+import { PAGE_SIZE } from '../../shared/constants/pagination';
 
 interface EmailLogEntry {
   id: number;
@@ -20,7 +23,7 @@ interface EmailLogEntry {
 @Component({
   selector: 'app-email-log-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, StatusPipe],
   templateUrl: './email-log-list.component.html',
   styleUrls: ['./email-log-list.component.css'],
 })
@@ -34,13 +37,15 @@ export class EmailLogListComponent implements OnInit {
   dateTo = '';
 
   page  = 1;
-  limit = 20;
+  limit = PAGE_SIZE;
   total = 0;
   pages = 0;
 
   expandedId: number | null = null;
 
-  constructor(private crud: CrudService) {}
+  constructor(private crud: CrudService, private ts: TranslationService) {}
+
+  t(key: string): string { return this.ts.translate(key); }
 
   ngOnInit(): void {
     this.load();

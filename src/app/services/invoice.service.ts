@@ -5,6 +5,8 @@ import { catchError, switchMap } from 'rxjs/operators';
 import jsPDF from 'jspdf';
 import { CompanyService } from './company.service';
 import { ToastService } from './toast.service';
+import { TranslationService } from './translation.service';
+import { reservationStatusLabel } from '../shared/utils/status.utils';
 import { environment } from '../../environments/environment';
 
 export interface InvoiceCompany {
@@ -24,6 +26,7 @@ export class InvoiceService {
     private http: HttpClient,
     private companySvc: CompanyService,
     private toast: ToastService,
+    private ts: TranslationService,
   ) {}
 
   /** Fetch reservation details then generate and download invoice PDF */
@@ -38,18 +41,34 @@ export class InvoiceService {
       settings: settings$,
     }).subscribe({
       next: ({ res, settings }) => {
-        const company: InvoiceCompany = {
-          name:    settings.companyName || this.companySvc.getCurrentName() || 'AGOCAR',
-          address: settings.adresse     || '',
-          phone:   settings.phone       || '',
-          email:   settings.email       || '',
-          ice:     settings.ice         || '',
-          logo:    this.companySvc.getCurrentLogo(),
-        };
-        this.buildRentalPdf(res, company);
+        this.buildRentalPdf(res, this.companyFromSettings(settings));
       },
       error: () => this.toast.show('Impossible de générer la facture.', 'error'),
     });
+  }
+
+  /** Generate and download invoice PDF using already-loaded reservation data (no extra API call) */
+  generateFromData(res: any): void {
+    const bureauId = this.companySvc.getCurrentBureauId();
+    const settings$ = bureauId
+      ? this.http.get<any>(`${this.apiUrl}/parametres/${bureauId}`).pipe(catchError(() => of({})))
+      : of({});
+
+    settings$.subscribe({
+      next:  (settings) => this.buildRentalPdf(res, this.companyFromSettings(settings)),
+      error: () => this.toast.show('Impossible de générer la facture.', 'error'),
+    });
+  }
+
+  private companyFromSettings(settings: any): InvoiceCompany {
+    return {
+      name:    settings.companyName || this.companySvc.getCurrentName() || 'AGOCAR',
+      address: settings.adresse     || '',
+      phone:   settings.phone       || '',
+      email:   settings.email       || '',
+      ice:     settings.ice         || '',
+      logo:    this.companySvc.getCurrentLogo(),
+    };
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -242,19 +261,13 @@ export class InvoiceService {
       terminee:    [99, 102, 241],
       in_progress: [59, 130, 246],
     };
-    const statusLabels: Record<string, string> = {
-      confirmed:   'Confirmée',
-      pending:     'En attente',
-      cancelled:   'Annulée',
-      terminee:    'Terminée',
-      in_progress: 'En cours',
-    };
-    const st = res.reservationStatus || 'confirmed';
-    const sc = statusColors[st] || [100, 100, 100];
+    const st   = res.reservationStatus || 'confirmed';
+    const lang = this.ts.getCurrentLanguage();
+    const sc   = statusColors[st] || [100, 100, 100];
     doc.setFillColor(sc[0], sc[1], sc[2]);
     doc.roundedRect(MARGIN, y - 2, 40, 7, 2, 2, 'F');
     doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
-    doc.text(statusLabels[st] || st, MARGIN + 3, y + 3);
+    doc.text(reservationStatusLabel(st, lang), MARGIN + 3, y + 3);
     y += 12;
 
     // ── Footer ───────────────────────────────────────────────────────────────

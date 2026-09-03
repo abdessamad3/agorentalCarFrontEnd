@@ -1,4 +1,4 @@
-<div (click)="expExportOpen = false">
+﻿<div>
 
   <!-- ── KPI CARDS ─────────────────────────────────────────────── -->
   <div class="exp-kpi-row">
@@ -12,7 +12,7 @@
     </div>
     <div class="exp-kpi-card ekc-orange">
       <div class="exp-kpi-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="20" height="20"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-      <div class="exp-kpi-body"><div class="exp-kpi-val">{{ expPendingCost | number:'1.0-0' }}<span class="exp-kpi-curr"> MAD</span></div><div class="exp-kpi-lbl">Pending</div></div>
+      <div class="exp-kpi-body"><div class="exp-kpi-val">{{ expPendingCost | number:'1.0-0' }}<span class="exp-kpi-curr"> MAD</span></div><div class="exp-kpi-lbl">{{ t('unpaid') }}</div></div>
     </div>
     <div class="exp-kpi-card ekc-purple">
       <div class="exp-kpi-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="20" height="20"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></div>
@@ -35,6 +35,18 @@
         <div class="exp-trend-label">{{ m.month }}</div>
       </div>
     </div>
+  </div>
+
+  <!-- ── EXPORT / PRINT ACTIONS ───────────────────────────────── -->
+  <div class="exp-maint-actions">
+    <button class="fta-btn fta-excel" (click)="exportExpenseExcel()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      {{ t('exportExcel') }}
+    </button>
+    <button class="fta-btn fta-print" (click)="printExpenseReport()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      {{ t('printReport') }}
+    </button>
   </div>
 
   <!-- ── FILTER SECTION ─────────────────────────────────────────── -->
@@ -60,18 +72,6 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Add Expense
         </button>
-        <div class="efb2-export-wrap" (click)="$event.stopPropagation()">
-          <button class="efb2-btn efb2-btn-export" (click)="expExportOpen = !expExportOpen">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Export
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <div *ngIf="expExportOpen" class="efb2-export-dd">
-            <button class="efb2-export-opt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Export as PDF</button>
-            <button class="efb2-export-opt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Export as Excel</button>
-            <button class="efb2-export-opt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg> Export as CSV</button>
-          </div>
-        </div>
       </div>
       <!-- Type pills -->
       <div class="efb2-type-pills">
@@ -147,8 +147,8 @@
     </button>
   </div>
 
-  <!-- ── TABLE ────────────────────────────────────────────────── -->
-  <div *ngIf="!expIsAnyLoading && currentExpenseItems.length > 0" class="exp-table-wrap">
+  <!-- ── TABLE (desktop) ──────────────────────────────────────── -->
+  <div *ngIf="!expIsAnyLoading && currentExpenseItems.length > 0" class="exp-table-wrap exp-desktop-only">
     <table class="exp-table">
       <thead>
         <tr>
@@ -195,7 +195,7 @@
               <td class="exp-td-actions" (click)="$event.stopPropagation()">
                 <div class="rh-actions">
                   <button class="exp-act-btn exp-act-pay" (click)="openPayDepPanel(r, r._type)" [title]="t('paymentHistory')">💳</button>
-                  <app-doc-btn *ngIf="r.filePath" [href]="getFileUrl(r.filePath)" [forceDownload]="true" title="Download document"></app-doc-btn>
+                  <app-doc-btn *ngFor="let fp of getFilePaths(r)" [href]="getFileUrl(fp)" [forceDownload]="true" [title]="fp.split('/').pop() || 'Download'"></app-doc-btn>
                   <button class="exp-act-btn exp-act-edit" (click)="openExpenseEdit(r)"
                           [disabled]="(r.paiementCount ?? 0) > 0"
                           [title]="(r.paiementCount ?? 0) > 0 ? (t('managedViaPaymentPanel') || 'Managed via payment panel') : t('edit')">
@@ -236,7 +236,7 @@
               </td>
               <td class="exp-td-actions" (click)="$event.stopPropagation()">
                 <div class="rh-actions">
-                  <app-doc-btn *ngIf="r.filePath" [href]="getFileUrl(r.filePath)" [forceDownload]="true" title="Download document"></app-doc-btn>
+                  <app-doc-btn *ngFor="let fp of getFilePaths(r)" [href]="getFileUrl(fp)" [forceDownload]="true" [title]="fp.split('/').pop() || 'Download'"></app-doc-btn>
                   <button class="exp-act-btn exp-act-pay" (click)="openPayDepPanel(r, expenseTypeSelected)" [title]="t('paymentHistory')">💳</button>
                   <button class="exp-act-btn exp-act-edit" (click)="openExpenseEdit(r)"
                           [disabled]="(r.paiementCount ?? 0) > 0"
@@ -255,7 +255,114 @@
     </table>
   </div>
 
-</div><!-- /click expExportOpen -->
+  <!-- ── MOBILE CARDS ──────────────────────────────────────────── -->
+  <div *ngIf="!expIsAnyLoading && currentExpenseItems.length > 0" class="exp-cards-mobile">
+
+    <!-- ALL EXPENSES VIEW -->
+    <ng-container *ngIf="expenseTypeSelected === 'all'">
+      <div *ngFor="let r of currentExpenseItems" class="exp-card" (click)="openExpenseDrawer(r)">
+        <ng-container *ngIf="normalizeAllExpenseRow(r) as row">
+          <div class="exp-card-head">
+            <div class="exp-card-cat">
+              <span class="exp-card-cat-icon">{{ row.categoryIcon }}</span>
+              <span class="exp-card-cat-name">{{ row.categoryLabel }}</span>
+            </div>
+            <span class="ps-chip" [ngClass]="'ps-' + row.paymentStatut">
+              {{ row.paymentStatut === 'paid' ? t('paid') : row.paymentStatut === 'partial' ? t('partial') : t('unpaid') }}
+            </span>
+          </div>
+          <div class="exp-card-detail">{{ row.detail }}</div>
+          <div class="exp-card-meta">
+            <span class="exp-card-date">📅 {{ row.date | date:'dd/MM/yy' }}</span>
+            <span *ngIf="row.endDate" class="exp-card-date">→ {{ row.endDate | date:'dd/MM/yy' }}</span>
+            <span *ngIf="r.dateFacture" class="exp-card-date">🧾 {{ r.dateFacture | date:'dd/MM/yy' }}</span>
+          </div>
+          <div class="exp-card-amounts">
+            <div class="exp-card-amt-item">
+              <span class="exp-card-amt-lbl">Total</span>
+              <span [class]="(row.amount != null && +row.amount > 0) ? 'exp-amount' : 'exp-amount-zero'">{{ (row.amount != null && +row.amount > 0) ? ((+row.amount | number:'1.0-0') + ' MAD') : '—' }}</span>
+            </div>
+            <div class="exp-card-amt-item">
+              <span class="exp-card-amt-lbl">{{ t('paid') }}</span>
+              <span class="exp-paid-amt">{{ row.montantPaye > 0 ? ((row.montantPaye | number:'1.0-0') + ' MAD') : '—' }}</span>
+            </div>
+            <div class="exp-card-amt-item">
+              <span class="exp-card-amt-lbl">{{ t('remaining') }}</span>
+              <span [class]="row.reste > 0 ? 'exp-reste-amt' : 'exp-paid-amt'">{{ row.reste > 0 ? ((row.reste | number:'1.0-0') + ' MAD') : '✓' }}</span>
+            </div>
+          </div>
+          <div class="exp-card-actions" (click)="$event.stopPropagation()">
+            <button class="exp-act-btn exp-act-pay" (click)="openPayDepPanel(r, r._type)" [title]="t('paymentHistory')">💳</button>
+            <app-doc-btn *ngFor="let fp of getFilePaths(r)" [href]="getFileUrl(fp)" [forceDownload]="true" [title]="fp.split('/').pop() || 'Download'"></app-doc-btn>
+            <button class="exp-act-btn exp-act-edit" (click)="openExpenseEdit(r)"
+                    [disabled]="(r.paiementCount ?? 0) > 0"
+                    [title]="(r.paiementCount ?? 0) > 0 ? (t('managedViaPaymentPanel') || 'Managed via payment panel') : t('edit')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="exp-act-btn exp-act-del" (click)="openExpenseDelete(r.id, r._type)" [title]="t('delete')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+            </button>
+          </div>
+        </ng-container>
+      </div>
+    </ng-container>
+
+    <!-- SINGLE TYPE VIEW -->
+    <ng-container *ngIf="expenseTypeSelected !== 'all'">
+      <div *ngFor="let r of currentExpenseItems" class="exp-card" (click)="openExpenseDrawer(r, expenseTypeSelected)">
+        <ng-container *ngIf="normalizeExpenseRow(r) as row">
+          <div class="exp-card-head">
+            <div class="exp-card-cat">
+              <span class="exp-card-cat-icon">{{ selectedCategoryIcon }}</span>
+              <span class="exp-card-cat-name">{{ expCurrentTypeLabel }}</span>
+            </div>
+            <ng-container *ngIf="expenseTypeSelected === 'repairs'">
+              <span class="rs-chip" [ngClass]="row.badgeClass">{{ row.badge }}</span>
+            </ng-container>
+            <ng-container *ngIf="expenseTypeSelected !== 'repairs'">
+              <span class="ps-chip" [ngClass]="'ps-' + row.paymentStatut">
+                {{ row.paymentStatut === 'paid' ? t('paid') : row.paymentStatut === 'partial' ? t('partial') : t('unpaid') }}
+              </span>
+            </ng-container>
+          </div>
+          <div class="exp-card-detail">{{ row.detail }}</div>
+          <div class="exp-card-meta">
+            <span class="exp-card-date">📅 {{ row.date | date:'dd/MM/yy' }}</span>
+            <span *ngIf="r.dateFacture" class="exp-card-date">🧾 {{ r.dateFacture | date:'dd/MM/yy' }}</span>
+          </div>
+          <div class="exp-card-amounts">
+            <div class="exp-card-amt-item">
+              <span class="exp-card-amt-lbl">Total</span>
+              <span [class]="(row.amount != null && +row.amount > 0) ? 'exp-amount' : 'exp-amount-zero'">{{ (row.amount != null && +row.amount > 0) ? ((+row.amount | number:'1.0-0') + ' MAD') : '—' }}</span>
+            </div>
+            <div class="exp-card-amt-item">
+              <span class="exp-card-amt-lbl">{{ t('paid') }}</span>
+              <span class="exp-paid-amt">{{ row.montantPaye > 0 ? ((row.montantPaye | number:'1.0-0') + ' MAD') : '—' }}</span>
+            </div>
+            <div class="exp-card-amt-item">
+              <span class="exp-card-amt-lbl">{{ t('remaining') }}</span>
+              <span [class]="row.reste > 0 ? 'exp-reste-amt' : 'exp-paid-amt'">{{ row.reste > 0 ? ((row.reste | number:'1.0-0') + ' MAD') : '✓' }}</span>
+            </div>
+          </div>
+          <div class="exp-card-actions" (click)="$event.stopPropagation()">
+            <app-doc-btn *ngFor="let fp of getFilePaths(r)" [href]="getFileUrl(fp)" [forceDownload]="true" [title]="fp.split('/').pop() || 'Download'"></app-doc-btn>
+            <button class="exp-act-btn exp-act-pay" (click)="openPayDepPanel(r, expenseTypeSelected)" [title]="t('paymentHistory')">💳</button>
+            <button class="exp-act-btn exp-act-edit" (click)="openExpenseEdit(r)"
+                    [disabled]="(r.paiementCount ?? 0) > 0"
+                    [title]="(r.paiementCount ?? 0) > 0 ? (t('managedViaPaymentPanel') || 'Managed via payment panel') : t('edit')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="exp-act-btn exp-act-del" (click)="openExpenseDelete(r.id)" [title]="t('delete')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+            </button>
+          </div>
+        </ng-container>
+      </div>
+    </ng-container>
+
+  </div>
+
+</div>
 
 <!-- ══════════════════════════════════════════ EXPENSE DRAWER -->
 <div *ngIf="expDrawerRecord" class="exp-drawer-backdrop" (click)="closeExpenseDrawer()">
@@ -306,13 +413,13 @@
           <div class="exp-drawer-row" *ngIf="expDrawerRecord.annee"><span class="exp-drawer-lbl">Year</span><span class="exp-drawer-val">{{ expDrawerRecord.annee }}</span></div>
         </div>
         <div class="exp-drawer-actions">
-          <button class="btn-modal-cancel" (click)="closeExpenseDrawer()">Close</button>
+          <button class="btn-modal-cancel" (click)="closeExpenseDrawer()">{{ 'close' | translate }}</button>
           <button class="btn-modal-save"
                   (click)="openExpenseEdit(expDrawerRecord); closeExpenseDrawer()"
                   [disabled]="(expDrawerRecord?.paiementCount ?? 0) > 0"
                   [title]="(expDrawerRecord?.paiementCount ?? 0) > 0 ? (t('managedViaPaymentPanel') || 'Managed via payment panel') : t('edit')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            Edit
+            {{ 'edit' | translate }}
           </button>
         </div>
       </ng-container>
@@ -366,6 +473,24 @@
             <div class="repair-status-display">
               <span class="rs-chip" [ngClass]="repairStatusClass({ statut: repairForm.get('statut')?.value })">{{ repairStatusLabel({ statut: repairForm.get('statut')?.value }) }}</span>
               <small class="repair-status-hint">Calculé automatiquement selon le paiement</small>
+            </div>
+          </div>
+          <div class="edit-field edit-field-full">
+            <label>{{ t('documents') }}</label>
+            <app-upload-btn variant="block" [multiple]="true" accept="image/*,.pdf"
+              label="+ Add files (PDF / Images)"
+              (filesSelected)="onRepairFilesAdded($event)"></app-upload-btn>
+            <div class="mfu-list" *ngIf="repairExistingFilePaths.length > 0 || repairFiles.length > 0">
+              <div class="mfu-item mfu-existing" *ngFor="let p of repairExistingFilePaths; let i = index">
+                <span class="mfu-icon">📎</span>
+                <a [href]="getFileUrl(p)" target="_blank" class="mfu-name">{{ p.split('/').pop() }}</a>
+                <button class="mfu-rm" type="button" (click)="removeRepairExistingFile(i)">✕</button>
+              </div>
+              <div class="mfu-item mfu-new" *ngFor="let f of repairFiles; let i = index">
+                <span class="mfu-icon">{{ f.type.includes('pdf') ? '📄' : '🖼️' }}</span>
+                <span class="mfu-name">{{ f.name }}</span>
+                <button class="mfu-rm" type="button" (click)="removeRepairFile(i)">✕</button>
+              </div>
             </div>
           </div>
         </div>
@@ -438,6 +563,24 @@
               <small class="field-error-hint" *ngIf="expModalForm.hasError('exceedsTotal') && expModalForm.get('montantPaye')?.dirty">{{ t('amountPaidExceedsTotal') || 'Amount paid cannot exceed total' }}</small>
             </div>
             <div class="edit-field"><label>{{ t('remaining') }}</label><input type="number" [value]="adblueReste" readonly class="input-readonly" placeholder="0" /></div>
+            <div class="edit-field edit-field-full">
+              <label>{{ t('documents') }}</label>
+              <app-upload-btn variant="block" [multiple]="true" accept="image/*,.pdf"
+                label="+ Add files (PDF / Images)"
+                (filesSelected)="onExpFilesAdded($event)"></app-upload-btn>
+              <div class="mfu-list" *ngIf="expExistingFilePaths.length > 0 || expFiles.length > 0">
+                <div class="mfu-item mfu-existing" *ngFor="let p of expExistingFilePaths; let i = index">
+                  <span class="mfu-icon">📎</span>
+                  <a [href]="getFileUrl(p)" target="_blank" class="mfu-name">{{ p.split('/').pop() }}</a>
+                  <button class="mfu-rm" type="button" (click)="removeExpExistingFile(i)">✕</button>
+                </div>
+                <div class="mfu-item mfu-new" *ngFor="let f of expFiles; let i = index">
+                  <span class="mfu-icon">{{ f.type.includes('pdf') ? '📄' : '🖼️' }}</span>
+                  <span class="mfu-name">{{ f.name }}</span>
+                  <button class="mfu-rm" type="button" (click)="removeExpFile(i)">✕</button>
+                </div>
+              </div>
+            </div>
           </ng-container>
           <!-- OIL CHANGES -->
           <ng-container *ngIf="expModalType === 'oil-changes'">
@@ -455,17 +598,23 @@
               <small class="field-error-hint" *ngIf="expModalForm.hasError('exceedsTotal') && expModalForm.get('montantPaye')?.dirty">{{ t('amountPaidExceedsTotal') || 'Amount paid cannot exceed total' }}</small>
             </div>
             <div class="edit-field"><label>{{ t('remaining') }}</label><input type="number" [value]="oilChangeReste" readonly class="input-readonly" placeholder="0" /></div>
-            <div class="edit-field">
-              <label>{{ t('document') || 'Document' }} ({{ t('imageOrPdf') || 'Image / PDF' }})</label>
-              <div class="exp-file-wrap">
-                <app-upload-btn variant="block" accept="image/*,.pdf"
-                  [label]="expFile ? expFile.name : (t('uploadFile') || 'Upload file')"
-                  (fileSelected)="onExpFileChange($event)"></app-upload-btn>
-                <button *ngIf="expFile" class="exp-file-clear" type="button" (click)="expFile=null">✕</button>
+            <div class="edit-field edit-field-full">
+              <label>{{ t('documents') }}</label>
+              <app-upload-btn variant="block" [multiple]="true" accept="image/*,.pdf"
+                label="+ Add files (PDF / Images)"
+                (filesSelected)="onExpFilesAdded($event)"></app-upload-btn>
+              <div class="mfu-list" *ngIf="expExistingFilePaths.length > 0 || expFiles.length > 0">
+                <div class="mfu-item mfu-existing" *ngFor="let p of expExistingFilePaths; let i = index">
+                  <span class="mfu-icon">📎</span>
+                  <a [href]="getFileUrl(p)" target="_blank" class="mfu-name">{{ p.split('/').pop() }}</a>
+                  <button class="mfu-rm" type="button" (click)="removeExpExistingFile(i)">✕</button>
+                </div>
+                <div class="mfu-item mfu-new" *ngFor="let f of expFiles; let i = index">
+                  <span class="mfu-icon">{{ f.type.includes('pdf') ? '📄' : '🖼️' }}</span>
+                  <span class="mfu-name">{{ f.name }}</span>
+                  <button class="mfu-rm" type="button" (click)="removeExpFile(i)">✕</button>
+                </div>
               </div>
-              <small *ngIf="expModalRecord?.filePath && !expFile" class="exp-file-existing">
-                <a [href]="expModalRecord.filePath" target="_blank">{{ t('viewCurrentFile') || 'View current file' }}</a>
-              </small>
             </div>
           </ng-container>
         </div>
@@ -494,4 +643,6 @@
 
   </div>
 </div>
+
+
 

@@ -1,7 +1,9 @@
 import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+
 import { CrudService } from '../services/crud.service';
+import { StatusPipe } from '../shared/pipes/status.pipe';
 import { TranslationService } from '../services/translation.service';
 import { catchError } from 'rxjs/operators';
 import { forkJoin, of } from 'rxjs';
@@ -27,7 +29,7 @@ interface AgendaGroup {
 @Component({
   selector: 'app-calendar',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, StatusPipe],
   templateUrl: './calendar.component.html',
   styleUrls: ['./calendar.component.css']
 })
@@ -55,6 +57,8 @@ export class CalendarComponent implements OnInit {
   selectedDayView: Date = new Date();
   dayViewCell: DayCell | null = null;
   showMobileFilter = false;
+  confirmingId: number | null = null;
+  cancellingId: number | null = null;
   private touchStartX = 0;
   private touchStartY = 0;
 
@@ -134,7 +138,7 @@ export class CalendarComponent implements OnInit {
       return s > today;
     }).length;
     this.availableFleet = this.voitures.filter((v: any) =>
-      v.voitureStatus === 'available' || v.voitureStatus === 'disponible'
+      (v.effectiveStatus ?? v.voitureStatus) === 'disponible'
     ).length;
   }
 
@@ -236,7 +240,7 @@ export class CalendarComponent implements OnInit {
         .map(r => r.voitureId || r.voiture?.id)
     );
     const availableCars = this.voitures.filter(v =>
-      !bookedIds.has(v.id) && (v.voitureStatus === 'available' || v.voitureStatus === 'disponible')
+      !bookedIds.has(v.id) && (v.effectiveStatus ?? v.voitureStatus) === 'disponible'
     );
 
     const day = date.getDay();
@@ -448,6 +452,52 @@ export class CalendarComponent implements OnInit {
     if (['annulee', 'cancelled', 'annule'].includes(s))            return 'cancelled';
     if (s === 'maintenance')                                        return 'maintenance';
     return 'pending';
+  }
+
+  confirmReservation(b: any, event: Event): void {
+    event.stopPropagation();
+    if (this.confirmingId === b.id) return;
+    this.confirmingId = b.id;
+    this.crud.update('reservation', b.id, { reservationStatus: 'confirmee' }).subscribe({
+      next: () => { this.confirmingId = null; this.silentReload(); },
+      error: ()  => { this.confirmingId = null; },
+    });
+  }
+
+  cancelReservation(b: any, event: Event): void {
+    event.stopPropagation();
+    if (this.cancellingId === b.id) return;
+    this.cancellingId = b.id;
+    this.crud.update('reservation', b.id, { reservationStatus: 'annulee' }).subscribe({
+      next: () => { this.cancellingId = null; this.silentReload(); },
+      error: ()  => { this.cancellingId = null; },
+    });
+  }
+
+  private silentReload(): void {
+    forkJoin({
+      reservations: this.crud.getAll('reservation').pipe(catchError(() => of([]))),
+      voitures:     this.crud.getAll('voiture').pipe(catchError(() => of([]))),
+      clients:      this.crud.getAll('client').pipe(catchError(() => of([]))),
+    }).subscribe(({ reservations, voitures, clients }) => {
+      this.reservations = toArr(reservations);
+      this.voitures     = toArr(voitures);
+      this.clients      = toArr(clients);
+      this.computeStats();
+      this.buildCalendar();
+      this.buildWeekView();
+      this.buildAgendaView();
+      this.buildDayView();
+      // Refresh open modal/sheet with updated day data
+      if (this.selectedDay) {
+        const target = this.selectedDay.date.toDateString();
+        this.selectedDay = this.weeks.flat().find(d => d.date.toDateString() === target) ?? null;
+      }
+      if (this.bottomSheetDay) {
+        const target = this.bottomSheetDay.date.toDateString();
+        this.bottomSheetDay = this.weeks.flat().find(d => d.date.toDateString() === target) ?? null;
+      }
+    });
   }
 
   t(key: string) { return this.ts.translate(key); }

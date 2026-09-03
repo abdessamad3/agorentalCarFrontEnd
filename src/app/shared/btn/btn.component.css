@@ -47,7 +47,8 @@
 /* ── Icon variants ── */
 .v-icon-view,
 .v-icon-edit,
-.v-icon-delete {
+.v-icon-delete,
+.v-icon-invoice {
   width: 34px;
   height: 34px;
   padding: 0;
@@ -56,17 +57,20 @@
   color: #4a5568;
 }
 
-.v-icon-view:not(:disabled):hover   { background: #ebf8ff; border-color: #3182ce; color: #3182ce; }
-.v-icon-edit:not(:disabled):hover   { background: #fffaf0; border-color: #d69e2e; color: #d69e2e; }
-.v-icon-delete:not(:disabled):hover { background: #fff5f5; border-color: #e53e3e; color: #e53e3e; }
+.v-icon-view:not(:disabled):hover    { background: #ebf8ff; border-color: #3182ce; color: #3182ce; }
+.v-icon-edit:not(:disabled):hover    { background: #fffaf0; border-color: #d69e2e; color: #d69e2e; }
+.v-icon-delete:not(:disabled):hover  { background: #fff5f5; border-color: #e53e3e; color: #e53e3e; }
+.v-icon-invoice:not(:disabled):hover { background: #f0fff4; border-color: #38a169; color: #38a169; }
 
 /* Icon sizes override — always square regardless of size input */
 .v-icon-view.s-sm,
 .v-icon-edit.s-sm,
-.v-icon-delete.s-sm { width: 28px; height: 28px; }
+.v-icon-delete.s-sm,
+.v-icon-invoice.s-sm { width: 28px; height: 28px; }
 .v-icon-view.s-lg,
 .v-icon-edit.s-lg,
-.v-icon-delete.s-lg { width: 40px; height: 40px; }
+.v-icon-delete.s-lg,
+.v-icon-invoice.s-lg { width: 40px; height: 40px; }
 
 /* ── Spinner ── */
 .spinner {

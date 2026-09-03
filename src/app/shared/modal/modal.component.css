@@ -1,0 +1,103 @@
+/* ── Backdrop ─────────────────────────────────────────────────────────────── */
+.am-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(3px);
+  z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem;
+  animation: am-fade-in .18s ease;
+}
+@keyframes am-fade-in { from { opacity: 0 } to { opacity: 1 } }
+
+/* ── Card ─────────────────────────────────────────────────────────────────── */
+.am-modal {
+  background: var(--surface, #fff);
+  border-radius: 14px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.22);
+  animation: am-pop .22s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+}
+@keyframes am-pop {
+  from { opacity: 0; transform: scale(0.94) translateY(-8px) }
+  to   { opacity: 1; transform: scale(1)    translateY(0) }
+}
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+.am-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.1rem 1.5rem;
+  border-bottom: 1px solid var(--border, #f1f5f9);
+  flex-shrink: 0;
+}
+.am-title-row { display: flex; align-items: center; gap: .625rem; }
+
+.am-icon-wrap {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; flex-shrink: 0;
+}
+.am-icon-blue   { background: #eff6ff; color: #2563eb; }
+.am-icon-green  { background: #f0fdf4; color: #16a34a; }
+.am-icon-red    { background: #fef2f2; color: #dc2626; }
+.am-icon-orange { background: #fff7ed; color: #ea580c; }
+.am-icon-purple { background: #faf5ff; color: #9333ea; }
+.am-icon-gray   { background: #f8fafc; color: #64748b; }
+
+.am-title {
+  margin: 0; font-size: 1rem; font-weight: 700;
+  color: var(--text, #1e293b);
+}
+.am-subtitle {
+  margin: .1rem 0 0; font-size: .78rem;
+  color: var(--text-muted, #64748b);
+}
+
+.am-close {
+  background: none; border: none; cursor: pointer;
+  width: 28px; height: 28px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-muted, #94a3b8); font-size: 1rem;
+  transition: background .15s, color .15s; flex-shrink: 0;
+}
+.am-close:hover { background: var(--surface-alt, #f1f5f9); color: var(--text, #1e293b); }
+
+/* ── Projected <form> wrappers must join the flex column so am-body can scroll */
+.am-modal > form {
+  display: flex; flex-direction: column;
+  flex: 1; min-height: 0; overflow: hidden;
+}
+
+/* ── Body (used by parent projected content) ──────────────────────────────── */
+.am-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1; min-height: 0;
+}
+
+/* ── Footer (used by parent projected content) ────────────────────────────── */
+.am-footer {
+  display: flex; justify-content: flex-end; gap: .75rem; align-items: center;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border, #f1f5f9);
+  background: var(--surface-alt, #f8fafc);
+  flex-shrink: 0;
+}
+
+/* ── Confirm button (reusable inside am-footer) ───────────────────────────── */
+.am-btn-confirm {
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .55rem 1.4rem;
+  border: none; border-radius: 8px;
+  font-size: .875rem; font-weight: 600; cursor: pointer;
+  transition: background .15s, transform .1s;
+}
+.am-btn-confirm:hover:not(:disabled) { filter: brightness(0.92); transform: translateY(-1px); }
+.am-btn-confirm:active:not(:disabled) { transform: none; }
+.am-btn-confirm:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+.am-btn-confirm-green { background: #16a34a; color: #fff; box-shadow: 0 2px 8px rgba(22,163,74,.25); }
+.am-btn-confirm-blue  { background: #2563eb; color: #fff; box-shadow: 0 2px 8px rgba(37,99,235,.25); }
+.am-btn-confirm-red   { background: #dc2626; color: #fff; box-shadow: 0 2px 8px rgba(220,38,38,.25); }

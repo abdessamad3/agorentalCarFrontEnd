@@ -144,7 +144,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
       </div>
       <div class="mob-empty-title">{{ t('noBookingsForDay') }}</div>
-      <a routerLink="/reservation/create" class="mob-empty-cta">{{ t('newBooking') }}</a>
+      <a routerLink="/location/new" class="mob-empty-cta">{{ t('newBooking') }}</a>
     </div>
     <div *ngIf="dayViewCell && dayViewCell.bookings.length > 0" class="mob-day-list">
       <div *ngFor="let b of dayViewCell.bookings"
@@ -156,7 +156,7 @@
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
               {{ getVoitureLabel(b) }}
             </span>
-            <span class="mob-dmi-badge" [ngClass]="'mob-badge-' + bookingStatusClass(b)">{{ b.reservationStatus || b.statut }}</span>
+            <span class="mob-dmi-badge" [ngClass]="'mob-badge-' + bookingStatusClass(b)">{{ (b.reservationStatus || b.statut) | appStatus:'reservation' }}</span>
           </div>
           <div class="mob-dmi-mid">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -193,7 +193,7 @@
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
               {{ getVoitureLabel(b) }}
             </span>
-            <span class="mob-agi-badge" [ngClass]="'mob-badge-' + bookingStatusClass(b)">{{ b.reservationStatus || b.statut }}</span>
+            <span class="mob-agi-badge" [ngClass]="'mob-badge-' + bookingStatusClass(b)">{{ (b.reservationStatus || b.statut) | appStatus:'reservation' }}</span>
           </div>
           <div class="mob-agi-client">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -279,7 +279,7 @@
         <button class="fpill fpill-teal"   [class.fpill-on]="filterStatus === 'available'" (click)="setFilter('available')">{{ t('available') }}</button>
       </div>
 
-      <a routerLink="/reservation/create" class="btn-new">
+      <a routerLink="/location/new" class="btn-new">
         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         <span class="btn-new-text">{{ t('newBooking') }}</span>
       </a>
@@ -389,7 +389,7 @@
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
               {{ getVoitureLabel(b) }}
             </span>
-            <span class="dmi-badge" [ngClass]="'badge-' + bookingStatusClass(b)">{{ b.reservationStatus || b.statut }}</span>
+            <span class="dmi-badge" [ngClass]="'badge-' + bookingStatusClass(b)">{{ (b.reservationStatus || b.statut) | appStatus:'reservation' }}</span>
           </div>
           <div class="dmi-bottom">
             <span class="dmi-client">
@@ -401,13 +401,26 @@
               {{ b.dateDebut | date:'dd MMM' }} — {{ b.dateFin | date:'dd MMM yyyy' }}
             </span>
           </div>
+          <div class="dmi-actions"
+               style="display:flex">
+            <button class="dmi-btn-confirm"
+                    [disabled]="confirmingId === b.id"
+                    (click)="confirmReservation(b, $event)">
+              ✓ Confirmer
+            </button>
+            <button class="dmi-btn-cancel"
+                    [disabled]="cancellingId === b.id"
+                    (click)="cancelReservation(b, $event)">
+              ✕ Annuler
+            </button>
+          </div>
         </div>
       </div>
     </div>
 
     <div class="dm-footer">
       <button class="dm-close-btn" (click)="closeDay()">{{ t('close') }}</button>
-      <a routerLink="/reservation/create" class="dm-add-btn" (click)="closeDay()">
+      <a routerLink="/location/new" class="dm-add-btn" (click)="closeDay()">
         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         {{ t('newBooking') }}
       </a>
@@ -444,7 +457,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
                 {{ getVoitureLabel(b) }}
               </span>
-              <span class="mob-bsi-badge" [ngClass]="'mob-badge-' + bookingStatusClass(b)">{{ b.reservationStatus || b.statut }}</span>
+              <span class="mob-bsi-badge" [ngClass]="'mob-badge-' + bookingStatusClass(b)">{{ (b.reservationStatus || b.statut) | appStatus:'reservation' }}</span>
             </div>
             <div class="mob-bsi-client">
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -454,13 +467,26 @@
               <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               {{ b.dateDebut | date:'dd MMM' }} — {{ b.dateFin | date:'dd MMM yyyy' }}
             </div>
+            <div class="dmi-actions"
+                 style="display:flex">
+              <button class="dmi-btn-confirm"
+                      [disabled]="confirmingId === b.id"
+                      (click)="confirmReservation(b, $event)">
+                ✓ Confirmer
+              </button>
+              <button class="dmi-btn-cancel"
+                      [disabled]="cancellingId === b.id"
+                      (click)="cancelReservation(b, $event)">
+                ✕ Annuler
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       <div class="mob-bs-footer">
         <button class="mob-bs-cancel" (click)="closeBottomSheet()">{{ t('close') }}</button>
-        <a routerLink="/reservation/create" class="mob-bs-add" (click)="closeBottomSheet()">
+        <a routerLink="/location/new" class="mob-bs-add" (click)="closeBottomSheet()">
           <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           {{ t('newBooking') }}
         </a>
@@ -473,7 +499,7 @@
      MOBILE FAB
 ════════════════════════════════════════ -->
 <div *ngIf="isMobile" class="mob-fab-wrap">
-  <a routerLink="/reservation/create" class="mob-fab-primary" [title]="t('newBooking')">
+  <a routerLink="/location/new" class="mob-fab-primary" [title]="t('newBooking')">
     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
   </a>
 </div>

@@ -10,13 +10,15 @@ import { AuthService } from '../../services/auth.service';
 import { SignaturePadComponent } from '../../shared/signature-pad/signature-pad.component';
 import { FuelGaugeComponent } from '../../shared/fuel-gauge/fuel-gauge.component';
 import { DamageDiagramComponent, Damage } from '../../shared/damage-diagram/damage-diagram.component';
+import { PrintContratComponent } from '../print-contrat/print-contrat.component';
 
 @Component({
   selector: 'app-contrat-form',
   standalone: true,
   imports: [
     CommonModule, FormsModule, RouterModule,
-    SignaturePadComponent, FuelGaugeComponent, DamageDiagramComponent
+    SignaturePadComponent, FuelGaugeComponent, DamageDiagramComponent,
+    PrintContratComponent,
   ],
   templateUrl: './contrat-form.component.html',
   styleUrls: ['./contrat-form.component.css']
@@ -311,15 +313,59 @@ export class ContratFormComponent implements OnInit {
     });
   }
 
+  printContractData: any = null;
+  autoDownloadPdf = false;
+
   downloadPdf() {
     if (!this.contratId) return;
-    this.contratService.downloadPdf(this.contratId).subscribe({
-      next: (blob: Blob) => {
-        const url = URL.createObjectURL(blob);
-        window.open(url, '_blank');
-        setTimeout(() => URL.revokeObjectURL(url), 10000);
-      },
-      error: () => this.toast.show('Erreur de génération PDF', 'error')
+    this.crud.getById('contrat', `${this.contratId}/full`).subscribe({
+      next: (full: any) => { this.printContractData = this.adaptFull(full); this.autoDownloadPdf = true; },
+      error: () => this.toast.show('Erreur de génération PDF', 'error'),
     });
+  }
+
+  onPrintClosed() { this.printContractData = null; this.autoDownloadPdf = false; }
+
+  private adaptFull(data: any): any {
+    const c    = data.contrat;
+    const res  = c?.reservation;
+    const cli  = res?.client;
+    const voit = res?.voiture;
+    const d2   = c?.deuxiemeChauffeur;
+    const del  = data.vehicleDelivery;
+    const ret  = data.vehicleReturnInspection;
+    return {
+      numeroContrat: c?.numero, id: c?.id,
+      dateDebut: res?.dateDebut, dateFin: res?.dateFin,
+      faitA: c?.faitA, signedAt: c?.signedAt,
+      montantTotal: res?.total, montantPaye: res?.montantPaye,
+      prixParJour: res?.prixParJour ?? c?.prixParJourSnapshot,
+      nbJoursFactures: c?.nbJoursFactures, remise: c?.remise,
+      franchise: c?.franchise, hasCaution: c?.hasCaution, cautionMontant: c?.cautionMontant,
+      lieuLivraison: res?.lieuLivraison, lieuRetour: res?.lieuRetour,
+      client: cli ? {
+        nom: cli.nom, prenom: '',
+        dateNaissance: cli.dateNaissance, lieuNaissance: cli.lieuNaissance,
+        nationalite: cli.nationalite,
+        adresseMaroc: cli.adresseMaroc, adresseEtranger: cli.adresseEtranger,
+        telephone: cli.telephone, telephoneEtranger: cli.telephoneEtranger,
+        cin: cli.cin,
+        permisConduite: cli.permisConduite, permisDelivreLe: cli.permisDelivreLe, permisDelivreA: cli.permisDelivreA,
+        passeport: cli.passeport, passeportDelivreLe: cli.passeportDelivreLe, passeportDelivreA: cli.passeportDelivreA,
+      } : {},
+      deuxiemeChauffeur: d2 ? {
+        nom: d2.nom, dateNaissance: d2.dateNaissance, nationalite: d2.nationalite,
+        adresseMaroc: d2.adresseMaroc, telephone: d2.telephone, cin: d2.cin,
+        permisConduite: d2.permisConduite, permisDelivreLe: d2.permisDelivreLe, permisDelivreA: d2.permisDelivreA,
+        passeport: d2.passeport, passeportDelivreLe: d2.passeportDelivreLe, passeportDelivreA: d2.passeportDelivreA,
+      } : null,
+      voiture: voit ? {
+        marque: voit.marque, modele: voit.modele, immatriculation: voit.immatriculation,
+        kilometrageActuel: del?.mileageOut ?? voit.kilometrageActuel,
+        prixJour: res?.prixParJour ?? c?.prixParJourSnapshot ?? voit.prixJour,
+      } : {},
+      vehicleDelivery: del ?? null,
+      vehicleReturnInspection: ret ?? null,
+    };
   }
 }

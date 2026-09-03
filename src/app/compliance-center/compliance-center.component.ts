@@ -66,9 +66,34 @@ export class ComplianceCenterComponent implements OnInit {
 
   constructor(private crud: CrudService, private ts: TranslationService) {}
 
+  t(key: string): string { return this.ts.translate(key); }
+
   ngOnInit() {
     this.ts.direction$.subscribe(d => this.dir = d);
     this.load();
+  }
+
+  urgencyLabel(u: string): string {
+    const lang = this.ts.getCurrentLanguage();
+    const m: Record<string, Record<string, string>> = {
+      OVERDUE:  { fr: 'En retard',       en: 'Overdue',         ar: 'متأخر' },
+      CRITICAL: { fr: 'Critique (≤7j)',   en: 'Critical (≤7d)',  ar: 'حرج (≤7أ)' },
+      WARNING:  { fr: 'Attention (≤30j)', en: 'Warning (≤30d)',  ar: 'تحذير (≤30أ)' },
+      UPCOMING: { fr: 'Bientôt (≤90j)',   en: 'Upcoming (≤90d)', ar: 'قادم (≤90أ)' },
+    };
+    return m[u]?.[lang] ?? m[u]?.['fr'] ?? u;
+  }
+
+  categoryLabel(c: string): string {
+    const lang = this.ts.getCurrentLanguage();
+    const m: Record<string, Record<string, string>> = {
+      insurance: { fr: '🛡️ Assurance',        en: '🛡️ Insurance',       ar: '🛡️ تأمين' },
+      vignette:  { fr: '🏷️ Vignette',         en: '🏷️ Vignette',        ar: '🏷️ فينيت' },
+      technical: { fr: '🔍 Visite technique',  en: '🔍 Technical Visit',  ar: '🔍 فحص تقني' },
+      oil:       { fr: '🛢️ Vidange',           en: '🛢️ Oil Change',       ar: '🛢️ تغيير الزيت' },
+      repair:    { fr: '🔧 Réparations',        en: '🔧 Repairs',          ar: '🔧 إصلاحات' },
+    };
+    return m[c]?.[lang] ?? m[c]?.['fr'] ?? c;
   }
 
   private carLabel(car: any): string {

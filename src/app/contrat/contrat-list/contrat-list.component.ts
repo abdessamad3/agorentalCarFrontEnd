@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
+﻿import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
@@ -16,22 +16,25 @@ import { BtnComponent } from '../../shared/btn/btn.component';
 import { PaginatorComponent } from '../../shared/paginator/paginator.component';
 import { Subject, of } from 'rxjs';
 import { debounceTime, switchMap, takeUntil, catchError } from 'rxjs/operators';
+import { PAGE_SIZE } from '../../shared/constants/pagination';
+import { StatusPipe } from '../../shared/pipes/status.pipe';
 
 @Component({
   selector: 'app-contrat-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, TranslatePipe, PrintContratComponent, VehicleDeliveryFormComponent, VehicleReturnFormComponent, BtnComponent, PaginatorComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, TranslatePipe, PrintContratComponent, VehicleDeliveryFormComponent, VehicleReturnFormComponent, BtnComponent, PaginatorComponent, StatusPipe],
   templateUrl: './contrat-list.component.html',
   styleUrls: ['../../shared/styles/crud-list.css', './contrat-list.component.css']
 })
 export class ContratListComponent implements OnInit, OnDestroy {
   items: any[] = [];
   loading = true; error = ''; dir = 'ltr'; search = '';
-  page = 1; limit = 20; total = 0;
+  page = 1; limit = PAGE_SIZE; total = 0;
   modalMode: 'form' | 'delete' | null = null;
   form: FormGroup; isSubmitting = false; deleteId: number | null = null;
   printItem: any = null;
   printLoading = false;
+  autoDownloadPdf = false;
   readonly endpoint = 'contrat';
   readonly objectEntries = Object.entries;
 
@@ -105,12 +108,59 @@ export class ContratListComponent implements OnInit, OnDestroy {
   openEdit(item: any)    { this.router.navigate(['/contrat', item.id, 'edit']); }
   openDelete(id: number) { this.deleteId = id; this.modalMode = 'delete'; }
   openPrint(item: any) {
+    this.autoDownloadPdf = false;
     this.printLoading = true;
     this.crud.getById('contrat', item.id + '/full').subscribe({
-      next: (full: any) => { this.printItem = full; this.printLoading = false; },
+      next: (full: any) => { this.printItem = this.adaptFull(full); this.printLoading = false; },
       error: () => { this.printItem = item; this.printLoading = false; }
     });
   }
+
+  onPrintClosed() { this.printItem = null; this.autoDownloadPdf = false; }
+
+  private adaptFull(data: any): any {
+    const c    = data.contrat;
+    const res  = c?.reservation;
+    const cli  = res?.client;
+    const voit = res?.voiture;
+    const d2   = c?.deuxiemeChauffeur;
+    const del  = data.vehicleDelivery;
+    const ret  = data.vehicleReturnInspection;
+    return {
+      numeroContrat: c?.numero, id: c?.id,
+      dateDebut: res?.dateDebut, dateFin: res?.dateFin,
+      faitA: c?.faitA, signedAt: c?.signedAt,
+      montantTotal: res?.total, montantPaye: res?.montantPaye,
+      prixParJour: res?.prixParJour ?? c?.prixParJourSnapshot,
+      nbJoursFactures: c?.nbJoursFactures, remise: c?.remise,
+      franchise: c?.franchise, hasCaution: c?.hasCaution, cautionMontant: c?.cautionMontant,
+      lieuLivraison: res?.lieuLivraison, lieuRetour: res?.lieuRetour,
+      client: cli ? {
+        nom: cli.nom, prenom: '',
+        dateNaissance: cli.dateNaissance, lieuNaissance: cli.lieuNaissance,
+        nationalite: cli.nationalite,
+        adresseMaroc: cli.adresseMaroc, adresseEtranger: cli.adresseEtranger,
+        telephone: cli.telephone, telephoneEtranger: cli.telephoneEtranger,
+        cin: cli.cin,
+        permisConduite: cli.permisConduite, permisDelivreLe: cli.permisDelivreLe, permisDelivreA: cli.permisDelivreA,
+        passeport: cli.passeport, passeportDelivreLe: cli.passeportDelivreLe, passeportDelivreA: cli.passeportDelivreA,
+      } : {},
+      deuxiemeChauffeur: d2 ? {
+        nom: d2.nom, dateNaissance: d2.dateNaissance, nationalite: d2.nationalite,
+        adresseMaroc: d2.adresseMaroc, telephone: d2.telephone, cin: d2.cin,
+        permisConduite: d2.permisConduite, permisDelivreLe: d2.permisDelivreLe, permisDelivreA: d2.permisDelivreA,
+        passeport: d2.passeport, passeportDelivreLe: d2.passeportDelivreLe, passeportDelivreA: d2.passeportDelivreA,
+      } : null,
+      voiture: voit ? {
+        marque: voit.marque, modele: voit.modele, immatriculation: voit.immatriculation,
+        kilometrageActuel: del?.mileageOut ?? voit.kilometrageActuel,
+        prixJour: res?.prixParJour ?? c?.prixParJourSnapshot ?? voit.prixJour,
+      } : {},
+      vehicleDelivery: del ?? null,
+      vehicleReturnInspection: ret ?? null,
+    };
+  }
+
   exportPDF(item: any)   { this.exportSvc.rentalContract(item); }
 
   openDelivery(item: any) {
@@ -142,16 +192,11 @@ export class ContratListComponent implements OnInit, OnDestroy {
   }
 
   downloadPdf(item: any) {
-    this.contratService.downloadPdf(item.id).subscribe({
-      next: (blob: Blob) => {
-        const url  = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href  = url;
-        link.download = `contrat-${item.numero || item.id}.pdf`;
-        link.click();
-        setTimeout(() => URL.revokeObjectURL(url), 5000);
-      },
-      error: () => this.toast.show('Erreur de génération PDF', 'error')
+    this.autoDownloadPdf = true;
+    this.printLoading = true;
+    this.crud.getById('contrat', item.id + '/full').subscribe({
+      next: (full: any) => { this.printItem = this.adaptFull(full); this.printLoading = false; },
+      error: () => { this.printLoading = false; this.autoDownloadPdf = false; this.toast.show(this.ts.translate('pdfGenerationError'), 'error'); }
     });
   }
   closeModal()           { this.modalMode = null; this.deleteId = null; this.isSubmitting = false; }

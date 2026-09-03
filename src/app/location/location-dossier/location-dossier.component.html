@@ -6,7 +6,7 @@
       <button class="btn-back" (click)="router.navigate(['/reservation'])">← {{ t('reservations') }}</button>
       <div class="header-info">
         <span class="contract-number">{{ contractNumber }}</span>
-        <span class="status-chip" [ngClass]="statusClass(status)">{{ statusLabel(status) }}</span>
+        <span class="status-chip" [ngClass]="statusClass(status)">{{ status | appStatus:'reservation' }}</span>
         <span class="compliance-badge" [ngClass]="complianceClass(complianceOverall)">
           {{ complianceOverall }}
         </span>
@@ -16,10 +16,17 @@
       <div class="vehicle-info">🚗 {{ vehicleLabel }}</div>
       <div class="client-info">👤 {{ clientLabel }}</div>
       <div class="payment-summary">
-        <span class="status-chip" [ngClass]="paymentStatusClass()">
-          {{ (dossier.montantPaye | number:'1.2-2') }} / {{ (dossier.montantTotal | number:'1.2-2') }} MAD
+        <span class="status-chip" [ngClass]="status === 'annulee' ? 'chip-done' : paymentStatusClass()">
+          <ng-container *ngIf="status !== 'annulee'">{{ (dossier.montantPaye | number:'1.2-2') }} / {{ (dossier.montantTotal | number:'1.2-2') }} MAD</ng-container>
+          <ng-container *ngIf="status === 'annulee'">—</ng-container>
         </span>
       </div>
+      <button *ngIf="canCancel"
+              class="btn-cancel-reservation"
+              [disabled]="cancelling"
+              (click)="openCancelModal()">
+        {{ cancelling ? t('cancelling') : t('cancelReservation') }}
+      </button>
     </div>
   </div>
 
@@ -191,43 +198,6 @@
           </div>
         </div>
 
-        <!-- Section 2: 1er Conducteur -->
-        <div class="form-section">
-          <h3>{{ t('firstDriver') }}</h3>
-          <div class="driver-info-grid">
-            <div class="info-row"><span class="info-label">{{ t('fullName') }}</span><span>{{ ((dossier.reservation.client?.prenom ? dossier.reservation.client?.prenom + ' ' : '') + (dossier.reservation.client?.nom || '')) || '—' }}</span></div>
-            <div class="info-row"><span class="info-label">CIN</span><span>{{ dossier.reservation.client?.cin || '—' }}</span></div>
-            <div class="info-row"><span class="info-label">{{ t('cinIssueDate') }}</span><span>{{ (dossier.reservation.client?.cinDelivreLe | date:'dd/MM/yyyy') || '—' }}</span></div>
-            <div class="info-row"><span class="info-label">{{ t('cinIssuedAt') }}</span><span>{{ dossier.reservation.client?.cinDelivreA || '—' }}</span></div>
-            <div class="info-row"><span class="info-label">{{ t('passeport') }}</span><span>{{ dossier.reservation.client?.passeport || '—' }}</span></div>
-            <div class="info-row"><span class="info-label">{{ t('passportIssueDate') }}</span><span>{{ (dossier.reservation.client?.passeportDelivreLe | date:'dd/MM/yyyy') || '—' }}</span></div>
-            <div class="info-row"><span class="info-label">{{ t('passportIssuedAt') }}</span><span>{{ dossier.reservation.client?.passeportDelivreA || '—' }}</span></div>
-            <div class="info-row"><span class="info-label">{{ t('dateOfBirth') }}</span><span>{{ (dossier.reservation.client?.dateNaissance | date:'dd/MM/yyyy') || '—' }}</span></div>
-            <div class="info-row"><span class="info-label">{{ t('placeOfBirth') }}</span><span>{{ dossier.reservation.client?.lieuNaissance || '—' }}</span></div>
-            <div class="info-row"><span class="info-label">{{ t('address') }}</span><span>{{ dossier.reservation.client?.adresse || dossier.reservation.client?.adresseMaroc || '—' }}</span></div>
-            <div class="info-row"><span class="info-label">{{ t('licenseNumber') }}</span><span>{{ dossier.reservation.client?.permisConduite || '—' }}</span></div>
-            <div class="info-row"><span class="info-label">{{ t('licenseIssueDate') }}</span><span>{{ (dossier.reservation.client?.permisDelivreLe | date:'dd/MM/yyyy') || '—' }}</span></div>
-            <div class="info-row"><span class="info-label">{{ t('licenseIssuedAt') }}</span><span>{{ dossier.reservation.client?.permisDelivreA || '—' }}</span></div>
-            <div class="info-row"><span class="info-label">{{ t('telephone') }}</span><span>{{ dossier.reservation.client?.telephone || '—' }}</span></div>
-          </div>
-        </div>
-
-        <!-- Section 3: 2ème Conducteur (optional) -->
-        <div class="form-section" *ngIf="dossier.reservation.deuxiemeChauffeur">
-          <h3>{{ t('secondDriver') }}</h3>
-          <div class="driver-info-grid">
-            <div class="info-row"><span class="info-label">{{ t('fullName') }}</span><span>{{ dossier.reservation.deuxiemeChauffeur.nom || '—' }}</span></div>
-            <div class="info-row"><span class="info-label">CIN</span><span>{{ dossier.reservation.deuxiemeChauffeur.cin || '—' }}</span></div>
-            <div class="info-row"><span class="info-label">{{ t('passeport') }}</span><span>{{ dossier.reservation.deuxiemeChauffeur.passeport || '—' }}</span></div>
-            <div class="info-row"><span class="info-label">{{ t('passportIssueDate') }}</span><span>{{ (dossier.reservation.deuxiemeChauffeur.passeportDelivreLe | date:'dd/MM/yyyy') || '—' }}</span></div>
-            <div class="info-row"><span class="info-label">{{ t('passportIssuedAt') }}</span><span>{{ dossier.reservation.deuxiemeChauffeur.passeportDelivreA || '—' }}</span></div>
-            <div class="info-row"><span class="info-label">{{ t('dateOfBirth') }}</span><span>{{ (dossier.reservation.deuxiemeChauffeur.dateNaissance | date:'dd/MM/yyyy') || '—' }}</span></div>
-            <div class="info-row"><span class="info-label">{{ t('licenseNumber') }}</span><span>{{ dossier.reservation.deuxiemeChauffeur.permisConduite || '—' }}</span></div>
-            <div class="info-row"><span class="info-label">{{ t('licenseIssueDate') }}</span><span>{{ (dossier.reservation.deuxiemeChauffeur.permisDelivreLe | date:'dd/MM/yyyy') || '—' }}</span></div>
-            <div class="info-row"><span class="info-label">{{ t('licenseIssuedAt') }}</span><span>{{ dossier.reservation.deuxiemeChauffeur.permisDelivreA || '—' }}</span></div>
-          </div>
-        </div>
-
         <!-- Section 4: Véhicule -->
         <div class="form-section">
           <h3>{{ t('vehicle') }}</h3>
@@ -245,6 +215,48 @@
               <input type="number" [(ngModel)]="departForm.mileageOut" min="0" placeholder="km" />
             </div>
           </div>
+        </div>
+
+        <!-- Section: Vehicle condition at departure (read-only damage diagram) -->
+        <div class="form-section">
+          <h3>{{ t('vehicleCondition') || 'État du véhicule' }}</h3>
+
+          <div class="dmg-loading-row" *ngIf="loadingDamages">
+            <span class="dmg-loading-text">Chargement de l'état…</span>
+          </div>
+
+          <ng-container *ngIf="!loadingDamages">
+
+            <!-- Status badge -->
+            <div class="dmg-depart-status" *ngIf="departureOpenDamages.length === 0">
+              <span class="dmg-status-clean">✓ {{ t('noDamageRecordedClean') }}</span>
+            </div>
+            <div class="dmg-depart-status" *ngIf="departureOpenDamages.length > 0">
+              <span class="dmg-status-damaged">
+                ⚠ {{ departureOpenDamages.length }} {{ t('openDamagesRecorded') }}
+              </span>
+            </div>
+
+            <!-- Read-only SVG car diagram -->
+            <div class="car-diagram-wrap car-diagram-done">
+              <div class="car-diagram-hint">{{ t('departureZonesHint') }}</div>
+
+              <app-vehicle-map [damagedZones]="departureDamagedZones" mode="readonly"></app-vehicle-map>
+
+              <!-- Damaged parts tags -->
+              <div class="dpl-box" *ngIf="departureOpenDamages.length > 0">
+                <div class="dpl-title">{{ t('preExistingDamages') }}</div>
+                <div class="dpl-tags">
+                  <span class="dpl-tag" *ngFor="let d of departureOpenDamages">
+                    {{ carPartLabel(d.zone) }}
+                    <span class="dpl-sev-badge" *ngIf="d.severity"> · {{ d.severity }}</span>
+                  </span>
+                </div>
+              </div>
+
+            </div><!-- /car-diagram-wrap -->
+
+          </ng-container>
         </div>
 
         <!-- Section 5: Tarification -->
@@ -332,6 +344,120 @@
         </div>
 
       </fieldset>
+
+      <!-- Section 2: 1er Conducteur -->
+      <div class="form-section">
+        <div class="section-header-row">
+          <h3>{{ t('firstDriver') }}</h3>
+          <button type="button" class="btn-edit-driver" (click)="openDriverEdit('first')">✏ {{ t('edit') }}</button>
+        </div>
+        <div class="driver-info-grid">
+          <div class="info-row"><span class="info-label">{{ t('fullName') }}</span><span>{{ ((dossier.reservation.client?.prenom ? dossier.reservation.client?.prenom + ' ' : '') + (dossier.reservation.client?.nom || '')) || '—' }}</span></div>
+          <div class="info-row"><span class="info-label">{{ t('telephone') }}</span><span>{{ dossier.reservation.client?.telephone || '—' }}</span></div>
+          <div class="info-row"><span class="info-label">{{ t('nationalite') }}</span><span>{{ dossier.reservation.client?.nationalite || '—' }}</span></div>
+          <div class="info-row"><span class="info-label">CIN</span><span>{{ dossier.reservation.client?.cin || '—' }}</span></div>
+          <div class="info-row"><span class="info-label">{{ t('cinIssueDate') }}</span><span>{{ (dossier.reservation.client?.cinDelivreLe | date:'dd/MM/yyyy') || '—' }}</span></div>
+          <div class="info-row"><span class="info-label">{{ t('cinIssuedAt') }}</span><span>{{ dossier.reservation.client?.cinDelivreA || '—' }}</span></div>
+          <div class="info-row"><span class="info-label">{{ t('passeport') }}</span><span>{{ dossier.reservation.client?.passeport || '—' }}</span></div>
+          <div class="info-row"><span class="info-label">{{ t('passportIssueDate') }}</span><span>{{ (dossier.reservation.client?.passeportDelivreLe | date:'dd/MM/yyyy') || '—' }}</span></div>
+          <div class="info-row"><span class="info-label">{{ t('passportIssuedAt') }}</span><span>{{ dossier.reservation.client?.passeportDelivreA || '—' }}</span></div>
+          <div class="info-row"><span class="info-label">{{ t('dateOfBirth') }}</span><span>{{ (dossier.reservation.client?.dateNaissance | date:'dd/MM/yyyy') || '—' }}</span></div>
+          <div class="info-row"><span class="info-label">{{ t('placeOfBirth') }}</span><span>{{ dossier.reservation.client?.lieuNaissance || '—' }}</span></div>
+          <div class="info-row"><span class="info-label">{{ t('address') }}</span><span>{{ dossier.reservation.client?.adresse || dossier.reservation.client?.adresseMaroc || '—' }}</span></div>
+          <div class="info-row"><span class="info-label">{{ t('licenseNumber') }}</span><span>{{ dossier.reservation.client?.permisConduite || '—' }}</span></div>
+          <div class="info-row"><span class="info-label">{{ t('licenseIssueDate') }}</span><span>{{ (dossier.reservation.client?.permisDelivreLe | date:'dd/MM/yyyy') || '—' }}</span></div>
+          <div class="info-row"><span class="info-label">{{ t('licenseIssuedAt') }}</span><span>{{ dossier.reservation.client?.permisDelivreA || '—' }}</span></div>
+        </div>
+      </div>
+
+      <!-- Section 3: 2ème Conducteur -->
+      <div class="form-section" *ngIf="dossier.reservation.deuxiemeChauffeur">
+        <div class="section-header-row">
+          <h3>{{ t('secondDriver') }}</h3>
+          <button type="button" class="btn-edit-driver" (click)="openDriverEdit('second')">✏ {{ t('edit') }}</button>
+        </div>
+        <div class="driver-info-grid">
+          <div class="info-row"><span class="info-label">{{ t('fullName') }}</span><span>{{ dossier.reservation.deuxiemeChauffeur.nom || '—' }}</span></div>
+          <div class="info-row"><span class="info-label">CIN</span><span>{{ dossier.reservation.deuxiemeChauffeur.cin || '—' }}</span></div>
+          <div class="info-row"><span class="info-label">{{ t('passeport') }}</span><span>{{ dossier.reservation.deuxiemeChauffeur.passeport || '—' }}</span></div>
+          <div class="info-row"><span class="info-label">{{ t('passportIssueDate') }}</span><span>{{ (dossier.reservation.deuxiemeChauffeur.passeportDelivreLe | date:'dd/MM/yyyy') || '—' }}</span></div>
+          <div class="info-row"><span class="info-label">{{ t('passportIssuedAt') }}</span><span>{{ dossier.reservation.deuxiemeChauffeur.passeportDelivreA || '—' }}</span></div>
+          <div class="info-row"><span class="info-label">{{ t('dateOfBirth') }}</span><span>{{ (dossier.reservation.deuxiemeChauffeur.dateNaissance | date:'dd/MM/yyyy') || '—' }}</span></div>
+          <div class="info-row"><span class="info-label">{{ t('licenseNumber') }}</span><span>{{ dossier.reservation.deuxiemeChauffeur.permisConduite || '—' }}</span></div>
+          <div class="info-row"><span class="info-label">{{ t('licenseIssueDate') }}</span><span>{{ (dossier.reservation.deuxiemeChauffeur.permisDelivreLe | date:'dd/MM/yyyy') || '—' }}</span></div>
+          <div class="info-row"><span class="info-label">{{ t('licenseIssuedAt') }}</span><span>{{ dossier.reservation.deuxiemeChauffeur.permisDelivreA || '—' }}</span></div>
+        </div>
+      </div>
+
+      <!-- Driver edit modal -->
+      <div class="driver-modal-backdrop" *ngIf="editingDriver" (click)="cancelDriverEdit()">
+        <div class="driver-modal" (click)="$event.stopPropagation()">
+
+          <div class="driver-modal-header">
+            <h2>{{ editingDriver === 'first' ? t('firstDriver') : t('secondDriver') }}</h2>
+            <button type="button" class="driver-modal-close" (click)="cancelDriverEdit()">✕</button>
+          </div>
+
+          <div class="driver-modal-body">
+
+            <!-- 1er Conducteur fields + documents -->
+            <ng-container *ngIf="editingDriver === 'first'">
+              <div class="driver-modal-section">
+                <h3>{{ t('infoSection') }}</h3>
+                <div class="form-grid">
+                  <div class="form-group"><label>{{ t('name') }}</label><input type="text" [(ngModel)]="driverForm.nom" /></div>
+                  <div class="form-group"><label>{{ t('prenom') }}</label><input type="text" [(ngModel)]="driverForm.prenom" /></div>
+                  <div class="form-group"><label>{{ t('telephone') }}</label><input type="text" [(ngModel)]="driverForm.telephone" /></div>
+                  <div class="form-group"><label>{{ t('nationalite') }}</label><input type="text" [(ngModel)]="driverForm.nationalite" /></div>
+                  <div class="form-group"><label>CIN</label><input type="text" [(ngModel)]="driverForm.cin" /></div>
+                  <div class="form-group"><label>{{ t('cinIssueDate') }}</label><input type="date" [(ngModel)]="driverForm.cinDelivreLe" /></div>
+                  <div class="form-group"><label>{{ t('cinIssuedAt') }}</label><input type="text" [(ngModel)]="driverForm.cinDelivreA" /></div>
+                  <div class="form-group"><label>{{ t('passeport') }}</label><input type="text" [(ngModel)]="driverForm.passeport" /></div>
+                  <div class="form-group"><label>{{ t('passportIssueDate') }}</label><input type="date" [(ngModel)]="driverForm.passeportDelivreLe" /></div>
+                  <div class="form-group"><label>{{ t('passportIssuedAt') }}</label><input type="text" [(ngModel)]="driverForm.passeportDelivreA" /></div>
+                  <div class="form-group"><label>{{ t('dateOfBirth') }}</label><input type="date" [(ngModel)]="driverForm.dateNaissance" /></div>
+                  <div class="form-group"><label>{{ t('placeOfBirth') }}</label><input type="text" [(ngModel)]="driverForm.lieuNaissance" /></div>
+                  <div class="form-group"><label>{{ t('address') }}</label><input type="text" [(ngModel)]="driverForm.adresseMaroc" /></div>
+                  <div class="form-group"><label>{{ t('licenseNumber') }}</label><input type="text" [(ngModel)]="driverForm.permisConduite" /></div>
+                  <div class="form-group"><label>{{ t('licenseIssueDate') }}</label><input type="date" [(ngModel)]="driverForm.permisDelivreLe" /></div>
+                  <div class="form-group"><label>{{ t('licenseIssuedAt') }}</label><input type="text" [(ngModel)]="driverForm.permisDelivreA" /></div>
+                </div>
+              </div>
+              <div class="driver-modal-section" *ngIf="dossier.reservation.client?.id">
+                <h3>{{ t('documents') }}</h3>
+                <app-client-documents [clientId]="dossier.reservation.client.id"></app-client-documents>
+              </div>
+            </ng-container>
+
+            <!-- 2ème Conducteur fields -->
+            <ng-container *ngIf="editingDriver === 'second'">
+              <div class="driver-modal-section">
+                <h3>{{ t('infoSection') }}</h3>
+                <div class="form-grid">
+                  <div class="form-group"><label>{{ t('fullName') }}</label><input type="text" [(ngModel)]="driverForm.nom" /></div>
+                  <div class="form-group"><label>CIN</label><input type="text" [(ngModel)]="driverForm.cin" /></div>
+                  <div class="form-group"><label>{{ t('passeport') }}</label><input type="text" [(ngModel)]="driverForm.passeport" /></div>
+                  <div class="form-group"><label>{{ t('passportIssueDate') }}</label><input type="date" [(ngModel)]="driverForm.passeportDelivreLe" /></div>
+                  <div class="form-group"><label>{{ t('passportIssuedAt') }}</label><input type="text" [(ngModel)]="driverForm.passeportDelivreA" /></div>
+                  <div class="form-group"><label>{{ t('dateOfBirth') }}</label><input type="date" [(ngModel)]="driverForm.dateNaissance" /></div>
+                  <div class="form-group"><label>{{ t('licenseNumber') }}</label><input type="text" [(ngModel)]="driverForm.permisConduite" /></div>
+                  <div class="form-group"><label>{{ t('licenseIssueDate') }}</label><input type="date" [(ngModel)]="driverForm.permisDelivreLe" /></div>
+                  <div class="form-group"><label>{{ t('licenseIssuedAt') }}</label><input type="text" [(ngModel)]="driverForm.permisDelivreA" /></div>
+                </div>
+              </div>
+            </ng-container>
+
+          </div>
+
+          <div class="driver-modal-footer">
+            <button type="button" class="btn-secondary" (click)="cancelDriverEdit()">{{ t('cancel') }}</button>
+            <button type="button" class="btn-primary" (click)="saveDriver()" [disabled]="savingDriver">
+              {{ savingDriver ? t('saving') : t('save') }}
+            </button>
+          </div>
+
+        </div>
+      </div>
 
       <!-- Sticky action -->
       <div class="sticky-action" *ngIf="!isDeliveryDone">
@@ -545,25 +671,75 @@
             </div>
           </div>
 
-          <!-- Collapsible: État général -->
+          <!-- Collapsible: État général / Vehicle Condition -->
           <div class="form-section collapsible-section">
             <button type="button" class="collapsible-header" (click)="showDommages = !showDommages">
               <span class="collapsible-title">{{ t('overallVehicleCondition') }}</span>
-              <span class="frais-badge damage-badge" *ngIf="retourForm.condition !== 'clean'">
+              <span class="frais-badge damage-badge" *ngIf="hasDamage">
                 {{ retourForm.condition === 'minor_damage' ? t('minorDamage') : t('majorDamage') }}
+                <ng-container *ngIf="(retourForm.damagedParts ?? []).length > 0">
+                  · {{ (retourForm.damagedParts ?? []).length }} {{ t('parts') || 'parts' }}
+                </ng-container>
               </span>
               <span class="collapse-arrow" [class.open]="showDommages">▼</span>
             </button>
+
             <div class="collapsible-body" *ngIf="showDommages">
-              <div class="form-group">
-                <label>{{ t('generalCondition') }}</label>
-                <select [(ngModel)]="retourForm.condition">
-                  <option value="clean">{{ t('cleanNoDamage') }}</option>
-                  <option value="minor_damage">{{ t('minorDamage') }}</option>
-                  <option value="major_damage">{{ t('majorDamage') }}</option>
-                </select>
+
+              <!-- Damage toggle -->
+              <div class="dmg-toggle-row">
+                <button type="button" class="dmg-opt"
+                  [class.dmg-opt-clean]="!hasDamage"
+                  (click)="setNoDamage()">
+                  ✓ {{ t('cleanNoDamage') }}
+                </button>
+                <button type="button" class="dmg-opt"
+                  [class.dmg-opt-damage]="hasDamage"
+                  (click)="setHasDamage()">
+                  ⚠ {{ t('hasDamage') || 'Has Damage' }}
+                </button>
               </div>
-            </div>
+
+              <!-- Damage severity + SVG (shown only when damage) -->
+              <ng-container *ngIf="hasDamage">
+
+                <div class="form-group" style="margin-top:0.75rem">
+                  <label>{{ t('generalCondition') }}</label>
+                  <select [(ngModel)]="retourForm.condition">
+                    <option value="minor_damage">{{ t('minorDamage') }}</option>
+                    <option value="major_damage">{{ t('majorDamage') }}</option>
+                  </select>
+                </div>
+
+                <div class="car-diagram-wrap" [class.car-diagram-done]="isRetourDone">
+                  <div class="car-diagram-hint">
+                    {{ t('clickToMarkDamage') }}
+                  </div>
+
+                  <app-vehicle-map
+                    [damagedZones]="retourForm.damagedParts ?? []"
+                    mode="interactive"
+                    (zoneClick)="togglePart($event)">
+                  </app-vehicle-map>
+
+                  <!-- Damaged parts list -->
+                  <div class="dpl-box" *ngIf="(retourForm.damagedParts ?? []).length > 0">
+                    <div class="dpl-title">{{ t('damagedParts') }}:</div>
+                    <div class="dpl-tags">
+                      <span class="dpl-tag" *ngFor="let p of retourForm.damagedParts">
+                        {{ carPartLabel(p) }}
+                        <button type="button" class="dpl-remove" (click)="togglePart(p)">×</button>
+                      </span>
+                    </div>
+                  </div>
+                  <div class="dpl-empty" *ngIf="(retourForm.damagedParts ?? []).length === 0">
+                    {{ t('noDamagedPartsSelected') }}
+                  </div>
+
+                </div><!-- /car-diagram-wrap -->
+              </ng-container>
+
+            </div><!-- /collapsible-body -->
           </div>
 
           <!-- Collapsible: Notes -->
@@ -690,7 +866,7 @@
             </div>
             <div class="info-row">
               <span class="info-label">{{ t('status') }}</span>
-              <span class="status-chip" [ngClass]="statusClass(status)">{{ statusLabel(status) }}</span>
+              <span class="status-chip" [ngClass]="statusClass(status)">{{ status | appStatus:'reservation' }}</span>
             </div>
             <div class="info-row" *ngIf="dossier.contrat?.signedAt">
               <span class="info-label">{{ t('signedOn') }}</span>
@@ -786,12 +962,48 @@
   </div>
 </div>
 
+<!-- ── Cancel reservation confirmation modal ──────────────────────────── -->
+<div class="confirm-modal-backdrop" *ngIf="showCancelModal" (click)="closeCancelModal()">
+  <div class="confirm-modal" (click)="$event.stopPropagation()">
+
+    <div class="confirm-modal-icon">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+    </div>
+
+    <h2 class="confirm-modal-title">{{ t('cancelReservation') || 'Annuler la réservation' }}</h2>
+    <p class="confirm-modal-msg">
+      {{ t('cancelReservationConfirm') || 'Êtes-vous sûr de vouloir annuler cette réservation ?' }}
+      <br>
+      <strong class="confirm-modal-ref">{{ contractNumber !== '—' ? contractNumber : ('N° ' + reservationId) }}</strong>
+    </p>
+    <p class="confirm-modal-warning">Cette action est irréversible.</p>
+
+    <div class="confirm-modal-actions">
+      <button class="btn-secondary confirm-modal-keep" (click)="closeCancelModal()">
+        Conserver
+      </button>
+      <button class="btn-danger confirm-modal-confirm" (click)="confirmCancelReservation()" [disabled]="cancelling">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+        </svg>
+        {{ cancelling ? (t('cancelling') || 'Annulation…') : (t('confirmCancel') || 'Oui, annuler') }}
+      </button>
+    </div>
+
+  </div>
+</div>
+
 <!-- Print overlay — same branded template/mechanism used in contrat-list, window.print() fires
      inside it. Independent of the tab content above, so it's placed outside the tab body. -->
 <app-print-contrat
   *ngIf="printContractData"
   [contractData]="printContractData"
-  (closed)="printContractData = null">
+  [autoDownload]="autoDownloadPdf"
+  (closed)="onPrintClosed()">
 </app-print-contrat>
 
 <!-- Loading -->

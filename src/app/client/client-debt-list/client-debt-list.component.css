@@ -1,0 +1,525 @@
+.debt-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+.page-header { margin-bottom: 1.25rem; }
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.page-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.btn-refresh {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.4rem 0.9rem;
+  font-size: 1rem;
+  cursor: pointer;
+  color: #475569;
+  transition: background 0.15s;
+}
+.btn-refresh:hover  { background: #e2e8f0; }
+.btn-refresh:disabled { opacity: 0.4; cursor: default; }
+.spin { display: inline-block; animation: g-spin 0.7s linear infinite; }
+
+/* ── Stats bar ───────────────────────────────────────────── */
+.stats-bar {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: white;
+  border-radius: 12px;
+  padding: 0.9rem 1.1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  flex: 1 1 150px;
+  min-width: 0;
+}
+
+.stat-total { border-left: 4px solid #ef4444; }
+.stat-count { border-left: 4px solid #3b82f6; }
+.stat-high  { border-left: 4px solid #f97316; }
+
+.stat-icon  { font-size: 1.5rem; flex-shrink: 0; }
+.stat-value { font-size: 1.25rem; font-weight: 700; color: #1e293b; line-height: 1.2; }
+.stat-label { font-size: 0.72rem; color: #94a3b8; margin-top: 2px; }
+
+/* ── Search ──────────────────────────────────────────────── */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: white;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.5rem 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.search-icon { font-size: 0.9rem; color: #94a3b8; flex-shrink: 0; }
+
+.search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 0.875rem;
+  background: transparent;
+  color: #1e293b;
+  min-width: 0;
+}
+
+.search-clear {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  padding: 0;
+  line-height: 1;
+}
+.search-clear:hover { color: #ef4444; }
+
+/* ── States ──────────────────────────────────────────────── */
+.state-msg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 3rem;
+  color: #64748b;
+}
+
+.spinner {
+  width: 20px; height: 20px;
+  border: 2px solid #e2e8f0;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: g-spin 0.7s linear infinite;
+}
+
+@keyframes g-spin { to { transform: rotate(360deg); } }
+
+.state-error { text-align: center; padding: 2rem; color: #ef4444; font-weight: 600; }
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.empty-icon { font-size: 3rem; margin-bottom: 0.75rem; }
+.empty-text { font-size: 1rem; color: #64748b; }
+
+/* ── Debtor cards ────────────────────────────────────────── */
+.debtor-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.debtor-card {
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  overflow: hidden;
+  border: 1.5px solid transparent;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.debtor-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.1); }
+
+.card-high   { border-color: #fca5a5; }
+.card-medium { border-color: #fcd34d; }
+
+/* ── Card header ─────────────────────────────────────────── */
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.9rem 1.1rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.rank-num {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #94a3b8;
+  min-width: 22px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.card-header:hover { background: #f8fafc; }
+
+.client-avatar {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.card-high .client-avatar   { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.card-medium .client-avatar { background: linear-gradient(135deg, #f97316, #ea580c); }
+
+.client-info { flex: 1; min-width: 0; }
+.client-name { font-weight: 600; color: #1e293b; font-size: 0.92rem; }
+.client-meta {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 2px;
+  flex-wrap: wrap;
+}
+.cin-tag { color: #94a3b8; }
+
+.card-right {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+}
+
+.debt-amount {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #ef4444;
+  white-space: nowrap;
+}
+
+.risk-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.18rem 0.55rem;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.debt-risk-low    { background: #fef9c3; color: #854d0e; }
+.debt-risk-medium { background: #fde8d0; color: #9a3412; }
+.debt-risk-high   { background: #fee2e2; color: #991b1b; }
+
+.expand-chevron { color: #94a3b8; font-size: 0.75rem; }
+
+.card-right-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* ── Reservation panel ────────────────────────────────────── */
+.reservation-panel {
+  border-top: 1px solid #f1f5f9;
+  padding: 0.75rem 1.1rem 1rem;
+  background: #f8fafc;
+}
+
+.res-table-wrap { overflow-x: auto; }
+
+.res-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  min-width: 400px;
+}
+
+.res-table thead th {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.res-table tbody tr {
+  border-bottom: 1px solid #e8edf3;
+  transition: background 0.12s;
+}
+.res-table tbody tr:hover { background: #f0f4f8; }
+.res-table tbody tr:last-child { border-bottom: none; }
+.res-table td { padding: 0.5rem 0.75rem; color: #334155; }
+
+.paid-cell      { color: #16a34a; font-weight: 600; }
+.remaining-cell { color: #ef4444; font-weight: 700; }
+.col-remaining  { text-align: right; }
+
+/* ── Table columns ───────────────────────────────────────── */
+.col-num    { text-align: right; }
+.col-action { text-align: center; white-space: nowrap; }
+.res-id     { font-family: monospace; color: #64748b; font-size: 0.78rem; }
+.res-date   { white-space: nowrap; font-size: 0.8rem; }
+
+/* Profile button in card header */
+.btn-profile {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.28rem 0.55rem;
+  border-radius: 7px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  border: 1.5px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.btn-profile:hover { background: #dbeafe; }
+
+/* Pay button per reservation row */
+.btn-pay-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.28rem 0.65rem;
+  border-radius: 7px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1.5px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.btn-pay-row:hover { background: #dcfce7; border-color: #86efac; }
+
+/* ── Payment modal ───────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,0.45);
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.pay-modal {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.18), 0 4px 12px rgba(0,0,0,0.08);
+  width: 100%;
+  max-width: 480px;
+  animation: slideUp 0.2s ease;
+}
+
+@keyframes slideUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.pay-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1.1rem 1.25rem 0.85rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.pay-modal-title { font-size: 1rem; font-weight: 700; color: #1e293b; }
+.pay-modal-sub   { font-size: 0.78rem; color: #64748b; margin-top: 3px; }
+
+.modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  color: #94a3b8;
+  padding: 0.1rem 0.3rem;
+  border-radius: 6px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.modal-close:hover { color: #ef4444; background: #fef2f2; }
+
+.pay-modal-body { padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.85rem; }
+
+.pay-row {
+  display: flex;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+.pay-row .pay-group { flex: 1 1 160px; min-width: 0; }
+
+.pay-group { display: flex; flex-direction: column; gap: 0.3rem; }
+
+.pay-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #475569;
+}
+.req { color: #ef4444; }
+
+.pay-input, .pay-select {
+  padding: 0.52rem 0.75rem;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: #1e293b;
+  background: #fff;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  font-family: inherit;
+}
+.pay-input:focus, .pay-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+}
+
+.pay-hint { font-size: 0.72rem; color: #64748b; }
+.pay-hint strong { color: #ef4444; }
+
+.pay-field-error { font-size: 0.72rem; color: #ef4444; }
+.pay-api-error {
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  color: #dc2626;
+}
+
+.pay-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  padding: 0.85rem 1.25rem 1.1rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.btn-cancel {
+  padding: 0.5rem 1.1rem;
+  border-radius: 8px;
+  border: 1.5px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.btn-cancel:hover { background: #f1f5f9; }
+
+.btn-submit {
+  padding: 0.5rem 1.25rem;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  box-shadow: 0 1px 4px rgba(37,99,235,0.25);
+}
+.btn-submit:hover:not(:disabled) { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+.btn-submit:disabled { opacity: 0.5; cursor: default; }
+
+/* ── RTL ──────────────────────────────────────────────────── */
+[dir="rtl"] .stat-total { border-left: none; border-right: 4px solid #ef4444; }
+[dir="rtl"] .stat-count { border-left: none; border-right: 4px solid #3b82f6; }
+[dir="rtl"] .stat-high  { border-left: none; border-right: 4px solid #f97316; }
+[dir="rtl"] .res-table thead th { text-align: right; }
+[dir="rtl"] .col-remaining { text-align: left; }
+
+/* Numbers always read left-to-right regardless of UI direction */
+[dir="rtl"] .stat-value,
+[dir="rtl"] .debt-amount,
+[dir="rtl"] .meta-phone,
+[dir="rtl"] .cin-tag,
+[dir="rtl"] .rank-num,
+[dir="rtl"] .res-id,
+[dir="rtl"] .res-date,
+[dir="rtl"] .col-num,
+[dir="rtl"] .pay-modal-sub {
+  direction: ltr;
+  unicode-bidi: embed;
+}
+
+/* ── Mobile ───────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .debt-page { padding: 0.75rem; }
+  .cin-tag   { display: none; }
+
+  /* Tighter card header on narrow screens */
+  .card-header { padding: 0.75rem 0.85rem; gap: 0.55rem; }
+
+  /* Hide rank number — saves ~30px */
+  .rank-num { display: none; }
+
+  /* Stack card-right vertically so it doesn't overflow */
+  .card-right {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+    flex-shrink: 0;
+  }
+
+  /* Inline amount + chevron on the first line of card-right */
+  .debt-amount {
+    font-size: 0.88rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .debt-amount::after {
+    content: attr(data-chevron);
+  }
+
+  /* Hide profile button on mobile — accessible via expand panel */
+  .btn-profile { display: none; }
+
+  .expand-chevron { font-size: 0.7rem; }
+  .risk-badge { font-size: 0.65rem; padding: 0.14rem 0.45rem; }
+
+  /* Row inside card-right: badge + chevron on same line */
+  .card-right-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .debt-page { padding: 0.5rem; }
+  .client-avatar { width: 32px; height: 32px; font-size: 0.85rem; }
+  .client-name { font-size: 0.84rem; }
+}

@@ -1,4 +1,6 @@
-import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
+﻿import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
+import { vehicleStatusClass } from '../../shared/utils/status.utils';
+import { StatusPipe } from '../../shared/pipes/status.pipe';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
@@ -14,13 +16,14 @@ import { AuthService } from '../../services/auth.service';
 import { EventBusService } from '../../services/event-bus.service';
 import { environment } from '../../../environments/environment';
 import { complianceSeverity } from '../../shared/utils/compliance.utils';
+import { PAGE_SIZE } from '../../shared/constants/pagination';
 
 const PLACEHOLDER = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjI1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjI1MCIgZmlsbD0iI2VkZjJmNyIvPjx0ZXh0IHg9IjIwMCIgeT0iMTI1IiBmaWxsPSIjYTBhZWMwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiBmb250LXNpemU9IjYwIj7wn5qlPC90ZXh0Pjwvc3ZnPg==`;
 
 @Component({
   selector: 'app-voiture-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, ComplianceBadgeComponent, UploadBtnComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, ComplianceBadgeComponent, UploadBtnComponent, StatusPipe],
   templateUrl: './voiture-list.component.html',
   styleUrls: ['./voiture-list.component.css']
 })
@@ -31,7 +34,7 @@ export class VoitureListComponent implements OnInit, OnDestroy {
   loading = true;
   error = '';
   page = 1;
-  limit = 20;
+  limit = PAGE_SIZE;
   total = 0;
   pages = 0;
   dir = 'ltr';
@@ -52,6 +55,17 @@ export class VoitureListComponent implements OnInit, OnDestroy {
 
   get canManageVehicle(): boolean {
     return !this.auth.hasRole('ROLE_STAFF') && !this.auth.hasRole('ROLE_MANAGER');
+  }
+
+  get isAdmin(): boolean { return this.auth.hasRole('ROLE_ADMIN'); }
+  get visibleTotal(): number {
+    if (this.isAdmin) return this.stats.total;
+    return this.stats.total - this.stats.brouillon - this.stats.setup;
+  }
+
+  get visibleStatusTabs() {
+    if (this.isAdmin) return this.STATUS_TABS;
+    return this.STATUS_TABS.filter(t => t.key !== 'brouillon' && t.key !== 'setup');
   }
 
   modalMode: 'edit' | 'delete' | null = null;
@@ -119,7 +133,6 @@ export class VoitureListComponent implements OnInit, OnDestroy {
       prixSemaine:       [0],
       prixMois:          [0],
       prixAchat:         [0],
-      caution:           [0],
       dateAchat:         [''],
     });
   }
@@ -159,6 +172,10 @@ export class VoitureListComponent implements OnInit, OnDestroy {
     this.buildOilStatusMap(oilReminders, data);
     this.voitures = data.map((v: any) => ({ ...v, _img: this.imgUrl(v.image) }));
     this.calcStats();
+    if (data.some((v: any) => v.effectiveStatus && v.voitureStatus &&
+        v.effectiveStatus.toLowerCase() !== v.voitureStatus.toLowerCase())) {
+      this.crud.create('voiture/sync-statuses', {}).pipe(catchError(() => of(null))).subscribe();
+    }
     if (openEditId) {
       const car = this.voitures.find(v => v.id === openEditId);
       if (car) this.openEdit(car);
@@ -221,6 +238,7 @@ export class VoitureListComponent implements OnInit, OnDestroy {
 
   get filtered(): any[] {
     let list = this.voitures;
+    if (!this.isAdmin) list = list.filter(v => !['brouillon', 'setup'].includes(this.effectiveStatus(v)));
     if (this.statusFilter !== 'all')    list = list.filter(v => this.effectiveStatus(v) === this.statusFilter.toLowerCase());
     if (this.fuelFilter)                list = list.filter(v => (v.typeCarburant || '').toLowerCase() === this.fuelFilter.toLowerCase());
     if (this.transmissionFilter)        list = list.filter(v => (v.transmission || '').toLowerCase() === this.transmissionFilter.toLowerCase());
@@ -289,38 +307,7 @@ export class VoitureListComponent implements OnInit, OnDestroy {
 
   // ── Status display ───────────────────────────────────────────────────────
 
-  statusClass(s: string): string {
-    const map: Record<string, string> = {
-      brouillon:      'st-draft',
-      setup:          'st-setup',
-      disponible:     'st-green',
-      reserve:        'st-teal',
-      louee:          'st-blue',
-      maintenance:    'st-orange',
-      hors_service:   'st-red',
-      decommissioned: 'st-brown',
-      vendu:          'st-gray',
-      archive:        'st-dark',
-    };
-    return map[(s || '').toLowerCase()] ?? 'st-gray';
-  }
-
-  statusLabel(s: string): string {
-    const normalized = (s || '').toLowerCase();
-    const keyMap: Record<string, string> = {
-      brouillon:      'brouillon',
-      setup:          'setup',
-      disponible:     'disponible',
-      reserve:        'reserve',
-      louee:          'louee',
-      maintenance:    'maintenance',
-      hors_service:   'horsService',
-      decommissioned: 'decommissioned',
-      vendu:          'vendu',
-      archive:        'archive',
-    };
-    return this.t(keyMap[normalized] ?? normalized);
-  }
+  readonly statusClass = vehicleStatusClass;
 
   statCount(key: string): number {
     if (key === 'all') return this.stats.total;
@@ -408,7 +395,7 @@ export class VoitureListComponent implements OnInit, OnDestroy {
       climatisation: car.climatisation || false, kilometrageActuel: car.kilometrageActuel || 0,
       prixJour: car.prixJour || 0, prixSemaine: car.prixSemaine || 0,
       prixMois: car.prixMois || 0, prixAchat: car.prixAchat || 0,
-      caution: car.caution || 0, dateAchat: car.dateAchat || '',
+      dateAchat: car.dateAchat || '',
     });
     this.editGallery = Array.isArray(car.galleryImages)
       ? car.galleryImages.map((g: any) => ({ id: g.id, path: this.imgUrl(g.path) }))
@@ -498,7 +485,7 @@ export class VoitureListComponent implements OnInit, OnDestroy {
   duplicate(car: any): void {
     const COPY_FIELDS = ['marque','modele','version','annee','typeCarburant','transmission',
       'couleur','places','portes','puissanceCv','categorie','climatisation',
-      'kilometrageActuel','prixJour','prixSemaine','prixMois','prixAchat','caution','dateAchat'];
+      'kilometrageActuel','prixJour','prixSemaine','prixMois','prixAchat','dateAchat'];
     const fd = new FormData();
     COPY_FIELDS.forEach(k => {
       const v = car[k];

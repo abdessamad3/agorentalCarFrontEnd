@@ -26,7 +26,7 @@
       <!-- Status Badge -->
       <div class="status-section">
         <span class="status-badge" [ngClass]="'status-' + bureau.statut">
-          {{ bureau.statut }}
+          {{ bureau.statut | appStatus:'bureau' }}
         </span>
       </div>
 

@@ -1,9 +1,10 @@
 .modal-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,.45);
   display: flex; align-items: center; justify-content: center; z-index: 1000;
+  padding: 1rem;
 }
 .return-modal {
-  background: #fff; border-radius: 12px; width: 680px; max-width: 96vw;
+  background: #fff; border-radius: 12px; width: 100%; max-width: 680px;
   max-height: 92vh; display: flex; flex-direction: column; overflow: hidden;
   box-shadow: 0 20px 60px rgba(0,0,0,.25);
 }
@@ -74,3 +75,14 @@
 
 .signatures-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 4px; }
 .sig-block { display: flex; flex-direction: column; gap: 6px; }
+
+@media (max-width: 600px) {
+  .modal-overlay { align-items: flex-end; padding: 0; }
+  .return-modal { border-radius: 16px 16px 0 0; max-height: 90vh; }
+  .modal-body { padding: 14px 16px; }
+  .modal-footer { padding: 12px 16px; flex-wrap: wrap; }
+  .modal-footer button { flex: 1; }
+  .signatures-row { grid-template-columns: 1fr; }
+  .charges-grid { grid-template-columns: 1fr 1fr; }
+  .field-input { width: 100%; box-sizing: border-box; }
+}

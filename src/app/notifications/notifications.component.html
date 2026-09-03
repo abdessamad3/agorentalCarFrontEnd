@@ -89,6 +89,37 @@
       <div>No compliance alerts match your current filters</div>
     </div>
 
+    <!-- ══════════════════════════════ SECTION: URGENT PENDING RESERVATIONS -->
+    <div class="cc-section cc-section-urgent-res" *ngIf="urgentPendingReservations.length > 0">
+      <div class="cc-section-header" (click)="toggleSection('urgentRes')">
+        <div class="cc-section-title">
+          <span class="cc-section-dot cc-dot-urgent-res"></span>
+          ⚠ Réservations en attente — départ dans &lt;24h
+          <span class="cc-section-count cc-count-urgent-res">{{ urgentPendingReservations.length }}</span>
+        </div>
+        <button class="cc-toggle-btn" type="button">
+          {{ collapsed['urgentRes'] ? '▶ Show' : '▼ Hide' }}
+        </button>
+      </div>
+      <div class="cc-section-body" *ngIf="!collapsed['urgentRes']">
+        <div class="cc-item cc-item-urgent-res" *ngFor="let r of urgentPendingReservations"
+             [routerLink]="['/location', r.id]" style="cursor:pointer">
+          <span class="source-badge source-reservation">RES</span>
+          <div class="cc-item-main">
+            <div class="cc-item-vehicle">
+              🚗 {{ r.voiture?.marque || '' }} {{ r.voiture?.modele || '' }}
+              <span *ngIf="r.voiture?.immatriculation"> · {{ r.voiture.immatriculation }}</span>
+            </div>
+            <div class="cc-item-detail">
+              👤 {{ r.client?.nom || ('Client #' + r.clientId) }}
+              &nbsp;·&nbsp; Départ: {{ r.dateDebut | date:'dd MMM HH:mm' }}
+            </div>
+          </div>
+          <span class="days-pill days-warning">En attente</span>
+        </div>
+      </div>
+    </div>
+
     <!-- ══════════════════════════════ SECTION: EXPIRED -->
     <div class="cc-section cc-section-expired" *ngIf="expired.length > 0">
       <div class="cc-section-header" (click)="toggleSection('expired')">

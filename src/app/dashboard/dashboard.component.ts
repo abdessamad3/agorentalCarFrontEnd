@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { CrudService } from '../services/crud.service';
 import { TranslationService } from '../services/translation.service';
+import { StatusPipe } from '../shared/pipes/status.pipe';
 import { catchError } from 'rxjs/operators';
 import { forkJoin, of } from 'rxjs';
 import { toArr } from '../shared/utils/rx.utils';
@@ -27,7 +28,7 @@ interface AgendaGroup {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, StatusPipe],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
@@ -46,8 +47,9 @@ export class DashboardComponent implements OnInit {
   thisMonthCount = 0;
   availableFleet = 0;
   returnTodayCount = 0;
+  urgentPendingCount = 0;
 
-  statModal: 'active' | 'available' | 'thisMonth' | 'returnToday' | null = null;
+  statModal: 'active' | 'available' | 'thisMonth' | 'returnToday' | 'urgentPending' | null = null;
 
   isMobile = false;
   mobileView: 'month' | 'week' | 'day' | 'agenda' = 'month';
@@ -117,25 +119,34 @@ export class DashboardComponent implements OnInit {
   }
 
 
+  private isCancelled(r: any): boolean {
+    const s = (r.reservationStatus || r.statut || '').toLowerCase();
+    return s === 'annulee' || s === 'cancelled' || s === 'annule';
+  }
+
   private computeStats() {
     const today = new Date(); today.setHours(12, 0, 0, 0);
     const y = today.getFullYear(), m = today.getMonth();
     this.activeCount = this.reservations.filter(r => {
+      if (this.isCancelled(r)) return false;
       const s = new Date(r.dateDebut); s.setHours(0,0,0,0);
       const e = new Date(r.dateFin);   e.setHours(23,59,59,999);
       return s <= today && e >= today;
     }).length;
     this.thisMonthCount = this.reservations.filter(r => {
+      if (this.isCancelled(r)) return false;
       const d = new Date(r.dateDebut);
       return d.getFullYear() === y && d.getMonth() === m;
     }).length;
-    this.availableFleet = this.voitures.filter((v: any) =>
-      v.voitureStatus === 'available' || v.voitureStatus === 'disponible'
-    ).length;
+    this.availableFleet = this.voitures.filter((v: any) => {
+      const s = ((v.effectiveStatus || v.voitureStatus) || '').toLowerCase();
+      return s === 'available' || s === 'disponible';
+    }).length;
     const todayISO = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
     this.returnTodayCount = this.reservations.filter(r =>
-      (r.dateFin || '').slice(0, 10) === todayISO
+      !this.isCancelled(r) && (r.dateFin || '').slice(0, 10) === todayISO
     ).length;
+    this.urgentPendingCount = this.urgentPendingList.length;
   }
 
   buildCalendar() {
@@ -234,7 +245,7 @@ export class DashboardComponent implements OnInit {
     const todayStart = new Date(today); todayStart.setHours(0, 0, 0, 0);
     const nonOperational = new Set(['vendu', 'archive', 'decommissioned', 'brouillon', 'setup', 'hors_service', 'maintenance']);
     const availableCars = probe < todayStart ? [] : this.voitures.filter(v => {
-      const s = ((v as any).voitureStatus || '').toLowerCase();
+      const s = ((v as any).effectiveStatus || (v as any).voitureStatus || '').toLowerCase();
       return !bookedIds.has(v.id) && !nonOperational.has(s);
     });
 
@@ -369,12 +380,70 @@ export class DashboardComponent implements OnInit {
 
   closeBottomSheet() { this.bottomSheetDay = null; }
   closeDay() { this.selectedDay = null; }
-  openStatModal(type: 'active' | 'available' | 'thisMonth' | 'returnToday') { this.statModal = type; }
+
+  confirmingId: number | null = null;
+  cancellingId: number | null = null;
+
+  confirmReservation(b: any, event: Event): void {
+    event.stopPropagation();
+    if (this.confirmingId === b.id) return;
+    this.confirmingId = b.id;
+    this.crud.update('reservation', b.id, { reservationStatus: 'confirmee' }).subscribe({
+      next: () => { this.confirmingId = null; this.silentReload(); },
+      error: ()  => { this.confirmingId = null; },
+    });
+  }
+
+  cancelReservation(b: any, event: Event): void {
+    event.stopPropagation();
+    if (this.cancellingId === b.id) return;
+    this.cancellingId = b.id;
+    this.crud.update('reservation', b.id, { reservationStatus: 'annulee' }).subscribe({
+      next: () => { this.cancellingId = null; this.silentReload(); },
+      error: ()  => { this.cancellingId = null; },
+    });
+  }
+
+  private silentReload(): void {
+    forkJoin({
+      reservations: this.crud.getAll('reservation').pipe(catchError(() => of([]))),
+      voitures:     this.crud.getAll('voiture').pipe(catchError(() => of([]))),
+      clients:      this.crud.getAll('client').pipe(catchError(() => of([]))),
+    }).subscribe(({ reservations, voitures, clients }) => {
+      this.reservations = toArr(reservations);
+      this.voitures     = toArr(voitures);
+      this.clients      = toArr(clients);
+      this.computeStats();
+      this.buildCalendar();
+      this.buildWeekView();
+      this.buildAgendaView();
+      this.buildDayView();
+      if (this.selectedDay) {
+        const t = this.selectedDay.date.toDateString();
+        this.selectedDay = this.weeks.flat().find(d => d.date.toDateString() === t) ?? null;
+      }
+      if (this.bottomSheetDay) {
+        const t = this.bottomSheetDay.date.toDateString();
+        this.bottomSheetDay = this.weeks.flat().find(d => d.date.toDateString() === t) ?? null;
+      }
+    });
+  }
+  openStatModal(type: 'active' | 'available' | 'thisMonth' | 'returnToday' | 'urgentPending') { this.statModal = type; }
   closeStatModal() { this.statModal = null; }
+
+  get urgentPendingList(): any[] {
+    return this.reservations.filter(r => {
+      const s = (r.reservationStatus || r.statut || '').toLowerCase();
+      if (s !== 'pending' && s !== 'en_attente') return false;
+      const hoursUntil = (new Date(r.dateDebut).getTime() - Date.now()) / (1000 * 60 * 60);
+      return hoursUntil >= 0 && hoursUntil <= 24;
+    });
+  }
 
   get activeRentalsList(): any[] {
     const today = new Date(); today.setHours(12, 0, 0, 0);
     return this.reservations.filter(r => {
+      if (this.isCancelled(r)) return false;
       const s = new Date(r.dateDebut); s.setHours(0,0,0,0);
       const e = new Date(r.dateFin);   e.setHours(23,59,59,999);
       return s <= today && e >= today;
@@ -384,7 +453,9 @@ export class DashboardComponent implements OnInit {
   get returnTodayList(): any[] {
     const now = new Date();
     const todayISO = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-    return this.reservations.filter(r => (r.dateFin || '').slice(0, 10) === todayISO);
+    return this.reservations.filter(r =>
+      !this.isCancelled(r) && (r.dateFin || '').slice(0, 10) === todayISO
+    );
   }
   get availableCarsList(): any[] {
     return this.voitures.filter(v => {
@@ -396,6 +467,7 @@ export class DashboardComponent implements OnInit {
     const today = new Date();
     const y = today.getFullYear(), m = today.getMonth();
     return this.reservations.filter(r => {
+      if (this.isCancelled(r)) return false;
       const d = new Date(r.dateDebut);
       return d.getFullYear() === y && d.getMonth() === m;
     }).sort((a, b) => new Date(a.dateDebut).getTime() - new Date(b.dateDebut).getTime());

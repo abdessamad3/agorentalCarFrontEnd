@@ -1,4 +1,4 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+﻿import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -7,11 +7,13 @@ import { CrudService } from '../../services/crud.service';
 import { TranslationService } from '../../services/translation.service';
 import { BtnComponent } from '../../shared/btn/btn.component';
 import { PaginatorComponent } from '../../shared/paginator/paginator.component';
+import { TranslatePipe } from '../../pipes/translate.pipe';
+import { PAGE_SIZE } from '../../shared/constants/pagination';
 
 @Component({
   selector: 'app-vente-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, BtnComponent, PaginatorComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, BtnComponent, PaginatorComponent, TranslatePipe],
   templateUrl: './vente-list.component.html',
   styleUrls: ['../../shared/styles/crud-list.css', './vente-list.component.css']
 })
@@ -27,7 +29,7 @@ export class VenteListComponent implements OnInit {
   search = '';
   activeTab: 'available' | 'sold' = 'available';
   page = 1;
-  limit = 20;
+  limit = PAGE_SIZE;
   totalVoitures = 0;
   totalVentes = 0;
 

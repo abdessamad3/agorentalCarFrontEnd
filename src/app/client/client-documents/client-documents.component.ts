@@ -1,9 +1,11 @@
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { BtnComponent } from '../../shared/btn/btn.component';
 import { UploadBtnComponent } from '../../shared/btn/upload-btn.component';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 type DocType = 'cin' | 'passeport' | 'permis' | 'autre';
 
@@ -15,15 +17,23 @@ interface ClientDoc {
   uploadedAt: string;
 }
 
+const EXPIRATION_FIELD: Partial<Record<DocType, string>> = {
+  cin:       'cinExpiration',
+  passeport: 'passeportExpiration',
+  permis:    'permisExpiration',
+};
+
 @Component({
   selector: 'app-client-documents',
   standalone: true,
-  imports: [CommonModule, BtnComponent, UploadBtnComponent],
+  imports: [CommonModule, FormsModule, BtnComponent, UploadBtnComponent, TranslatePipe],
   templateUrl: './client-documents.component.html',
   styleUrls: ['./client-documents.component.css'],
 })
 export class ClientDocumentsComponent implements OnChanges {
   @Input() clientId!: number;
+  @Input() client: any = null;
+  @Output() clientUpdated = new EventEmitter<void>();
 
   docs: ClientDoc[] = [];
   loading = false;
@@ -31,12 +41,35 @@ export class ClientDocumentsComponent implements OnChanges {
   uploadQueue: number = 0;
   error = '';
 
+  editingType: DocType | null = null;
+  editExpiration = '';
+  saving = false;
+  saveError = '';
+
   readonly docTypes: { type: DocType; label: string }[] = [
     { type: 'cin',       label: 'CIN' },
     { type: 'passeport', label: 'Passport' },
     { type: 'permis',    label: 'Driving Licence' },
     { type: 'autre',     label: 'Other' },
   ];
+
+  get today(): string {
+    return new Date().toISOString().substring(0, 10);
+  }
+
+  hasExpirationField(type: DocType): boolean {
+    return type in EXPIRATION_FIELD;
+  }
+
+  get editingLabel(): string {
+    return this.docTypes.find(d => d.type === this.editingType)?.label ?? '';
+  }
+
+  currentExpiration(type: DocType): string {
+    if (!this.client) return '';
+    const field = EXPIRATION_FIELD[type];
+    return field ? (this.client[field] ?? '') : '';
+  }
 
   constructor(private http: HttpClient) {}
 
@@ -84,6 +117,41 @@ export class ClientDocumentsComponent implements OnChanges {
     this.http.delete(`${environment.apiUrl}/client/${this.clientId}/documents/${doc.id}`).subscribe({
       next: () => { this.docs = this.docs.filter(d => d.id !== doc.id); },
       error: () => { this.error = 'Delete failed'; },
+    });
+  }
+
+  openModal(type: DocType) {
+    this.editingType = type;
+    this.editExpiration = this.currentExpiration(type);
+    this.saveError = '';
+  }
+
+  closeModal() {
+    this.editingType = null;
+    this.editExpiration = '';
+    this.saveError = '';
+  }
+
+  onFilesSelectedInModal(files: File[]) {
+    if (this.editingType) this.onFilesSelected(files, this.editingType);
+  }
+
+  saveExpiration() {
+    if (!this.editingType || !this.editExpiration) return;
+    const field = EXPIRATION_FIELD[this.editingType];
+    if (!field) return;
+    this.saving = true;
+    this.saveError = '';
+    this.http.put(`${environment.apiUrl}/client/${this.clientId}`, { [field]: this.editExpiration }).subscribe({
+      next: () => {
+        this.saving = false;
+        this.clientUpdated.emit();
+        this.closeModal();
+      },
+      error: (err) => {
+        this.saving = false;
+        this.saveError = err?.error?.message || 'Save failed';
+      },
     });
   }
 

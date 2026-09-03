@@ -4,10 +4,13 @@ import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { CrudService } from '../../services/crud.service';
 import { ContratService } from '../../services/contrat.service';
 import { ToastService } from '../../services/toast.service';
+import { ActivityLogService } from '../../services/activity-log.service';
 import { FuelGaugeComponent } from '../../shared/fuel-gauge/fuel-gauge.component';
 import { ContratTimelineComponent } from '../contrat-timeline/contrat-timeline.component';
 import { VehicleDeliveryFormComponent } from '../vehicle-delivery-form/vehicle-delivery-form.component';
 import { VehicleReturnFormComponent } from '../vehicle-return-form/vehicle-return-form.component';
+import { PrintContratComponent } from '../print-contrat/print-contrat.component';
+import { StatusPipe } from '../../shared/pipes/status.pipe';
 
 @Component({
   selector: 'app-contrat-detail',
@@ -16,6 +19,7 @@ import { VehicleReturnFormComponent } from '../vehicle-return-form/vehicle-retur
     CommonModule, RouterModule,
     FuelGaugeComponent,
     ContratTimelineComponent, VehicleDeliveryFormComponent, VehicleReturnFormComponent,
+    PrintContratComponent, StatusPipe,
   ],
   templateUrl: './contrat-detail.component.html',
   styleUrls: ['./contrat-detail.component.css'],
@@ -25,6 +29,8 @@ export class ContratDetailComponent implements OnInit {
   pageData: any = null;
   loading = true;
   error   = '';
+  printContractData: any = null;
+  autoDownloadPdf = false;
 
   activeTab: 'contrat' | 'delivery' | 'return' | 'finance' | 'documents' = 'contrat';
 
@@ -61,10 +67,12 @@ export class ContratDetailComponent implements OnInit {
     private crud: CrudService,
     private contratSvc: ContratService,
     private toast: ToastService,
+    private activityLog: ActivityLogService,
   ) {}
 
   ngOnInit() {
     this.contratId = +this.route.snapshot.paramMap.get('id')!;
+    this.activityLog.logView('Contrat', this.contratId);
     this.load();
   }
 
@@ -83,13 +91,6 @@ export class ContratDetailComponent implements OnInit {
   get timeline()         { return this.pageData?.timeline ?? []; }
   get paiements()        { return this.pageData?.paiements ?? []; }
   get status(): string   { return this.reservation?.reservationStatus ?? ''; }
-
-  get statusLabel(): string {
-    const map: Record<string, string> = {
-      confirmed: 'Confirmé', en_cours: 'En cours', terminee: 'Clôturé', annulee: 'Annulé',
-    };
-    return map[this.status] ?? this.status;
-  }
 
   get totalPaid(): number {
     return this.paiements.reduce((s: number, p: any) => s + (+p.montant), 0);
@@ -130,17 +131,53 @@ export class ContratDetailComponent implements OnInit {
   }
 
   downloadPdf() {
-    this.contratSvc.downloadPdf(this.contratId).subscribe({
-      next: (blob: Blob) => {
-        const url  = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href  = url;
-        link.download = `contrat-${this.contrat?.numero || this.contratId}.pdf`;
-        link.click();
-        setTimeout(() => URL.revokeObjectURL(url), 5_000);
-      },
-      error: () => this.toast.show('Erreur de génération PDF', 'error'),
-    });
+    this.autoDownloadPdf = true;
+    this.printContractData = this.adaptFull(this.pageData);
+  }
+
+  onPrintClosed() { this.printContractData = null; this.autoDownloadPdf = false; }
+
+  private adaptFull(data: any): any {
+    const c    = data.contrat;
+    const res  = c?.reservation;
+    const cli  = res?.client;
+    const voit = res?.voiture;
+    const d2   = c?.deuxiemeChauffeur;
+    const del  = data.vehicleDelivery;
+    const ret  = data.vehicleReturnInspection;
+    return {
+      numeroContrat: c?.numero, id: c?.id,
+      dateDebut: res?.dateDebut, dateFin: res?.dateFin,
+      faitA: c?.faitA, signedAt: c?.signedAt,
+      montantTotal: res?.total, montantPaye: res?.montantPaye,
+      prixParJour: res?.prixParJour ?? c?.prixParJourSnapshot,
+      nbJoursFactures: c?.nbJoursFactures, remise: c?.remise,
+      franchise: c?.franchise, hasCaution: c?.hasCaution, cautionMontant: c?.cautionMontant,
+      lieuLivraison: res?.lieuLivraison, lieuRetour: res?.lieuRetour,
+      client: cli ? {
+        nom: cli.nom, prenom: '',
+        dateNaissance: cli.dateNaissance, lieuNaissance: cli.lieuNaissance,
+        nationalite: cli.nationalite,
+        adresseMaroc: cli.adresseMaroc, adresseEtranger: cli.adresseEtranger,
+        telephone: cli.telephone, telephoneEtranger: cli.telephoneEtranger,
+        cin: cli.cin,
+        permisConduite: cli.permisConduite, permisDelivreLe: cli.permisDelivreLe, permisDelivreA: cli.permisDelivreA,
+        passeport: cli.passeport, passeportDelivreLe: cli.passeportDelivreLe, passeportDelivreA: cli.passeportDelivreA,
+      } : {},
+      deuxiemeChauffeur: d2 ? {
+        nom: d2.nom, dateNaissance: d2.dateNaissance, nationalite: d2.nationalite,
+        adresseMaroc: d2.adresseMaroc, telephone: d2.telephone, cin: d2.cin,
+        permisConduite: d2.permisConduite, permisDelivreLe: d2.permisDelivreLe, permisDelivreA: d2.permisDelivreA,
+        passeport: d2.passeport, passeportDelivreLe: d2.passeportDelivreLe, passeportDelivreA: d2.passeportDelivreA,
+      } : null,
+      voiture: voit ? {
+        marque: voit.marque, modele: voit.modele, immatriculation: voit.immatriculation,
+        kilometrageActuel: del?.mileageOut ?? voit.kilometrageActuel,
+        prixJour: res?.prixParJour ?? c?.prixParJourSnapshot ?? voit.prixJour,
+      } : {},
+      vehicleDelivery: del ?? null,
+      vehicleReturnInspection: ret ?? null,
+    };
   }
 
   back() { this.router.navigate(['/contrat']); }

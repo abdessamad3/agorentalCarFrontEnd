@@ -3,8 +3,8 @@
   <!-- Header -->
   <div class="rp-header">
     <div>
-      <div class="rp-title">Bureau Profitability Report</div>
-      <div class="rp-subtitle">Revenue vs expenses per office · {{ selectedYear }}</div>
+      <div class="rp-title">{{ t('brTitle') }}</div>
+      <div class="rp-subtitle">{{ t('brSubtitle') }} · {{ selectedYear }}</div>
     </div>
     <div class="rp-actions">
       <select class="rp-select" [(ngModel)]="selectedYear" (ngModelChange)="onYearChange()">
@@ -12,16 +12,16 @@
       </select>
       <button class="btn-export btn-csv" (click)="exportCSV()">
         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Export CSV
+        {{ t('exportCsv') }}
       </button>
       <button class="btn-export btn-print" (click)="print()">
         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-        Print / PDF
+        {{ t('printPdf') }}
       </button>
     </div>
   </div>
 
-  <div *ngIf="loading" class="rp-loading">Computing bureau profitability…</div>
+  <div *ngIf="loading" class="rp-loading">{{ t('brLoading') }}</div>
 
   <ng-container *ngIf="!loading">
 
@@ -29,46 +29,46 @@
     <div class="rp-stats">
       <div class="stat-card sc-blue">
         <div class="sc-num">{{ rows.length }}</div>
-        <div class="sc-lbl">Active Bureaux</div>
+        <div class="sc-lbl">{{ t('activeBureaux') }}</div>
       </div>
       <div class="stat-card sc-teal">
         <div class="sc-num">{{ totals.rentals }}</div>
-        <div class="sc-lbl">Total Rentals</div>
+        <div class="sc-lbl">{{ t('totalRentals') }}</div>
       </div>
       <div class="stat-card sc-green">
         <div class="sc-num" style="font-size:1.1rem">{{ fmt(totals.revenue) }}</div>
-        <div class="sc-lbl">Total Revenue (MAD)</div>
+        <div class="sc-lbl">{{ t('totalRevenue') }} (MAD)</div>
       </div>
       <div class="stat-card sc-red">
         <div class="sc-num" style="font-size:1.1rem">{{ fmt(totals.totalExpenses) }}</div>
-        <div class="sc-lbl">Total Expenses (MAD)</div>
+        <div class="sc-lbl">{{ t('totalExpenses') }} (MAD)</div>
       </div>
       <div class="stat-card" [ngClass]="totals.profit >= 0 ? 'sc-purple' : 'sc-orange'">
         <div class="sc-num" [ngClass]="totals.profit >= 0 ? 'positive' : 'negative'" style="font-size:1.1rem">{{ fmt(totals.profit) }}</div>
-        <div class="sc-lbl">Net Profit (MAD)</div>
+        <div class="sc-lbl">{{ t('netProfit') }} (MAD)</div>
       </div>
     </div>
 
     <!-- Expense breakdown totals -->
-    <div class="rp-section">Expense Breakdown — {{ selectedYear }}</div>
+    <div class="rp-section">{{ t('expenseBreakdown') }} — {{ selectedYear }}</div>
     <div class="rp-stats" style="margin-bottom:1.5rem">
       <div class="stat-card" style="border-top:3px solid #f6ad55">
         <div class="sc-num negative" style="font-size:1.1rem">{{ fmt(totals.vehicleExpenses) }}</div>
-        <div class="sc-lbl">🚗 Vehicle Expenses</div>
+        <div class="sc-lbl">🚗 {{ t('vehicleExpenses') }}</div>
       </div>
       <div class="stat-card" style="border-top:3px solid #9f7aea">
         <div class="sc-num negative" style="font-size:1.1rem">{{ fmt(totals.officeExpenses) }}</div>
-        <div class="sc-lbl">🏢 Office Expenses</div>
+        <div class="sc-lbl">🏢 {{ t('bureauExpenses') }}</div>
       </div>
       <div class="stat-card" style="border-top:3px solid #dd6b20">
         <div class="sc-num negative" style="font-size:1.1rem">{{ fmt(totals.creditCost) }}</div>
-        <div class="sc-lbl">🏦 Credit Payments</div>
+        <div class="sc-lbl">🏦 {{ t('creditPaymentsLabel') }}</div>
       </div>
     </div>
 
     <!-- Revenue bar chart -->
     <div *ngIf="rows.length > 0">
-      <div class="rp-section">Revenue by Bureau — {{ selectedYear }}</div>
+      <div class="rp-section">{{ t('revenueByBureau') }} — {{ selectedYear }}</div>
       <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:1.5rem;margin-bottom:1.5rem">
         <div style="display:flex;flex-direction:column;gap:.75rem">
           <div *ngFor="let r of sorted; let i = index" style="display:flex;align-items:center;gap:.75rem">
@@ -91,23 +91,23 @@
       </div>
 
       <!-- Full table -->
-      <div class="rp-section">Full Bureau Breakdown — {{ selectedYear }}</div>
+      <div class="rp-section">{{ t('fullBreakdown') }} — {{ selectedYear }}</div>
       <div class="rp-table-wrap">
         <table class="rp-table">
           <thead>
             <tr>
               <th>#</th>
-              <th (click)="toggleSort('name')" style="cursor:pointer">Bureau {{ sortField==='name' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</th>
-              <th>Manager</th>
-              <th class="td-right" (click)="toggleSort('vehicleCount')" style="cursor:pointer">Vehicles {{ sortField==='vehicleCount' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</th>
-              <th class="td-right" (click)="toggleSort('rentals')" style="cursor:pointer">Rentals {{ sortField==='rentals' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</th>
-              <th class="td-right" (click)="toggleSort('revenue')" style="cursor:pointer">Revenue {{ sortField==='revenue' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</th>
-              <th class="td-right" (click)="toggleSort('vehicleExpenses')" style="cursor:pointer">Vehicle Exp. {{ sortField==='vehicleExpenses' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</th>
-              <th class="td-right" (click)="toggleSort('officeExpenses')" style="cursor:pointer">Office Exp. {{ sortField==='officeExpenses' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</th>
-              <th class="td-right" (click)="toggleSort('creditCost')" style="cursor:pointer">Credit {{ sortField==='creditCost' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</th>
-              <th class="td-right" (click)="toggleSort('totalExpenses')" style="cursor:pointer">Total Exp. {{ sortField==='totalExpenses' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</th>
-              <th class="td-right" (click)="toggleSort('profit')" style="cursor:pointer">Net Profit {{ sortField==='profit' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</th>
-              <th class="td-right" (click)="toggleSort('margin')" style="cursor:pointer">Margin {{ sortField==='margin' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</th>
+              <th (click)="toggleSort('name')" style="cursor:pointer">{{ t('bureau') }} {{ sortField==='name' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</th>
+              <th>{{ t('managerLabel') }}</th>
+              <th class="td-right" (click)="toggleSort('vehicleCount')" style="cursor:pointer">{{ t('thVehicles') }} {{ sortField==='vehicleCount' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</th>
+              <th class="td-right" (click)="toggleSort('rentals')" style="cursor:pointer">{{ t('thRentals') }} {{ sortField==='rentals' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</th>
+              <th class="td-right" (click)="toggleSort('revenue')" style="cursor:pointer">{{ t('revenue') }} {{ sortField==='revenue' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</th>
+              <th class="td-right" (click)="toggleSort('vehicleExpenses')" style="cursor:pointer">{{ t('thVehicleExp') }} {{ sortField==='vehicleExpenses' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</th>
+              <th class="td-right" (click)="toggleSort('officeExpenses')" style="cursor:pointer">{{ t('thOfficeExp') }} {{ sortField==='officeExpenses' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</th>
+              <th class="td-right" (click)="toggleSort('creditCost')" style="cursor:pointer">{{ t('thCredit') }} {{ sortField==='creditCost' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</th>
+              <th class="td-right" (click)="toggleSort('totalExpenses')" style="cursor:pointer">{{ t('thTotalExp') }} {{ sortField==='totalExpenses' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</th>
+              <th class="td-right" (click)="toggleSort('profit')" style="cursor:pointer">{{ t('netProfit') }} {{ sortField==='profit' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</th>
+              <th class="td-right" (click)="toggleSort('margin')" style="cursor:pointer">{{ t('margin') }} {{ sortField==='margin' ? (sortDir==='asc'?'↑':'↓') : '↕' }}</th>
             </tr>
           </thead>
           <tbody>
@@ -131,7 +131,7 @@
           </tbody>
           <tfoot>
             <tr style="font-weight:700;background:#f7fafc">
-              <td colspan="3">Total</td>
+              <td colspan="3">{{ t('total') }}</td>
               <td class="td-right">{{ totals.vehicleCount }}</td>
               <td class="td-right">{{ totals.rentals }}</td>
               <td class="td-right mono positive">{{ fmt(totals.revenue) }}</td>
@@ -148,7 +148,7 @@
     </div>
 
     <div *ngIf="rows.length === 0" class="rp-empty">
-      No bureau activity found for {{ selectedYear }}
+      {{ t('noBureauActivity') }} {{ selectedYear }}
     </div>
 
   </ng-container>

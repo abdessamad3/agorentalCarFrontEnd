@@ -27,6 +27,8 @@ export class PayDepPanelComponent implements OnChanges {
   loading    = false;
   submitting = false;
   deleteId: number | null = null;
+  receiptFile: File | null = null;
+  receiptError = '';
   form!: FormGroup;
 
   constructor(
@@ -47,6 +49,8 @@ export class PayDepPanelComponent implements OnChanges {
       this.form.reset({ datePaiement: new Date().toISOString().split('T')[0] });
       this.paiements = [];
       this.deleteId  = null;
+      this.receiptFile = null;
+      this.receiptError = '';
       this.loadPaiements();
     }
     if (c['depenseId'] && this.open && this.depenseId) {
@@ -63,6 +67,25 @@ export class PayDepPanelComponent implements OnChanges {
     });
   }
 
+  onReceiptChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file  = input.files?.[0] ?? null;
+    this.receiptError = '';
+    if (!file) { this.receiptFile = null; return; }
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    if (!allowed.includes(file.type)) {
+      this.receiptError = this.t('receiptTypeError');
+      input.value = '';
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      this.receiptError = this.t('receiptSizeError');
+      input.value = '';
+      return;
+    }
+    this.receiptFile = file;
+  }
+
   submit(): void {
     if (this.form.invalid || !this.depenseId) return;
     if (+this.form.value.montant > this.reste) return;
@@ -74,9 +97,11 @@ export class PayDepPanelComponent implements OnChanges {
       montant:      parseFloat(v.montant),
       datePaiement: v.datePaiement,
       note:         v.note || undefined,
-    }).subscribe({
+    }, this.receiptFile).subscribe({
       next: () => {
         this.submitting = false;
+        this.receiptFile = null;
+        this.receiptError = '';
         this.form.reset({ datePaiement: new Date().toISOString().split('T')[0] });
         this.loadPaiements();
         this.paymentChanged.emit();

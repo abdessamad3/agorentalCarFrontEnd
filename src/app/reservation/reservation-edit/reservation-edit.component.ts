@@ -42,7 +42,7 @@ export class ReservationEditComponent implements OnInit {
       voitureId:         ['', Validators.required],
       dateDebut:         ['', Validators.required],
       dateFin:           ['', Validators.required],
-      reservationStatus: ['confirmed', Validators.required],
+      reservationStatus: ['confirmee', Validators.required],
       modePaiement:      ['especes'],
       total:             [0, [Validators.required, Validators.min(0)]],
       montantPaye:       [0, [Validators.min(0)]]
@@ -75,7 +75,7 @@ export class ReservationEditComponent implements OnInit {
         voitureId:         reservation.voiture?.id ?? reservation.voitureId ?? '',
         dateDebut:         reservation.dateDebut   ?? '',
         dateFin:           reservation.dateFin     ?? '',
-        reservationStatus: reservation.reservationStatus || 'confirmed',
+        reservationStatus: reservation.reservationStatus || 'confirmee',
         modePaiement:      reservation.modePaiement || 'especes',
         total:             reservation.total    ?? 0,
         montantPaye:       reservation.montantPaye ?? 0
@@ -87,8 +87,16 @@ export class ReservationEditComponent implements OnInit {
     });
 
     // Auto-recalculate total when dates or vehicle change
-    this.form.get('dateDebut')?.valueChanges.subscribe(() => this.recalcTotal());
-    this.form.get('dateFin')?.valueChanges.subscribe(()   => this.recalcTotal());
+    this.form.get('dateDebut')?.valueChanges.subscribe(start => {
+      const fin = this.form.get('dateFin')?.value;
+      if (start && fin && fin <= start) {
+        const next = new Date(start);
+        next.setDate(next.getDate() + 1);
+        this.form.patchValue({ dateFin: next.toISOString().slice(0, 10) }, { emitEvent: false });
+      }
+      this.recalcTotal();
+    });
+    this.form.get('dateFin')?.valueChanges.subscribe(() => this.recalcTotal());
     this.form.get('voitureId')?.valueChanges.subscribe(() => this.recalcTotal());
   }
 
@@ -133,8 +141,18 @@ export class ReservationEditComponent implements OnInit {
     return this.selectedAccessoireIds.includes(id);
   }
 
+  get dateRangeInvalid(): boolean {
+    const s = this.form.get('dateDebut')?.value;
+    const e = this.form.get('dateFin')?.value;
+    return !!s && !!e && e <= s;
+  }
+
   save() {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+    if (this.dateRangeInvalid) {
+      this.conflictError = this.t('dateReturnBeforeStart');
+      return;
+    }
     this.saving        = true;
     this.conflictError = '';
 

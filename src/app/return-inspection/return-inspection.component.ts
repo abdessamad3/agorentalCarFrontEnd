@@ -1,4 +1,4 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+﻿import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { TranslationService } from '../services/translation.service';
@@ -6,13 +6,15 @@ import { CrudService } from '../services/crud.service';
 import { ToastService } from '../services/toast.service';
 import { BtnComponent } from '../shared/btn/btn.component';
 import { PaginatorComponent } from '../shared/paginator/paginator.component';
+import { TranslatePipe } from '../pipes/translate.pipe';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { PAGE_SIZE } from '../shared/constants/pagination';
 
 @Component({
   selector: 'app-return-inspection',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, BtnComponent, PaginatorComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, BtnComponent, PaginatorComponent, TranslatePipe],
   templateUrl: './return-inspection.component.html',
   styleUrls: ['./return-inspection.component.css']
 })
@@ -26,7 +28,7 @@ export class ReturnInspectionComponent implements OnInit {
   filterCondition = '';
 
   page = 1;
-  limit = 20;
+  limit = PAGE_SIZE;
 
   modalMode: 'form' | 'delete' | 'view' | null = null;
   selected: any = null;
@@ -38,11 +40,15 @@ export class ReturnInspectionComponent implements OnInit {
   resSearch = '';
   resDropdownOpen = false;
 
-  readonly conditionOptions = [
-    { value: 'clean',        label: 'Clean' },
-    { value: 'minor_damage', label: 'Minor Damage' },
-    { value: 'major_damage', label: 'Major Damage' },
-  ];
+  get conditionOptions() {
+    return [
+      { value: 'clean',        label: this.t('conditionClean') },
+      { value: 'minor_damage', label: this.t('minorDamage') },
+      { value: 'major_damage', label: this.t('majorDamage') },
+    ];
+  }
+
+  t(key: string): string { return this.ts.translate(key); }
 
   constructor(
     private crud: CrudService,
@@ -74,7 +80,7 @@ export class ReturnInspectionComponent implements OnInit {
         this.reservations = Array.isArray(reservations) ? reservations : (reservations as any)?.data ?? [];
         this.loading = false;
       },
-      error: () => { this.error = 'Erreur de chargement.'; this.loading = false; }
+      error: () => { this.error = this.t('loadError'); this.loading = false; }
     });
   }
 
@@ -85,7 +91,7 @@ export class ReturnInspectionComponent implements OnInit {
     if (this.filterCondition)  params['condition'] = this.filterCondition;
     this.crud.getPage('vehicle-return-inspection', params).subscribe({
       next: r => { this.items = r.data ?? []; this.total = r.meta?.total ?? 0; this.loading = false; },
-      error: () => { this.error = 'Erreur de chargement.'; this.loading = false; }
+      error: () => { this.error = this.t('loadError'); this.loading = false; }
     });
   }
 
@@ -200,9 +206,9 @@ export class ReturnInspectionComponent implements OnInit {
       : this.crud.create('vehicle-return-inspection', payload);
 
     req.subscribe({
-      next: () => { this.closeModal(); this.load(); },
+      next: () => { this.toast.show(this.t('saved'), 'success'); this.closeModal(); this.load(); },
       error: (err) => {
-        this.toast.show(err?.error?.error || 'Erreur lors de la sauvegarde.', 'error');
+        this.toast.show(err?.error?.error || this.t('saveError'), 'error');
         this.isSubmitting = false;
       }
     });

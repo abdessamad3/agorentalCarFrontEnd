@@ -10,9 +10,32 @@
 
 .cd-section-header {
   display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 8px;
+  margin-bottom: 6px; gap: 8px;
 }
 .cd-section-title { font-weight: 600; font-size: 13px; color: #374151; }
+
+.cd-section-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+.cd-manage-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 12px; border-radius: 6px;
+  border: 1px solid #d1d5db; background: #f9fafb;
+  font-size: 12px; font-weight: 500; color: #374151;
+  cursor: pointer; white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+}
+.cd-manage-btn:hover { background: #ede9fe; border-color: #7c3aed; color: #7c3aed; }
+
+/* Expiration badge */
+.cd-expiry-row {
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 8px;
+}
+.cd-expiry-label { font-size: 11px; color: #6b7280; }
+.cd-expiry-val {
+  font-size: 12px; font-weight: 600; color: #1d4ed8;
+  background: #eff6ff; border-radius: 4px; padding: 1px 7px;
+}
 
 .cd-empty { font-size: 12px; color: #9ca3af; padding: 4px 0; }
 
@@ -42,3 +65,69 @@
 .cd-doc-date { font-size: 11px; color: #9ca3af; }
 
 .cd-doc-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+/* ── Modal ── */
+.cd-modal-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+}
+.cd-modal {
+  background: #fff; border-radius: 14px;
+  width: 100%; max-width: 380px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.cd-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid #e5e7eb;
+}
+.cd-modal-title { font-size: 15px; font-weight: 700; color: #111827; margin: 0; }
+.cd-modal-close {
+  width: 28px; height: 28px; border: none; background: none;
+  font-size: 20px; color: #6b7280; cursor: pointer; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+}
+.cd-modal-close:hover { background: #f3f4f6; color: #111827; }
+
+.cd-modal-body { padding: 4px 0; }
+.cd-modal-section { padding: 16px 20px; display: flex; flex-direction: column; gap: 8px; }
+.cd-modal-divider { height: 1px; background: #e5e7eb; }
+.cd-form-group { display: flex; flex-direction: column; gap: 6px; }
+.cd-form-label { font-size: 13px; font-weight: 600; color: #374151; }
+.cd-form-input {
+  width: 100%; padding: 9px 12px; border-radius: 8px;
+  border: 1.5px solid #d1d5db; font-size: 14px; color: #111827;
+  outline: none; box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.cd-form-input:focus { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,.12); }
+
+.cd-save-error {
+  margin-top: 8px; font-size: 12px; color: #dc2626;
+  background: #fef2f2; border-radius: 6px; padding: 6px 10px;
+}
+
+.cd-modal-footer {
+  display: flex; justify-content: flex-end; gap: 8px;
+  padding: 14px 20px; border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+.cd-btn-cancel {
+  padding: 8px 16px; border-radius: 8px;
+  border: 1px solid #d1d5db; background: #fff;
+  font-size: 13px; font-weight: 500; color: #374151;
+  cursor: pointer;
+}
+.cd-btn-cancel:hover { background: #f3f4f6; }
+.cd-btn-save {
+  padding: 8px 20px; border-radius: 8px;
+  border: none; background: #7c3aed; color: #fff;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: background 0.15s;
+}
+.cd-btn-save:hover:not(:disabled) { background: #6d28d9; }
+.cd-btn-save:disabled { opacity: 0.55; cursor: not-allowed; }

@@ -48,21 +48,25 @@ export class CreditListComponent implements OnInit {
   search = '';
   filterStatus = '';
 
-  readonly statuses = [
-    { value: '', label: 'All Statuses' },
-    { value: 'draft',            label: 'Draft' },
-    { value: 'pending_approval', label: 'Pending Approval' },
-    { value: 'active',           label: 'Active' },
-    { value: 'completed',        label: 'Completed' },
-    { value: 'defaulted',        label: 'Defaulted' },
-    { value: 'cancelled',        label: 'Cancelled' },
-  ];
+  get statuses() {
+    return [
+      { value: '', label: this.t('allStatuses') },
+      { value: 'draft',            label: this.t('creditDraft') },
+      { value: 'pending_approval', label: this.t('creditPendingApproval') },
+      { value: 'active',           label: this.t('creditActive') },
+      { value: 'completed',        label: this.t('creditCompleted') },
+      { value: 'defaulted',        label: this.t('creditDefaulted') },
+      { value: 'cancelled',        label: this.t('creditCancelled2') },
+    ];
+  }
 
   constructor(
     private crud: CrudService,
     private ts: TranslationService,
     private router: Router,
   ) {}
+
+  t(key: string): string { return this.ts.translate(key); }
 
   ngOnInit() {
     this.ts.direction$.subscribe(d => this.dir = d);

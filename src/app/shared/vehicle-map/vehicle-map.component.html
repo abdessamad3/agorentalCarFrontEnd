@@ -1,0 +1,217 @@
+<svg viewBox="0 0 200 416"
+     class="vm-svg"
+     [class.vm-interactive]="mode === 'interactive'"
+     xmlns="http://www.w3.org/2000/svg">
+
+  <!-- Direction labels -->
+  <text class="vm-dir-lbl" x="100" y="7" text-anchor="middle">{{ t('svgFront') }}</text>
+  <text class="vm-dir-lbl" x="100" y="414" text-anchor="middle">{{ t('svgRear') }}</text>
+  <text class="vm-dir-lbl" x="5" y="200" text-anchor="middle" transform="rotate(-90,5,200)">{{ t('svgLeft') }}</text>
+  <text class="vm-dir-lbl" x="195" y="200" text-anchor="middle" transform="rotate(90,195,200)">{{ t('svgRight') }}</text>
+
+  <!-- Car body background -->
+  <rect x="38" y="36" width="124" height="340" rx="14" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <!-- ── Front Bumper ── -->
+  <rect x="54" y="10" width="92" height="28" rx="8" class="vm-zone"
+    [attr.fill]="isDamaged('front_bumper') ? '#fca5a5' : '#dde6f0'"
+    [attr.stroke]="isDamaged('front_bumper') ? '#ef4444' : '#94a3b8'"
+    stroke-width="1.5"
+    (click)="handleClick('front_bumper')">
+    <title>{{ t('zoneFrontBumper') }}</title>
+  </rect>
+  <text class="vm-zone-lbl" x="100" y="28" text-anchor="middle" font-size="7">{{ t('zoneFrontBumper') }}</text>
+
+  <!-- ── Hood ── -->
+  <rect x="38" y="36" width="124" height="80" rx="0" class="vm-zone"
+    [attr.fill]="isDamaged('hood') ? '#fca5a5' : '#e8edf3'"
+    [attr.stroke]="isDamaged('hood') ? '#ef4444' : '#94a3b8'"
+    stroke-width="1"
+    (click)="handleClick('hood')">
+    <title>{{ t('zoneHood') }}</title>
+  </rect>
+  <text class="vm-zone-lbl" x="100" y="80" text-anchor="middle" font-size="8">{{ t('zoneHood') }}</text>
+
+  <!-- ── Windshield ── -->
+  <rect x="52" y="116" width="96" height="38" rx="3" class="vm-zone"
+    [attr.fill]="isDamaged('windshield') ? '#fca5a5' : '#bfdbfe'"
+    [attr.stroke]="isDamaged('windshield') ? '#ef4444' : '#93c5fd'"
+    stroke-width="1"
+    (click)="handleClick('windshield')">
+    <title>{{ t('zoneWindshield') }}</title>
+  </rect>
+  <text class="vm-zone-lbl" x="100" y="139" text-anchor="middle" font-size="7">{{ t('zoneWindshield') }}</text>
+
+  <!-- ── Roof ── -->
+  <rect x="46" y="154" width="108" height="94" rx="4" class="vm-zone"
+    [attr.fill]="isDamaged('roof') ? '#fca5a5' : '#dde6f0'"
+    [attr.stroke]="isDamaged('roof') ? '#ef4444' : '#94a3b8'"
+    stroke-width="1"
+    (click)="handleClick('roof')">
+    <title>{{ t('zoneRoof') }}</title>
+  </rect>
+  <text class="vm-zone-lbl" x="100" y="205" text-anchor="middle" font-size="8">{{ t('zoneRoof') }}</text>
+
+  <!-- ── Rear Window ── -->
+  <rect x="52" y="248" width="96" height="38" rx="3" class="vm-zone"
+    [attr.fill]="isDamaged('rear_window') ? '#fca5a5' : '#bfdbfe'"
+    [attr.stroke]="isDamaged('rear_window') ? '#ef4444' : '#93c5fd'"
+    stroke-width="1"
+    (click)="handleClick('rear_window')">
+    <title>{{ t('zoneRearWindow') }}</title>
+  </rect>
+  <text class="vm-zone-lbl" x="100" y="271" text-anchor="middle" font-size="7">{{ t('zoneRearWindow') }}</text>
+
+  <!-- ── Trunk ── -->
+  <rect x="38" y="286" width="124" height="90" rx="0" class="vm-zone"
+    [attr.fill]="isDamaged('trunk') ? '#fca5a5' : '#e8edf3'"
+    [attr.stroke]="isDamaged('trunk') ? '#ef4444' : '#94a3b8'"
+    stroke-width="1"
+    (click)="handleClick('trunk')">
+    <title>{{ t('zoneTrunk') }}</title>
+  </rect>
+  <text class="vm-zone-lbl" x="100" y="335" text-anchor="middle" font-size="8">{{ t('zoneTrunk') }}</text>
+
+  <!-- ── Rear Bumper ── -->
+  <rect x="54" y="376" width="92" height="28" rx="8" class="vm-zone"
+    [attr.fill]="isDamaged('rear_bumper') ? '#fca5a5' : '#dde6f0'"
+    [attr.stroke]="isDamaged('rear_bumper') ? '#ef4444' : '#94a3b8'"
+    stroke-width="1.5"
+    (click)="handleClick('rear_bumper')">
+    <title>{{ t('zoneRearBumper') }}</title>
+  </rect>
+  <text class="vm-zone-lbl" x="100" y="394" text-anchor="middle" font-size="7">{{ t('zoneRearBumper') }}</text>
+
+  <!-- ── LEFT side panels ── -->
+  <!-- FL Fender -->
+  <rect x="26" y="52" width="14" height="66" rx="3" class="vm-zone"
+    [attr.fill]="isDamaged('fl_fender') ? '#fca5a5' : '#e8edf3'"
+    [attr.stroke]="isDamaged('fl_fender') ? '#ef4444' : '#94a3b8'"
+    stroke-width="1"
+    (click)="handleClick('fl_fender')">
+    <title>{{ t('zoneFlFender') }}</title>
+  </rect>
+  <text class="vm-zone-lbl" x="33" y="85" text-anchor="middle" font-size="5.5" transform="rotate(-90,33,85)">{{ t('svgFlFender') }}</text>
+
+  <!-- Left Mirror -->
+  <rect x="12" y="162" width="14" height="18" rx="3" class="vm-zone"
+    [attr.fill]="isDamaged('left_mirror') ? '#fca5a5' : '#dde6f0'"
+    [attr.stroke]="isDamaged('left_mirror') ? '#ef4444' : '#94a3b8'"
+    stroke-width="1"
+    (click)="handleClick('left_mirror')">
+    <title>{{ t('zoneLeftMirror') }}</title>
+  </rect>
+
+  <!-- FL Door -->
+  <rect x="26" y="154" width="14" height="52" rx="2" class="vm-zone"
+    [attr.fill]="isDamaged('fl_door') ? '#fca5a5' : '#e8edf3'"
+    [attr.stroke]="isDamaged('fl_door') ? '#ef4444' : '#94a3b8'"
+    stroke-width="1"
+    (click)="handleClick('fl_door')">
+    <title>{{ t('zoneFlDoor') }}</title>
+  </rect>
+  <text class="vm-zone-lbl" x="33" y="180" text-anchor="middle" font-size="5.5" transform="rotate(-90,33,180)">{{ t('svgFlDoor') }}</text>
+
+  <!-- RL Door -->
+  <rect x="26" y="206" width="14" height="50" rx="2" class="vm-zone"
+    [attr.fill]="isDamaged('rl_door') ? '#fca5a5' : '#e8edf3'"
+    [attr.stroke]="isDamaged('rl_door') ? '#ef4444' : '#94a3b8'"
+    stroke-width="1"
+    (click)="handleClick('rl_door')">
+    <title>{{ t('zoneRlDoor') }}</title>
+  </rect>
+  <text class="vm-zone-lbl" x="33" y="231" text-anchor="middle" font-size="5.5" transform="rotate(-90,33,231)">{{ t('svgRlDoor') }}</text>
+
+  <!-- RL Fender -->
+  <rect x="26" y="286" width="14" height="68" rx="3" class="vm-zone"
+    [attr.fill]="isDamaged('rl_fender') ? '#fca5a5' : '#e8edf3'"
+    [attr.stroke]="isDamaged('rl_fender') ? '#ef4444' : '#94a3b8'"
+    stroke-width="1"
+    (click)="handleClick('rl_fender')">
+    <title>{{ t('zoneRlFender') }}</title>
+  </rect>
+  <text class="vm-zone-lbl" x="33" y="320" text-anchor="middle" font-size="5.5" transform="rotate(-90,33,320)">{{ t('svgRlFender') }}</text>
+
+  <!-- ── RIGHT side panels ── -->
+  <!-- FR Fender -->
+  <rect x="160" y="52" width="14" height="66" rx="3" class="vm-zone"
+    [attr.fill]="isDamaged('fr_fender') ? '#fca5a5' : '#e8edf3'"
+    [attr.stroke]="isDamaged('fr_fender') ? '#ef4444' : '#94a3b8'"
+    stroke-width="1"
+    (click)="handleClick('fr_fender')">
+    <title>{{ t('zoneFrFender') }}</title>
+  </rect>
+  <text class="vm-zone-lbl" x="167" y="85" text-anchor="middle" font-size="5.5" transform="rotate(90,167,85)">{{ t('svgFrFender') }}</text>
+
+  <!-- Right Mirror -->
+  <rect x="174" y="162" width="14" height="18" rx="3" class="vm-zone"
+    [attr.fill]="isDamaged('right_mirror') ? '#fca5a5' : '#dde6f0'"
+    [attr.stroke]="isDamaged('right_mirror') ? '#ef4444' : '#94a3b8'"
+    stroke-width="1"
+    (click)="handleClick('right_mirror')">
+    <title>{{ t('zoneRightMirror') }}</title>
+  </rect>
+
+  <!-- FR Door -->
+  <rect x="160" y="154" width="14" height="52" rx="2" class="vm-zone"
+    [attr.fill]="isDamaged('fr_door') ? '#fca5a5' : '#e8edf3'"
+    [attr.stroke]="isDamaged('fr_door') ? '#ef4444' : '#94a3b8'"
+    stroke-width="1"
+    (click)="handleClick('fr_door')">
+    <title>{{ t('zoneFrDoor') }}</title>
+  </rect>
+  <text class="vm-zone-lbl" x="167" y="180" text-anchor="middle" font-size="5.5" transform="rotate(90,167,180)">{{ t('svgFrDoor') }}</text>
+
+  <!-- RR Door -->
+  <rect x="160" y="206" width="14" height="50" rx="2" class="vm-zone"
+    [attr.fill]="isDamaged('rr_door') ? '#fca5a5' : '#e8edf3'"
+    [attr.stroke]="isDamaged('rr_door') ? '#ef4444' : '#94a3b8'"
+    stroke-width="1"
+    (click)="handleClick('rr_door')">
+    <title>{{ t('zoneRrDoor') }}</title>
+  </rect>
+  <text class="vm-zone-lbl" x="167" y="231" text-anchor="middle" font-size="5.5" transform="rotate(90,167,231)">{{ t('svgRrDoor') }}</text>
+
+  <!-- RR Fender -->
+  <rect x="160" y="286" width="14" height="68" rx="3" class="vm-zone"
+    [attr.fill]="isDamaged('rr_fender') ? '#fca5a5' : '#e8edf3'"
+    [attr.stroke]="isDamaged('rr_fender') ? '#ef4444' : '#94a3b8'"
+    stroke-width="1"
+    (click)="handleClick('rr_fender')">
+    <title>{{ t('zoneRrFender') }}</title>
+  </rect>
+  <text class="vm-zone-lbl" x="167" y="320" text-anchor="middle" font-size="5.5" transform="rotate(90,167,320)">{{ t('svgRrFender') }}</text>
+
+  <!-- ── Wheels ── -->
+  <ellipse cx="16" cy="87" rx="10" ry="24" class="vm-zone"
+    [attr.fill]="isDamaged('fl_wheel') ? '#fca5a5' : '#64748b'"
+    [attr.stroke]="isDamaged('fl_wheel') ? '#ef4444' : '#475569'"
+    stroke-width="1.5"
+    (click)="handleClick('fl_wheel')">
+    <title>{{ t('zoneFlWheel') }}</title>
+  </ellipse>
+
+  <ellipse cx="184" cy="87" rx="10" ry="24" class="vm-zone"
+    [attr.fill]="isDamaged('fr_wheel') ? '#fca5a5' : '#64748b'"
+    [attr.stroke]="isDamaged('fr_wheel') ? '#ef4444' : '#475569'"
+    stroke-width="1.5"
+    (click)="handleClick('fr_wheel')">
+    <title>{{ t('zoneFrWheel') }}</title>
+  </ellipse>
+
+  <ellipse cx="16" cy="317" rx="10" ry="24" class="vm-zone"
+    [attr.fill]="isDamaged('rl_wheel') ? '#fca5a5' : '#64748b'"
+    [attr.stroke]="isDamaged('rl_wheel') ? '#ef4444' : '#475569'"
+    stroke-width="1.5"
+    (click)="handleClick('rl_wheel')">
+    <title>{{ t('zoneRlWheel') }}</title>
+  </ellipse>
+
+  <ellipse cx="184" cy="317" rx="10" ry="24" class="vm-zone"
+    [attr.fill]="isDamaged('rr_wheel') ? '#fca5a5' : '#64748b'"
+    [attr.stroke]="isDamaged('rr_wheel') ? '#ef4444' : '#475569'"
+    stroke-width="1.5"
+    (click)="handleClick('rr_wheel')">
+    <title>{{ t('zoneRrWheel') }}</title>
+  </ellipse>
+</svg>

@@ -37,6 +37,8 @@ export class CustomerReportComponent implements OnInit {
 
   constructor(private crud: CrudService, private ts: TranslationService) {}
 
+  t(key: string): string { return this.ts.translate(key); }
+
   ngOnInit(): void {
     this.ts.direction$.subscribe(d => this.dir = d);
     this.load();
@@ -156,7 +158,10 @@ export class CustomerReportComponent implements OnInit {
   }
 
   exportCSV(): void {
-    const headers = ['Name', 'Phone', 'Reservations', 'Revenue (MAD)', 'Paid (MAD)', 'Outstanding (MAD)'];
+    const headers = [
+      this.t('thCustomer'), this.t('thPhone'), this.t('thRentalsNum'),
+      `${this.t('revenue')} (MAD)`, `${this.t('thCollected')} (MAD)`, `${this.t('thOutstanding')} (MAD)`,
+    ];
     const rows = [...this.allCustomers]
       .sort((a, b) => b.revenue - a.revenue)
       .map(c => [c.name, c.phone, c.reservations, this.fmt(c.revenue), this.fmt(c.paid), this.fmt(c.outstanding)]);

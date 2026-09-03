@@ -7,7 +7,7 @@ export interface ActivityLogEntry {
   id: number;
   entityType: string;
   entityId: number;
-  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'ARCHIVE';
+  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'ARCHIVE' | 'VIEW';
   oldData: Record<string, any> | null;
   newData: Record<string, any> | null;
   createdAt: string;
@@ -53,5 +53,9 @@ export class ActivityLogService {
 
   getEntityHistory(entityType: string, entityId: number): Observable<ActivityLogEntry[]> {
     return this.http.get<ActivityLogEntry[]>(`${this.base}/entity/${entityType}/${entityId}`);
+  }
+
+  logView(entityType: string, entityId: number): void {
+    this.http.post(`${this.base}/view`, { entityType, entityId }).subscribe({ error: () => {} });
   }
 }

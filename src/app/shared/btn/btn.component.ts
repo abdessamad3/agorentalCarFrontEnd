@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-export type BtnVariant = 'primary' | 'secondary' | 'danger' | 'success' | 'icon-view' | 'icon-edit' | 'icon-delete';
+export type BtnVariant = 'primary' | 'secondary' | 'danger' | 'success' | 'icon-view' | 'icon-edit' | 'icon-delete' | 'icon-invoice';
 export type BtnSize = 'sm' | 'md' | 'lg';
 
 @Component({

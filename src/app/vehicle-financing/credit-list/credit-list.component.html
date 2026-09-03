@@ -5,14 +5,14 @@
     <div class="rp-header-left">
       <div class="rp-header-icon">🏦</div>
       <div>
-        <div class="rp-title">Vehicle Financing Contracts</div>
-        <div class="rp-subtitle">Track all financed vehicles, installment schedules and remaining debt</div>
+        <div class="rp-title">{{ t('vehicleFinancingTitle') }}</div>
+        <div class="rp-subtitle">{{ t('vehicleFinancingSubtitle') }}</div>
       </div>
     </div>
     <div class="rp-actions">
-      <button class="btn-export btn-print" onclick="window.print()">🖨️ Print</button>
-      <button class="btn-export btn-csv" (click)="load()">↻ Refresh</button>
-      <a routerLink="/vehicle-financing/create" class="btn-export btn-excel" style="text-decoration:none">＋ New Contract</a>
+      <button class="btn-export btn-print" onclick="window.print()">🖨️ {{ t('printPdf') }}</button>
+      <button class="btn-export btn-csv" (click)="load()">{{ t('refresh') }}</button>
+      <a routerLink="/vehicle-financing/create" class="btn-export btn-excel" style="text-decoration:none">＋ {{ t('newFinancingContract') }}</a>
     </div>
   </div>
 
@@ -20,16 +20,16 @@
   <div class="rp-toolbar">
     <div class="rp-search-wrap" style="flex:1;min-width:200px">
       <span class="rp-search-icon">🔍</span>
-      <input class="rp-search" [(ngModel)]="search" placeholder="Search vehicle, plate, contract, bank…" />
+      <input class="rp-search" [(ngModel)]="search" [placeholder]="t('searchVehiclePlate')" />
     </div>
     <select class="rp-select" [(ngModel)]="filterStatus" (ngModelChange)="load()">
       <option *ngFor="let s of statuses" [value]="s.value">{{ s.label }}</option>
     </select>
-    <span class="rp-count">{{ filtered.length }} contracts</span>
+    <span class="rp-count">{{ filtered.length }} {{ t('contractsSuffix') }}</span>
   </div>
 
   <div *ngIf="loading" class="rp-loading">
-    <span class="rp-loading-spinner"></span> Loading contracts…
+    <span class="rp-loading-spinner"></span> {{ t('loadingCredit') }}
   </div>
 
   <!-- Cards grid -->
@@ -52,22 +52,22 @@
 
       <!-- Institution -->
       <div style="font-size:.8rem;color:#4a5568;margin-bottom:.5rem">
-        🏦 {{ vc.financialInstitution || 'No institution' }}
+        🏦 {{ vc.financialInstitution || t('noInstitution') }}
         <span *ngIf="vc.contractNumber" style="margin-left:.5rem;color:#a0aec0">#{{ vc.contractNumber }}</span>
       </div>
 
       <!-- Amounts row -->
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-bottom:.9rem">
         <div style="background:#f7fafc;border-radius:8px;padding:.5rem;text-align:center">
-          <div style="font-size:.68rem;color:#718096">Financed</div>
+          <div style="font-size:.68rem;color:#718096">{{ t('financedAmount') }}</div>
           <div style="font-weight:700;font-size:.82rem;color:#2b6cb0">{{ fmt(vc.financedAmount) }}</div>
         </div>
         <div style="background:#f7fafc;border-radius:8px;padding:.5rem;text-align:center">
-          <div style="font-size:.68rem;color:#718096">Remaining</div>
+          <div style="font-size:.68rem;color:#718096">{{ t('remainingLbl') }}</div>
           <div style="font-weight:700;font-size:.82rem" [style.color]="vc.remainingBalance > 0 ? '#c53030' : '#276749'">{{ fmt(vc.remainingBalance) }}</div>
         </div>
         <div style="background:#f7fafc;border-radius:8px;padding:.5rem;text-align:center">
-          <div style="font-size:.68rem;color:#718096">Monthly</div>
+          <div style="font-size:.68rem;color:#718096">{{ t('monthlyInstallmentLbl') }}</div>
           <div style="font-weight:700;font-size:.82rem;color:#553c9a">{{ fmt(vc.monthlyInstallment) }}</div>
         </div>
       </div>
@@ -75,7 +75,7 @@
       <!-- Progress bar -->
       <div style="margin-bottom:.6rem">
         <div style="display:flex;justify-content:space-between;font-size:.72rem;color:#718096;margin-bottom:.3rem">
-          <span>Progress</span>
+          <span>{{ t('repaymentProgress') }}</span>
           <span style="font-weight:600" [style.color]="progressColor(vc.progressPct)">{{ vc.progressPct }}%</span>
         </div>
         <div style="height:6px;background:#edf2f7;border-radius:3px;overflow:hidden">
@@ -87,16 +87,16 @@
 
       <!-- Footer -->
       <div style="display:flex;justify-content:space-between;font-size:.72rem;color:#718096">
-        <span>{{ vc.paidInstallments ?? 0 }}/{{ vc.installmentCount ?? vc.durationMonths }} installments</span>
+        <span>{{ vc.paidInstallments ?? 0 }}/{{ vc.installmentCount ?? vc.durationMonths }} {{ t('installmentsLbl') }}</span>
         <span *ngIf="(vc.overdueInstallments ?? 0) > 0" style="color:#c53030;font-weight:600">
-          ⚠ {{ vc.overdueInstallments }} overdue
+          ⚠ {{ vc.overdueInstallments }} {{ t('overdueLbl2') }}
         </span>
-        <span>{{ vc.durationMonths }} months &#64; {{ vc.interestRate }}%</span>
+        <span>{{ vc.durationMonths }} {{ t('monthsAtRate') }} {{ vc.interestRate }}%</span>
       </div>
     </div>
 
     <div *ngIf="filtered.length === 0" style="grid-column:1/-1" class="rp-empty">
-      No financing contracts found
+      {{ t('noFinancingContracts') }}
     </div>
   </div>
 

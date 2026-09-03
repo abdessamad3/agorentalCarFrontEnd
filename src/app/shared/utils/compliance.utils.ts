@@ -52,3 +52,16 @@ export function complianceScore(
   const scores: number[] = docAlerts.map(d => d.level === 'danger' ? 0 : d.level === 'warning' ? 50 : 100);
   return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
 }
+
+/**
+ * Days remaining (negative if overdue) for a compliance section — always the
+ * backend's `daysRemaining` (ComplianceService computes "today" in the
+ * business's timezone; the browser's local clock is not a reliable stand-in).
+ * Centralized so the hero compliance cards, the conformité tab and the
+ * insurance tab can't independently recompute and disagree.
+ */
+export function complianceDaysRemaining(
+  info: { daysRemaining?: number | null } | null | undefined,
+): number | null {
+  return info?.daysRemaining ?? null;
+}

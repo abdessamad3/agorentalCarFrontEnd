@@ -2,8 +2,8 @@
 
   <div class="page-header">
     <div class="page-header-left">
-      <a routerLink="/reservation" class="back-btn">← Réservations</a>
-      <h1 class="page-title">Nouvelle location</h1>
+      <a routerLink="/reservation" class="back-btn">← {{ t('back') }}</a>
+      <h1 class="page-title">{{ t('newRental') }}</h1>
     </div>
   </div>
 
@@ -14,16 +14,16 @@
 
       <!-- Client -->
       <div class="form-section">
-        <div class="section-title">👤 Client</div>
+        <div class="section-title">👤 {{ t('client') }}</div>
 
         <div class="client-search-wrap" *ngIf="!selectedClient">
           <div class="client-search-input">
             <input type="text" [(ngModel)]="clientSearch"
               (input)="onClientSearch()" (focus)="onClientSearch()"
-              placeholder="Rechercher par nom ou téléphone..."
+              [placeholder]="t('searchByNameOrPhone')"
               autocomplete="off" />
             <button type="button" class="btn-add-client" (click)="showNewClientForm = true">
-              + Nouveau client
+              + {{ t('addNewClient') }}
             </button>
           </div>
           <div class="client-dropdown" *ngIf="showClientDropdown && filteredClients.length > 0">
@@ -46,40 +46,102 @@
           </div>
           <button type="button" class="btn-clear" (click)="clearClient()">×</button>
         </div>
+
+        <!-- Expired docs warning — soft/dismissible, does not block submission -->
+        <div *ngIf="showExpiryWarning" class="expiry-warning-alert">
+          <button type="button" class="ewa-dismiss" (click)="dismissExpiryWarning()">×</button>
+          <span class="ewa-icon">⚠️</span>
+          <div class="ewa-body">
+            <strong>Expired Documents</strong>
+            <div class="ewa-doc-block" *ngFor="let doc of expiredClientDocs; trackBy: trackByDocType">
+              <div class="ewa-doc-row">
+                <span class="ewa-doc-label">{{ doc.label }}</span>
+                <span *ngIf="uploadedDocTypes.has(doc.type)" class="ewa-uploaded">✓ Uploaded</span>
+                <app-upload-btn *ngIf="!uploadedDocTypes.has(doc.type)" label="+ Upload new photo"
+                  accept=".jpg,.jpeg,.png,.webp,.pdf" [multiple]="true"
+                  (filesSelected)="onExpiredDocFiles($event, doc.type)"></app-upload-btn>
+              </div>
+              <div class="ewa-existing-docs" *ngIf="docsOf(doc.type).length > 0">
+                <a class="ewa-doc-link" *ngFor="let d of docsOf(doc.type); trackBy: trackByDocId" (click)="openClientDoc(d)">
+                  <span>{{ isImageDoc(d) ? '🖼️' : '📄' }}</span> {{ d.originalName }}
+                </a>
+              </div>
+              <div class="ewa-dates-row">
+                <div class="ewa-date-field">
+                  <label>New expiration date</label>
+                  <input type="date" [(ngModel)]="expiredDocUpdates[doc.type].expiration" [ngModelOptions]="{standalone: true}" [min]="today" />
+                </div>
+                <button type="button" class="ewa-save-dates-btn"
+                  [disabled]="savingDocType === doc.type || !expiredDocUpdates[doc.type].expiration"
+                  (click)="saveExpiredDocDates(doc.type)">
+                  {{ savingDocType === doc.type ? 'Saving…' : 'Save dates' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Dates & lieux -->
       <div class="form-section">
-        <div class="section-title">📅 Dates &amp; lieux</div>
+        <div class="section-title">📅 {{ t('datesAndLocations') }}</div>
         <div class="date-row">
           <div class="form-group">
-            <label>Date de départ</label>
-            <input type="datetime-local" [(ngModel)]="dateDebut" />
+            <label>{{ t('departureDate') }}</label>
+            <input type="datetime-local" [(ngModel)]="dateDebut" (change)="onDateDebutChange()" />
           </div>
           <div class="form-group">
-            <label>Date de retour</label>
-            <input type="datetime-local" [(ngModel)]="dateFin" />
+            <label>{{ t('returnDate') }}</label>
+            <input type="datetime-local" [(ngModel)]="dateFin" [min]="dateDebut || null" (change)="clearBookedVehicle()" />
           </div>
           <div class="days-chip" *ngIf="numberOfDays > 0">
             <span class="days-num">{{ numberOfDays }}</span>
-            <span class="days-label">jours</span>
+            <span class="days-label">{{ t('days') }}</span>
           </div>
         </div>
         <div class="form-row" style="margin-top: 0.75rem">
           <div class="form-group">
-            <label>Lieu de livraison</label>
-            <input type="text" [(ngModel)]="lieuLivraison" placeholder="Optionnel" />
+            <label>{{ t('deliveryLocation') }}</label>
+            <div class="loc-wrap">
+              <input type="text" [(ngModel)]="lieuLivraison"
+                (focus)="onLivraisonFocus()" (input)="onLivraisonInput()" (blur)="hideLivraison()"
+                [placeholder]="t('optional')" autocomplete="off" />
+              <div class="loc-dropdown" *ngIf="showLivraisonDropdown && filteredLivraison.length > 0">
+                <div class="loc-option" *ngFor="let loc of filteredLivraison"
+                  (mousedown)="selectLivraison(loc)">
+                  <span class="loc-icon">{{ locIcon(loc.type) }}</span>
+                  <span class="loc-label">{{ loc.label }}</span>
+                  <span class="loc-badge loc-badge--{{ loc.type }}">
+                    {{ loc.type === 'airport' ? '✈' : loc.type === 'train' ? 'ONCF' : '🏙' }}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
           <div class="form-group">
-            <label>Lieu de retour</label>
-            <input type="text" [(ngModel)]="lieuRetour" placeholder="Optionnel" />
+            <label>{{ t('returnLocation') }}</label>
+            <div class="loc-wrap">
+              <input type="text" [(ngModel)]="lieuRetour"
+                (focus)="onRetourFocus()" (input)="onRetourInput()" (blur)="hideRetour()"
+                [placeholder]="t('optional')" autocomplete="off" />
+              <div class="loc-dropdown" *ngIf="showRetourDropdown && filteredRetour.length > 0">
+                <div class="loc-option" *ngFor="let loc of filteredRetour"
+                  (mousedown)="selectRetour(loc)">
+                  <span class="loc-icon">{{ locIcon(loc.type) }}</span>
+                  <span class="loc-label">{{ loc.label }}</span>
+                  <span class="loc-badge loc-badge--{{ loc.type }}">
+                    {{ loc.type === 'airport' ? '✈' : loc.type === 'train' ? 'ONCF' : '🏙' }}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Vehicle grid -->
       <div class="form-section">
-        <div class="section-title">🚗 Véhicule</div>
+        <div class="section-title">🚗 {{ t('vehicle') }}</div>
         <div class="vehicle-grid">
           <div *ngFor="let v of voitures"
             class="vehicle-card"
@@ -95,16 +157,16 @@
             <span class="compliance-tag" [ngClass]="complianceClass(v)" *ngIf="v.compliance?.overall">
               {{ v.compliance?.overall }}
             </span>
-            <div class="vehicle-booked-badge" *ngIf="!isAvailable(v)">Indisponible</div>
+            <div class="vehicle-booked-badge" *ngIf="!isAvailable(v)">{{ t('booked') }}</div>
             <div class="vehicle-check" *ngIf="selectedVoiture?.id === v.id && isAvailable(v)">✓</div>
           </div>
-          <div *ngIf="voitures.length === 0" class="no-vehicles">Aucun véhicule disponible</div>
+          <div *ngIf="voitures.length === 0" class="no-vehicles">{{ t('noVehiclesAvailable') }}</div>
         </div>
       </div>
 
       <!-- Accessories -->
       <div class="form-section" *ngIf="accessoires.length > 0">
-        <div class="section-title">🧩 Accessoires</div>
+        <div class="section-title">🧩 {{ t('accessories') }}</div>
         <div class="accessory-grid">
           <div *ngFor="let a of accessoires"
             class="accessory-toggle"
@@ -124,23 +186,23 @@
 
       <!-- Summary -->
       <div class="form-section summary-section">
-        <div class="section-title">💰 Récapitulatif</div>
+        <div class="section-title">💰 {{ t('summary') }}</div>
         <div class="summary-rows">
           <div class="summary-row">
-            <span>Tarif journalier</span>
+            <span>{{ t('dailyRate') }}</span>
             <span>{{ selectedVoiture?.prixJour ?? 0 }} MAD</span>
           </div>
           <div class="summary-row">
-            <span>Nombre de jours</span>
+            <span>{{ t('numberOfDays') }}</span>
             <span>{{ numberOfDays }}</span>
           </div>
           <div class="summary-row">
-            <span>Accessoires</span>
+            <span>{{ t('accessories') }}</span>
             <span>{{ accessoryTotal | number:'1.2-2' }} MAD</span>
           </div>
           <div class="summary-divider"></div>
           <div class="summary-row total-row">
-            <span>Total</span>
+            <span>{{ t('total') }}</span>
             <span class="total-val">{{ totalAmount | number:'1.2-2' }} MAD</span>
           </div>
         </div>
@@ -148,22 +210,22 @@
 
       <!-- Payment -->
       <div class="form-section">
-        <div class="section-title">💳 Paiement</div>
+        <div class="section-title">💳 {{ t('paiement') }}</div>
         <div class="form-group">
-          <label>Mode de paiement</label>
+          <label>{{ t('modePaiement') }}</label>
           <select [(ngModel)]="modePaiement">
-            <option value="especes">Espèces</option>
-            <option value="carte">Carte</option>
-            <option value="virement">Virement</option>
-            <option value="cheque">Chèque</option>
+            <option value="especes">{{ t('cash') }}</option>
+            <option value="carte">{{ t('card') }}</option>
+            <option value="virement">{{ t('transfer') }}</option>
+            <option value="cheque">{{ t('cheque') }}</option>
           </select>
         </div>
         <div class="form-group" style="margin-top: 0.75rem">
-          <label>Acompte (MAD)</label>
+          <label>{{ t('amountPaid') }} (MAD)</label>
           <input type="number" [(ngModel)]="montantPaye" min="0" step="0.01" />
         </div>
         <div class="remaining-row" [class.overpaid]="remaining < 0">
-          <span>Restant</span>
+          <span>{{ t('remaining') }}</span>
           <span class="remaining-val" [class.zero]="remaining <= 0">
             {{ remaining | number:'1.2-2' }} MAD
           </span>
@@ -172,13 +234,13 @@
 
       <!-- Submit -->
       <button class="btn-submit" (click)="submit()" [disabled]="!canSubmit || isSubmitting">
-        {{ isSubmitting ? 'Création...' : 'Créer le dossier' }}
+        {{ isSubmitting ? t('creating') : t('createDossier') }}
       </button>
 
       <div class="submit-hint" *ngIf="!canSubmit">
-        <span *ngIf="!selectedClient">Sélectionnez un client</span>
-        <span *ngIf="selectedClient && !selectedVoiture">Sélectionnez un véhicule</span>
-        <span *ngIf="selectedClient && selectedVoiture && numberOfDays <= 0">Vérifiez les dates</span>
+        <span *ngIf="!selectedClient">{{ t('selectClient') }}</span>
+        <span *ngIf="selectedClient && !selectedVoiture">{{ t('selectVehicle') }}</span>
+        <span *ngIf="selectedClient && selectedVoiture && numberOfDays <= 0">{{ t('checkDates') }}</span>
       </div>
 
     </div>
@@ -189,35 +251,35 @@
 <div *ngIf="showNewClientForm" class="modal-overlay" (click)="showNewClientForm = false">
   <div class="modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h2>Nouveau client</h2>
+      <h2>{{ t('addNewClient') }}</h2>
       <button class="modal-close" (click)="showNewClientForm = false">×</button>
     </div>
     <div class="modal-body">
       <div class="form-row">
         <div class="form-group">
-          <label>Nom <span class="required">*</span></label>
-          <input type="text" [(ngModel)]="newClient.nom" placeholder="Nom complet" />
+          <label>{{ t('name') }} <span class="required">*</span></label>
+          <input type="text" [(ngModel)]="newClient.nom" [placeholder]="t('name')" />
         </div>
         <div class="form-group">
-          <label>Téléphone</label>
+          <label>{{ t('telephone') }}</label>
           <input type="text" [(ngModel)]="newClient.telephone" />
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label>CIN</label>
+          <label>{{ t('cin') }}</label>
           <input type="text" [(ngModel)]="newClient.cin" />
         </div>
         <div class="form-group">
-          <label>N° Permis</label>
+          <label>{{ t('permisConduire') }}</label>
           <input type="text" [(ngModel)]="newClient.permisConduite" />
         </div>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn-secondary" (click)="showNewClientForm = false">Annuler</button>
+      <button class="btn-secondary" (click)="showNewClientForm = false">{{ t('cancel') }}</button>
       <button class="btn-primary" (click)="createClient()" [disabled]="savingClient">
-        {{ savingClient ? '...' : 'Créer' }}
+        {{ savingClient ? '...' : t('save') }}
       </button>
     </div>
   </div>

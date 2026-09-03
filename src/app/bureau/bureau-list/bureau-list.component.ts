@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
+﻿import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -11,6 +11,7 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 import { BtnComponent } from '../../shared/btn/btn.component';
 import { Subject, of } from 'rxjs';
 import { debounceTime, switchMap, takeUntil, catchError } from 'rxjs/operators';
+import { PAGE_SIZE } from '../../shared/constants/pagination';
 
 @Component({
   selector: 'app-bureau-list',
@@ -25,7 +26,7 @@ export class BureauListComponent implements OnInit, OnDestroy {
   loading = true;
   error = '';
   page = 1;
-  limit = 20;
+  limit = PAGE_SIZE;
   total = 0;
   pages = 0;
   search = '';

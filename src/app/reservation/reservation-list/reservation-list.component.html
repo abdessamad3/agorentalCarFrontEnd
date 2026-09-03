@@ -7,7 +7,15 @@
       <div class="search-box">
         <input type="text" [(ngModel)]="search" (ngModelChange)="onSearch()" [placeholder]="t('search') + '...'" />
       </div>
-      <a routerLink="/location/new" class="btn-new">+ Nouvelle location</a>
+      <select [(ngModel)]="filterStatus" (ngModelChange)="onFilterChange()" class="filter-select">
+        <option value="">{{ t('allStatuses') }}</option>
+        <option value="confirmee">{{ 'confirmee' | appStatus:'reservation' }}</option>
+        <option value="en_attente">{{ 'en_attente' | appStatus:'reservation' }}</option>
+        <option value="en_cours">{{ 'en_cours' | appStatus:'reservation' }}</option>
+        <option value="terminee">{{ 'terminee' | appStatus:'reservation' }}</option>
+        <option value="annulee">{{ 'annulee' | appStatus:'reservation' }}</option>
+      </select>
+      <a routerLink="/location/new" class="btn-new">+ {{ t('newRental') }}</a>
     </div>
   </div>
 
@@ -30,7 +38,7 @@
         <div *ngFor="let r of activeContracts" class="active-card">
           <div class="ac-top">
             <div class="ac-vehicle">🚗 {{ r.voiture?.marque || r.voitureId }} {{ r.voiture?.modele || '' }}</div>
-            <span class="status-chip chip-active">{{ statusLabel(r) }}</span>
+            <span class="status-chip chip-active">{{ getStatus(r) | appStatus:'reservation' }}</span>
           </div>
           <div class="ac-client">👤 {{ r.client?.nom || r.clientId }}</div>
           <div class="ac-dates">
@@ -54,7 +62,7 @@
           <div class="ac-actions">
             <button class="btn-sm btn-view" (click)="openView(r)">{{ t('view') }}</button>
             <button class="btn-sm btn-edit" (click)="openEdit(r)">{{ t('edit') }}</button>
-            <button class="btn-sm btn-dossier" (click)="goToDossier(r)">Ouvrir le dossier</button>
+            <button class="btn-sm btn-dossier" (click)="goToDossier(r)">{{ t('locationDossier') }}</button>
           </div>
         </div>
       </div>
@@ -67,47 +75,41 @@
         <span class="section-title">{{ t('upcomingDepartures') }}</span>
         <span class="section-count">{{ upcomingDepartures.length }}</span>
       </div>
-      <div class="table-wrap">
-        <table class="res-table">
-          <thead>
-            <tr>
-              <th>{{ t('client') }}</th>
-              <th>{{ t('car') }}</th>
-              <th>{{ t('departureDate') }}</th>
-              <th>{{ t('returnDate') }}</th>
-              <th>{{ t('accessories') }}</th>
-              <th>{{ t('status') }}</th>
-              <th>Départ</th>
-              <th>{{ t('paymentStatus') }}</th>
-              <th>Retour</th>
-              <th>{{ t('amountPaid') }}</th>
-              <th>{{ t('remaining') }}</th>
-              <th>{{ t('actions') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let r of upcomingDepartures">
-              <td>{{ r.client?.nom || r.clientId }}</td>
-              <td>{{ r.voiture?.marque || r.voitureId }} {{ r.voiture?.modele || '' }}</td>
-              <td><span class="date-badge upcoming">{{ r.dateDebut | date:'dd/MM/yy HH:mm' }}</span></td>
-              <td>{{ r.dateFin | date:'dd/MM/yy HH:mm' }}</td>
-              <td class="td-accessories">{{ getAccessoireLabels(r) }}</td>
-              <td><span class="status-chip chip-upcoming">{{ statusLabel(r) }}</span></td>
-              <td><span class="status-dot" [class.dot-done]="deliveryStatus(r) === 'done'" [class.dot-pending]="deliveryStatus(r) === 'pending'"></span></td>
-              <td><span class="status-chip" [ngClass]="paymentStatusClass(r)">{{ paymentStatusLabel(r) }}</span></td>
-              <td><span class="status-dot" [class.dot-done]="returnStatus(r) === 'done'" [class.dot-pending]="returnStatus(r) === 'pending'"></span></td>
-              <td class="td-amount">{{ (r.montantPaye || 0) | number:'1.0-0' }} MAD</td>
-              <td class="td-remaining" [class.td-remaining-zero]="remaining(r) === 0">{{ remaining(r) | number:'1.0-0' }} MAD</td>
-              <td class="actions-cell">
-                <button class="btn-icon" (click)="openView(r)" [title]="t('view')">👁</button>
-                <button class="btn-icon" (click)="openEdit(r)" [title]="t('edit')">✏️</button>
-                <button class="btn-sm btn-dossier" (click)="goToDossier(r)" title="Ouvrir le dossier">Dossier</button>
-                <button class="btn-icon" (click)="generateInvoice(r)" title="Télécharger Facture">🧾</button>
-                <button class="btn-icon btn-del" (click)="openDelete(r.id)" [title]="t('delete')">🗑</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="res-grid">
+        <div *ngFor="let r of upcomingDepartures" class="upcoming-card" [class.card-urgent]="isUrgentPending(r)">
+          <div class="rc-top">
+            <div class="rc-vehicle">🚗 {{ r.voiture?.marque || r.voitureId }} {{ r.voiture?.modele || '' }}</div>
+            <div class="rc-badges">
+              <span class="status-chip chip-upcoming">{{ getStatus(r) | appStatus:'reservation' }}</span>
+              <span *ngIf="isUrgentPending(r)" class="badge-urgent">⚠ &lt;24h</span>
+            </div>
+          </div>
+          <div class="rc-client">👤 {{ r.client?.nom || r.clientId }}</div>
+          <div class="rc-dates">
+            <span class="date-badge upcoming">{{ r.dateDebut | date:'dd/MM/yy HH:mm' }}</span>
+            <span class="dates-sep">→</span>
+            <span class="rc-date-end">{{ r.dateFin | date:'dd/MM/yy HH:mm' }}</span>
+          </div>
+          <div class="rc-accessories" *ngIf="getAccessoireLabels(r) !== '—'">🎒 {{ getAccessoireLabels(r) }}</div>
+          <div class="rc-status-row">
+            <span class="rc-status-label">{{ t('depart') }}</span>
+            <span class="status-dot" [class.dot-done]="deliveryStatus(r) === 'done'" [class.dot-pending]="deliveryStatus(r) === 'pending'"></span>
+            <span class="rc-status-label" style="margin-inline-start:.75rem">{{ t('retour') }}</span>
+            <span class="status-dot" [class.dot-done]="returnStatus(r) === 'done'" [class.dot-pending]="returnStatus(r) === 'pending'"></span>
+            <span class="status-chip" [ngClass]="paymentStatusClass(r)" style="margin-inline-start:auto">{{ paymentStatusLabel(r) }}</span>
+          </div>
+          <div class="rc-amounts">
+            <span class="rc-paid">{{ (r.montantPaye || 0) | number:'1.0-0' }} MAD {{ t('amountPaid') }}</span>
+            <span class="rc-remaining" [class.rc-remaining-zero]="remaining(r) === 0">{{ remaining(r) | number:'1.0-0' }} MAD {{ t('remaining') }}</span>
+          </div>
+          <div class="rc-actions">
+            <app-btn variant="icon-view"    (click)="openView(r)"        [title]="t('view')"></app-btn>
+            <app-btn variant="icon-edit"    (click)="openEdit(r)"        [title]="t('edit')"></app-btn>
+            <app-btn variant="icon-invoice" (click)="generateInvoice(r)" [title]="t('downloadInvoice')"></app-btn>
+            <app-btn variant="icon-delete"  (click)="openDelete(r.id)"   [title]="t('delete')"></app-btn>
+            <app-btn variant="primary" size="sm" (click)="goToDossier(r)">{{ t('locationDossier') }}</app-btn>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -119,55 +121,124 @@
         <span class="section-count">{{ historicalRecords.length }}</span>
       </div>
       <div *ngIf="historicalRecords.length === 0" class="empty-msg">{{ t('noData') }}</div>
-      <div *ngIf="historicalRecords.length > 0" class="table-wrap">
-        <table class="res-table">
-          <thead>
-            <tr>
-              <th>{{ t('client') }}</th>
-              <th>{{ t('car') }}</th>
-              <th>{{ t('startDate') }}</th>
-              <th>{{ t('endDate') }}</th>
-              <th>{{ t('accessories') }}</th>
-              <th>{{ t('montant') }}</th>
-              <th>{{ t('status') }}</th>
-              <th>Départ</th>
-              <th>{{ t('paymentStatus') }}</th>
-              <th>Retour</th>
-              <th>{{ t('amountPaid') }}</th>
-              <th>{{ t('remaining') }}</th>
-              <th>{{ t('actions') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let r of historicalRecords">
-              <td>{{ r.client?.nom || r.clientId }}</td>
-              <td>{{ r.voiture?.marque || r.voitureId }} {{ r.voiture?.modele || '' }}</td>
-              <td>{{ r.dateDebut | date:'dd/MM/yy HH:mm' }}</td>
-              <td>{{ r.dateFin | date:'dd/MM/yy HH:mm' }}</td>
-              <td class="td-accessories">{{ getAccessoireLabels(r) }}</td>
-              <td class="td-amount">{{ (r.total || r.montant || 0) | number:'1.0-0' }} MAD</td>
-              <td>
-                <span class="status-chip"
-                  [class.chip-cancelled]="isCancelled(r)"
-                  [class.chip-done]="!isCancelled(r)">
-                  {{ statusLabel(r) }}
-                </span>
-              </td>
-              <td><span class="status-dot" [class.dot-done]="deliveryStatus(r) === 'done'" [class.dot-pending]="deliveryStatus(r) === 'pending'"></span></td>
-              <td><span class="status-chip" [ngClass]="paymentStatusClass(r)">{{ paymentStatusLabel(r) }}</span></td>
-              <td><span class="status-dot" [class.dot-done]="returnStatus(r) === 'done'" [class.dot-pending]="returnStatus(r) === 'pending'"></span></td>
-              <td class="td-amount">{{ (r.montantPaye || 0) | number:'1.0-0' }} MAD</td>
-              <td class="td-remaining" [class.td-remaining-zero]="remaining(r) === 0">{{ remaining(r) | number:'1.0-0' }} MAD</td>
-              <td class="actions-cell">
-                <button class="btn-icon" (click)="openView(r)" [title]="t('view')">👁</button>
-                <button class="btn-icon" (click)="openEdit(r)" [title]="t('edit')">✏️</button>
-                <button class="btn-sm btn-dossier" (click)="goToDossier(r)" title="Ouvrir le dossier">Dossier</button>
-                <button class="btn-icon" (click)="generateInvoice(r)" title="Télécharger Facture">🧾</button>
-                <button class="btn-icon btn-del" (click)="openDelete(r.id)" [title]="t('delete')">🗑</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div *ngIf="historicalRecords.length > 0" class="hist-columns">
+
+        <!-- ── Column 1: Terminées ── -->
+        <div class="hist-col">
+          <div class="hist-col-header">
+            <span class="hist-dot hdot-done"></span>
+            <span class="hist-col-title">{{ t('done') }}</span>
+            <span class="hist-col-count">{{ histCompleted.length }}</span>
+          </div>
+          <div *ngIf="histCompleted.length === 0" class="hist-empty">—</div>
+          <div *ngFor="let r of histCompleted" class="hist-card">
+            <div class="rc-top">
+              <div class="rc-vehicle">🚗 {{ r.voiture?.marque || r.voitureId }} {{ r.voiture?.modele || '' }}</div>
+              <span class="status-chip chip-done">{{ getStatus(r) | appStatus:'reservation' }}</span>
+            </div>
+            <div class="rc-client">👤 {{ r.client?.nom || r.clientId }}</div>
+            <div class="rc-dates">
+              <span class="rc-date-start">{{ r.dateDebut | date:'dd/MM/yy' }}</span>
+              <span class="dates-sep">→</span>
+              <span class="rc-date-end">{{ r.dateFin | date:'dd/MM/yy' }}</span>
+            </div>
+            <div class="rc-accessories" *ngIf="getAccessoireLabels(r) !== '—'">🎒 {{ getAccessoireLabels(r) }}</div>
+            <div class="rc-status-row">
+              <span class="rc-status-label">{{ t('depart') }}</span>
+              <span class="status-dot" [class.dot-done]="deliveryStatus(r) === 'done'" [class.dot-pending]="deliveryStatus(r) === 'pending'"></span>
+              <span class="rc-status-label" style="margin-inline-start:.75rem">{{ t('retour') }}</span>
+              <span class="status-dot" [class.dot-done]="returnStatus(r) === 'done'" [class.dot-pending]="returnStatus(r) === 'pending'"></span>
+              <span class="status-chip" [ngClass]="paymentStatusClass(r)" style="margin-inline-start:auto">{{ paymentStatusLabel(r) }}</span>
+            </div>
+            <div class="rc-amounts">
+              <span class="rc-montant">{{ (r.total || r.montant || 0) | number:'1.0-0' }} MAD</span>
+              <span class="rc-remaining" [class.rc-remaining-zero]="remaining(r) === 0">{{ remaining(r) | number:'1.0-0' }} MAD {{ t('remaining') }}</span>
+            </div>
+            <div class="rc-actions">
+              <app-btn variant="icon-view"    (click)="openView(r)"        [title]="t('view')"></app-btn>
+              <app-btn variant="icon-edit"    (click)="openEdit(r)"        [title]="t('edit')"></app-btn>
+              <app-btn variant="icon-invoice" (click)="generateInvoice(r)" [title]="t('downloadInvoice')"></app-btn>
+              <app-btn variant="icon-delete"  (click)="openDelete(r.id)"   [title]="t('delete')"></app-btn>
+              <app-btn variant="primary" size="sm" (click)="goToDossier(r)">{{ t('locationDossier') }}</app-btn>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Column 2: Non clôturées ── -->
+        <div class="hist-col">
+          <div class="hist-col-header">
+            <span class="hist-dot hdot-unclosed"></span>
+            <span class="hist-col-title">{{ t('histUnclosed') }}</span>
+            <span class="hist-col-count">{{ histUnclosed.length }}</span>
+          </div>
+          <div *ngIf="histUnclosed.length === 0" class="hist-empty">—</div>
+          <div *ngFor="let r of histUnclosed" class="hist-card">
+            <div class="rc-top">
+              <div class="rc-vehicle">🚗 {{ r.voiture?.marque || r.voitureId }} {{ r.voiture?.modele || '' }}</div>
+              <span class="status-chip chip-done">{{ getStatus(r) | appStatus:'reservation' }}</span>
+            </div>
+            <div class="rc-client">👤 {{ r.client?.nom || r.clientId }}</div>
+            <div class="rc-dates">
+              <span class="rc-date-start">{{ r.dateDebut | date:'dd/MM/yy' }}</span>
+              <span class="dates-sep">→</span>
+              <span class="rc-date-end">{{ r.dateFin | date:'dd/MM/yy' }}</span>
+            </div>
+            <div class="rc-accessories" *ngIf="getAccessoireLabels(r) !== '—'">🎒 {{ getAccessoireLabels(r) }}</div>
+            <div class="rc-status-row">
+              <span class="rc-status-label">{{ t('depart') }}</span>
+              <span class="status-dot" [class.dot-done]="deliveryStatus(r) === 'done'" [class.dot-pending]="deliveryStatus(r) === 'pending'"></span>
+              <span class="rc-status-label" style="margin-inline-start:.75rem">{{ t('retour') }}</span>
+              <span class="status-dot" [class.dot-done]="returnStatus(r) === 'done'" [class.dot-pending]="returnStatus(r) === 'pending'"></span>
+              <span class="status-chip" [ngClass]="paymentStatusClass(r)" style="margin-inline-start:auto">{{ paymentStatusLabel(r) }}</span>
+            </div>
+            <div class="rc-amounts">
+              <span class="rc-montant">{{ (r.total || r.montant || 0) | number:'1.0-0' }} MAD</span>
+              <span class="rc-remaining" [class.rc-remaining-zero]="remaining(r) === 0">{{ remaining(r) | number:'1.0-0' }} MAD {{ t('remaining') }}</span>
+            </div>
+            <div class="rc-actions">
+              <app-btn variant="icon-view"    (click)="openView(r)"        [title]="t('view')"></app-btn>
+              <app-btn variant="icon-edit"    (click)="openEdit(r)"        [title]="t('edit')"></app-btn>
+              <app-btn variant="icon-invoice" (click)="generateInvoice(r)" [title]="t('downloadInvoice')"></app-btn>
+              <app-btn variant="icon-delete"  (click)="openDelete(r.id)"   [title]="t('delete')"></app-btn>
+              <app-btn variant="primary" size="sm" (click)="goToDossier(r)">{{ t('locationDossier') }}</app-btn>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Column 3: Annulées ── -->
+        <div class="hist-col">
+          <div class="hist-col-header">
+            <span class="hist-dot hdot-cancelled"></span>
+            <span class="hist-col-title">{{ t('cancelled') }}</span>
+            <span class="hist-col-count">{{ histCancelled.length }}</span>
+          </div>
+          <div *ngIf="histCancelled.length === 0" class="hist-empty">—</div>
+          <div *ngFor="let r of histCancelled" class="hist-card hist-card-cancelled">
+            <div class="rc-top">
+              <div class="rc-vehicle">🚗 {{ r.voiture?.marque || r.voitureId }} {{ r.voiture?.modele || '' }}</div>
+              <span class="status-chip chip-cancelled">{{ getStatus(r) | appStatus:'reservation' }}</span>
+            </div>
+            <div class="rc-client">👤 {{ r.client?.nom || r.clientId }}</div>
+            <div class="rc-dates">
+              <span class="rc-date-start">{{ r.dateDebut | date:'dd/MM/yy' }}</span>
+              <span class="dates-sep">→</span>
+              <span class="rc-date-end">{{ r.dateFin | date:'dd/MM/yy' }}</span>
+            </div>
+            <div class="rc-accessories" *ngIf="getAccessoireLabels(r) !== '—'">🎒 {{ getAccessoireLabels(r) }}</div>
+            <div class="rc-actions">
+              <app-btn variant="icon-view"    (click)="openView(r)"        [title]="t('view')"></app-btn>
+              <app-btn variant="icon-edit"    (click)="openEdit(r)"        [title]="t('edit')"></app-btn>
+              <app-btn variant="icon-delete"  (click)="openDelete(r.id)"   [title]="t('delete')"></app-btn>
+              <app-btn variant="primary" size="sm" (click)="goToDossier(r)">{{ t('locationDossier') }}</app-btn>
+              <app-btn variant="secondary" size="sm"
+                       (click)="restoreReservation(r)"
+                       [disabled]="restoringId === r.id">
+                {{ restoringId === r.id ? '…' : t('restoreReservation') }}
+              </app-btn>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -199,7 +270,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" (click)="closeModal()">{{ t('close') }}</button>
-        <button class="btn-export-pdf" (click)="exportReceipt(selected)">⬇ PDF Receipt</button>
+        <button class="btn-export-pdf" (click)="exportReceipt(selected)">⬇ {{ t('downloadInvoice') }}</button>
         <button class="btn-primary" (click)="openEdit(selected)">{{ t('edit') }}</button>
       </div>
     </ng-container>
@@ -243,10 +314,10 @@
             <div class="form-group">
               <label>{{ t('paymentMethod') }}</label>
               <select formControlName="modePaiement">
-                <option value="especes">Espèces</option>
-                <option value="carte">Carte</option>
-                <option value="virement">Virement</option>
-                <option value="cheque">Chèque</option>
+                <option value="especes">{{ t('cash') }}</option>
+                <option value="carte">{{ t('card') }}</option>
+                <option value="virement">{{ t('transfer') }}</option>
+                <option value="cheque">{{ t('cheque') }}</option>
               </select>
             </div>
             <div class="form-group"><label>{{ t('amountPaid') }}</label><input type="number" formControlName="montantPaye" min="0" /></div>

@@ -59,17 +59,17 @@ export class ReservationCreateComponent implements OnInit {
 
   expiryWarningDismissed = false;
   uploadedDocTypes = new Set<ExpiredDocType>();
-  expiredDocUpdates: Record<ExpiredDocType, { expiration: string; issueDate: string }> = {
-    cin:       { expiration: '', issueDate: '' },
-    passeport: { expiration: '', issueDate: '' },
-    permis:    { expiration: '', issueDate: '' },
+  expiredDocUpdates: Record<ExpiredDocType, { expiration: string }> = {
+    cin:       { expiration: '' },
+    passeport: { expiration: '' },
+    permis:    { expiration: '' },
   };
   savingDocType: ExpiredDocType | null = null;
   clientDocs: ClientDoc[] = [];
-  private static readonly DOC_DATE_FIELDS: Record<ExpiredDocType, { expiration: string; issueDate: string }> = {
-    cin:       { expiration: 'cinExpiration',       issueDate: 'cinDelivreLe' },
-    passeport: { expiration: 'passeportExpiration', issueDate: 'passeportDelivreLe' },
-    permis:    { expiration: 'permisExpiration',    issueDate: 'permisDelivreLe' },
+  private static readonly DOC_DATE_FIELDS: Record<ExpiredDocType, string> = {
+    cin:       'cinExpiration',
+    passeport: 'passeportExpiration',
+    permis:    'permisExpiration',
   };
 
   debtWarningDismissed = false;
@@ -191,7 +191,11 @@ export class ReservationCreateComponent implements OnInit {
       accessoires:  this.crud.getAll('accessoire').pipe(catchError(() => of([]))),
       reservations: this.crud.getAll('reservation').pipe(catchError(() => of([]))),
     }).subscribe(({ voitures, accessoires, reservations }) => {
-      this.voitures = Array.isArray(voitures) ? voitures : (voitures as any)?.data ?? [];
+      const allCars: any[] = Array.isArray(voitures) ? voitures : (voitures as any)?.data ?? [];
+      this.voitures = allCars.filter(v => {
+        const s = (v.effectiveStatus || v.voitureStatus || '').toLowerCase();
+        return s !== 'brouillon' && s !== 'setup';
+      });
       this.accessoires  = Array.isArray(accessoires)  ? accessoires  : (accessoires  as any)?.data ?? [];
       this.reservations = Array.isArray(reservations) ? reservations : (reservations as any)?.data ?? [];
     });
@@ -250,11 +254,15 @@ export class ReservationCreateComponent implements OnInit {
     window.open(environment.apiUrl.replace('/api', '') + doc.url, '_blank');
   }
 
+  get today(): string {
+    return new Date().toISOString().substring(0, 10);
+  }
+
   private resetExpiredDocUpdates(): void {
     this.expiredDocUpdates = {
-      cin:       { expiration: '', issueDate: '' },
-      passeport: { expiration: '', issueDate: '' },
-      permis:    { expiration: '', issueDate: '' },
+      cin:       { expiration: '' },
+      passeport: { expiration: '' },
+      permis:    { expiration: '' },
     };
   }
 
@@ -267,13 +275,23 @@ export class ReservationCreateComponent implements OnInit {
     return doc.type;
   }
 
+  private isDocExpiredOrSoon(expired: boolean, dateStr: string | null | undefined): boolean {
+    if (expired) return true;
+    if (!dateStr) return false;
+    const exp = new Date(dateStr);
+    const now = new Date(); now.setHours(0, 0, 0, 0);
+    const limit = new Date(now); limit.setDate(limit.getDate() + 30);
+    return exp > now && exp <= limit;
+  }
+
   /** Soft warning only (per business decision) — does not block reservation creation. */
   get expiredClientDocs(): { type: ExpiredDocType; label: string }[] {
     if (!this.selectedClient) return [];
+    const c = this.selectedClient;
     const docs: { type: ExpiredDocType; label: string }[] = [];
-    if (this.selectedClient.cinExpired)       docs.push({ type: 'cin', label: 'CIN' });
-    if (this.selectedClient.passeportExpired) docs.push({ type: 'passeport', label: this.t('passeport') });
-    if (this.selectedClient.permisExpired)    docs.push({ type: 'permis', label: this.t('permisConduire') });
+    if (this.isDocExpiredOrSoon(c.cinExpired,       c.cinExpiration))       docs.push({ type: 'cin',      label: 'CIN' });
+    if (this.isDocExpiredOrSoon(c.passeportExpired, c.passeportExpiration)) docs.push({ type: 'passeport', label: this.t('passeport') });
+    if (this.isDocExpiredOrSoon(c.permisExpired,    c.permisExpiration))    docs.push({ type: 'permis',    label: this.t('permisConduire') });
     return docs;
   }
 
@@ -330,11 +348,10 @@ export class ReservationCreateComponent implements OnInit {
    *  check — a doc only drops off the warning once the new expiration date is genuinely future. */
   saveExpiredDocDates(type: ExpiredDocType): void {
     if (!this.selectedClient) return;
-    const upd = this.expiredDocUpdates[type];
-    const fields = ReservationCreateComponent.DOC_DATE_FIELDS[type];
+    const upd   = this.expiredDocUpdates[type];
+    const field = ReservationCreateComponent.DOC_DATE_FIELDS[type];
     const payload: any = {};
-    if (upd.expiration) payload[fields.expiration] = upd.expiration;
-    if (upd.issueDate)  payload[fields.issueDate] = upd.issueDate;
+    if (upd.expiration) payload[field] = upd.expiration;
     if (!Object.keys(payload).length) return;
 
     this.savingDocType = type;
@@ -343,7 +360,7 @@ export class ReservationCreateComponent implements OnInit {
         this.crud.getById('client', this.selectedClient.id).subscribe({
           next: (fresh: any) => {
             this.selectedClient = fresh;
-            this.expiredDocUpdates[type] = { expiration: '', issueDate: '' };
+            this.expiredDocUpdates[type] = { expiration: '' };
             this.savingDocType = null;
           },
           error: () => { this.savingDocType = null; },
@@ -432,16 +449,16 @@ export class ReservationCreateComponent implements OnInit {
     const start = this.form.get('dateDebut')?.value;
     const end   = this.form.get('dateFin')?.value;
     if (!start || !end || !voitureId) return false;
-    const s = new Date(start); s.setHours(0, 0, 0, 0);
-    const e = new Date(end);   e.setHours(23, 59, 59, 999);
+    const s = new Date(start);
+    const e = new Date(end);
     return this.reservations.some(r => {
       const rId = r.voiture?.id ?? r.voitureId;
       if (rId !== voitureId) return false;
       const st = (r.reservationStatus || r.statut || '').toLowerCase();
       if (['cancelled', 'annulee', 'annule'].includes(st)) return false;
-      const rs = new Date(r.dateDebut); rs.setHours(0, 0, 0, 0);
-      const re = new Date(r.dateFin);   re.setHours(23, 59, 59, 999);
-      return s <= re && e >= rs;
+      const rs = new Date(r.dateDebut);
+      const re = new Date(r.dateFin);
+      return rs < e && re > s;
     });
   }
 
@@ -452,6 +469,8 @@ export class ReservationCreateComponent implements OnInit {
   }
 
   selectVoiture(voiture: any) {
+    const s = (voiture.effectiveStatus || voiture.voitureStatus || '').toLowerCase();
+    if (s === 'brouillon' || s === 'setup') return;
     if (this.isVoitureConflicted(voiture.id)) return;
     if (this.isVignetteExpired(voiture)) return;
     this.selectedVoiture = voiture;

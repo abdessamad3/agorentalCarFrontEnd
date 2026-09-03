@@ -222,3 +222,10 @@
 
   </ng-container>
 </div>
+
+<app-print-contrat
+  *ngIf="printContractData"
+  [contractData]="printContractData"
+  [autoDownload]="autoDownloadPdf"
+  (closed)="onPrintClosed()">
+</app-print-contrat>

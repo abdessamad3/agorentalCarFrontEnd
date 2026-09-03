@@ -3,11 +3,11 @@
   <!-- ── Header ── -->
   <div class="nc-header">
     <div class="nc-header-left">
-      <h1 class="nc-title">🔔 Notification Center</h1>
-      <span class="nc-unread-badge" *ngIf="unreadCount > 0">{{ unreadCount }} unread</span>
+      <h1 class="nc-title">🔔 {{ t('notificationCenter') }}</h1>
+      <span class="nc-unread-badge" *ngIf="unreadCount > 0">{{ unreadCount }} {{ t('notifUnread') }}</span>
     </div>
     <button class="nc-mark-all" (click)="markAllRead()" *ngIf="unreadCount > 0">
-      ✓ Mark all as read
+      ✓ {{ t('notifMarkAllRead') }}
     </button>
   </div>
 
@@ -50,14 +50,14 @@
 
       <!-- Loading -->
       <div class="nc-loading" *ngIf="loading">
-        <span class="nc-spinner"></span> Loading notifications…
+        <span class="nc-spinner"></span> {{ t('loadingNotifications') }}
       </div>
 
       <!-- Empty state -->
       <div class="nc-empty" *ngIf="!loading && filteredNotifs.length === 0">
         <div class="nc-empty-icon">✅</div>
-        <div class="nc-empty-title">All clear</div>
-        <div class="nc-empty-msg">No notifications match this filter.</div>
+        <div class="nc-empty-title">{{ t('allClear') }}</div>
+        <div class="nc-empty-msg">{{ t('noNotificationsFilter') }}</div>
       </div>
 
       <!-- Notification cards -->
@@ -77,9 +77,9 @@
           <!-- Body -->
           <div class="nc-card-body">
             <div class="nc-card-title" [class.nc-card-title-bold]="!n.isRead">
-              {{ n.title }}
+              {{ notifTitle(n) }}
             </div>
-            <div class="nc-card-msg">{{ n.message }}</div>
+            <div class="nc-card-msg">{{ notifMsg(n) }}</div>
             <div class="nc-card-actions" *ngIf="actionButtonsFor(n).length > 0">
               <button
                 *ngFor="let btn of actionButtonsFor(n)"

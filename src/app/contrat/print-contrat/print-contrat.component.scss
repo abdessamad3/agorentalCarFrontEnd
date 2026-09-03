@@ -13,6 +13,12 @@
   overflow-x: hidden;
 }
 
+/* Silent auto-download: off-screen but still in DOM so html2canvas can capture it */
+.pct-overlay.pct-silent {
+  top: 100vh;
+  pointer-events: none;
+}
+
 /* ── Toolbar ── */
 .pct-toolbar {
   position: sticky;
@@ -41,6 +47,34 @@
   display: flex;
   gap: 8px;
 }
+
+.pct-btn-pdf {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 18px;
+  background: #16a34a;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: Arial, sans-serif;
+  transition: background 0.15s;
+  &:hover:not(:disabled) { background: #15803d; }
+  &:disabled { opacity: 0.65; cursor: not-allowed; }
+}
+
+.pct-spin {
+  display: inline-block;
+  width: 13px; height: 13px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: pct-spin 0.7s linear infinite;
+}
+@keyframes pct-spin { to { transform: rotate(360deg); } }
 
 .pct-btn-print {
   display: inline-flex;
@@ -109,25 +143,41 @@
 }
 
 .pct-hdr-logo {
-  padding: 2.5mm 3mm;
+  width: 22%;
+  min-width: 22mm;
+  padding: 2mm 3mm;
   border-right: 2px solid #000;
   display: flex;
   align-items: center;
-  gap: 2mm;
-  min-width: 24mm;
+  justify-content: center;
+}
+
+.pct-logo-img {
+  max-width: 30mm;
+  max-height: 24mm;
+  display: block;
+  margin: auto;
+}
+
+.pct-logo-fallback {
+  text-align: center;
+  line-height: 1.2;
 }
 
 .pct-brand-name {
-  font-size: 9pt;
+  font-size: 10pt;
   font-weight: 900;
-  color: #b8860b;
-  line-height: 1.1;
+  color: #8b6914;
+  text-align: center;
+  line-height: 1.2;
 }
 
 .pct-brand-sub {
-  font-size: 6pt;
+  font-size: 7pt;
   font-weight: 700;
-  line-height: 1.1;
+  text-align: center;
+  letter-spacing: 1px;
+  line-height: 1.2;
 }
 
 .pct-hdr-title {
@@ -136,44 +186,48 @@
   flex-direction: column;
   justify-content: center;
   text-align: center;
-  padding: 2mm;
+  padding: 3mm 2mm;
   border-right: 2px solid #000;
 }
 
 .pct-title-fr {
-  font-size: 16pt;
+  font-size: 14pt;
   font-weight: 900;
-  letter-spacing: 0.4px;
-  line-height: 1.2;
+  letter-spacing: 0.5px;
+  line-height: 1.25;
+  text-transform: uppercase;
 }
 
 .pct-title-ar {
-  font-size: 13pt;
+  font-size: 11pt;
   font-weight: 900;
   direction: rtl;
-  letter-spacing: 0.4px;
-  line-height: 1.2;
+  line-height: 1.25;
+  margin-top: 1mm;
 }
 
 .pct-hdr-meta {
+  width: 33%;
+  flex-shrink: 0;
   padding: 2mm 3mm;
-  min-width: 34mm;
-  font-size: 6.5pt;
-  line-height: 1.35;
+  font-size: 6pt;
+  line-height: 1.5;
+  vertical-align: top;
 }
 
 .pct-meta-row {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 1.5mm;
-  font-size: 6.5pt;
+  margin-bottom: 1mm;
+  font-size: 6pt;
 }
 
 .pct-rtl { direction: rtl; }
 
 .pct-meta-notice {
-  font-size: 5.5pt;
+  font-size: 4.8pt;
   line-height: 1.35;
+  color: #222;
   margin: 0;
 }
 
@@ -339,6 +393,10 @@
 .pct-fs-last {
   height: 4mm;
   border-bottom: none;
+}
+
+.pct-fs-filled {
+  background: #000;
 }
 
 /* ── Car diagram ── */

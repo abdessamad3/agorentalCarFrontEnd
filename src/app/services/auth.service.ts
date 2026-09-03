@@ -5,20 +5,21 @@ import { tap, map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 export const INACTIVITY_LIMIT = 24 * 60 * 60 * 1000;
-const LAST_ACTIVITY_KEY = 'last_activity';
-const REFRESH_TOKEN_KEY = 'refresh_token';
+const LAST_ACTIVITY_KEY  = 'last_activity';
+const REFRESH_TOKEN_KEY  = 'refresh_token';
+const PROACTIVE_MARGIN   = 2 * 60 * 1000; // refresh 2 min before access token expires
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
   private apiUrl = environment.apiUrl;
+  private refreshTimer: ReturnType<typeof setTimeout> | null = null;
 
   /** Emits true when a token refresh is in flight so interceptors can queue. */
   readonly refreshing$ = new BehaviorSubject<boolean>(false);
 
-  /** Fires on every logout (manual, expired token, expired session) so other services (e.g. the
-   *  idle-activity tracker) can react without AuthService needing to know about them. */
+  /** Fires on every logout so other services can react. */
   private readonly loggedOutSource = new Subject<void>();
   readonly loggedOut$ = this.loggedOutSource.asObservable();
 
@@ -26,6 +27,9 @@ export class AuthService {
     const storedToken = localStorage.getItem('auth_token');
     if (storedToken && this.isSessionExpired()) {
       this.logout();
+    } else if (storedToken && this.getRefreshToken()) {
+      // Restore proactive refresh timer on page reload
+      this.scheduleProactiveRefresh();
     }
   }
 
@@ -46,6 +50,7 @@ export class AuthService {
           if (data.user) {
             localStorage.setItem('autoloc_user', JSON.stringify(data.user));
           }
+          this.scheduleProactiveRefresh();
         }
       })
     );
@@ -62,6 +67,7 @@ export class AuthService {
           localStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
         }
         this.updateActivity();
+        this.scheduleProactiveRefresh();
         return data.token as string;
       })
     );
@@ -71,7 +77,6 @@ export class AuthService {
     localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
   }
 
-  /** Timestamp (ms) of the last recorded activity, or null if none has been recorded yet. */
   getLastActivity(): number | null {
     const last = localStorage.getItem(LAST_ACTIVITY_KEY);
     return last ? parseInt(last, 10) : null;
@@ -91,17 +96,26 @@ export class AuthService {
     return localStorage.getItem(REFRESH_TOKEN_KEY);
   }
 
+  /** Returns the access token's expiry timestamp in ms, or null if unavailable. */
+  getTokenExpiry(): number | null {
+    const token = this.getToken();
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.exp ? payload.exp * 1000 : null;
+    } catch {
+      return null;
+    }
+  }
+
   isAuthenticated(): boolean {
     const token = this.getToken();
     if (!token) return false;
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
       if (payload.exp && Date.now() >= payload.exp * 1000) {
-        // The access token's own short TTL (1h, set server-side) has lapsed — that's expected
-        // and NOT a logout signal by itself: the jwt interceptor silently refreshes it via the
-        // refresh token (valid 30 days) on the next request. Only the 24h *inactivity* window
-        // (isSessionExpired) should actually end the session. Logging out here too meant users
-        // got force-logged-out every ~1h regardless of how recently they'd been active.
+        // Access token expired — still authenticated as long as the refresh token exists.
+        // The interceptor will silently refresh it on the next request.
         return !!this.getRefreshToken();
       }
     } catch {
@@ -150,7 +164,6 @@ export class AuthService {
     return !!this.getStoredUser()?.mustChangePassword;
   }
 
-  /** Returns the current user's saved signature blob, or null if not set. */
   getMySignature(): Observable<string | null> {
     return this.http.get<any>(`${this.apiUrl}/auth/me`).pipe(
       map((r: any) => (r?.data ?? r)?.signatureBlob ?? null)
@@ -169,8 +182,9 @@ export class AuthService {
   }
 
   logout(): void {
+    this.cancelProactiveRefresh();
     const refreshToken = this.getRefreshToken();
-    // Clear tokens FIRST so the fire-and-forget logout request doesn't carry expired credentials
+    // Clear tokens FIRST so the fire-and-forget logout request doesn't carry stale credentials
     localStorage.removeItem('auth_token');
     localStorage.removeItem('autoloc_user');
     localStorage.removeItem(LAST_ACTIVITY_KEY);
@@ -179,5 +193,33 @@ export class AuthService {
       this.http.post(`${this.apiUrl}/auth/logout`, { refreshToken }).subscribe({ error: () => {} });
     }
     this.loggedOutSource.next();
+  }
+
+  // ── Proactive refresh ─────────────────────────────────────────────────────
+
+  private scheduleProactiveRefresh(): void {
+    this.cancelProactiveRefresh();
+    const expiry = this.getTokenExpiry();
+    if (!expiry) return;
+    const delay = expiry - Date.now() - PROACTIVE_MARGIN;
+    if (delay <= 0) return; // already expired or too close — reactive path handles it
+    this.refreshTimer = setTimeout(() => {
+      if (!this.getRefreshToken() || this.refreshing$.getValue()) return;
+      this.refreshing$.next(true);
+      this.refreshAccessToken().subscribe({
+        next: () => this.refreshing$.next(false),
+        error: () => {
+          this.refreshing$.next(false);
+          // Don't logout here — let the interceptor handle the 401 on the next real request
+        }
+      });
+    }, delay);
+  }
+
+  private cancelProactiveRefresh(): void {
+    if (this.refreshTimer !== null) {
+      clearTimeout(this.refreshTimer);
+      this.refreshTimer = null;
+    }
   }
 }

@@ -5,8 +5,8 @@
     <div class="el-title">
       <span class="el-icon">📧</span>
       <div>
-        <h1>Email History</h1>
-        <p>{{ total }} email(s) sent</p>
+        <h1>{{ t('emailHistory') }}</h1>
+        <p>{{ total }} {{ t('emailsSuffix') }}</p>
       </div>
     </div>
   </div>
@@ -14,19 +14,19 @@
   <!-- Filters -->
   <div class="el-filters">
     <select [(ngModel)]="statusFilter" class="el-select">
-      <option value="">All statuses</option>
-      <option value="sent">Sent</option>
-      <option value="failed">Failed</option>
+      <option value="">{{ t('allStatus') }}</option>
+      <option value="sent">{{ 'sent' | appStatus:'email' }}</option>
+      <option value="failed">{{ 'failed' | appStatus:'email' }}</option>
     </select>
 
     <div class="el-date-range">
-      <input type="date" [(ngModel)]="dateFrom" class="el-input" placeholder="From">
+      <input type="date" [(ngModel)]="dateFrom" class="el-input" [placeholder]="t('from')">
       <span class="el-dash">→</span>
-      <input type="date" [(ngModel)]="dateTo" class="el-input" placeholder="To">
+      <input type="date" [(ngModel)]="dateTo" class="el-input" [placeholder]="t('to')">
     </div>
 
-    <button class="btn-primary" (click)="applyFilters()">Filter</button>
-    <button class="btn-ghost"   (click)="resetFilters()">Reset</button>
+    <button class="btn-primary" (click)="applyFilters()">{{ t('applyFilters') }}</button>
+    <button class="btn-ghost"   (click)="resetFilters()">{{ t('reset') }}</button>
   </div>
 
   <!-- Error -->
@@ -34,7 +34,7 @@
 
   <!-- Loading -->
   <div *ngIf="loading" class="el-loading">
-    <div class="spinner"></div> Loading…
+    <div class="spinner"></div> {{ t('loading') }}
   </div>
 
   <!-- Table -->
@@ -42,13 +42,13 @@
     <table class="el-table">
       <thead>
         <tr>
-          <th>Date &amp; Time</th>
-          <th>Recipient</th>
-          <th>Subject</th>
-          <th>Total Alerts</th>
-          <th>Breakdown</th>
-          <th>Status</th>
-          <th>Triggered By</th>
+          <th>{{ t('dateTime') }}</th>
+          <th>{{ t('recipient') }}</th>
+          <th>{{ t('emailSubject') }}</th>
+          <th>{{ t('totalAlerts') }}</th>
+          <th>{{ t('breakdown') }}</th>
+          <th>{{ t('status') }}</th>
+          <th>{{ t('triggeredBy') }}</th>
           <th></th>
         </tr>
       </thead>
@@ -75,12 +75,12 @@
             </td>
             <td>
               <span class="el-badge" [ngClass]="statusClass(log.status)">
-                {{ log.status === 'sent' ? '✓ Sent' : '✗ Failed' }}
+                {{ log.status === 'sent' ? '✓' : '✗' }} {{ log.status | appStatus:'email' }}
               </span>
             </td>
             <td>
               <span class="el-badge" [ngClass]="triggeredClass(log.triggeredBy)">
-                {{ log.triggeredBy === 'manual' ? '👤 Manual' : '⏰ Auto' }}
+                {{ log.triggeredBy === 'manual' ? t('triggeredManual') : t('triggeredAuto') }}
               </span>
             </td>
             <td>
@@ -95,14 +95,14 @@
           <tr *ngIf="expandedId === log.id && log.errorMessage" class="el-error-row">
             <td colspan="8">
               <div class="el-error-detail">
-                <strong>Error:</strong> {{ log.errorMessage }}
+                <strong>{{ t('emailError') }}:</strong> {{ log.errorMessage }}
               </div>
             </td>
           </tr>
         </ng-container>
 
         <tr *ngIf="logs.length === 0">
-          <td colspan="8" class="el-empty">No emails sent yet.</td>
+          <td colspan="8" class="el-empty">{{ t('noEmailsSent') }}</td>
         </tr>
       </tbody>
     </table>
@@ -117,7 +117,7 @@
             [class.active]="p === page">{{ p }}</button>
     <button (click)="goToPage(page + 1)" [disabled]="page === pages">›</button>
     <button (click)="goToPage(pages)"    [disabled]="page === pages">»</button>
-    <span class="el-page-info">Page {{ page }} / {{ pages }}</span>
+    <span class="el-page-info">{{ t('pageLbl') }} {{ page }} / {{ pages }}</span>
   </div>
 
 </div>

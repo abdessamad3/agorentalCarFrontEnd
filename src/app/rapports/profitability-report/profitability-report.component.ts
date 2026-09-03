@@ -56,6 +56,9 @@ export class ProfitabilityReportComponent implements OnInit {
       });
   }
 
+  t(key: string): string { return this.ts.translate(key); }
+  noIcon(key: string): string { const v = this.ts.translate(key); const i = v.search(/\s/); return i > 0 ? v.slice(i).trim() : v; }
+
   onYearChange() { this.load(); }
 
   get filtered(): VehicleRow[] {

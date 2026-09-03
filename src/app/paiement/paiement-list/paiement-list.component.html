@@ -35,7 +35,7 @@
           <td>{{ item.montant }} MAD</td>
           <td class="date-cell">{{ item.datePaiement | date:'shortDate' }}</td>
           <td>{{ item.modePaiement }}</td>
-          <td><span class="status-badge" [ngClass]="'status-' + item.statut">{{ item.statut }}</span></td>
+          <td><span class="status-badge" [ngClass]="'status-' + item.statut">{{ item.statut | appStatus:'payment' }}</span></td>
           <td class="actions-cell">
             <app-btn variant="icon-view"   (click)="openView(item)"      [title]="'view'   | translate"></app-btn>
             <app-btn variant="icon-edit"   (click)="openEdit(item)"      [title]="'edit'   | translate"></app-btn>

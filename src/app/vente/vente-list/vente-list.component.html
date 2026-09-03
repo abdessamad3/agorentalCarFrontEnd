@@ -1,4 +1,4 @@
-<div class="list-container" [dir]="dir">
+﻿<div class="list-container" [dir]="dir">
 
   <!-- Header -->
   <div class="header">
@@ -263,14 +263,14 @@
 <div class="drawer" [class.open]="drawerOpen">
   <ng-container *ngIf="drawerItem">
     <div class="drawer-header">
-      <span class="drawer-title">Details</span>
+      <span class="drawer-title">{{ 'details' | translate }}</span>
       <button class="drawer-close" (click)="closeDrawer()">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
     <div class="drawer-body">
       <div class="drawer-section">
-        <div class="drawer-section-head">Information</div>
+        <div class="drawer-section-head">{{ 'information' | translate }}</div>
         <div class="drawer-row" *ngFor="let e of objectEntries(drawerItem)">
           <span class="drawer-lbl">{{ e[0] }}</span>
           <span class="drawer-val">{{ displayValue(e[1]) }}</span>
@@ -285,3 +285,4 @@
     </div>
   </ng-container>
 </div>
+

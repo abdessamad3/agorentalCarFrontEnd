@@ -61,7 +61,9 @@
           <div class="form-group">
             <label>{{ t('endDate') }} <span class="required">*</span></label>
             <input type="date" formControlName="dateFin"
-              [class.invalid]="form.get('dateFin')?.invalid && form.get('dateFin')?.touched" />
+              [min]="form.get('dateDebut')?.value"
+              [class.invalid]="(form.get('dateFin')?.invalid && form.get('dateFin')?.touched) || dateRangeInvalid" />
+            <span class="field-error" *ngIf="dateRangeInvalid">{{ t('dateReturnBeforeStart') }}</span>
           </div>
         </div>
 

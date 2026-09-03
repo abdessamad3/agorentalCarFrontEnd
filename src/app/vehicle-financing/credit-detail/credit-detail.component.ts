@@ -4,8 +4,10 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { CrudService } from '../../services/crud.service';
 import { TranslationService } from '../../services/translation.service';
+import { ActivityLogService } from '../../services/activity-log.service';
 import { environment } from '../../../environments/environment';
 import { UploadBtnComponent } from '../../shared/btn/upload-btn.component';
+import { StatusPipe } from '../../shared/pipes/status.pipe';
 
 interface Installment {
   id: number;
@@ -45,7 +47,7 @@ interface Document {
 @Component({
   selector: 'app-credit-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, UploadBtnComponent],
+  imports: [CommonModule, FormsModule, RouterModule, UploadBtnComponent, StatusPipe],
   templateUrl: './credit-detail.component.html',
   styleUrls: ['../../shared/styles/reports.css'],
 })
@@ -87,40 +89,48 @@ export class CreditDetailComponent implements OnInit {
   showStatusModal = false;
   newStatus = '';
 
-  readonly paymentTypes = [
-    { value: 'scheduled',  label: 'Scheduled Payment' },
-    { value: 'partial',    label: 'Partial Payment' },
-    { value: 'advance',    label: 'Advance Payment' },
-    { value: 'extra',      label: 'Extra Payment' },
-    { value: 'settlement', label: 'Full Settlement' },
-    { value: 'refund',     label: 'Refund' },
-  ];
+  get paymentTypes() {
+    return [
+      { value: 'scheduled',  label: this.t('scheduledPayment') },
+      { value: 'partial',    label: this.t('partialPayment') },
+      { value: 'advance',    label: this.t('advancePayment') },
+      { value: 'extra',      label: this.t('extraPayment') },
+      { value: 'settlement', label: this.t('fullSettlement') },
+      { value: 'refund',     label: this.t('refundPayment') },
+    ];
+  }
 
-  readonly paymentMethods = [
-    { value: 'bank_transfer', label: 'Bank Transfer' },
-    { value: 'check',         label: 'Check' },
-    { value: 'cash',          label: 'Cash' },
-    { value: 'direct_debit',  label: 'Direct Debit' },
-    { value: 'other',         label: 'Other' },
-  ];
+  get paymentMethods() {
+    return [
+      { value: 'bank_transfer', label: this.t('transfer') },
+      { value: 'check',         label: this.t('cheque') },
+      { value: 'cash',          label: this.t('especes') || 'Espèces' },
+      { value: 'direct_debit',  label: 'Prélèvement auto' },
+      { value: 'other',         label: this.t('other') },
+    ];
+  }
 
-  readonly docTypes = [
-    { value: 'financing_contract',   label: 'Financing Contract' },
-    { value: 'bank_approval',        label: 'Bank Approval' },
-    { value: 'amortization_schedule',label: 'Amortization Schedule' },
-    { value: 'insurance',            label: 'Insurance Document' },
-    { value: 'settlement_certificate',label: 'Settlement Certificate' },
-    { value: 'other',                label: 'Other' },
-  ];
+  get docTypes() {
+    return [
+      { value: 'financing_contract',    label: this.t('newFinancingContractTitle') },
+      { value: 'bank_approval',         label: this.t('creditPendingApproval') },
+      { value: 'amortization_schedule', label: this.t('scheduleTab').replace(/📅\s*/, '') },
+      { value: 'insurance',             label: this.t('typeInsuranceLbl').replace(/🛡️\s*/, '') },
+      { value: 'settlement_certificate',label: this.t('fullSettlement') },
+      { value: 'other',                 label: this.t('other') || 'Autre' },
+    ];
+  }
 
-  readonly contractStatuses = [
-    { value: 'draft',            label: 'Draft' },
-    { value: 'pending_approval', label: 'Pending Approval' },
-    { value: 'active',           label: 'Active' },
-    { value: 'completed',        label: 'Completed' },
-    { value: 'defaulted',        label: 'Defaulted' },
-    { value: 'cancelled',        label: 'Cancelled' },
-  ];
+  get contractStatuses() {
+    return [
+      { value: 'draft',            label: this.t('creditDraft') },
+      { value: 'pending_approval', label: this.t('creditPendingApproval') },
+      { value: 'active',           label: this.t('creditActive') },
+      { value: 'completed',        label: this.t('creditCompleted') },
+      { value: 'defaulted',        label: this.t('creditDefaulted') },
+      { value: 'cancelled',        label: this.t('creditCancelled2') },
+    ];
+  }
 
   serverBase = environment.serverUrl ?? 'http://localhost:8000';
 
@@ -129,11 +139,15 @@ export class CreditDetailComponent implements OnInit {
     private router: Router,
     private crud: CrudService,
     private ts: TranslationService,
+    private activityLog: ActivityLogService,
   ) {}
+
+  t(key: string): string { return this.ts.translate(key); }
 
   ngOnInit() {
     this.ts.direction$.subscribe(d => this.dir = d);
     this.id = +this.route.snapshot.paramMap.get('id')!;
+    this.activityLog.logView('Credit', this.id);
     this.load();
   }
 

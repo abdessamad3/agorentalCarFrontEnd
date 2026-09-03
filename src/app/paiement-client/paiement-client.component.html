@@ -5,6 +5,7 @@
     <h1 class="page-title">💳 {{ t('clientPayments') }}</h1>
     <div class="header-actions">
       <div class="search-box">
+        <span class="search-icon">🔍</span>
         <input type="text" [(ngModel)]="search" [placeholder]="t('search') + '...'" />
       </div>
       <app-btn variant="primary" (click)="openAdd()">+ {{ t('addPayment') }}</app-btn>
@@ -13,15 +14,26 @@
 
   <!-- Summary bar -->
   <div class="summary-bar" *ngIf="!loading">
-    <div class="summary-chip chip-collected">
-      <span class="chip-icon">✅</span>
-      <span class="chip-label">{{ t('totalCollected') }}:</span>
-      <span class="chip-value">{{ totalCollected | number:'1.0-0' }} MAD</span>
+    <div class="summary-card card-collected">
+      <div class="sc-icon">✅</div>
+      <div class="sc-body">
+        <div class="sc-label">{{ t('totalCollected') }}</div>
+        <div class="sc-value">{{ totalCollected | number:'1.0-0' }} MAD</div>
+      </div>
     </div>
-    <div class="summary-chip chip-count">
-      <span class="chip-icon">🧾</span>
-      <span class="chip-label">{{ t('payments') }}:</span>
-      <span class="chip-value">{{ items.length }}</span>
+    <div class="summary-card card-outstanding" *ngIf="totalOutstanding > 0">
+      <div class="sc-icon">⏳</div>
+      <div class="sc-body">
+        <div class="sc-label">{{ t('outstandingDebt') }}</div>
+        <div class="sc-value">{{ totalOutstanding | number:'1.0-0' }} MAD</div>
+      </div>
+    </div>
+    <div class="summary-card card-count">
+      <div class="sc-icon">🧾</div>
+      <div class="sc-body">
+        <div class="sc-label">{{ t('payments') }}</div>
+        <div class="sc-value">{{ items.length }}</div>
+      </div>
     </div>
   </div>
 
@@ -41,32 +53,77 @@
             <th>{{ t('client') }}</th>
             <th>{{ t('car') }}</th>
             <th>{{ t('reservationDates') }}</th>
-            <th>{{ t('totalAmount') }}</th>
-            <th>{{ t('amountPaid') }}</th>
+            <th>{{ t('payment') }}</th>
             <th>{{ t('paymentMethod') }}</th>
             <th>{{ t('notes') }}</th>
             <th class="th-actions">{{ t('actions') }}</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let item of filtered; let i = index">
+          <tr *ngFor="let item of filtered; let i = index"
+              [class.row-paid]="isFullyPaid(item)"
+              [class.row-partial]="!isFullyPaid(item)">
+
             <td class="td-num">{{ i + 1 }}</td>
+
             <td class="td-date">{{ item.datePaiement | date:'dd/MM/yyyy' }}</td>
+
             <td class="td-client">
-              {{ item.reservation?.client?.nom || '—' }}
-              {{ item.reservation?.client?.prenom || '' }}
+              <div class="client-cell">
+                <div class="client-avatar" [style.background]="avatarColor(item)">
+                  {{ clientInitials(item) }}
+                </div>
+                <span class="client-name">
+                  {{ item.reservation?.client?.nom || '—' }}
+                  {{ item.reservation?.client?.prenom || '' }}
+                </span>
+              </div>
             </td>
-            <td>{{ item.reservation?.voiture?.marque || '—' }} {{ item.reservation?.voiture?.modele || '' }}</td>
+
+            <td class="td-car">
+              <div class="car-main">{{ (item.reservation?.voiture?.marque || '—') + ' ' + (item.reservation?.voiture?.modele || '') }}</div>
+              <div class="car-sub" *ngIf="item.reservation?.voiture?.immatriculation">
+                {{ item.reservation?.voiture?.immatriculation }}
+              </div>
+            </td>
+
             <td class="td-dates">
-              {{ item.reservation?.dateDebut | date:'dd/MM/yy' }}
-              → {{ item.reservation?.dateFin | date:'dd/MM/yy' }}
+              <span class="date-from">{{ item.reservation?.dateDebut | date:'dd/MM/yy' }}</span>
+              <span class="date-arrow">→</span>
+              <span class="date-to">{{ item.reservation?.dateFin | date:'dd/MM/yy' }}</span>
             </td>
-            <td class="td-amount">{{ (item.reservation?.total || 0) | number:'1.0-0' }} MAD</td>
-            <td class="td-paid">{{ item.montant | number:'1.0-0' }} MAD</td>
+
+            <td class="td-payment">
+              <div class="payment-cell">
+                <div class="payment-top">
+                  <span class="this-payment">{{ item.montant | number:'1.0-0' }} MAD</span>
+                  <span class="of-total">/ {{ (item.reservation?.total || 0) | number:'1.0-0' }} MAD</span>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill"
+                       [style.width]="paymentPct(item) + '%'"
+                       [class.fill-full]="isFullyPaid(item)"
+                       [class.fill-partial]="!isFullyPaid(item)">
+                  </div>
+                </div>
+                <div class="payment-bottom">
+                  <span class="paid-badge" *ngIf="isFullyPaid(item)">✓ Soldé</span>
+                  <span class="remaining-badge" *ngIf="!isFullyPaid(item)">
+                    Reste {{ remaining(item) | number:'1.0-0' }} MAD
+                  </span>
+                  <span class="pct-label">{{ paymentPct(item) }}%</span>
+                </div>
+              </div>
+            </td>
+
             <td>
-              <span class="method-badge">{{ item.modePaiement || '—' }}</span>
+              <span class="method-badge" [ngClass]="'method-' + (item.modePaiement || 'other')">
+                {{ item.modePaiement || '—' }}
+              </span>
             </td>
+
             <td class="td-note">{{ item.note || '—' }}</td>
+
             <td class="actions-cell">
               <app-btn variant="icon-delete" (click)="confirmDelete(item)" [title]="t('delete')"></app-btn>
             </td>
@@ -100,7 +157,12 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label>{{ t('amountPaid') }} * <span class="max-hint" *ngIf="form.get('reservationId')?.value">(max {{ maxPayable(form.get('reservationId')?.value) | number:'1.0-0' }} MAD)</span></label>
+            <label>
+              {{ t('amountPaid') }} *
+              <span class="max-hint" *ngIf="form.get('reservationId')?.value">
+                (max {{ maxPayable(form.get('reservationId')?.value) | number:'1.0-0' }} MAD)
+              </span>
+            </label>
             <input type="number" formControlName="montant" min="0.01" step="0.01" />
           </div>
           <div class="form-group">

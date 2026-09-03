@@ -2,6 +2,8 @@ import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { TranslationService } from '../../services/translation.service';
+import { StatusPipe } from '../../shared/pipes/status.pipe';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 import { CrudService } from '../../services/crud.service';
 import { AuthService } from '../../services/auth.service';
 import { BtnComponent } from '../../shared/btn/btn.component';
@@ -10,7 +12,7 @@ import { SignaturePadComponent } from '../../shared/signature-pad/signature-pad.
 @Component({
   selector: 'app-utilisateur-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, BtnComponent, SignaturePadComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, BtnComponent, SignaturePadComponent, StatusPipe, TranslatePipe],
   templateUrl: './utilisateur-list.component.html',
   styleUrls: ['../../shared/styles/crud-list.css', './utilisateur-list.component.css']
 })

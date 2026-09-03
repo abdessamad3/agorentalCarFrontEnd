@@ -415,6 +415,20 @@
 .badge-cancelled   { background: rgba(235,87,87,0.12);   color: #961b1b; }
 .badge-maintenance { background: rgba(155,81,224,0.12);  color: #581a94; }
 
+.dmi-actions {
+  display: flex; gap: 0.4rem; margin-top: 0.35rem;
+}
+.dmi-btn-confirm, .dmi-btn-cancel {
+  flex: 1; padding: 0.3rem 0.5rem; border-radius: 6px;
+  font-size: 0.7rem; font-weight: 700; cursor: pointer;
+  border: none; transition: opacity 0.15s;
+}
+.dmi-btn-confirm:disabled, .dmi-btn-cancel:disabled { opacity: 0.5; cursor: not-allowed; }
+.dmi-btn-confirm { background: rgba(39,174,96,0.13); color: #16623a; }
+.dmi-btn-confirm:not(:disabled):hover { background: rgba(39,174,96,0.25); }
+.dmi-btn-cancel  { background: rgba(235,87,87,0.12); color: #961b1b; }
+.dmi-btn-cancel:not(:disabled):hover  { background: rgba(235,87,87,0.22); }
+
 .dm-footer {
   display: flex; gap: 0.65rem; padding: 0.9rem 1.4rem;
   border-top: 1px solid #EEF2F7;

@@ -5,18 +5,35 @@
     <div class="rp-header-left">
       <div class="rp-header-icon" style="background:#1a202c;color:#f6ad55">👑</div>
       <div>
-        <div class="rp-title">Executive Dashboard</div>
-        <div class="rp-subtitle">High-level operational & financial overview for management</div>
+        <div class="rp-title">{{ t('exTitle') }}</div>
+        <div class="rp-subtitle">{{ t('exSubtitle') }}</div>
       </div>
     </div>
     <div class="rp-actions">
-      <button class="btn-export btn-print" onclick="window.print()">🖨️ Print</button>
-      <button class="btn-export btn-csv" (click)="load()">↻ Refresh</button>
+      <button class="btn-export btn-print" onclick="window.print()">🖨️ {{ t('printPdf') }}</button>
+      <button class="btn-export btn-csv" (click)="load()">↻ {{ t('exRefresh') }}</button>
+    </div>
+  </div>
+
+  <!-- ── Date Filter Bar (sticks when scrolled past) ── -->
+  <div #filterSentinel class="exec-filter-sentinel"></div>
+  <div class="exec-filter-spacer" [style.display]="filterStuck ? 'block' : 'none'"></div>
+  <div class="exec-filter-bar" [class.efb-stuck]="filterStuck">
+    <div class="exec-filter-presets">
+      <button class="efb-btn" [class.efb-active]="activePreset==='thisMonth'"  (click)="setPreset('thisMonth')">{{ t('thisMonth') }}</button>
+      <button class="efb-btn" [class.efb-active]="activePreset==='lastMonth'"  (click)="setPreset('lastMonth')">{{ t('lastMonth') }}</button>
+      <button class="efb-btn" [class.efb-active]="activePreset==='thisYear'"   (click)="setPreset('thisYear')">{{ t('thisYear') }}</button>
+      <button class="efb-btn" [class.efb-active]="activePreset==='all'"        (click)="setPreset('all')">{{ t('allTime') }}</button>
+    </div>
+    <div class="exec-filter-dates">
+      <input class="efb-date" type="date" [(ngModel)]="filterFrom" (ngModelChange)="onDateChange()" />
+      <span class="efb-sep">—</span>
+      <input class="efb-date" type="date" [(ngModel)]="filterTo"   (ngModelChange)="onDateChange()" />
     </div>
   </div>
 
   <div *ngIf="loading" style="padding:3rem;text-align:center;color:#a0aec0;">
-    <span class="rp-loading-spinner"></span> Loading executive data…
+    <span class="rp-loading-spinner"></span> {{ t('exLoading') }}
   </div>
 
   <ng-container *ngIf="!loading">
@@ -25,7 +42,7 @@
     <div *ngIf="alerts.length > 0"
       style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.5rem">
       <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#a0aec0;margin-bottom:.6rem">
-        Action Required
+        {{ t('actionRequired') }}
       </div>
       <div style="display:flex;flex-direction:column;gap:.4rem">
         <div *ngFor="let a of alerts"
@@ -34,7 +51,7 @@
           [routerLink]="a.link">
           <span>{{ a.icon }}</span>
           <span [style.color]="a.urgency==='critical'?'#c53030':a.urgency==='warning'?'#dd6b20':'#2b6cb0'">{{ a.text }}</span>
-          <span style="margin-left:auto;color:#a0aec0;font-size:.75rem">→</span>
+          <span style="margin-left:auto;color:#a0aec0;font-size:.75rem">{{ arrow }}</span>
         </div>
       </div>
     </div>
@@ -60,36 +77,59 @@
       </a>
     </div>
 
-    <!-- Main grid: chart + fleet status + top vehicles -->
-    <div style="display:grid;grid-template-columns:2fr 1fr;gap:1.5rem;margin-bottom:1.5rem">
+    <!-- Main grid: chart + fleet status -->
+    <div class="exec-main-grid">
 
       <!-- Monthly revenue chart -->
       <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:1.5rem">
-        <div class="rp-section" style="margin-top:0">Revenue vs Expenses — Last 6 Months</div>
-        <div style="display:flex;align-items:flex-end;gap:8px;height:130px;padding-bottom:1.5rem;border-bottom:1px solid #e2e8f0">
-          <ng-container *ngFor="let b of monthBars">
-            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+        <div class="rp-section" style="margin-top:0">{{ t('revenueVsExpLast6') }}</div>
+        <div dir="ltr" style="display:flex;align-items:flex-end;gap:8px;height:130px;padding-bottom:1.5rem;border-bottom:1px solid #e2e8f0">
+          <ng-container *ngFor="let b of monthBars; let i = index">
+            <div (click)="selectBar(i)"
+              style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;transition:opacity .15s"
+              [style.opacity]="selectedBarIdx !== null && selectedBarIdx !== i ? '0.35' : '1'">
               <div style="display:flex;align-items:flex-end;gap:2px;height:120px">
-                <div style="width:14px;border-radius:3px 3px 0 0;background:#4299e1"
-                  [style.height]="b.rH+'px'" [attr.title]="b.label+' Revenue'"></div>
-                <div style="width:14px;border-radius:3px 3px 0 0;background:#fc8181"
-                  [style.height]="b.eH+'px'" [attr.title]="b.label+' Expenses'"></div>
+                <div style="width:14px;border-radius:3px 3px 0 0;background:#4299e1;transition:filter .15s"
+                  [style.filter]="selectedBarIdx === i ? 'brightness(1.15)' : 'none'"
+                  [style.height]="b.rH+'px'"></div>
+                <div style="width:14px;border-radius:3px 3px 0 0;background:#fc8181;transition:filter .15s"
+                  [style.filter]="selectedBarIdx === i ? 'brightness(1.15)' : 'none'"
+                  [style.height]="b.eH+'px'"></div>
               </div>
-              <div style="font-size:.65rem;color:#718096;white-space:nowrap;max-width:38px;overflow:hidden;text-overflow:ellipsis" [title]="b.label">
-                {{ b.label.slice(0, 6) }}
+              <div style="font-size:.65rem;color:#718096;white-space:nowrap;max-width:42px;overflow:hidden;text-overflow:ellipsis" [title]="b.label">
+                {{ b.label.split(' ')[0] }}
               </div>
             </div>
           </ng-container>
         </div>
+
+        <!-- Bar detail panel -->
+        <div *ngIf="selectedBar" style="margin-top:.6rem;background:#f7fafc;border:1px solid #e2e8f0;border-radius:8px;padding:.6rem .9rem;font-size:.82rem;animation:rp-fadein .15s ease">
+          <div style="font-weight:700;color:#2d3748;margin-bottom:.35rem">{{ selectedBar.label }}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:.5rem .9rem">
+            <span style="display:flex;align-items:center;gap:.3rem">
+              <span style="display:inline-block;width:8px;height:8px;background:#4299e1;border-radius:2px"></span>
+              {{ t('revenue') }}: <strong style="color:#276749">{{ fmt(selectedBar.revenue) }}</strong>
+            </span>
+            <span style="display:flex;align-items:center;gap:.3rem">
+              <span style="display:inline-block;width:8px;height:8px;background:#fc8181;border-radius:2px"></span>
+              {{ t('expenses') }}: <strong style="color:#c53030">{{ fmt(selectedBar.expenses) }}</strong>
+            </span>
+            <span style="display:flex;align-items:center;gap:.3rem">
+              {{ t('netProfit') }}: <strong [style.color]="selectedBar.revenue - selectedBar.expenses >= 0 ? '#276749' : '#c53030'">{{ fmt(selectedBar.revenue - selectedBar.expenses) }}</strong>
+            </span>
+          </div>
+        </div>
+
         <div style="display:flex;gap:1rem;margin-top:.75rem;font-size:.75rem">
           <span style="display:flex;align-items:center;gap:.3rem">
-            <span style="display:inline-block;width:10px;height:10px;background:#4299e1;border-radius:2px"></span> Revenue
+            <span style="display:inline-block;width:10px;height:10px;background:#4299e1;border-radius:2px"></span> {{ t('revenue') }}
           </span>
           <span style="display:flex;align-items:center;gap:.3rem">
-            <span style="display:inline-block;width:10px;height:10px;background:#fc8181;border-radius:2px"></span> Expenses
+            <span style="display:inline-block;width:10px;height:10px;background:#fc8181;border-radius:2px"></span> {{ t('expenses') }}
           </span>
           <span style="margin-left:auto;font-weight:700;color:#276749">
-            This month: {{ fmt(revenueThisMonth) }}
+            {{ t('thisMonth') }} {{ fmt(revenueThisMonth) }}
             <span style="margin-left:.4rem" [style.color]="revTrendPct>=0?'#276749':'#c53030'">
               ({{ revTrendPct>=0?'+':'' }}{{ revTrendPct }}%)
             </span>
@@ -99,11 +139,11 @@
 
       <!-- Fleet status -->
       <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:1.5rem">
-        <div class="rp-section" style="margin-top:0">Fleet Status</div>
+        <div class="rp-section" style="margin-top:0">{{ t('fleetStatus') }}</div>
         <div style="display:flex;flex-direction:column;gap:.75rem">
           <div>
             <div style="display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:.25rem">
-              <span style="color:#718096">Available</span>
+              <span style="color:#718096">{{ t('flAvailable') }}</span>
               <span style="font-weight:700;color:#276749">{{ availableVehicles }}</span>
             </div>
             <div style="height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden">
@@ -113,7 +153,7 @@
           </div>
           <div>
             <div style="display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:.25rem">
-              <span style="color:#718096">Rented</span>
+              <span style="color:#718096">{{ t('flRented') }}</span>
               <span style="font-weight:700;color:#2b6cb0">{{ rentedVehicles }}</span>
             </div>
             <div style="height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden">
@@ -123,7 +163,7 @@
           </div>
           <div>
             <div style="display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:.25rem">
-              <span style="color:#718096">Maintenance</span>
+              <span style="color:#718096">{{ t('inMaintenance') }}</span>
               <span style="font-weight:700;color:#dd6b20">{{ maintenanceVehicles }}</span>
             </div>
             <div style="height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden">
@@ -134,81 +174,122 @@
         </div>
         <div style="margin-top:1rem;padding:.75rem;background:#ebf8ff;border-radius:10px;text-align:center">
           <div style="font-size:1.6rem;font-weight:800;color:#2b6cb0">{{ fleetUtilization }}%</div>
-          <div style="font-size:.75rem;color:#4a5568;margin-top:.15rem">Utilization Rate</div>
+          <div style="font-size:.75rem;color:#4a5568;margin-top:.15rem">{{ t('utilizationRate') }}</div>
         </div>
         <div style="margin-top:.75rem;display:flex;justify-content:space-between;font-size:.8rem">
-          <a routerLink="/rapports/fleet" style="color:#4299e1;text-decoration:none">Fleet Report →</a>
-          <a routerLink="/fleet-health" style="color:#4299e1;text-decoration:none">Health Scores →</a>
+          <a routerLink="/rapports/fleet" style="color:#4299e1;text-decoration:none">{{ t('fleetReportLink') }} {{ arrow }}</a>
+          <a routerLink="/fleet-health" style="color:#4299e1;text-decoration:none">{{ t('healthScores') }} {{ arrow }}</a>
         </div>
       </div>
     </div>
 
     <!-- Top vehicles + compliance + cash flow -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem">
+    <div class="exec-bottom-grid">
 
       <!-- Top 5 vehicles -->
       <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:1.5rem">
-        <div class="rp-section" style="margin-top:0">Top 5 Vehicles by Revenue</div>
-        <div *ngIf="topVehicles.length === 0" style="color:#a0aec0;font-size:.82rem;text-align:center;padding:1rem">No data</div>
+        <div class="rp-section" style="margin-top:0">{{ t('top5VehiclesRev') }}</div>
+        <div *ngIf="topVehicles.length === 0" style="color:#a0aec0;font-size:.82rem;text-align:center;padding:1rem">{{ t('noData') }}</div>
         <div style="display:flex;flex-direction:column;gap:.6rem">
           <div *ngFor="let v of topVehicles; let i=index" style="display:flex;align-items:center;gap:.6rem">
             <span style="font-size:.85rem;width:20px;text-align:center">{{ i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1) }}</span>
             <div style="flex:1;min-width:0">
               <div style="font-size:.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ v.label }}</div>
-              <div style="font-size:.72rem;color:#718096">{{ v.rentals }} rental{{ v.rentals!==1?'s':'' }}</div>
+              <div style="font-size:.72rem;color:#718096">{{ v.rentals }} {{ t('thRentals') }}</div>
             </div>
             <div style="font-size:.82rem;font-weight:700;color:#276749;white-space:nowrap">{{ fmt(v.revenue) }}</div>
           </div>
         </div>
         <div style="margin-top:.75rem">
-          <a routerLink="/rapports/profitability" style="color:#4299e1;font-size:.78rem;text-decoration:none">Full profitability report →</a>
+          <a routerLink="/rapports/profitability" style="color:#4299e1;font-size:.78rem;text-decoration:none">{{ t('fullProfitReport') }} {{ arrow }}</a>
         </div>
       </div>
 
       <!-- Compliance summary -->
       <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:1.5rem">
-        <div class="rp-section" style="margin-top:0">Compliance Status</div>
+        <div class="rp-section" style="margin-top:0">{{ t('complianceStatus') }}</div>
         <div style="display:flex;flex-direction:column;gap:.75rem">
           <div style="display:flex;align-items:center;justify-content:space-between;padding:.6rem .75rem;background:#fff5f5;border-radius:8px"
             [style.opacity]="complianceAlerts.overdue===0?'0.5':'1'">
-            <span style="font-size:.82rem;color:#c53030;font-weight:600">🔴 Overdue</span>
+            <span style="font-size:.82rem;color:#c53030;font-weight:600">🔴 {{ t('overdueLabel') }}</span>
             <span style="font-size:1.1rem;font-weight:800;color:#c53030">{{ complianceAlerts.overdue }}</span>
           </div>
           <div style="display:flex;align-items:center;justify-content:space-between;padding:.6rem .75rem;background:#fffaf0;border-radius:8px"
             [style.opacity]="complianceAlerts.critical===0?'0.5':'1'">
-            <span style="font-size:.82rem;color:#dd6b20;font-weight:600">🟠 Critical</span>
+            <span style="font-size:.82rem;color:#dd6b20;font-weight:600">🟠 {{ t('criticalLabel') }}</span>
             <span style="font-size:1.1rem;font-weight:800;color:#dd6b20">{{ complianceAlerts.critical }}</span>
           </div>
           <div style="display:flex;align-items:center;justify-content:space-between;padding:.6rem .75rem;background:#fffaf0;border-radius:8px"
             [style.opacity]="complianceAlerts.warning===0?'0.5':'1'">
-            <span style="font-size:.82rem;color:#d69e2e;font-weight:600">🟡 Warning</span>
+            <span style="font-size:.82rem;color:#d69e2e;font-weight:600">🟡 {{ t('warningLabel') }}</span>
             <span style="font-size:1.1rem;font-weight:800;color:#d69e2e">{{ complianceAlerts.warning }}</span>
           </div>
         </div>
         <div style="margin-top:.75rem;display:flex;gap:.5rem">
-          <a routerLink="/compliance-center" style="color:#4299e1;font-size:.78rem;text-decoration:none">Compliance Center →</a>
+          <a routerLink="/compliance-center" style="color:#4299e1;font-size:.78rem;text-decoration:none">{{ t('complianceCenterNav') }} {{ arrow }}</a>
+        </div>
+      </div>
+
+      <!-- Expense breakdown -->
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:1.5rem">
+        <div class="rp-section" style="margin-top:0">💸 {{ t('totalExpenses') }}</div>
+
+        <!-- Total figure -->
+        <div style="background:#fff5f5;border-radius:10px;padding:.75rem;margin-bottom:.75rem">
+          <div style="font-size:.72rem;color:#718096;margin-bottom:.15rem">{{ t('totalExpenses') }}</div>
+          <div style="font-size:1.4rem;font-weight:800;color:#c53030">{{ fmt(expensesThisMonth) }}</div>
+        </div>
+
+        <!-- Ratio vs revenue -->
+        <div *ngIf="revenueThisMonth > 0 && expensesThisMonth > 0" style="margin-bottom:.75rem">
+          <div style="display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:.3rem">
+            <span style="color:#718096">{{ t('ofRevenue') }}</span>
+            <span style="font-weight:700;color:#c53030">{{ barPct(expensesThisMonth, revenueThisMonth) }}%</span>
+          </div>
+          <div style="height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden">
+            <div style="height:100%;background:#fc8181;border-radius:3px;max-width:100%"
+              [style.width]="barPct(expensesThisMonth, revenueThisMonth)+'%'"></div>
+          </div>
+        </div>
+
+        <!-- By category -->
+        <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#a0aec0;margin-bottom:.4rem">
+          {{ t('byCategory') }}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:.35rem">
+          <div *ngFor="let c of expenseBreakdown"
+            style="display:flex;align-items:center;justify-content:space-between;font-size:.8rem;padding:.3rem .5rem;background:#fafafa;border-radius:6px">
+            <span style="color:#4a5568;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:55%">{{ c.label }}</span>
+            <span style="font-weight:700;color:#c53030;white-space:nowrap">{{ fmt(c.amount) }}</span>
+          </div>
+          <div *ngIf="expenseBreakdown.length === 0"
+            style="color:#a0aec0;font-size:.82rem;text-align:center;padding:.75rem">{{ t('noData') }}</div>
+        </div>
+
+        <div style="margin-top:.75rem">
+          <a routerLink="/depense" style="color:#4299e1;font-size:.78rem;text-decoration:none">{{ t('viewAll') }} {{ arrow }}</a>
         </div>
       </div>
 
       <!-- Cash flow -->
       <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:1.5rem">
-        <div class="rp-section" style="margin-top:0">Cash Flow</div>
+        <div class="rp-section" style="margin-top:0">{{ t('cashFlow') }}</div>
         <div style="display:flex;flex-direction:column;gap:.75rem">
           <div style="background:#f0fff4;border-radius:10px;padding:.75rem">
-            <div style="font-size:.72rem;color:#718096;margin-bottom:.2rem">Collected (all time)</div>
+            <div style="font-size:.72rem;color:#718096;margin-bottom:.2rem">{{ t('collectedAllTime') }}</div>
             <div style="font-size:1.2rem;font-weight:800;color:#276749">{{ fmt(collected) }}</div>
           </div>
           <div style="background:#fff5f5;border-radius:10px;padding:.75rem">
-            <div style="font-size:.72rem;color:#718096;margin-bottom:.2rem">Outstanding Debt</div>
+            <div style="font-size:.72rem;color:#718096;margin-bottom:.2rem">{{ t('outstandingDebt') }}</div>
             <div style="font-size:1.2rem;font-weight:800;color:#c53030">{{ fmt(outstanding) }}</div>
           </div>
           <div style="background:#ebf8ff;border-radius:10px;padding:.75rem">
-            <div style="font-size:.72rem;color:#718096;margin-bottom:.2rem">Clients</div>
+            <div style="font-size:.72rem;color:#718096;margin-bottom:.2rem">{{ t('clients') }}</div>
             <div style="font-size:1.2rem;font-weight:800;color:#2b6cb0">{{ totalClients }}</div>
           </div>
         </div>
         <div style="margin-top:.75rem">
-          <a routerLink="/paiement-client" style="color:#4299e1;font-size:.78rem;text-decoration:none">Client payments →</a>
+          <a routerLink="/paiement-client" style="color:#4299e1;font-size:.78rem;text-decoration:none">{{ t('clientPayments') }} {{ arrow }}</a>
         </div>
       </div>
 
@@ -216,18 +297,18 @@
 
     <!-- Quick links -->
     <div style="margin-top:1.5rem;background:#f7fafc;border:1px solid #e2e8f0;border-radius:12px;padding:1rem 1.5rem">
-      <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#a0aec0;margin-bottom:.75rem">Enterprise Reports</div>
+      <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#a0aec0;margin-bottom:.75rem">{{ t('enterpriseReports') }}</div>
       <div style="display:flex;flex-wrap:wrap;gap:.5rem">
-        <a routerLink="/rapports/fleet"          class="btn-export btn-print">📋 Fleet</a>
-        <a routerLink="/rapports/financial"      class="btn-export btn-print">💹 Financial</a>
-        <a routerLink="/rapports/profitability"  class="btn-export btn-print">📊 Profitability</a>
-        <a routerLink="/rapports/forecast"       class="btn-export btn-print">🔮 Forecast</a>
-        <a routerLink="/rapports/branches"       class="btn-export btn-print">🏢 Branches</a>
-        <a routerLink="/rapports/clients"        class="btn-export btn-print">👥 Customers</a>
-        <a routerLink="/rapports/maintenance"    class="btn-export btn-print">🔧 Maintenance</a>
-        <a routerLink="/maintenance/planning"    class="btn-export btn-print">📅 Planning</a>
-        <a routerLink="/fleet-health"            class="btn-export btn-print">❤️ Health</a>
-        <a routerLink="/compliance-center"       class="btn-export btn-print">⚡ Compliance</a>
+        <a routerLink="/rapports/fleet"         class="btn-export btn-print">📋 {{ t('fleetReports') }}</a>
+        <a routerLink="/rapports/financial"     class="btn-export btn-print">💹 {{ t('financialReports') }}</a>
+        <a routerLink="/rapports/profitability" class="btn-export btn-print">📊 {{ t('vehicleProfitability') }}</a>
+        <a routerLink="/rapports/forecast"      class="btn-export btn-print">🔮 {{ t('forecastReport') }}</a>
+        <a routerLink="/rapports/branches"      class="btn-export btn-print">🏢 {{ t('branchReport') }}</a>
+        <a routerLink="/rapports/clients"       class="btn-export btn-print">👥 {{ t('customerAnalytics') }}</a>
+        <a routerLink="/rapports/maintenance"   class="btn-export btn-print">🔧 {{ t('maintenanceReports') }}</a>
+        <a routerLink="/maintenance/planning"   class="btn-export btn-print">📅 {{ t('maintenancePlanning') }}</a>
+        <a routerLink="/fleet-health"           class="btn-export btn-print">❤️ {{ t('fleetHealth') }}</a>
+        <a routerLink="/compliance-center"      class="btn-export btn-print">⚡ {{ t('complianceCenterNav') }}</a>
       </div>
     </div>
 

@@ -57,7 +57,6 @@ export class TopHeaderComponent implements OnInit, OnDestroy {
     '/client':              'clients',
     '/location/new':        'createBooking',
     '/location':            'locationDossier',
-    '/reservation/create':  'createBooking',
     '/reservation':         'reservations',
     '/contrat':             'contrats',
     '/return-inspection':   'returnInspections',
@@ -201,6 +200,7 @@ export class TopHeaderComponent implements OnInit, OnDestroy {
       credit_overdue:       '💳',
       credit_installment:   '💳',
       reservation_created:  '📅',
+      reservation_conflict: '⚠️',
       vehicle_sold:         '🏷️',
     };
     return icons[type] ?? '🔔';

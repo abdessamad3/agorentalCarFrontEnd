@@ -1,0 +1,34 @@
+:host {
+  display: block;
+}
+
+.vm-svg {
+  display: block;
+  width: 100%;
+  max-width: 160px;
+  margin: 0 auto;
+}
+
+.vm-dir-lbl {
+  font-size: 7px;
+  fill: var(--text-muted, #94a3b8);
+  pointer-events: none;
+}
+
+.vm-zone-lbl {
+  font-size: 7px;
+  fill: var(--text-secondary, #64748b);
+  pointer-events: none;
+}
+
+.vm-zone {
+  transition: opacity .1s;
+}
+
+.vm-interactive .vm-zone {
+  cursor: pointer;
+}
+
+.vm-interactive .vm-zone:hover {
+  opacity: .75;
+}

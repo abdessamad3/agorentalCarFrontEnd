@@ -1,18 +1,28 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { VoitureService } from '../../services/voiture.service';
 import { CrudService } from '../../services/crud.service';
 import { TranslationService } from '../../services/translation.service';
+import { FinanceCalculatorService, LoanResult } from '../../services/finance-calculator.service';
 import { catchError, switchMap } from 'rxjs/operators';
+import { StatusPipe } from '../../shared/pipes/status.pipe';
 import { of, Observable } from 'rxjs';
+
+function dateRangeValidator(startKey: string, endKey: string) {
+  return (group: AbstractControl) => {
+    const start = group.get(startKey)?.value;
+    const end   = group.get(endKey)?.value;
+    return start && end && start > end ? { dateRange: true } : null;
+  };
+}
 
 @Component({
   selector: 'app-voiture-create',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, StatusPipe],
   templateUrl: './voiture-create.component.html',
   styleUrls: ['./voiture-create.component.css']
 })
@@ -26,7 +36,7 @@ export class VoitureCreateComponent implements OnInit {
   imagePreviews: { url: SafeUrl; name: string; size: string; isMain: boolean }[] = [];
   isDragging = false;
 
-  assuranceFile: File | null = null;
+  assuranceFiles: File[] = [];
   vignetteFile:  File | null = null;
   fournisseurs: any[] = [];
 
@@ -67,7 +77,7 @@ export class VoitureCreateComponent implements OnInit {
   readonly CAT_OPTIONS   = ['Citadine', 'Berline', 'SUV', '4x4', 'Monospace', 'Cabriolet', 'Utilitaire', 'Coupé', 'Pick-up'];
   readonly currentYear   = new Date().getFullYear();
 
-  creditCalc = { resteAFinancer: 0, dureeMois: 0, dernierMensualite: 0 };
+  loanResult: LoanResult | null = null;
 
   get isCreditType(): boolean {
     const t = this.form.get('typeFinancement')?.value;
@@ -95,7 +105,8 @@ export class VoitureCreateComponent implements OnInit {
     private crud: CrudService,
     private ts: TranslationService,
     private router: Router,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
+    private financeCalc: FinanceCalculatorService
   ) {
     this.form = this.fb.group({
       // Step 0 — Vehicle Info
@@ -118,11 +129,10 @@ export class VoitureCreateComponent implements OnInit {
       typeFinancement: ['comptant'],
       apport:          [0, Validators.min(0)],
       mensualite:      [0, Validators.min(0)],
-      tauxInteret:     [0, Validators.min(0)],
+      dureeMois:       [null, Validators.min(1)],
 
       // Step 2 — Pricing
       prixJour:    ['', [Validators.required, Validators.min(0)]],
-      caution:     [0, Validators.min(0)],
 
       // Step 4 — Accessories
       couleur:       [''],
@@ -150,7 +160,7 @@ export class VoitureCreateComponent implements OnInit {
       montantPaye:    [''],
       dateDebut:      ['', Validators.required],
       dateFin:        ['', Validators.required],
-    });
+    }, { validators: dateRangeValidator('dateDebut', 'dateFin') });
 
     const currentYear = new Date().getFullYear();
     this.vignetteForm = this.fb.group({
@@ -176,19 +186,17 @@ export class VoitureCreateComponent implements OnInit {
         this.vignetteForm.get('dateLimite')!.setValue(`${y + 1}-01-31`, { emitEvent: false });
       }
     });
-    ['prixAchat', 'apport', 'mensualite', 'tauxInteret'].forEach(f =>
+    ['prixAchat', 'apport', 'mensualite', 'dureeMois'].forEach(f =>
       this.form.get(f)?.valueChanges.subscribe(() => this.recalcCredit())
     );
   }
 
   recalcCredit(): void {
-    const price    = +(this.form.get('prixAchat')?.value  ?? 0);
-    const apport   = +(this.form.get('apport')?.value     ?? 0);
-    const monthly  = +(this.form.get('mensualite')?.value ?? 0);
-    const reste    = Math.max(0, price - apport);
-    const duration = monthly > 0 ? Math.floor(reste / monthly) : 0;
-    const last     = monthly > 0 ? +(reste - duration * monthly).toFixed(2) : 0;
-    this.creditCalc = { resteAFinancer: reste, dureeMois: duration, dernierMensualite: last };
+    const prixAchat  = +(this.form.get('prixAchat')?.value  ?? 0);
+    const apport     = +(this.form.get('apport')?.value     ?? 0);
+    const mensualite = +(this.form.get('mensualite')?.value ?? 0);
+    const dureeMois  = +(this.form.get('dureeMois')?.value  ?? 0);
+    this.loanResult = this.financeCalc.calculate({ prixAchat, apport, mensualite, dureeMois });
   }
 
   private loadSuppliers(): void {
@@ -208,7 +216,9 @@ export class VoitureCreateComponent implements OnInit {
       case 'purchase':
         return !!(this.form.get('dateAchat')?.valid && this.form.get('prixAchat')?.valid);
       case 'assurance':
-        return !!(this.assuranceForm.get('dateFin')?.valid && this.assuranceForm.get('dateDebut')?.valid);
+        return !!(this.assuranceForm.get('dateFin')?.valid &&
+                  this.assuranceForm.get('dateDebut')?.valid &&
+                  !this.assuranceForm.hasError('dateRange'));
       case 'pricing':
         return !!this.form.get('prixJour')?.valid;
       default:
@@ -303,8 +313,12 @@ export class VoitureCreateComponent implements OnInit {
 
   onAssuranceFileSelect(event: Event): void {
     const input = event.target as HTMLInputElement;
-    if (input.files?.[0]) this.assuranceFile = input.files[0];
+    if (input.files) this.assuranceFiles.push(...Array.from(input.files));
     input.value = '';
+  }
+
+  removeAssuranceFile(index: number): void {
+    this.assuranceFiles.splice(index, 1);
   }
 
   onVignetteFileSelect(event: Event): void {
@@ -395,7 +409,7 @@ export class VoitureCreateComponent implements OnInit {
     this.complianceError = null;
     const fd = new FormData();
 
-    const { immatNum1, immatLetter, immatNum2, fournisseurId, typeFinancement, apport, mensualite, tauxInteret, ...rest } = this.form.value;
+    const { immatNum1, immatLetter, immatNum2, fournisseurId, typeFinancement, apport, mensualite, dureeMois, ...rest } = this.form.value;
     const plateStr = [immatNum1, (immatLetter || '').toUpperCase(), immatNum2].filter(Boolean).join('-');
     if (plateStr) fd.append('immatriculation', plateStr);
 
@@ -445,7 +459,7 @@ export class VoitureCreateComponent implements OnInit {
           statut:          'actif',
           ...(achatV.fournisseurId ? { fournisseurId: achatV.fournisseurId } : {}),
           ...(this.isCreditType && achatV.mensualite > 0 ? { mensualite: achatV.mensualite } : {}),
-          ...(this.isCreditType && achatV.tauxInteret > 0 ? { tauxInteret: achatV.tauxInteret } : {}),
+          ...(this.isCreditType && achatV.dureeMois > 0 ? { dureeMois: achatV.dureeMois } : {}),
         }).pipe(catchError(() => of(null)))
       : of(null);
 
@@ -456,12 +470,17 @@ export class VoitureCreateComponent implements OnInit {
     const postAssurance$: Observable<any> = hasAssurance
       ? this.crud.create('assurance', { voitureId, ...this.compactObj(assV) }).pipe(
           switchMap((res: any) => {
-            if (this.assuranceFile && res?.id) {
-              const fd = new FormData();
-              fd.append('file', this.assuranceFile);
-              return this.crud.rawPost(`assurance/${res.id}/file`, fd).pipe(catchError(() => of(null)));
-            }
-            return of(res);
+            if (!res?.id || this.assuranceFiles.length === 0) return of(res);
+            return this.assuranceFiles.reduce(
+              (acc$: Observable<any>, file: File) => acc$.pipe(
+                switchMap(() => {
+                  const fd = new FormData();
+                  fd.append('file', file);
+                  return this.crud.rawPost(`assurance/${res.id}/file`, fd).pipe(catchError(() => of(null)));
+                })
+              ),
+              of(null) as Observable<any>
+            );
           }),
           catchError(() => of(null))
         )

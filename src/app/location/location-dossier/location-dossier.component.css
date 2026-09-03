@@ -258,3 +258,419 @@
 .vcheck-pending .vcheck-icon { color: #9ca3af; }
 .vcheck-label { font-size: .9rem; color: var(--text-primary, #111827); }
 .vcheck-done .vcheck-label   { font-weight: 500; }
+
+/* Driver section header row */
+.section-header-row { display: flex; align-items: center; gap: .75rem; margin-bottom: 1rem; }
+.section-header-row h3 { margin: 0; flex: 1; }
+.btn-edit-driver { background: none; border: 1px solid var(--border, #e5e7eb); color: var(--text-secondary, #6b7280); font-size: .8rem; padding: .25rem .65rem; border-radius: 6px; cursor: pointer; transition: background .15s, color .15s; }
+.btn-edit-driver:hover { background: var(--row-hover, #f3f4f6); color: var(--text-primary, #111827); }
+
+/* Driver edit modal */
+.driver-modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 900; display: flex; align-items: flex-start; justify-content: center; padding: 2rem 1rem; overflow-y: auto; }
+.driver-modal { background: var(--card-bg, #fff); border-radius: 12px; width: 100%; max-width: 780px; display: flex; flex-direction: column; max-height: calc(100vh - 4rem); box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+.driver-modal-header { display: flex; align-items: center; justify-content: space-between; padding: 1.1rem 1.5rem; border-bottom: 1px solid var(--border, #e5e7eb); flex-shrink: 0; }
+.driver-modal-header h2 { margin: 0; font-size: 1rem; font-weight: 700; color: var(--text-primary, #111827); }
+.driver-modal-close { background: none; border: none; font-size: 1.1rem; cursor: pointer; color: var(--text-secondary, #6b7280); padding: .25rem .5rem; border-radius: 4px; line-height: 1; }
+.driver-modal-close:hover { background: var(--row-hover, #f3f4f6); color: var(--text-primary, #111827); }
+.driver-modal-body { flex: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
+.driver-modal-section h3 { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-secondary, #6b7280); margin: 0 0 1rem; padding-bottom: .5rem; border-bottom: 1px solid var(--border, #e5e7eb); }
+.driver-modal-footer { display: flex; justify-content: flex-end; gap: .75rem; padding: 1rem 1.5rem; border-top: 1px solid var(--border, #e5e7eb); flex-shrink: 0; }
+
+.btn-cancel-reservation {
+  padding: 6px 14px;
+  background: transparent;
+  color: #e53e3e;
+  border: 1px solid #e53e3e;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.btn-cancel-reservation:hover:not(:disabled) {
+  background: #e53e3e;
+  color: #fff;
+}
+.btn-cancel-reservation:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   Car damage diagram
+══════════════════════════════════════════════════════════════════ */
+
+/* Damage toggle (No Damage / Has Damage) */
+.dmg-toggle-row {
+  display: flex;
+  gap: 0.6rem;
+}
+.dmg-opt {
+  flex: 1;
+  padding: 0.6rem 0.75rem;
+  border-radius: 9px;
+  border: 2px solid #e2e8f0;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.dmg-opt-clean {
+  border-color: #22c55e;
+  background: #f0fdf4;
+  color: #166534;
+}
+.dmg-opt-damage {
+  border-color: #ef4444;
+  background: #fff5f5;
+  color: #991b1b;
+}
+
+/* SVG wrapper */
+.car-diagram-wrap {
+  margin-top: 1rem;
+}
+.car-diagram-wrap.car-diagram-done .car-zone {
+  cursor: default;
+  pointer-events: none;
+}
+.car-diagram-hint {
+  text-align: center;
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin-bottom: 0.5rem;
+  font-style: italic;
+}
+.car-svg {
+  display: block;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 200px;
+}
+
+/* SVG text classes */
+.car-svg .dir-lbl {
+  font-size: 7px;
+  fill: #94a3b8;
+  text-anchor: middle;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+.car-svg .side-lbl {
+  font-size: 6px;
+}
+.car-svg .zone-lbl {
+  font-size: 7px;
+  fill: #475569;
+  text-anchor: middle;
+  pointer-events: none;
+  user-select: none;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.car-zone {
+  cursor: pointer;
+  transition: opacity 0.12s;
+}
+.car-zone:hover { opacity: 0.78; }
+
+/* Damaged parts list */
+.dpl-box {
+  margin-top: 0.75rem;
+  background: #fff5f5;
+  border: 1px solid #fca5a5;
+  border-radius: 9px;
+  padding: 0.6rem 0.75rem;
+}
+.dpl-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #991b1b;
+  margin-bottom: 0.4rem;
+}
+.dpl-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.dpl-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+  border-radius: 20px;
+  padding: 0.18rem 0.45rem 0.18rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+.dpl-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #ef4444;
+  font-size: 0.85rem;
+  line-height: 1;
+  padding: 0;
+  margin-left: 1px;
+}
+.dpl-remove:hover { color: #dc2626; }
+
+.dpl-empty {
+  margin-top: 0.6rem;
+  text-align: center;
+  font-size: 0.72rem;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* ── Departure damage status ── */
+.dmg-loading-row   { padding: 0.5rem 0; color: #94a3b8; font-size: 0.82rem; font-style: italic; }
+.dmg-depart-status { margin-bottom: 0.75rem; }
+
+.dmg-status-clean {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  color: #166534;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+}
+
+.dmg-status-damaged {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #fefce8;
+  border: 1px solid #fde047;
+  color: #854d0e;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+}
+
+.dpl-sev-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  opacity: 0.75;
+  text-transform: capitalize;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   Cancel reservation confirmation modal
+══════════════════════════════════════════════════════════════════ */
+.confirm-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: cm-fade-in 0.15s ease;
+}
+@keyframes cm-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+.confirm-modal {
+  background: var(--card-bg, #fff);
+  border-radius: 14px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.22);
+  width: 100%;
+  max-width: 400px;
+  padding: 2rem 1.75rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  animation: cm-slide-up 0.18s ease;
+}
+@keyframes cm-slide-up {
+  from { transform: translateY(12px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.confirm-modal-icon {
+  background: #fef2f2;
+  border-radius: 50%;
+  width: 68px;
+  height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.1rem;
+}
+
+.confirm-modal-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary, #111827);
+  margin: 0 0 0.6rem;
+  text-align: center;
+}
+
+.confirm-modal-msg {
+  font-size: 0.9rem;
+  color: var(--text-secondary, #4b5563);
+  text-align: center;
+  margin: 0 0 0.4rem;
+  line-height: 1.55;
+}
+
+.confirm-modal-ref {
+  color: var(--text-primary, #111827);
+  font-size: 0.95rem;
+}
+
+.confirm-modal-warning {
+  font-size: 0.78rem;
+  color: #dc2626;
+  font-weight: 600;
+  text-align: center;
+  margin: 0 0 1.5rem;
+}
+
+.confirm-modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.confirm-modal-keep {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  font-size: 0.9rem;
+}
+
+.confirm-modal-confirm {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1rem;
+  font-size: 0.9rem;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   MOBILE  ≤ 640px
+══════════════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+
+  /* Page shell */
+  .dossier-page { padding: 0.625rem; }
+
+  /* ── Header ── */
+  .dossier-header {
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+  }
+  .header-left,
+  .header-right { gap: 0.35rem; }
+  .contract-number { font-size: 1.05rem; }
+  .header-info { gap: 0.5rem; }
+  .vehicle-info, .client-info { font-size: .82rem; }
+  /* payment chip — let it wrap naturally */
+  .payment-summary { margin-top: 0; }
+
+  /* ── Tabs ── */
+  .tab-bar { gap: 0; }
+  .tab-btn { padding: .5rem .75rem; font-size: .8rem; }
+
+  /* ── Cards & sections ── */
+  .form-section { padding: 0.875rem 1rem; margin-bottom: 1rem; }
+  .info-card    { padding: 0.875rem 1rem; }
+  .collapsible-header { padding: 0.875rem 1rem; }
+  .collapsible-body   { padding: 0 1rem 1rem; }
+  .timeline-section   { padding: 0.875rem 1rem; }
+  .totals-summary     { padding: 0.875rem 1rem; }
+  .cloture-action     { padding: 1rem; }
+  .sticky-action      { padding: 0.75rem 1rem; }
+
+  /* ── Form grid → single column ── */
+  .form-grid        { grid-template-columns: 1fr; gap: 0.75rem; }
+  .checkbox-grid    { grid-template-columns: 1fr 1fr; }
+  .driver-info-grid { grid-template-columns: 1fr; }
+  .info-grid        { grid-template-columns: 1fr; gap: 0.75rem; }
+
+  /* ── Doc items: icon + info stack, buttons full-width ── */
+  .doc-item {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .doc-info  { flex: 1 1 100%; }
+  .doc-item .btn-secondary {
+    flex: 1;
+    text-align: center;
+    min-width: 0;
+  }
+
+  /* ── Payment summary: 2-col grid ── */
+  .paiement-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+  }
+
+  /* ── Tables: contained scroll ── */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .data-table { min-width: 420px; }
+
+  /* ── Buttons ── */
+  .btn-lg {
+    width: 100%;
+    text-align: center;
+    padding: .7rem 1rem;
+  }
+  .sticky-action { flex-direction: column; align-items: stretch; }
+  .btn-danger.btn-lg,
+  .btn-primary.btn-lg { width: 100%; }
+
+  /* Caution row */
+  .caution-row { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+  .caution-amount { min-width: 0; width: 100%; }
+
+  /* Km reference row */
+  .km-reference-row { flex-direction: column; gap: 0.35rem; }
+
+  /* Fuel bar wraps more tightly */
+  .fuel-bar-labels { flex-direction: column; gap: 0.15rem; }
+  .fuel-btn { padding: .4rem .65rem; font-size: .78rem; }
+
+  /* Timeline horizontal scroll */
+  .timeline { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 0.5rem; }
+  .timeline-step { min-width: 58px; flex: 0 0 auto; }
+  .step-label { font-size: 0.68rem; word-break: break-word; }
+  .step-date  { font-size: 0.6rem; }
+
+  /* Driver modal full-screen on mobile */
+  .driver-modal-backdrop { padding: 0; align-items: flex-end; }
+  .driver-modal {
+    max-width: 100%;
+    border-radius: 16px 16px 0 0;
+    max-height: 90vh;
+  }
+
+  /* Info alert / compliance alert */
+  .info-alert,
+  .compliance-alert,
+  .delivery-done-banner { padding: 0.65rem 0.875rem; font-size: .82rem; }
+
+  /* Validation checklist item */
+  .vcheck-label { font-size: .83rem; }
+
+  /* Undo closure btn full width */
+  .undo-cloture-btn { display: block; margin: 0.5rem 0 0; width: 100%; }
+}

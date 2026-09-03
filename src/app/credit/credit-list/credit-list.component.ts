@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
+﻿import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -9,6 +9,7 @@ import { Subject, of } from 'rxjs';
 import { debounceTime, switchMap, takeUntil, catchError } from 'rxjs/operators';
 import { BtnComponent } from '../../shared/btn/btn.component';
 import { PaginatorComponent } from '../../shared/paginator/paginator.component';
+import { PAGE_SIZE } from '../../shared/constants/pagination';
 
 @Component({
   selector: 'app-credit-list',
@@ -21,7 +22,7 @@ export class CreditListComponent implements OnInit, OnDestroy {
   items: any[] = [];
   voitures: any[] = [];
   loading = true; error = ''; dir = 'ltr'; search = '';
-  page = 1; limit = 20; total = 0;
+  page = 1; limit = PAGE_SIZE; total = 0;
   modalMode: 'form' | 'delete' | null = null;
   selected: any = null; form: FormGroup; isSubmitting = false; deleteId: number | null = null; isEditing = false;
   readonly endpoint = 'credit';

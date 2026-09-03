@@ -5,7 +5,7 @@ import { TranslationService } from '../../../../services/translation.service';
 import { InsuranceModalComponent, InsuranceSavePayload } from '../../../../shared/insurance-modal/insurance-modal.component';
 import { PayDepPanelComponent } from '../../../../shared/pay-dep-panel/pay-dep-panel.component';
 import { environment } from '../../../../../environments/environment';
-import { daysUntil as daysUntilUtil } from '../../../../shared/utils/date.utils';
+import { complianceDaysRemaining as complianceDaysRemainingUtil } from '../../../../shared/utils/compliance.utils';
 import { Assurance } from '../../../../models/compliance.model';
 
 @Component({
@@ -117,11 +117,8 @@ export class InsuranceTabComponent implements OnChanges {
         this.closeModal();
         const finish = () => { this.refreshAfterChange(); };
         if (payload.file && recordId) {
-          this.crud.uploadDocumentFile('insurance', recordId, payload.file).subscribe({
-            next: (res: any) => {
-              if (res?.path) this.crud.update('assurance', recordId, { filePath: res.path }).subscribe({ next: finish, error: finish });
-              else finish();
-            },
+          this.crud.uploadFile('assurance', recordId, payload.file).subscribe({
+            next: finish,
             error: finish,
           });
         } else { finish(); }
@@ -154,13 +151,22 @@ export class InsuranceTabComponent implements OnChanges {
     });
   }
 
-  onRenewConfirmed(data: { dateDebut: string; dateFin: string; montant: number | null }): void {
+  onRenewConfirmed(data: { dateDebut: string; dateFin: string; montant: number | null; file: File | null }): void {
     if (!this.selectedItem?.id) return;
     this.isSubmitting = true;
     const body: Record<string, any> = { dateDebut: data.dateDebut, dateFin: data.dateFin };
     if (data.montant != null) body['montant'] = data.montant;
     this.crud.customAction(`assurance/${this.selectedItem.id}/renew`, body).subscribe({
-      next: () => { this.closeModal(); this.refreshAfterChange(); },
+      next: (res: any) => {
+        this.closeModal();
+        const newId = res?.newId;
+        if (data.file && newId) {
+          this.crud.uploadFile('assurance', newId, data.file).subscribe({
+            next: () => this.refreshAfterChange(),
+            error: () => this.refreshAfterChange(),
+          });
+        } else { this.refreshAfterChange(); }
+      },
       error: (err: any) => {
         this.isSubmitting = false;
         this.errorMessage = err?.error?.message || err?.error?.error || null;
@@ -182,7 +188,8 @@ export class InsuranceTabComponent implements OnChanges {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  daysUntil(d?: string | null): number | null { return daysUntilUtil(d); }
+  /** Backend-computed days remaining for the car's current insurance — same source as the compliance card and conformité tab. */
+  get currentDaysRemaining(): number | null { return complianceDaysRemainingUtil(this.car?.compliance?.assurance); }
 
   statusClass(item: any): string {
     const s = (item?.status || '').toLowerCase();

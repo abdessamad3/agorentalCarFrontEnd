@@ -1,12 +1,14 @@
-import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
+﻿import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { TranslationService } from '../../services/translation.service';
 import { CrudService } from '../../services/crud.service';
 import { BtnComponent } from '../../shared/btn/btn.component';
 import { PaginatorComponent } from '../../shared/paginator/paginator.component';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 import { Subject, of } from 'rxjs';
 import { debounceTime, switchMap, takeUntil, catchError } from 'rxjs/operators';
+import { PAGE_SIZE } from '../../shared/constants/pagination';
 
 export const VEHICLE_EXPENSE_TYPES = [
   { value: 'assurance',       label: 'Insurance (Assurance)' },
@@ -21,7 +23,7 @@ export const VEHICLE_EXPENSE_TYPES = [
 @Component({
   selector: 'app-vehicle-expense-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, BtnComponent, PaginatorComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, BtnComponent, PaginatorComponent, TranslatePipe],
   templateUrl: './vehicle-expense-list.component.html',
   styleUrls: ['../../shared/styles/crud-list.css'],
 })
@@ -33,7 +35,7 @@ export class VehicleExpenseListComponent implements OnInit, OnDestroy {
   dir = 'ltr';
   search = '';
   page = 1;
-  limit = 20;
+  limit = PAGE_SIZE;
   total = 0;
 
   modalMode: 'form' | 'delete' | null = null;
@@ -45,6 +47,11 @@ export class VehicleExpenseListComponent implements OnInit, OnDestroy {
 
   drawerOpen = false;
   drawerItem: any = null;
+
+  pendingFile: File | null = null;
+  pendingFileName = '';
+  uploadingFile = false;
+  fileError = '';
 
   readonly expenseTypes = VEHICLE_EXPENSE_TYPES;
   private searchSubject = new Subject<void>();
@@ -108,6 +115,7 @@ export class VehicleExpenseListComponent implements OnInit, OnDestroy {
     this.selected = null;
     this.isEditing = false;
     this.form.reset({ montant: 0, statut: 'pending', voitureId: null, typeDepense: '', date: new Date().toISOString().slice(0, 10) });
+    this.clearFile();
     this.modalMode = 'form';
   }
 
@@ -118,26 +126,42 @@ export class VehicleExpenseListComponent implements OnInit, OnDestroy {
       voitureId:    item.voitureId,
       typeDepense:  item.typeDepense,
       montant:      item.montant,
-      date:         item.date,
+      date:         item.dateDebut ?? item.date,
       statut:       item.statut,
       description:  item.description,
       datePaiement: item.datePaiement,
       dateFacture:  item.dateFacture,
     });
+    this.clearFile();
     this.modalMode = 'form';
   }
 
   openDelete(id: number) { this.deleteId = id; this.modalMode = 'delete'; }
   openView(item: any)    { this.drawerItem = item; this.drawerOpen = true; }
-  closeModal()           { this.modalMode = null; this.selected = null; this.deleteId = null; this.isSubmitting = false; this.isEditing = false; }
+  closeModal()           { this.modalMode = null; this.selected = null; this.deleteId = null; this.isSubmitting = false; this.isEditing = false; this.clearFile(); }
   closeDrawer()          { this.drawerOpen = false; this.drawerItem = null; }
+
+  clearFile() { this.pendingFile = null; this.pendingFileName = ''; this.fileError = ''; }
+
+  onFileChange(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    this.fileError = '';
+    if (!file) { this.clearFile(); return; }
+    if (file.size > 10 * 1024 * 1024) { this.fileError = 'Max 10 MB'; this.clearFile(); return; }
+    const allowed = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+    if (!allowed.includes(file.type)) { this.fileError = 'PDF, JPEG ou PNG seulement'; this.clearFile(); return; }
+    this.pendingFile = file;
+    this.pendingFileName = file.name;
+  }
 
   @HostListener('document:keydown.escape') onEscape() { this.closeModal(); this.closeDrawer(); }
 
   save() {
     if (this.form.invalid) return;
     this.isSubmitting = true;
-    const payload = { ...this.form.value };
+    const payload: any = { ...this.form.value };
+    if (payload.date) { payload.dateDebut = payload.date; delete payload.date; }
     if (!payload.datePaiement) delete payload.datePaiement;
     if (!payload.dateFacture)  delete payload.dateFacture;
 
@@ -146,7 +170,18 @@ export class VehicleExpenseListComponent implements OnInit, OnDestroy {
       : this.crud.create('depense', payload);
 
     req.subscribe({
-      next: () => { this.closeModal(); this.load(); },
+      next: (res: any) => {
+        const id = this.isEditing ? this.selected.id : res?.id;
+        if (this.pendingFile && id) {
+          this.uploadingFile = true;
+          this.crud.uploadDepenseJustificatif(id, this.pendingFile).subscribe({
+            next: () => { this.uploadingFile = false; this.closeModal(); this.load(); },
+            error: () => { this.uploadingFile = false; this.closeModal(); this.load(); }
+          });
+        } else {
+          this.closeModal(); this.load();
+        }
+      },
       error: () => { this.isSubmitting = false; },
     });
   }
@@ -158,6 +193,8 @@ export class VehicleExpenseListComponent implements OnInit, OnDestroy {
       error: () => this.closeModal(),
     });
   }
+
+  t(key: string): string { return this.ts.translate(key); }
 
   voitureLabel(v: any): string {
     return `${v.marque ?? ''} ${v.modele ?? ''} · ${v.immatriculation ?? ''}`.trim();

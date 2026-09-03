@@ -7,10 +7,21 @@
     <div class="search-input">
       <input type="text" [(ngModel)]="search" (ngModelChange)="onSearch()" [placeholder]="'clientSearchPlaceholder' | translate" />
     </div>
-    <select [(ngModel)]="filterNationalite" class="filter-select">
+    <select [(ngModel)]="filterNationalite" (ngModelChange)="onFilterChange()" class="filter-select">
       <option value="">{{ 'allNationalities' | translate }}</option>
-      <option *ngFor="let n of nationalites" [value]="n">{{ n }}</option>
+      <option *ngFor="let n of nationalites" [value]="n">{{ translateNationality(n) }}</option>
     </select>
+  </div>
+  <div class="filter-pills-bar">
+    <button class="filter-pill" [class.active]="filterHasDebt" (click)="toggleFilter('debt')">
+      💰 {{ 'filterWithDebt' | translate }}
+    </button>
+    <button class="filter-pill" [class.active]="filterHasActiveReservation" (click)="toggleFilter('active')">
+      🔑 {{ 'filterActiveRental' | translate }}
+    </button>
+    <button class="filter-pill" [class.active]="filterExpiringDocs" (click)="toggleFilter('expiring')">
+      ⚠️ {{ 'filterExpiringDocs' | translate }}
+    </button>
   </div>
   <div *ngIf="loading" class="loading-state"><p>{{ 'loading' | translate }}</p></div>
   <div *ngIf="error && !loading" class="error-state"><p>{{ error }}</p><button (click)="load()" class="btn-retry">{{ 'retry' | translate }}</button></div>
@@ -34,14 +45,16 @@
         <th>{{ 'actions' | translate }}</th>
       </tr></thead>
       <tbody>
-        <tr *ngFor="let item of paged" class="bureau-row">
+        <tr *ngFor="let item of paged" class="bureau-row"
+            [class.row-expired-docs]="hasExpiredDocs(item)"
+            [class.row-expiring-soon]="hasExpiringSoonDocs(item)">
           <td class="date-cell">{{ item.id }}</td>
           <td class="name-cell">{{ item.prenom ? item.prenom + ' ' + item.nom : item.nom }}</td>
           <td>{{ item.telephone || '-' }}</td>
           <td>{{ item.cin || '-' }}</td>
           <td>{{ item.passeport || '-' }}</td>
           <td>{{ item.permisConduite || '-' }}</td>
-          <td>{{ item.nationalite || '-' }}</td>
+          <td>{{ translateNationality(item.nationalite) }}</td>
           <td>
             <span class="debt-badge" [ngClass]="debtRiskClass(item.outstandingDebt)" *ngIf="item.outstandingDebt > 0">
               {{ (item.outstandingDebt | number:'1.0-2') }} MAD
@@ -49,13 +62,55 @@
             <span *ngIf="!item.outstandingDebt" class="text-muted">—</span>
           </td>
           <td class="actions-cell">
-            <app-btn variant="icon-view" (click)="viewProfile(item)" title="View Profile"></app-btn>
+            <app-btn variant="icon-view" (click)="viewProfile(item)" [title]="'viewProfile'|translate"></app-btn>
             <app-btn variant="icon-edit" (click)="openEdit(item)" [title]="'edit'|translate"></app-btn>
             <app-btn variant="icon-delete" (click)="openDelete(item.id)" [title]="'delete'|translate"></app-btn>
           </td>
         </tr>
       </tbody>
     </table>
+    <app-paginator [page]="page" [limit]="limit" [total]="total"
+      (pageChange)="onPageChange($event)">
+    </app-paginator>
+  </div>
+
+  <!-- Mobile cards: visible only on small screens (table-container is hidden by crud-list.css media query) -->
+  <div *ngIf="!loading && !error && filtered.length > 0" class="mobile-cards">
+    <div *ngFor="let item of paged" class="expense-card"
+         [class.row-expired-docs]="hasExpiredDocs(item)"
+         [class.row-expiring-soon]="hasExpiringSoonDocs(item)">
+
+      <!-- Name + debt badge -->
+      <div class="ec-top">
+        <span class="name-cell" style="font-size:.95rem;">
+          {{ item.prenom ? item.prenom + ' ' + item.nom : item.nom }}
+        </span>
+        <span class="debt-badge" [ngClass]="debtRiskClass(item.outstandingDebt)" *ngIf="item.outstandingDebt > 0" style="margin-left:auto;">
+          {{ (item.outstandingDebt | number:'1.0-0') }} MAD
+        </span>
+      </div>
+
+      <!-- Phone + nationality -->
+      <div class="ec-desc">
+        <span *ngIf="item.telephone">📞 {{ item.telephone }}</span>
+        <span *ngIf="item.nationalite"> · 🌍 {{ translateNationality(item.nationalite) }}</span>
+        <span *ngIf="!item.telephone && !item.nationalite">—</span>
+      </div>
+
+      <!-- Doc numbers + actions -->
+      <div class="ec-footer">
+        <div style="display:flex;flex-direction:column;gap:2px;">
+          <span *ngIf="item.cin" style="font-size:.72rem;color:#64748b;">{{ 'cinLabel'|translate }}: {{ item.cin }}</span>
+          <span *ngIf="item.permisConduite" style="font-size:.72rem;color:#64748b;">{{ 'permisConduire'|translate }}: {{ item.permisConduite }}</span>
+          <span *ngIf="!item.cin && !item.permisConduite" style="font-size:.72rem;color:#a0aec0;">—</span>
+        </div>
+        <div class="ec-actions">
+          <app-btn variant="icon-view" (click)="viewProfile(item)" [title]="'viewProfile'|translate"></app-btn>
+          <app-btn variant="icon-edit" (click)="openEdit(item)" [title]="'edit'|translate"></app-btn>
+          <app-btn variant="icon-delete" (click)="openDelete(item.id)" [title]="'delete'|translate"></app-btn>
+        </div>
+      </div>
+    </div>
     <app-paginator [page]="page" [limit]="limit" [total]="total"
       (pageChange)="onPageChange($event)">
     </app-paginator>
@@ -83,19 +138,33 @@
           <!-- Step 1: personal info -->
           <ng-container *ngIf="showInfoFields">
             <div class="form-row">
-              <div class="form-group"><label>{{ 'name' | translate }} <span class="required">*</span></label><input type="text" formControlName="nom" /></div>
-              <div class="form-group"><label>{{ 'prenom' | translate }} <span class="required">*</span></label><input type="text" formControlName="prenom" /></div>
+              <div class="form-group">
+                <label>{{ 'name' | translate }} <span class="required">*</span></label>
+                <input type="text" formControlName="nom" [class.invalid]="form.get('nom')?.invalid && form.get('nom')?.touched" />
+                <span class="field-error" *ngIf="form.get('nom')?.invalid && form.get('nom')?.touched">{{ 'required' | translate }}</span>
+              </div>
+              <div class="form-group">
+                <label>{{ 'prenom' | translate }} <span class="required">*</span></label>
+                <input type="text" formControlName="prenom" [class.invalid]="form.get('prenom')?.invalid && form.get('prenom')?.touched" />
+                <span class="field-error" *ngIf="form.get('prenom')?.invalid && form.get('prenom')?.touched">{{ 'required' | translate }}</span>
+              </div>
             </div>
             <div class="form-row">
-              <div class="form-group"><label>{{ 'telephone' | translate }} <span class="required">*</span></label><input type="text" formControlName="telephone" /></div>
+              <div class="form-group">
+                <label>{{ 'telephone' | translate }} <span class="required">*</span></label>
+                <input type="text" formControlName="telephone" [class.invalid]="form.get('telephone')?.invalid && form.get('telephone')?.touched" />
+                <span class="field-error" *ngIf="form.get('telephone')?.invalid && form.get('telephone')?.touched">{{ 'required' | translate }}</span>
+              </div>
               <div class="form-group nationalite-combo">
                 <label>{{ 'nationalite' | translate }} <span class="required">*</span></label>
                 <input type="text" formControlName="nationalite" autocomplete="off"
+                  [class.invalid]="form.get('nationalite')?.invalid && form.get('nationalite')?.touched"
                   (focus)="nationaliteDropdownOpen = true" (blur)="onNationaliteBlur()" />
                 <ul class="nationalite-dropdown" *ngIf="nationaliteDropdownOpen">
                   <li *ngFor="let n of filteredNationalites" (mousedown)="selectNationalite(n)">{{ n }}</li>
                   <li *ngIf="filteredNationalites.length === 0" class="nationalite-empty">{{ 'noData' | translate }}</li>
                 </ul>
+                <span class="field-error" *ngIf="form.get('nationalite')?.invalid && form.get('nationalite')?.touched">{{ 'required' | translate }}</span>
               </div>
             </div>
             <div class="form-row">
@@ -107,7 +176,11 @@
               <div class="form-group"><label>{{ 'placeOfBirth' | translate }}</label><input type="text" formControlName="lieuNaissance" /></div>
             </div>
             <div class="form-row">
-              <div class="form-group"><label>{{ 'addressMorocco' | translate }} <span class="required">*</span></label><input type="text" formControlName="adresseMaroc" /></div>
+              <div class="form-group">
+                <label>{{ 'addressMorocco' | translate }} <span class="required">*</span></label>
+                <input type="text" formControlName="adresseMaroc" [class.invalid]="form.get('adresseMaroc')?.invalid && form.get('adresseMaroc')?.touched" />
+                <span class="field-error" *ngIf="form.get('adresseMaroc')?.invalid && form.get('adresseMaroc')?.touched">{{ 'required' | translate }}</span>
+              </div>
               <div class="form-group"><label>{{ 'addressAbroad' | translate }}</label><input type="text" formControlName="adresseEtranger" /></div>
             </div>
           </ng-container>
@@ -115,26 +188,38 @@
           <!-- Step 2: document numbers / dates -->
           <ng-container *ngIf="showCardsFields">
             <div class="form-row">
-              <div class="form-group"><label>{{ 'cinLabel' | translate }} <span class="required">*</span></label><input type="text" formControlName="cin" /></div>
+              <div class="form-group">
+                <label>{{ 'cinLabel' | translate }} <span class="required" *ngIf="isMoroccan">*</span></label>
+                <input type="text" formControlName="cin" [class.invalid]="form.get('cin')?.invalid && form.get('cin')?.touched" />
+                <span class="field-error" *ngIf="form.get('cin')?.invalid && form.get('cin')?.touched">{{ 'required' | translate }}</span>
+              </div>
               <div class="form-group"><label>{{ 'cinExpiration' | translate }}</label><input type="date" formControlName="cinExpiration" /></div>
             </div>
-            <div class="form-row">
+            <div class="form-row" *ngIf="isAdmin">
               <div class="form-group"><label>{{ 'cinIssueDate' | translate }}</label><input type="date" formControlName="cinDelivreLe" /></div>
               <div class="form-group"><label>{{ 'cinIssuedAt' | translate }}</label><input type="text" formControlName="cinDelivreA" /></div>
             </div>
             <div class="form-row">
-              <div class="form-group"><label>{{ 'passeport' | translate }}</label><input type="text" formControlName="passeport" /></div>
+              <div class="form-group">
+                <label>{{ 'passeport' | translate }} <span class="required" *ngIf="!isMoroccan">*</span></label>
+                <input type="text" formControlName="passeport" [class.invalid]="form.get('passeport')?.invalid && form.get('passeport')?.touched" />
+                <span class="field-error" *ngIf="form.get('passeport')?.invalid && form.get('passeport')?.touched">{{ 'required' | translate }}</span>
+              </div>
               <div class="form-group"><label>{{ 'passeportExpiration' | translate }}</label><input type="date" formControlName="passeportExpiration" /></div>
             </div>
-            <div class="form-row">
+            <div class="form-row" *ngIf="isAdmin">
               <div class="form-group"><label>{{ 'passportIssueDate' | translate }}</label><input type="date" formControlName="passeportDelivreLe" /></div>
               <div class="form-group"><label>{{ 'passportIssuedAt' | translate }}</label><input type="text" formControlName="passeportDelivreA" /></div>
             </div>
             <div class="form-row">
-              <div class="form-group"><label>{{ 'permisConduire' | translate }} <span class="required">*</span></label><input type="text" formControlName="permisConduite" /></div>
+              <div class="form-group">
+                <label>{{ 'permisConduire' | translate }} <span class="required">*</span></label>
+                <input type="text" formControlName="permisConduite" [class.invalid]="form.get('permisConduite')?.invalid && form.get('permisConduite')?.touched" />
+                <span class="field-error" *ngIf="form.get('permisConduite')?.invalid && form.get('permisConduite')?.touched">{{ 'required' | translate }}</span>
+              </div>
               <div class="form-group"><label>{{ 'permisExpiration' | translate }}</label><input type="date" formControlName="permisExpiration" /></div>
             </div>
-            <div class="form-row">
+            <div class="form-row" *ngIf="isAdmin">
               <div class="form-group"><label>{{ 'licenseIssueDate' | translate }}</label><input type="date" formControlName="permisDelivreLe" /></div>
               <div class="form-group"><label>{{ 'licenseIssuedAt' | translate }}</label><input type="text" formControlName="permisDelivreA" /></div>
             </div>
@@ -181,32 +266,32 @@
 <div class="drawer" [class.open]="drawerOpen">
   <ng-container *ngIf="drawerItem">
     <div class="drawer-header">
-      <span class="drawer-title">Details</span>
+      <span class="drawer-title">{{ 'details' | translate }}</span>
       <button class="drawer-close" (click)="closeDrawer()">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
     <div class="drawer-body">
       <div class="drawer-section">
-        <div class="drawer-section-head">Information</div>
+        <div class="drawer-section-head">{{ 'information' | translate }}</div>
         <div class="drawer-row" *ngFor="let e of objectEntries(drawerItem)">
           <span class="drawer-lbl">{{ e[0] }}</span>
           <span class="drawer-val">{{ displayValue(e[1]) }}</span>
         </div>
       </div>
       <div class="drawer-section">
-        <div class="drawer-section-head">Documents</div>
+        <div class="drawer-section-head">{{ 'documents' | translate }}</div>
         <app-client-documents [clientId]="drawerItem.id"></app-client-documents>
       </div>
     </div>
     <div class="drawer-footer">
       <button class="btn-outline-danger" (click)="openDelete(drawerItem.id); closeDrawer()">
         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
-        Delete
+        {{ 'delete' | translate }}
       </button>
       <button class="btn-primary-sm" (click)="openEdit(drawerItem); closeDrawer()">
         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-        Edit
+        {{ 'edit' | translate }}
       </button>
     </div>
   </ng-container>

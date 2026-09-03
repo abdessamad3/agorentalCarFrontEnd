@@ -40,6 +40,8 @@ export class BranchReportComponent implements OnInit {
 
   constructor(private crud: CrudService, private ts: TranslationService) {}
 
+  t(key: string): string { return this.ts.translate(key); }
+
   ngOnInit() {
     this.ts.direction$.subscribe(d => this.dir = d);
     this.load();
@@ -105,9 +107,9 @@ export class BranchReportComponent implements OnInit {
 
   exportCSV() {
     const headers = [
-      'Bureau', 'Address', 'Manager', 'Vehicles', 'Rentals',
-      'Revenue (MAD)', 'Vehicle Exp. (MAD)', 'Office Exp. (MAD)',
-      'Credit Pmts (MAD)', 'Total Expenses (MAD)', 'Net Profit (MAD)', 'Margin %',
+      this.t('bureau'), this.t('address'), this.t('managerLabel'), this.t('thVehicles'), this.t('thRentals'),
+      `${this.t('revenue')} (MAD)`, `${this.t('thVehicleExp')} (MAD)`, `${this.t('thOfficeExp')} (MAD)`,
+      `${this.t('creditPaymentsLabel')} (MAD)`, `${this.t('totalExpenses')} (MAD)`, `${this.t('netProfit')} (MAD)`, `${this.t('margin')} %`,
     ];
     const rows = this.sorted.map(r => [
       r.name, r.address ?? '', r.manager ?? '',

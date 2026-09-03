@@ -38,15 +38,18 @@ export class FinancialReportComponent implements OnInit {
   monthBars: MonthBar[] = [];
   expenseByType: { type: string; total: number; count: number }[] = [];
 
-  readonly monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  readonly monthKeys = ['mJan','mFeb','mMar','mApr','mMay','mJun','mJul','mAug','mSep','mOct','mNov','mDec'];
   readonly revenueStatuses = ['confirmed','confirmee','active','en_cours','encours','completed','terminee','done','termine'];
 
   expenseExporting = false;
 
   constructor(private crud: CrudService, private ts: TranslationService, private exportSvc: ExportService) {}
 
+  t(key: string): string { return this.ts.translate(key); }
+
   ngOnInit() {
     this.ts.direction$.subscribe(d => this.dir = d);
+    this.ts.currentLang$.subscribe(() => { if (!this.loading) this.build(); });
     const safe = (obs: any) => obs.pipe(catchError(() => of([])));
     forkJoin({
       reservations: safe(this.crud.getAll('reservation', { limit: 2000 })),
@@ -97,7 +100,7 @@ export class FinancialReportComponent implements OnInit {
         .reduce((s, e) => s + (parseFloat(e.montant) || 0), 0);
 
       const margin = rev > 0 ? Math.round(((rev - exp) / rev) * 100) : 0;
-      bars.push({ label: this.monthNames[m], revenue: rev, expenses: exp, rH: 0, eH: 0, margin });
+      bars.push({ label: this.t(this.monthKeys[m]), revenue: rev, expenses: exp, rH: 0, eH: 0, margin });
     }
     const maxVal = Math.max(...bars.map(b => Math.max(b.revenue, b.expenses)), 1);
     bars.forEach(b => { b.rH = Math.round((b.revenue / maxVal) * 120); b.eH = Math.round((b.expenses / maxVal) * 120); });
@@ -198,26 +201,12 @@ export class FinancialReportComponent implements OnInit {
 
   exportExpenseExcel() {
     this.expenseExporting = true;
-    const safe = (obs: any) => obs.pipe(catchError(() => of([])));
-    forkJoin({
-      assurances:  safe(this.crud.getAll('assurance',   { limit: 2000 })),
-      reparations: safe(this.crud.getAll('reparation',  { limit: 2000 })),
-      vidanges:    safe(this.crud.getAll('vidange',     { limit: 2000 })),
-    }).subscribe({
-      next: ({ assurances, reparations, vidanges }: any) => {
-        this.exportSvc.expenseExcel(
-          toArr(assurances),
-          toArr(reparations),
-          toArr(vidanges),
-        );
-        this.expenseExporting = false;
-      },
-      error: () => { this.expenseExporting = false; },
-    });
+    this.exportSvc.expenseExcel(this.expenses)
+      .finally(() => { this.expenseExporting = false; });
   }
 
   exportCSV() {
-    const headers = ['Mois','Revenus','Dépenses','Net'];
+    const headers = [this.t('thMonth'), this.t('revenue'), this.t('expenses'), this.t('netProfit')];
     const rows = this.monthBars.map(b => [
       b.label, this.fmt(b.revenue), this.fmt(b.expenses), this.fmt(b.revenue - b.expenses)
     ]);

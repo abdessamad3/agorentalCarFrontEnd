@@ -29,23 +29,45 @@ export class NotificationsInboxComponent implements OnInit {
   activeCategory: CategoryKey = 'all';
   statusFilter: StatusFilter = 'all';
 
-  readonly categories: { key: CategoryKey; label: string; icon: string }[] = [
-    { key: 'all',          label: 'All Notifications', icon: '🔔' },
-    { key: 'compliance',   label: 'Compliance',         icon: '⚖️' },
-    { key: 'reservations', label: 'Reservations',       icon: '📅' },
-    { key: 'payments',     label: 'Payments',           icon: '💰' },
-    { key: 'credits',      label: 'Credits',            icon: '💳' },
-    { key: 'maintenance',  label: 'Maintenance',        icon: '🔧' },
-    { key: 'system',       label: 'System',             icon: '⚙️' },
-  ];
+  get categories(): { key: CategoryKey; label: string; icon: string }[] {
+    const lang = this.ts.getCurrentLanguage() as 'fr' | 'en' | 'ar';
+    const labels: Record<CategoryKey, Record<'fr' | 'en' | 'ar', string>> = {
+      all:          { fr: 'Toutes',       en: 'All Notifications', ar: 'كل الإشعارات' },
+      compliance:   { fr: 'Conformité',   en: 'Compliance',        ar: 'الامتثال' },
+      reservations: { fr: 'Réservations', en: 'Reservations',      ar: 'الحجوزات' },
+      payments:     { fr: 'Paiements',    en: 'Payments',          ar: 'المدفوعات' },
+      credits:      { fr: 'Crédits',      en: 'Credits',           ar: 'القروض' },
+      maintenance:  { fr: 'Entretien',    en: 'Maintenance',       ar: 'الصيانة' },
+      system:       { fr: 'Système',      en: 'System',            ar: 'النظام' },
+    };
+    return [
+      { key: 'all',          label: labels.all[lang],          icon: '🔔' },
+      { key: 'compliance',   label: labels.compliance[lang],   icon: '⚖️' },
+      { key: 'reservations', label: labels.reservations[lang], icon: '📅' },
+      { key: 'payments',     label: labels.payments[lang],     icon: '💰' },
+      { key: 'credits',      label: labels.credits[lang],      icon: '💳' },
+      { key: 'maintenance',  label: labels.maintenance[lang],  icon: '🔧' },
+      { key: 'system',       label: labels.system[lang],       icon: '⚙️' },
+    ];
+  }
 
-  readonly statusFilters: { key: StatusFilter; label: string }[] = [
-    { key: 'all',      label: 'All'      },
-    { key: 'unread',   label: 'Unread'   },
-    { key: 'critical', label: 'Critical' },
-    { key: 'warnings', label: 'Warnings' },
-    { key: 'resolved', label: 'Resolved' },
-  ];
+  get statusFilters(): { key: StatusFilter; label: string }[] {
+    const lang = this.ts.getCurrentLanguage() as 'fr' | 'en' | 'ar';
+    const labels: Record<StatusFilter, Record<'fr' | 'en' | 'ar', string>> = {
+      all:      { fr: 'Tous',      en: 'All',      ar: 'الكل' },
+      unread:   { fr: 'Non lus',   en: 'Unread',   ar: 'غير مقروء' },
+      critical: { fr: 'Critique',  en: 'Critical', ar: 'حرج' },
+      warnings: { fr: 'Attention', en: 'Warnings', ar: 'تحذيرات' },
+      resolved: { fr: 'Résolus',   en: 'Resolved', ar: 'محلول' },
+    };
+    return [
+      { key: 'all',      label: labels.all[lang] },
+      { key: 'unread',   label: labels.unread[lang] },
+      { key: 'critical', label: labels.critical[lang] },
+      { key: 'warnings', label: labels.warnings[lang] },
+      { key: 'resolved', label: labels.resolved[lang] },
+    ];
+  }
 
   constructor(
     private notifSvc: NotificationService,
@@ -130,34 +152,44 @@ export class NotificationsInboxComponent implements OnInit {
   }
 
   actionButtonsFor(n: AppNotification): ActionBtn[] {
+    const lang = this.ts.getCurrentLanguage() as 'fr' | 'en' | 'ar';
+    const L = {
+      renew:      { fr: 'Renouveler',          en: 'Renew',               ar: 'تجديد' },
+      pay:        { fr: 'Payer',               en: 'Pay',                 ar: 'دفع' },
+      inspect:    { fr: 'Planifier contrôle',  en: 'Book Inspection',     ar: 'حجز فحص' },
+      compliance: { fr: 'Voir conformité',     en: 'View Compliance',     ar: 'عرض الامتثال' },
+      oil:        { fr: 'Planifier vidange',   en: 'Schedule Oil Change', ar: 'جدولة تغيير الزيت' },
+      credit:     { fr: 'Voir crédit',         en: 'View Credit',         ar: 'عرض القرض' },
+      booking:    { fr: 'Voir réservation',    en: 'View Booking',        ar: 'عرض الحجز' },
+      view:       { fr: 'Voir',                en: 'View',                ar: 'عرض' },
+      vehicle:    { fr: 'Voir véhicule',       en: 'View Vehicle',        ar: 'عرض السيارة' },
+    };
     const btns: ActionBtn[] = [];
     const t = n.type;
 
-    // Primary action by type
     if (t === 'compliance_insurance' || t.includes('insurance')) {
-      btns.push({ label: 'Renew', route: '/assurance', icon: '🔄', cls: 'ncb-renew' });
+      btns.push({ label: L.renew[lang], route: '/assurance', icon: '🔄', cls: 'ncb-renew' });
     } else if (t === 'compliance_vignette' || t.includes('vignette')) {
-      btns.push({ label: 'Pay', route: '/vignette', icon: '💳', cls: 'ncb-pay' });
+      btns.push({ label: L.pay[lang], route: '/vignette', icon: '💳', cls: 'ncb-pay' });
     } else if (t === 'compliance_visite' || t.includes('visite')) {
-      btns.push({ label: 'Book Inspection', route: '/suivi-technique', icon: '🔬', cls: 'ncb-inspect' });
+      btns.push({ label: L.inspect[lang], route: '/suivi-technique', icon: '🔬', cls: 'ncb-inspect' });
     } else if (t === 'compliance_expired' || t === 'compliance_warning') {
-      btns.push({ label: 'View Compliance', route: n.deepLink ?? '/compliance', icon: '⚖️', cls: 'ncb-renew' });
+      btns.push({ label: L.compliance[lang], route: n.deepLink ?? '/compliance', icon: '⚖️', cls: 'ncb-renew' });
     } else if (t.startsWith('oil_')) {
-      btns.push({ label: 'Schedule Oil Change', route: n.deepLink, icon: '🛢️', cls: 'ncb-oil' });
+      btns.push({ label: L.oil[lang], route: n.deepLink, icon: '🛢️', cls: 'ncb-oil' });
     } else if (t.startsWith('credit_')) {
-      btns.push({ label: 'View Credit', route: n.deepLink, icon: '💳', cls: 'ncb-credit' });
+      btns.push({ label: L.credit[lang], route: n.deepLink, icon: '💳', cls: 'ncb-credit' });
     } else if (t.startsWith('reservation_')) {
-      btns.push({ label: 'View Booking', route: n.deepLink, icon: '📅', cls: 'ncb-booking' });
+      btns.push({ label: L.booking[lang], route: n.deepLink, icon: '📅', cls: 'ncb-booking' });
     } else if (n.deepLink) {
-      btns.push({ label: 'View', route: n.deepLink, icon: '→', cls: 'ncb-view' });
+      btns.push({ label: L.view[lang], route: n.deepLink, icon: '→', cls: 'ncb-view' });
     }
 
-    // View Vehicle for compliance & maintenance
     if (t.startsWith('compliance_') || t.startsWith('oil_')) {
       const vehicleLink = n.deepLink?.startsWith('/voiture/') ? n.deepLink
         : (n.sourceType === 'vehicle' ? `/voiture/${n.sourceId}` : null);
       if (vehicleLink) {
-        btns.push({ label: 'View Vehicle', route: vehicleLink, icon: '🚗', cls: 'ncb-vehicle' });
+        btns.push({ label: L.vehicle[lang], route: vehicleLink, icon: '🚗', cls: 'ncb-vehicle' });
       }
     }
 
@@ -183,6 +215,8 @@ export class NotificationsInboxComponent implements OnInit {
     });
   }
 
+  t(key: string): string { return this.ts.translate(key); }
+
   typeIcon(type: string): string {
     const map: Record<string, string> = {
       compliance_expired:   '🚨',
@@ -207,6 +241,97 @@ export class NotificationsInboxComponent implements OnInit {
   }
 
   priorityLabel(priority: string): string {
-    return ({ CRITICAL: 'Critical', HIGH: 'High', MEDIUM: 'Medium', LOW: 'Low' } as any)[priority] ?? priority;
+    const lang = this.ts.getCurrentLanguage() as 'fr' | 'en' | 'ar';
+    const m: Record<string, Record<'fr' | 'en' | 'ar', string>> = {
+      CRITICAL: { fr: 'Critique', en: 'Critical', ar: 'حرج' },
+      HIGH:     { fr: 'Élevé',    en: 'High',     ar: 'عالٍ' },
+      MEDIUM:   { fr: 'Moyen',    en: 'Medium',   ar: 'متوسط' },
+      LOW:      { fr: 'Faible',   en: 'Low',      ar: 'منخفض' },
+    };
+    return m[priority]?.[lang] ?? m[priority]?.['fr'] ?? priority;
+  }
+
+  notifTitle(n: AppNotification): string {
+    const lang = this.ts.getCurrentLanguage() as 'fr' | 'en' | 'ar';
+    if (lang === 'fr') return n.title;
+
+    // Extract the dynamic label after the last " — " separator
+    const sep = n.title.lastIndexOf(' — ');
+    const suffix = sep >= 0 ? n.title.slice(sep + 3) : n.title;
+
+    switch (n.type) {
+      case 'reservation_created': {
+        // title: "Nouvelle réservation - car" (new) or "New booking - car" (legacy)
+        const car = n.title.replace(/^[^-]+-\s*/, '');
+        return lang === 'ar' ? `حجز جديد — ${car}` : `New Booking — ${car}`;
+      }
+      case 'compliance_expired':
+        return lang === 'ar' ? `وثيقة منتهية الصلاحية — ${suffix}` : `Compliance expired — ${suffix}`;
+      case 'compliance_warning':
+        return lang === 'ar' ? `وثيقة تنتهي قريباً — ${suffix}` : `Compliance expiring — ${suffix}`;
+      case 'oil_change_overdue':
+        return lang === 'ar' ? `تغيير الزيت متأخر — ${suffix}` : `Oil change overdue — ${suffix}`;
+      case 'oil_change_due':
+        return lang === 'ar' ? `تغيير الزيت قريباً — ${suffix}` : `Oil change due soon — ${suffix}`;
+      case 'credit_overdue':
+        return lang === 'ar' ? `قسط التمويل متأخر — ${suffix}` : `Credit installment overdue — ${suffix}`;
+      case 'credit_due':
+        return lang === 'ar' ? `قسط التمويل مستحق — ${suffix}` : `Credit installment due — ${suffix}`;
+      case 'vehicle_sold':
+        return lang === 'ar' ? `مركبة مباعة — ${suffix}` : `Vehicle sold — ${suffix}`;
+      default:
+        return n.title;
+    }
+  }
+
+  notifMsg(n: AppNotification): string {
+    const lang = this.ts.getCurrentLanguage() as 'fr' | 'en' | 'ar';
+    if (lang === 'fr') return n.message;
+
+    const nums = n.message.match(/[\d.]+/g) ?? [];
+
+    switch (n.type) {
+      case 'reservation_created': {
+        const dates = n.message.match(/\d{2}\/\d{2}\/\d{4}/g) ?? [];
+        const client = n.message.replace(/^.*?(?:pour|for)\s*/i, '').replace(/,.*$/, '').trim();
+        const range = dates.join(' › ');
+        return lang === 'ar' ? `تم إنشاء حجز لـ ${client}، ${range}`
+                             : `Booking created for ${client}, ${range}`;
+      }
+      case 'compliance_expired': {
+        const d = nums[0];
+        return d
+          ? (lang === 'ar' ? `انتهت الصلاحية منذ ${d} يوم.`    : `Expired ${d} day(s) ago.`)
+          : (lang === 'ar' ? `الوثيقة منتهية الصلاحية.`          : `Document has expired.`);
+      }
+      case 'compliance_warning': {
+        const d = nums[0] ?? '?';
+        return lang === 'ar' ? `الوثيقة تنتهي خلال ${d} يوم.` : `Document expires in ${d} day(s).`;
+      }
+      case 'oil_change_overdue': {
+        const km = nums[0] ?? '?';
+        return lang === 'ar' ? `تأخر تغيير الزيت بـ ${km} كم.` : `Oil change overdue by ${km} km.`;
+      }
+      case 'oil_change_due': {
+        const [km1, km2] = nums;
+        return lang === 'ar'
+          ? `تغيير الزيت خلال ${km1 ?? '?'} كم (القادم عند ${km2 ?? '?'} كم).`
+          : `Oil change due in ${km1 ?? '?'} km (next at ${km2 ?? '?'} km).`;
+      }
+      case 'credit_overdue': {
+        const amt = nums[0] ?? '?';
+        return lang === 'ar' ? `المنسالة البالغة ${amt} درهم متأخرة.` : `Installment of ${amt} MAD is past due.`;
+      }
+      case 'credit_due': {
+        const amt = nums[0] ?? '?';
+        return lang === 'ar' ? `المنسالة البالغة ${amt} درهم مستحقة خلال 7 أيام.`
+                             : `Installment of ${amt} MAD is due within 7 days.`;
+      }
+      case 'vehicle_sold':
+        return lang === 'ar' ? `تم بيع المركبة وإزالتها من الأسطول.`
+                             : `Vehicle sold and removed from the active fleet.`;
+      default:
+        return n.message;
+    }
   }
 }

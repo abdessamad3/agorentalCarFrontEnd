@@ -4,8 +4,7 @@ import { TranslationService } from '../../../../services/translation.service';
 import { InsuranceTabComponent } from '../insurance-tab/insurance-tab.component';
 import { VignetteTabComponent }  from '../vignette-tab/vignette-tab.component';
 import { SuiviTabComponent }     from '../suivi-tab/suivi-tab.component';
-import { daysUntil as daysUntilUtil } from '../../../../shared/utils/date.utils';
-import { complianceSeverity as complianceSeverityUtil } from '../../../../shared/utils/compliance.utils';
+import { complianceSeverity as complianceSeverityUtil, complianceDaysRemaining as complianceDaysRemainingUtil } from '../../../../shared/utils/compliance.utils';
 
 @Component({
   selector: 'app-conformite-tab',
@@ -22,19 +21,31 @@ export class ConformiteTabComponent implements OnChanges {
 
   selectedSection = 'insurance';
 
-  readonly SECTIONS = [
+  private readonly ALL_SECTIONS = [
     { value: 'insurance', labelKey: 'assurances',   icon: '🛡️', color: '#2563eb', bg: '#eff6ff' },
-    { value: 'vignettes', labelKey: 'vignettes',    icon: '📄', color: '#d97706', bg: '#fffbeb' },
+    { value: 'vignettes', labelKey: 'vignettes',    icon: '🏷️', color: '#d97706', bg: '#fffbeb' },
     { value: 'suivi',     labelKey: 'technicalDoc', icon: '🔬', color: '#475569', bg: '#f8fafc' },
   ];
 
+  get showTechnicalInspection(): boolean {
+    return (new Date().getFullYear() - +(this.car?.annee || 0)) >= 3;
+  }
+
+  get SECTIONS() {
+    return this.showTechnicalInspection
+      ? this.ALL_SECTIONS
+      : this.ALL_SECTIONS.filter(s => s.value !== 'suivi');
+  }
+
   constructor(private ts: TranslationService) {}
 
-  ngOnChanges(_changes: SimpleChanges): void {}
+  ngOnChanges(_changes: SimpleChanges): void {
+    if (!this.showTechnicalInspection && this.selectedSection === 'suivi') {
+      this.selectedSection = 'insurance';
+    }
+  }
 
   t(key: string): string { return this.ts.translate(key); }
-
-  daysUntil(d?: string | null): number | null { return daysUntilUtil(d); }
 
   get compliance(): any { return this.car?.compliance ?? {}; }
 
@@ -51,12 +62,16 @@ export class ConformiteTabComponent implements OnChanges {
   get suiviLevel(): 'ok' | 'warning' | 'danger' { return this.kpiLevel(this.compliance.visite?.status);   }
 
   get overallScore(): number {
-    // Mirrors backend ComplianceService::worstStatus() — excludes NOT_REQUIRED sections.
-    const sections = [
+    // Mirrors backend ComplianceService::worstStatus() — excludes NOT_REQUIRED sections
+    // and excludes technical inspection entirely for cars under 3 years old.
+    const candidates = [
       { level: this.insLevel,   status: this.compliance.assurance?.status },
       { level: this.vigLevel,   status: this.compliance.vignette?.status },
-      { level: this.suiviLevel, status: this.compliance.visite?.status },
-    ].filter(s => (s.status || '').toLowerCase() !== 'not_required');
+      ...(this.showTechnicalInspection
+        ? [{ level: this.suiviLevel, status: this.compliance.visite?.status }]
+        : []),
+    ];
+    const sections = candidates.filter(s => (s.status || '').toLowerCase() !== 'not_required');
     if (sections.length === 0) return 100;
     return Math.round((sections.filter(s => s.level === 'ok').length / sections.length) * 100);
   }
@@ -79,8 +94,8 @@ export class ConformiteTabComponent implements OnChanges {
     return '✗';
   }
 
-  expiryLabel(expiresAt: string | undefined): string {
-    const days = this.daysUntil(expiresAt);
+  expiryLabel(info: { daysRemaining?: number | null } | undefined): string {
+    const days = complianceDaysRemainingUtil(info);
     if (days === null) return '—';
     if (days < 0)  return `${this.t('expired')} ${Math.abs(days)}j`;
     if (days === 0) return this.t('today');
