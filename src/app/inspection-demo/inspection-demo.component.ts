@@ -431,7 +431,7 @@ export class InspectionDemoComponent implements AfterViewInit, OnDestroy {
 
     const loader = new GLTFLoader();
     loader.load(
-      '/assets/models/dacia_logan.glb',
+      'assets/models/dacia_logan.glb',
       (gltf) => {
         const model = gltf.scene;
 
