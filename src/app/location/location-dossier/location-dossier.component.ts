@@ -102,7 +102,7 @@ export class LocationDossierComponent implements OnInit {
         this.load();
       },
       error: (err: any) => {
-        this.toast.show(err?.error?.error ?? this.t('error'), 'error');
+        this.toast.show(err?.error?.error ?? err?.error?.message ?? this.t('error'), 'error');
         this.confirming = false;
       }
     });
