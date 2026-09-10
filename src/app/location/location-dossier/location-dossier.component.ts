@@ -95,7 +95,7 @@ export class LocationDossierComponent implements OnInit {
   confirmReservation(): void {
     if (this.confirming) return;
     this.confirming = true;
-    this.crud.update('reservation', this.reservationId, { reservationStatus: 'confirmee' }).subscribe({
+    this.crud.rawPatch('reservation', this.reservationId, { reservationStatus: 'confirmee' }).subscribe({
       next: () => {
         this.toast.show(this.t('reservationConfirmed') || 'Réservation confirmée', 'success');
         this.confirming = false;
@@ -122,14 +122,14 @@ export class LocationDossierComponent implements OnInit {
   confirmCancelReservation(): void {
     this.showCancelModal = false;
     this.cancelling = true;
-    this.crud.update('reservation', this.reservationId, { reservationStatus: 'annulee' }).subscribe({
+    this.crud.rawPatch('reservation', this.reservationId, { reservationStatus: 'annulee' }).subscribe({
       next: () => {
         this.toast.show(this.t('reservationCancelled'), 'info');
         this.cancelling = false;
         this.router.navigate(['/reservation']);
       },
       error: (err: any) => {
-        this.toast.show(err?.error?.error ?? this.t('error'), 'error');
+        this.toast.show(err?.error?.error ?? err?.error?.message ?? this.t('error'), 'error');
         this.cancelling = false;
       }
     });
