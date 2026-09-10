@@ -461,8 +461,8 @@ export const routes: Routes = [
   {
     path: 'inspection-demo',
     loadComponent: () => import('./inspection-demo/inspection-demo.component').then(m => m.InspectionDemoComponent),
-    canActivate: [authGuard],
-    data: { breadcrumbs: ['Inspection 3D'] }
+    canActivate: [authGuard, roleGuard],
+    data: { breadcrumbs: ['Inspection 3D'], roles: ['ROLE_ADMIN'] }
   },
 
   // Catch all

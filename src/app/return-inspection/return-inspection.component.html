@@ -216,7 +216,18 @@
 
           <!-- Damages -->
           <div class="form-group">
-            <label>{{ t('damagesFormLabel') }}</label>
+            <div class="dmg-label-row">
+              <label>{{ t('damagesFormLabel') }}</label>
+              <button type="button" class="ri-3d-btn" *ngIf="carId" (click)="open3DOverlay()">
+                🔍 Inspecter en 3D
+              </button>
+            </div>
+            <!-- New damage chips from 3D session -->
+            <div class="ri-chips" *ngIf="newDamages.length > 0">
+              <span *ngFor="let d of newDamages" class="ri-chip">
+                {{ ZONE_LABELS[d.zone] || d.zone }}
+              </span>
+            </div>
             <textarea formControlName="damages" rows="3" [placeholder]="t('damage') + '…'"></textarea>
           </div>
 
@@ -235,6 +246,25 @@
         </div>
       </form>
     </ng-container>
+
+    <!-- 3D inspection overlay (inside modal stacking context) -->
+    <div *ngIf="show3DOverlay" class="ri-3d-overlay">
+      <div class="ri-3d-overlay-header">
+        <div class="ri-3d-legend">
+          <span class="ri-legend-dot ri-legend-grey"></span> Avant location
+          <span class="ri-legend-dot ri-legend-orange" style="margin-left:.75rem"></span> Nouveau dommage
+        </div>
+        <button class="ri-3d-done-btn" (click)="close3DOverlay()">
+          ✓ Terminé <span *ngIf="newDamages.length > 0">({{ newDamages.length }})</span>
+        </button>
+      </div>
+      <app-inspection-demo
+        [voitureId]="carId"
+        [embedded]="true"
+        [preExistingDamages]="preExistingDamages"
+        (newDamageAdded)="onNewDamageAdded($event)">
+      </app-inspection-demo>
+    </div>
 
     <!-- Delete confirm -->
     <ng-container *ngIf="modalMode === 'delete'">

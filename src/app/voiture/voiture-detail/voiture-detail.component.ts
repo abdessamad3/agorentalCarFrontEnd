@@ -191,6 +191,7 @@ export class VoitureDetailComponent implements OnInit {
         this.buildGallery();
         this.loading = false;
         this.loadSupportData(id);
+        if (this.activeTab === 'credit') this.loadCredit(id);
         const status = (data.effectiveStatus || data.voitureStatus || '').toLowerCase();
         if (status === 'vendu' || status === 'decommissioned') {
           this.loadSaleRecord(id);

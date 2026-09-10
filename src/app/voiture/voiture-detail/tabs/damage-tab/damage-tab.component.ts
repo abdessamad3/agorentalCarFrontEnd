@@ -7,6 +7,7 @@ import { environment } from '../../../../../environments/environment';
 import { VehicleMapComponent, VEHICLE_ZONES } from '../../../../shared/vehicle-map/vehicle-map.component';
 import { ModalComponent } from '../../../../shared/modal/modal.component';
 import { PayDepPanelComponent } from '../../../../shared/pay-dep-panel/pay-dep-panel.component';
+import { InspectionDemoComponent } from '../../../../inspection-demo/inspection-demo.component';
 
 export interface DamageRecord {
   id: number;
@@ -28,7 +29,7 @@ export interface DamageRecord {
 @Component({
   selector: 'app-damage-tab',
   standalone: true,
-  imports: [CommonModule, FormsModule, TitleCasePipe, VehicleMapComponent, ModalComponent, PayDepPanelComponent],
+  imports: [CommonModule, FormsModule, TitleCasePipe, VehicleMapComponent, ModalComponent, PayDepPanelComponent, InspectionDemoComponent],
   templateUrl: './damage-tab.component.html',
   styleUrls: ['../../voiture-detail.component.css'],
 })
@@ -36,6 +37,9 @@ export class DamageTabComponent implements OnInit {
   @Input() carId!: number;
   @Input() car!: any;
   @Input() dir = 'ltr';
+
+  // 3D view toggle
+  view3D = false;
 
   damages: DamageRecord[] = [];
   loading = true;
@@ -89,6 +93,27 @@ export class DamageTabComponent implements OnInit {
   constructor(private http: HttpClient, private ts: TranslationService) {}
 
   ngOnInit(): void { this.load(); }
+
+  enable3D(): void {
+    this.view3D = true;
+    setTimeout(() => {
+      document.querySelector('app-inspection-demo')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  }
+
+  downloadPdfReport(): void {
+    this.http.get(`${environment.apiUrl}/voiture/${this.carId}/damage-report`, { responseType: 'blob' }).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+      },
+      error: () => {},
+    });
+  }
 
   load(): void {
     this.loading = true;

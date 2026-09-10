@@ -3822,6 +3822,17 @@
 }
 .dmg-add-btn:hover { background: #b91c1c; }
 
+.dmg-view-toggle {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.28rem 0.75rem; border-radius: 6px; border: 1px solid var(--border, #e2e8f0);
+  background: var(--surface, #fff); color: var(--text-muted, #64748b);
+  font-size: 0.82rem; font-weight: 500; cursor: pointer; transition: all 0.15s;
+}
+.dmg-view-toggle:hover { border-color: var(--primary, #2563eb); color: var(--primary, #2563eb); }
+.dmg-view-toggle.active {
+  background: var(--primary, #2563eb); color: #fff; border-color: var(--primary, #2563eb);
+}
+
 .dmg-add-form {
   background: var(--surface-alt, #f8fafc); border: 1px solid var(--border, #e2e8f0);
   border-radius: 10px; padding: 1.1rem 1.25rem; margin-bottom: 1.25rem;

@@ -85,6 +85,29 @@ export class LocationDossierComponent implements OnInit {
     });
   }
 
+  // ── Confirm reservation ──────────────────────────────────────────────────
+  confirming = false;
+
+  get canConfirm(): boolean {
+    return this.status === 'pending';
+  }
+
+  confirmReservation(): void {
+    if (this.confirming) return;
+    this.confirming = true;
+    this.crud.update('reservation', this.reservationId, { reservationStatus: 'confirmee' }).subscribe({
+      next: () => {
+        this.toast.show(this.t('reservationConfirmed') || 'Réservation confirmée', 'success');
+        this.confirming = false;
+        this.load();
+      },
+      error: (err: any) => {
+        this.toast.show(err?.error?.error ?? this.t('error'), 'error');
+        this.confirming = false;
+      }
+    });
+  }
+
   // ── Cancel reservation ───────────────────────────────────────────────────
   cancelling = false;
   showCancelModal = false;

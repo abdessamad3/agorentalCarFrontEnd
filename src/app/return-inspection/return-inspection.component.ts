@@ -1,20 +1,23 @@
 ﻿import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { TranslationService } from '../services/translation.service';
 import { CrudService } from '../services/crud.service';
 import { ToastService } from '../services/toast.service';
 import { BtnComponent } from '../shared/btn/btn.component';
 import { PaginatorComponent } from '../shared/paginator/paginator.component';
 import { TranslatePipe } from '../pipes/translate.pipe';
+import { InspectionDemoComponent } from '../inspection-demo/inspection-demo.component';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { PAGE_SIZE } from '../shared/constants/pagination';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-return-inspection',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, BtnComponent, PaginatorComponent, TranslatePipe],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, BtnComponent, PaginatorComponent, TranslatePipe, InspectionDemoComponent],
   templateUrl: './return-inspection.component.html',
   styleUrls: ['./return-inspection.component.css']
 })
@@ -40,6 +43,24 @@ export class ReturnInspectionComponent implements OnInit {
   resSearch = '';
   resDropdownOpen = false;
 
+  // 3D inspection overlay
+  carId: number | null = null;
+  preExistingDamages: any[] = [];
+  show3DOverlay = false;
+  newDamages: Array<{ zone: string; severity: string }> = [];
+
+  readonly ZONE_LABELS: Record<string, string> = {
+    front_bumper: 'Pare-choc avant', hood: 'Capot', windshield: 'Pare-brise',
+    roof: 'Toit', rear_window: 'Lunette arrière', trunk: 'Coffre',
+    rear_bumper: 'Pare-choc arrière', fl_fender: 'Aile av. gauche',
+    fr_fender: 'Aile av. droite', rl_fender: 'Aile ar. gauche',
+    rr_fender: 'Aile ar. droite', fl_door: 'Portière av. gauche',
+    fr_door: 'Portière av. droite', rl_door: 'Portière ar. gauche',
+    rr_door: 'Portière ar. droite', left_mirror: 'Rétroviseur gauche',
+    right_mirror: 'Rétroviseur droit', fl_wheel: 'Roue av. gauche',
+    fr_wheel: 'Roue av. droite', rl_wheel: 'Roue ar. gauche', rr_wheel: 'Roue ar. droite',
+  };
+
   get conditionOptions() {
     return [
       { value: 'clean',        label: this.t('conditionClean') },
@@ -55,6 +76,7 @@ export class ReturnInspectionComponent implements OnInit {
     private ts: TranslationService,
     private fb: FormBuilder,
     private toast: ToastService,
+    private http: HttpClient,
   ) {
     this.form = this.fb.group({
       reservationId: ['', Validators.required],
@@ -153,11 +175,42 @@ export class ReturnInspectionComponent implements OnInit {
     this.form.patchValue({ reservationId: r.id });
     this.resSearch = this.reservationLabel(r);
     this.resDropdownOpen = false;
+    const cid = r.voiture?.id ?? r.voitureId ?? null;
+    if (cid) {
+      this.carId = +cid;
+      this.loadCarDamages(this.carId);
+    }
+  }
+
+  loadCarDamages(carId: number) {
+    this.http.get<any[]>(`${environment.apiUrl}/voiture/${carId}/damages`).subscribe({
+      next: (list) => { this.preExistingDamages = (list ?? []).filter(d => d.status !== 'repaired'); },
+      error: () => { this.preExistingDamages = []; }
+    });
+  }
+
+  open3DOverlay() { this.show3DOverlay = true; }
+
+  close3DOverlay() {
+    this.show3DOverlay = false;
+    if (this.newDamages.length > 0) {
+      const summary = this.newDamages
+        .map(d => `${this.ZONE_LABELS[d.zone] ?? d.zone} (${d.severity})`)
+        .join(', ');
+      const current = this.form.get('damages')!.value || '';
+      this.form.patchValue({ damages: current ? current + '\n' + summary : summary });
+    }
+  }
+
+  onNewDamageAdded(d: any) {
+    this.newDamages = [...this.newDamages, { zone: d.zone, severity: d.severity }];
   }
 
   openAdd() {
     this.selected = null; this.isEditing = false;
     this.resSearch = ''; this.resDropdownOpen = false;
+    this.carId = null; this.preExistingDamages = [];
+    this.show3DOverlay = false; this.newDamages = [];
     this.form.reset({ fuelLevel: 50, condition: 'clean' });
     this.modalMode = 'form';
   }
@@ -184,6 +237,8 @@ export class ReturnInspectionComponent implements OnInit {
     this.isSubmitting = false; this.isEditing = false;
     this.resSearch = ''; this.resDropdownOpen = false;
     this.form.get('reservationId')!.enable();
+    this.carId = null; this.preExistingDamages = [];
+    this.show3DOverlay = false; this.newDamages = [];
   }
 
   @HostListener('document:keydown.escape') onEscape() { this.closeModal(); }

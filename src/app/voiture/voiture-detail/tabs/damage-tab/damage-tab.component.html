@@ -1,11 +1,25 @@
 <div class="itab-wrap">
   <div class="itab-header">
     <h2 class="itab-title">⚠️ {{ t('damage') }}</h2>
-    <div style="display:flex;gap:.5rem;align-items:center">
-      <button class="itab-refresh" (click)="load()" [title]="t('retry')">↻</button>
-      <button class="dmg-add-btn" (click)="openAddForm()" *ngIf="!showAddForm">+ {{ t('addDamage') }}</button>
+    <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+      <!-- 3D / 2D toggle -->
+      <button class="dmg-view-toggle" [class.active]="!view3D" (click)="view3D = false" title="Vue liste">
+        ☰ Liste
+      </button>
+      <button class="dmg-view-toggle" [class.active]="view3D" (click)="enable3D()" title="Vue 3D">
+        🔍 Vue 3D
+      </button>
+      <button class="itab-refresh" (click)="load()" [title]="t('retry')" *ngIf="!view3D">↻</button>
+      <button class="dmg-view-toggle" (click)="downloadPdfReport()" title="Télécharger le rapport PDF">📄 Rapport PDF</button>
+      <button class="dmg-add-btn" (click)="openAddForm()" *ngIf="!showAddForm && !view3D">+ {{ t('addDamage') }}</button>
     </div>
   </div>
+
+  <!-- ── 3D Inspection View ──────────────────────────────────────── -->
+  <app-inspection-demo *ngIf="view3D" [voitureId]="carId" [embedded]="true"></app-inspection-demo>
+
+  <!-- ── 2D List View ─────────────────────────────────────────────── -->
+  <ng-container *ngIf="!view3D">
 
   <!-- ── Add Damage Form ───────────────────────────────────────────── -->
   <div *ngIf="showAddForm" class="dmg-add-form">
@@ -177,6 +191,8 @@
     </div>
 
   </div>
+
+  </ng-container><!-- /!view3D -->
 </div>
 
 <!-- ── Repair Modal ─────────────────────────────────────────────────────────── -->

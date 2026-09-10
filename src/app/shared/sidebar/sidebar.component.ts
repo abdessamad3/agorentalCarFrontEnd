@@ -44,7 +44,7 @@ export class SidebarComponent implements OnInit {
       labelKey: 'groupFleet',
       items: [
         { link: '/voiture',              icon: '🚗', key: 'myCars' },
-        { link: '/inspection-demo',      icon: '🔍', key: 'inspection3D',        roles: ['ROLE_ADMIN','ROLE_MANAGER'] },
+        { link: '/inspection-demo',      icon: '🔍', key: 'inspection3D',        roles: ['ROLE_ADMIN'] },
         { link: '/compliance',           icon: '⏰', key: 'compliance',          roles: ['ROLE_ADMIN'] },
         { link: '/compliance-center',    icon: '⚡', key: 'complianceCenterNav', roles: ['ROLE_ADMIN'] },
         { link: '/fleet-health',         icon: '❤️', key: 'fleetHealth',        roles: ['ROLE_ADMIN'] },

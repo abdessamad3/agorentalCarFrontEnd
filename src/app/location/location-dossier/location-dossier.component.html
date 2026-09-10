@@ -21,6 +21,12 @@
           <ng-container *ngIf="status === 'annulee'">—</ng-container>
         </span>
       </div>
+      <button *ngIf="canConfirm"
+              class="btn-confirm-reservation"
+              [disabled]="confirming"
+              (click)="confirmReservation()">
+        {{ confirming ? '...' : '✓ ' + t('confirmReservation') }}
+      </button>
       <button *ngIf="canCancel"
               class="btn-cancel-reservation"
               [disabled]="cancelling"

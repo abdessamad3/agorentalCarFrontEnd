@@ -24,6 +24,9 @@
 .car-name  { font-weight: 500; }
 .car-plate { font-size: 11px; color: var(--text-secondary, #888); }
 
+/* Form group labels should not intercept pointer events on inputs below them */
+.form-group > label { pointer-events: none; }
+
 /* Condition pill radio group */
 .condition-pills { display: flex; gap: 10px; flex-wrap: wrap; }
 .pill {
@@ -99,3 +102,42 @@
 
 .res-empty { color: #9ca3af; cursor: default; font-style: italic; }
 .res-empty:hover { background: transparent; }
+
+/* ── 3D inspection ── */
+.dmg-label-row {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: .35rem;
+}
+.ri-3d-btn {
+  display: inline-flex; align-items: center; gap: .3rem;
+  padding: .22rem .65rem; border-radius: 6px;
+  border: 1px solid #2563eb; background: transparent; color: #2563eb;
+  font-size: .78rem; font-weight: 500; cursor: pointer; transition: all .15s;
+}
+.ri-3d-btn:hover { background: #2563eb; color: #fff; }
+
+.ri-chips { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .4rem; }
+.ri-chip {
+  background: #fef3c7; color: #92400e; border: 1px solid #fcd34d;
+  border-radius: 99px; padding: .15rem .55rem; font-size: .75rem; font-weight: 500;
+}
+
+.ri-3d-overlay {
+  position: fixed; inset: 0; z-index: 1200;
+  background: #0f1623; display: flex; flex-direction: column; overflow: hidden;
+}
+.ri-3d-overlay-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .5rem .85rem; background: #1a2235; border-bottom: 1px solid rgba(255,255,255,.1);
+  flex-shrink: 0;
+}
+.ri-3d-legend { display: flex; align-items: center; gap: .35rem; color: #94a3b8; font-size: .8rem; }
+.ri-legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.ri-legend-grey { background: #9ca3af; }
+.ri-legend-orange { background: #f59e0b; }
+.ri-3d-done-btn {
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .3rem .85rem; border-radius: 6px; border: none;
+  background: #22c55e; color: #fff; font-size: .85rem; font-weight: 600; cursor: pointer;
+  transition: background .15s;
+}
+.ri-3d-done-btn:hover { background: #16a34a; }
