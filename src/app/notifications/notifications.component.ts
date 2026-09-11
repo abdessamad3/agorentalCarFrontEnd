@@ -198,14 +198,14 @@ export class NotificationsComponent implements OnInit {
 
   actionLabel(source: NotifSource): string {
     const m: Record<NotifSource, string> = {
-      assurance:   'Renew Insurance',
-      vignette:    'Pay Vignette',
-      visite:      'Create Inspection',
-      contrat:     'View Contract',
-      vidange:     'View Car',
-      reservation: 'Open Dossier',
+      assurance:   'notifActionRenew',
+      vignette:    'notifActionPay',
+      visite:      'notifActionCreateInspection',
+      contrat:     'notifActionViewContract',
+      vidange:     'notifActionViewCar',
+      reservation: 'notifActionOpenDossier',
     };
-    return m[source];
+    return this.ts.translate(m[source]);
   }
 
   actionClass(source: NotifSource): string {
@@ -226,11 +226,14 @@ export class NotificationsComponent implements OnInit {
 
   sourceLabel(s: NotifSource): string {
     const m: Record<NotifSource, string> = {
-      assurance:   'Insurance', vignette: 'Vignette', visite: 'Inspection',
-      contrat:     'Contract',  vidange:  'Oil Change',
-      reservation: 'Reservation',
+      assurance:   'assurances',
+      vignette:    'vignettes',
+      visite:      'suiviTechnique',
+      contrat:     'contrats',
+      vidange:     'vidanges',
+      reservation: 'reservations',
     };
-    return m[s];
+    return this.ts.translate(m[s]);
   }
 
   sourceIcon(s: NotifSource): string {
@@ -432,7 +435,7 @@ export class NotificationsComponent implements OnInit {
         vehicleLabel: carMap[vid] || `#${vid || i.annee}`,
         vehicleId: +vid,
         expiryDate: i.dateLimite, daysLeft: days, status: this.statusFor(days),
-        detail: i.annee ? `Year ${i.annee}` : '—',
+        detail: i.annee ? `${this.ts.translate('notifDetailYear')} ${i.annee}` : '—',
       };
     });
   }
@@ -453,7 +456,7 @@ export class NotificationsComponent implements OnInit {
         vehicleId: +vid,
         expiryDate: i.dateFin, daysLeft: days, status: this.statusFor(days),
         detail: i.dateReglages
-          ? `Checked: ${new Date(i.dateReglages).toLocaleDateString('fr-FR')}`
+          ? `${this.ts.translate('notifDetailChecked')}: ${new Date(i.dateReglages).toLocaleDateString('fr-FR')}`
           : '—',
       };
     });
@@ -472,7 +475,7 @@ export class NotificationsComponent implements OnInit {
         vehicleLabel: carLabel,
         vehicleId: i.voitureId,
         expiryDate: i.dateFin, daysLeft: days, status: this.statusFor(days),
-        detail: clientName ? `Client: ${clientName}` : `Contract #${i.id}`,
+        detail: clientName ? `${this.ts.translate('notifDetailClient')}: ${clientName}` : `${this.ts.translate('notifDetailContract')} #${i.id}`,
       };
     });
   }
@@ -487,8 +490,8 @@ export class NotificationsComponent implements OnInit {
       const km: number   = i.remainingKm as number;
       const status: NotifStatus = km <= 0 ? 'expired' : 'critical';
       const detail = km <= 0
-        ? `Oil change overdue by ${Math.abs(km).toLocaleString()} km`
-        : `Oil change due in ${km.toLocaleString()} km`;
+        ? `${this.ts.translate('vidanges')} — ${this.ts.translate('notifDetailOilOverdue')} ${Math.abs(km).toLocaleString()} km`
+        : `${this.ts.translate('vidanges')} — ${this.ts.translate('notifDetailOilDue')} ${km.toLocaleString()} km`;
       return {
         id: i.vidangeId,
         source: 'vidange' as NotifSource,
