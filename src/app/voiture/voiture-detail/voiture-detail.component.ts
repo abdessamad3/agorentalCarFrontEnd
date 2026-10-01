@@ -149,9 +149,11 @@ export class VoitureDetailComponent implements OnInit {
       modele:            [''],
       version:           [''],
       annee:             [''],
+      plateType:         ['standard'],
       immatNum1:         [''],
       immatLetter:       [''],
       immatNum2:         [''],
+      immatWW:           [''],
       vin:               [''],
       typeCarburant:     ['Essence'],
       transmission:      ['Manuelle'],
@@ -904,13 +906,23 @@ export class VoitureDetailComponent implements OnInit {
     (el as HTMLInputElement).value = (el as HTMLInputElement).value.replace(/[^a-zA-Z]/g, '').toUpperCase();
   }
 
-  private parsePlate(plate: string): { immatNum1: string; immatLetter: string; immatNum2: string } {
-    const parts = (plate || '').split('-');
-    return { immatNum1: parts[0] || '', immatLetter: parts[1] || '', immatNum2: parts[2] || '' };
+  private parsePlate(plate: string): { plateType: string; immatNum1: string; immatLetter: string; immatNum2: string; immatWW: string } {
+    const m = (plate || '').match(/^(\d{1,5})-([A-Za-z])-(\d{1,2})$/);
+    if (m) {
+      return { plateType: 'standard', immatNum1: m[1], immatLetter: m[2].toUpperCase(), immatNum2: m[3], immatWW: '' };
+    }
+    return { plateType: plate ? 'ww' : 'standard', immatNum1: '', immatLetter: '', immatNum2: '', immatWW: plate || '' };
+  }
+
+  get isWwPlate(): boolean { return this.editForm.value.plateType === 'ww'; }
+
+  setPlateType(type: 'standard' | 'ww'): void {
+    this.editForm.patchValue({ plateType: type });
   }
 
   private buildPlate(): string {
-    const { immatNum1, immatLetter, immatNum2 } = this.editForm.value;
+    const { plateType, immatNum1, immatLetter, immatNum2, immatWW } = this.editForm.value;
+    if (plateType === 'ww') return (immatWW || '').trim();
     return [immatNum1, (immatLetter || '').toUpperCase(), immatNum2].filter(Boolean).join('-');
   }
 
@@ -919,7 +931,7 @@ export class VoitureDetailComponent implements OnInit {
     this.isSubmitting = true;
     const id        = this.car.id;
     const imageFile = this.editImageFile;
-    const { immatNum1, immatLetter, immatNum2, ...formRest } = this.editForm.value;
+    const { plateType, immatNum1, immatLetter, immatNum2, immatWW, ...formRest } = this.editForm.value;
     const payload = { ...formRest, immatriculation: this.buildPlate() };
     this.voitureService.updateVoiture(id, payload).pipe(
       switchMap(() => imageFile ? this.voitureService.updateVoitureImage(id, imageFile) : of(null))

@@ -194,7 +194,8 @@
     <div *ngIf="finTransactions.length === 0" class="fin-tx-empty">{{ t('noTransactions') }}</div>
 
     <!-- Desktop table -->
-    <table class="fin-tx-table exp-desktop-only" *ngIf="finTransactions.length > 0">
+    <div class="fin-tx-table-wrap exp-desktop-only" *ngIf="finTransactions.length > 0">
+    <table class="fin-tx-table">
       <thead>
         <tr>
           <th>{{ t('date') }}</th>
@@ -230,6 +231,7 @@
         </tr>
       </tbody>
     </table>
+    </div>
 
     <!-- Mobile cards -->
     <div class="exp-cards-mobile" *ngIf="finTransactions.length > 0">

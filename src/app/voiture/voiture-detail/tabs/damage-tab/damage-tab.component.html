@@ -2,21 +2,23 @@
   <div class="itab-header">
     <h2 class="itab-title">⚠️ {{ t('damage') }}</h2>
     <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
-      <!-- 3D / 2D toggle -->
-      <button class="dmg-view-toggle" [class.active]="!view3D" (click)="view3D = false" title="Vue liste">
-        ☰ Liste
-      </button>
-      <button class="dmg-view-toggle" [class.active]="view3D" (click)="enable3D()" title="Vue 3D">
-        🔍 Vue 3D
-      </button>
+      <!-- 3D / 2D toggle — 3D inspection is admin-only -->
+      <ng-container *ngIf="isAdmin">
+        <button class="dmg-view-toggle" [class.active]="!view3D" (click)="view3D = false" title="Vue liste">
+          ☰ Liste
+        </button>
+        <button class="dmg-view-toggle" [class.active]="view3D" (click)="enable3D()" title="Vue 3D">
+          🔍 Vue 3D
+        </button>
+      </ng-container>
       <button class="itab-refresh" (click)="load()" [title]="t('retry')" *ngIf="!view3D">↻</button>
       <button class="dmg-view-toggle" (click)="downloadPdfReport()" title="Télécharger le rapport PDF">📄 Rapport PDF</button>
       <button class="dmg-add-btn" (click)="openAddForm()" *ngIf="!showAddForm && !view3D">+ {{ t('addDamage') }}</button>
     </div>
   </div>
 
-  <!-- ── 3D Inspection View ──────────────────────────────────────── -->
-  <app-inspection-demo *ngIf="view3D" [voitureId]="carId" [embedded]="true"></app-inspection-demo>
+  <!-- ── 3D Inspection View (admin only) ──────────────────────────── -->
+  <app-inspection-demo *ngIf="view3D && isAdmin" [voitureId]="carId" [embedded]="true"></app-inspection-demo>
 
   <!-- ── 2D List View ─────────────────────────────────────────────── -->
   <ng-container *ngIf="!view3D">

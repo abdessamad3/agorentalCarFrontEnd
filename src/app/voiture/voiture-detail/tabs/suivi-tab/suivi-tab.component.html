@@ -81,6 +81,10 @@
           </select>
         </div>
         <div class="edit-field">
+          <label>{{ t('montant') }} (MAD)</label>
+          <input type="number" min="0" formControlName="montant" placeholder="0" />
+        </div>
+        <div class="edit-field">
           <label>{{ isEditing && selectedItem?.filePath ? t('replaceDoc') : t('uploadDoc') }}</label>
           <app-upload-btn label="+ Upload" accept="image/*,.pdf" (fileSelected)="onFileSelect($event)"></app-upload-btn>
           <small *ngIf="selectedFile" style="display:block;margin-top:0.25rem;color:#6b7280">{{ selectedFile.name }}

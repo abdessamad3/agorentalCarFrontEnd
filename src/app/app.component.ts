@@ -67,23 +67,33 @@ export class AppComponent implements OnInit {
   }
 
   /**
-   * Managers/staff don't pick their branding manually — load it for them on every fresh session.
-   * The logo lives on the Company (bureau.company.logo), not on the bureau's Parametres.
-   * Fetches /auth/me instead of trusting the cached login-time user object, since the admin may have
-   * assigned the bureau/company after this user's session/token was already created.
+   * Company name/logo is global (ParametresSociete, single row) — refresh it for
+   * every role on every fresh session so the sidebar never relies on stale
+   * localStorage or on the admin having revisited the settings page.
+   * Bureau locking is separate: only managers/staff are pinned to one bureau
+   * (via their user), fetched from /auth/me since the admin may have assigned
+   * the bureau after this user's session/token was already created. Admins
+   * pick their own bureau filter via the sidebar switcher — never touched here.
    */
   private syncCompanyBranding(): void {
+    this.http.get<any>(`${environment.apiUrl}/parametres-societe`).subscribe({
+      next: (ps) => {
+        const rawLogo = ps?.logoPath || null;
+        const logoUrl = rawLogo && !rawLogo.startsWith('http')
+          ? `${environment.serverUrl}${rawLogo}`
+          : rawLogo;
+        this.companyService.setCompanyName(ps?.raisonSociale || 'AGOCAR');
+        this.companyService.setLogo(logoUrl);
+      },
+      error: () => {}
+    });
+
     if (!this.authService.hasAnyRole('ROLE_MANAGER', 'ROLE_STAFF')) return;
 
     this.http.get<any>(`${environment.apiUrl}/auth/me`).subscribe({
       next: (res) => {
         const me = res?.data ?? res;
-        if (!me?.bureau) return;
-        const rawLogo = me.companyLogo || null;
-        const logoUrl = rawLogo && !rawLogo.startsWith('http')
-          ? `${environment.serverUrl}${rawLogo}`
-          : rawLogo;
-        this.companyService.setCurrentBureau(me.bureau, me.companyNom || 'AGOCAR', logoUrl);
+        if (me?.bureau != null) this.companyService.setCurrentBureau(me.bureau);
       },
       error: () => {}
     });

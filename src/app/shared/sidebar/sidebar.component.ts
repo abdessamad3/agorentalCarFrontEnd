@@ -159,19 +159,12 @@ export class SidebarComponent implements OnInit {
       .subscribe(() => this.closeSidebar.emit());
   }
 
+  // Company branding (name/logo) is global now, not per-bureau -- no need to
+  // refetch it on bureau switch, just navigate.
   onBureauSwitch(event: Event) {
     const id = +(event.target as HTMLSelectElement).value;
     this.companyService.setCurrentBureau(id);
-    this.http.get<any>(`${environment.apiUrl}/parametres/${id}`).subscribe({
-      next: (data) => {
-        this.companyService.setCompanyName(data.companyName || 'AGOCAR');
-        this.companyService.setLogo(data.logo || null);
-        window.location.href = '/dashboard';
-      },
-      error: () => {
-        window.location.href = '/dashboard';
-      }
-    });
+    window.location.href = '/dashboard';
   }
 
   canSee(roles?: string[]): boolean {

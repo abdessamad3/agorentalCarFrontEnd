@@ -1,20 +1,20 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { CompanyService } from '../services/company.service';
 import { ToastService } from '../services/toast.service';
 import { TranslationService } from '../services/translation.service';
 import { TranslatePipe } from '../pipes/translate.pipe';
 import { environment } from '../../environments/environment';
-import { UploadBtnComponent } from '../shared/btn/upload-btn.component';
 
 type Tab = 'general' | 'localization' | 'rental' | 'notifications';
 
 @Component({
   selector: 'app-parametres',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TranslatePipe, UploadBtnComponent],
+  imports: [CommonModule, ReactiveFormsModule, TranslatePipe, RouterLink],
   templateUrl: './parametres.component.html',
   styleUrls: ['../shared/styles/crud-list.css', './parametres.component.css']
 })
@@ -23,9 +23,6 @@ export class ParametresComponent implements OnInit {
   isSaving = false;
   saveSuccess = false;
   testEmailStatus: '' | 'sending' | 'sent' | 'error' = '';
-  logoPreview: string | null = null;
-  private logoFile: File | null = null;
-  private blobUrl: string | null = null;
   showDeleteConfirm = false;
 
   bureaux: { id: number; nom: string }[] = [];
@@ -50,23 +47,7 @@ export class ParametresComponent implements OnInit {
     private toast: ToastService,
     private ts: TranslationService
   ) {
-    this.logoPreview = companyService.getCurrentLogo();
     this.form = this.fb.group({
-      companyName:  ['AGOCAR'],
-      tradeName:    [''],
-      ice:          [''],
-      rc:           [''],
-      cnss:         [''],
-      taxId:        [''],
-      address:      [''],
-      city:         [''],
-      region:       [''],
-      postalCode:   [''],
-      phone:        [''],
-      email:        [''],
-      website:      [''],
-      whatsapp:     [''],
-
       currency:          ['MAD'],
       language:          ['fr'],
       dateFormat:        ['DD/MM/YYYY'],
@@ -146,11 +127,6 @@ export class ParametresComponent implements OnInit {
     this.http.get<any>(`${this.apiUrl}/${this.selectedBureauId}`).subscribe({
       next: (data) => {
         this.form.patchValue(data);
-        this.logoPreview = data.logo ?? null;
-        this.companyService.setLogo(data.logo ?? null);
-        if (data.companyName) {
-          this.companyService.setCompanyName(data.companyName);
-        }
         this.isLoading = false;
       },
       error: () => { this.isLoading = false; }
@@ -168,61 +144,17 @@ export class ParametresComponent implements OnInit {
     this.activeTab = tab;
   }
 
-  onLogoChange(file: File) {
-    if (!this.selectedBureauId) return;
-
-    this.revokeBlobUrl();
-    this.blobUrl = URL.createObjectURL(file);
-    this.logoPreview = this.blobUrl;
-
-    const fd = new FormData();
-    fd.append('logoFile', file);
-    this.http.post<{ logo: string }>(`${this.apiUrl}/${this.selectedBureauId}/logo`, fd).subscribe({
-      next: (res) => {
-        this.revokeBlobUrl();
-        this.logoFile = null;
-        this.logoPreview = res.logo;
-        this.companyService.setLogo(res.logo);
-      },
-      error: () => {
-        this.toast.show('Logo upload failed', 'error');
-        this.revokeBlobUrl();
-        this.logoPreview = this.companyService.getCurrentLogo();
-      }
-    });
-  }
-
-  removeLogo() {
-    this.revokeBlobUrl();
-    this.logoFile = null;
-    this.logoPreview = null;
-    this.companyService.setLogo(null);
-  }
-
-  private revokeBlobUrl() {
-    if (this.blobUrl) {
-      URL.revokeObjectURL(this.blobUrl);
-      this.blobUrl = null;
-    }
-  }
-
   save() {
     if (!this.selectedBureauId) return;
     this.isSaving = true;
-    const payload = { ...this.form.value, logo: this.logoPreview };
-    this.http.put<any>(`${this.apiUrl}/${this.selectedBureauId}`, payload).subscribe({
+    this.http.put<any>(`${this.apiUrl}/${this.selectedBureauId}`, this.form.value).subscribe({
       next: (data) => {
         this.isSaving = false;
         this.saveSuccess = true;
         setTimeout(() => (this.saveSuccess = false), 3000);
-        if (data.companyName) {
-          this.companyService.setCompanyName(data.companyName);
-          if (this.selectedBureauId) {
-            this.companyService.updateBureauName(this.selectedBureauId, data.bureauNom ?? data.companyName);
-          }
+        if (data.bureauNom && this.selectedBureauId) {
+          this.companyService.updateBureauName(this.selectedBureauId, data.bureauNom);
         }
-        this.logoPreview = data.logo ?? null;
-        this.companyService.setLogo(data.logo ?? null);
         this.toast.show('Settings saved successfully', 'success');
       },
       error: () => {

@@ -8,6 +8,7 @@ import { VehicleMapComponent, VEHICLE_ZONES } from '../../../../shared/vehicle-m
 import { ModalComponent } from '../../../../shared/modal/modal.component';
 import { PayDepPanelComponent } from '../../../../shared/pay-dep-panel/pay-dep-panel.component';
 import { InspectionDemoComponent } from '../../../../inspection-demo/inspection-demo.component';
+import { EventBusService } from '../../../../services/event-bus.service';
 
 export interface DamageRecord {
   id: number;
@@ -37,6 +38,7 @@ export class DamageTabComponent implements OnInit {
   @Input() carId!: number;
   @Input() car!: any;
   @Input() dir = 'ltr';
+  @Input() isAdmin = false;
 
   // 3D view toggle
   view3D = false;
@@ -71,6 +73,7 @@ export class DamageTabComponent implements OnInit {
 
   onRepairPaymentChanged(): void {
     this.load();
+    this.bus.paymentsChanged$.next();
   }
 
   // ── Repair modal ─────────────────────────────────────────────────────────────
@@ -90,11 +93,12 @@ export class DamageTabComponent implements OnInit {
     { value: 'broken',  key: 'sevBroken' },
   ];
 
-  constructor(private http: HttpClient, private ts: TranslationService) {}
+  constructor(private http: HttpClient, private ts: TranslationService, private bus: EventBusService) {}
 
   ngOnInit(): void { this.load(); }
 
   enable3D(): void {
+    if (!this.isAdmin) return;
     this.view3D = true;
     setTimeout(() => {
       document.querySelector('app-inspection-demo')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -211,6 +215,7 @@ export class DamageTabComponent implements OnInit {
         this.repairDamage = null;
         this.repairFile = null;
         this.load();
+        this.bus.paymentsChanged$.next();
       },
       error: (err) => {
         this.submittingRepair = false;

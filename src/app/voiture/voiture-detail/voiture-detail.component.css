@@ -546,6 +546,7 @@
 .fin-filter-btn { height: 34px; padding: 0 1rem; border: none; border-radius: var(--radius-sm); background: var(--blue); color: #fff; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
 .fin-filter-btn:hover { background: var(--navy-mid); }
 .fin-tx-empty { padding: 2.5rem; text-align: center; color: var(--text-muted); font-size: 0.88rem; }
+.fin-tx-table-wrap { overflow-x: auto; }
 .fin-tx-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
 .fin-tx-table th { padding: 0.65rem 0.85rem; background: var(--bg); color: var(--text-soft); font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; text-align: left; border-bottom: 1px solid var(--border); }
 .fin-tx-table td { padding: 0.65rem 0.85rem; border-bottom: 1px solid var(--border); color: var(--text-dark); vertical-align: middle; }
@@ -989,10 +990,19 @@
   color: var(--text-dark);
   padding: 0.5rem 0.4rem;
 }
-.plate-num1   { width: 58px; }
+.plate-num1   { width: 70px; }
 .plate-letter { width: 36px; text-transform: uppercase; border-inline: 1.5px solid var(--border) !important; }
 .plate-num2   { width: 40px; }
+.plate-ww     { width: 160px; text-transform: uppercase; }
 .plate-sep { font-weight: 700; color: #a0aec0; font-size: 1rem; padding: 0 3px; user-select: none; }
+
+.plate-type-toggle { display: flex; gap: 6px; margin-bottom: 6px; }
+.plate-type-toggle button {
+  padding: 3px 10px; border: 1.5px solid var(--border, #cbd5e0); border-radius: 6px;
+  background: var(--surface, white); color: var(--text-muted, #718096); font-size: 0.78rem; font-weight: 600;
+  cursor: pointer; transition: all 0.15s;
+}
+.plate-type-toggle button.active { background: #3182ce; border-color: #3182ce; color: white; }
 .check-label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; font-weight: 600; color: var(--text-dark); cursor: pointer; }
 .check-label input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
 .edit-img-row { display: flex; align-items: flex-end; gap: 1rem; margin-bottom: 0.5rem; }
@@ -1390,9 +1400,9 @@
   cursor: pointer; transition: all 0.15s; white-space: nowrap;
 }
 .efb2-clear-btn:hover { background: #fee2e2; border-color: #dc2626; }
-.efb2-daterange { flex: 2; min-width: 0; display: flex; align-items: center; gap: 0.35rem; }
+.efb2-daterange { flex: 2; min-width: 230px; display: flex; align-items: center; gap: 0.35rem; }
 .efb2-date-ctrl {
-  flex: 1; min-width: 0;
+  flex: 1; min-width: 110px;
   position: relative;
   display: flex; align-items: center;
   border-radius: 10px; border: 1px solid var(--color-border-tertiary, #e2e8f0);

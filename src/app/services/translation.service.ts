@@ -545,6 +545,7 @@ export class TranslationService {
 
       // ── Company Settings page ──────────────────────────────────────────────
       companySettingsDesc: 'Manage your company profile, localization, rental rules and notifications',
+      companyIdentityMovedNotice: 'Company logo, legal identity and contact info are now managed on the ',
       saveChanges: 'Save Changes', settingsSaved: 'Settings saved successfully',
       general: 'General', localization: 'Localization', rentalRules: 'Rental Rules', notifications: 'Notifications',
       companyLogo: 'Company Logo', uploadLogo: 'Upload Logo', remove: 'Remove',
@@ -1461,6 +1462,7 @@ export class TranslationService {
 
       // ── Paramètres société ─────────────────────────────────────────────────
       companySettingsDesc: 'Gérez votre profil société, la localisation, les règles de location et les notifications',
+      companyIdentityMovedNotice: 'Le logo, l\'identité légale et les coordonnées de la société se gèrent désormais sur la page ',
       saveChanges: 'Enregistrer les modifications', settingsSaved: 'Paramètres enregistrés avec succès',
       general: 'Général', localization: 'Localisation', rentalRules: 'Règles de location', notifications: 'Notifications',
       companyLogo: 'Logo de la société', uploadLogo: 'Télécharger le logo', remove: 'Supprimer',
@@ -2364,6 +2366,7 @@ export class TranslationService {
 
       // ── إعدادات الشركة ─────────────────────────────────────────────────────
       companySettingsDesc: 'إدارة ملف شركتك والمحلية وقواعد الإيجار والإشعارات',
+      companyIdentityMovedNotice: 'أصبح شعار الشركة وهويتها القانونية ومعلومات الاتصال تُدار الآن في صفحة ',
       saveChanges: 'حفظ التغييرات', settingsSaved: 'تم حفظ الإعدادات بنجاح',
       general: 'عام', localization: 'التوطين', rentalRules: 'قواعد الإيجار', notifications: 'الإشعارات',
       companyLogo: 'شعار الشركة', uploadLogo: 'رفع الشعار', remove: 'إزالة',

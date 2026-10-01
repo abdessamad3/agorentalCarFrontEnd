@@ -5,6 +5,7 @@ import { RouterModule } from '@angular/router';
 import { ContratService } from '../../services/contrat.service';
 import { ToastService } from '../../services/toast.service';
 import { TranslationService } from '../../services/translation.service';
+import { CompanyService } from '../../services/company.service';
 import { environment } from '../../../environments/environment';
 import { UploadBtnComponent } from '../../shared/btn/upload-btn.component';
 
@@ -29,6 +30,9 @@ export class ParametresSocieteComponent implements OnInit {
   ice = '';
   ifFiscal = '';
   cnss = '';
+  email = '';
+  website = '';
+  whatsapp = '';
   logoPath: string | null = null;
 
   readonly serverUrl = environment.serverUrl || '';
@@ -37,6 +41,7 @@ export class ParametresSocieteComponent implements OnInit {
     private contratService: ContratService,
     private toast: ToastService,
     private ts: TranslationService,
+    private companyService: CompanyService,
   ) {}
 
   ngOnInit() {
@@ -52,10 +57,15 @@ export class ParametresSocieteComponent implements OnInit {
         this.ice             = data.ice ?? '';
         this.ifFiscal        = data.ifFiscal ?? '';
         this.cnss            = data.cnss ?? '';
+        this.email           = data.email ?? '';
+        this.website         = data.website ?? '';
+        this.whatsapp        = data.whatsapp ?? '';
         this.logoPath        = data.logoPath ?? null;
         if (this.logoPath) {
           this.logoPreviewUrl = `${this.serverUrl}${this.logoPath}`;
         }
+        this.companyService.setLogo(this.logoPreviewUrl);
+        if (this.raisonSociale) this.companyService.setCompanyName(this.raisonSociale);
         this.loading = false;
       },
       error: () => { this.error = 'Erreur de chargement'; this.loading = false; }
@@ -67,6 +77,7 @@ export class ParametresSocieteComponent implements OnInit {
       next: (res: any) => {
         this.logoPath = res.logoPath ?? null;
         this.logoPreviewUrl = this.logoPath ? `${this.serverUrl}${this.logoPath}` : null;
+        this.companyService.setLogo(this.logoPreviewUrl);
         this.toast.show('Logo mis à jour', 'success');
       },
       error: () => this.toast.show('Erreur upload logo', 'error')
@@ -88,8 +99,12 @@ export class ParametresSocieteComponent implements OnInit {
       ice:           this.ice,
       ifFiscal:      this.ifFiscal,
       cnss:          this.cnss,
+      email:         this.email,
+      website:       this.website,
+      whatsapp:      this.whatsapp,
     }).subscribe({
       next: () => {
+        if (this.raisonSociale) this.companyService.setCompanyName(this.raisonSociale);
         this.toast.show('Paramètres enregistrés', 'success');
         this.saving = false;
       },

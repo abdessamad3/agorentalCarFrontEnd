@@ -806,7 +806,8 @@
         *ngIf="activeTab === 'damage'"
         [carId]="car.id"
         [car]="car"
-        [dir]="dir">
+        [dir]="dir"
+        [isAdmin]="isAdmin">
       </app-damage-tab>
 
       <!-- ══════════════════════════════════════════════ CREDIT TAB -->
@@ -1007,8 +1008,12 @@
           <div class="edit-field"><label>{{ t('year') }} *</label><input type="number" formControlName="annee" /></div>
           <div class="edit-field edit-field-plate">
             <label>{{ t('licensePlate') }}</label>
-            <div class="plate-input">
-              <input formControlName="immatNum1" class="plate-num1" placeholder="1231" maxlength="4"
+            <div class="plate-type-toggle">
+              <button type="button" [class.active]="!isWwPlate" (click)="setPlateType('standard')">{{ t('plateStandard') }}</button>
+              <button type="button" [class.active]="isWwPlate" (click)="setPlateType('ww')">{{ t('plateWw') }}</button>
+            </div>
+            <div class="plate-input" *ngIf="!isWwPlate">
+              <input formControlName="immatNum1" class="plate-num1" placeholder="14703" maxlength="5"
                      (input)="filterDigits($event.target)" />
               <span class="plate-sep">-</span>
               <input formControlName="immatLetter" class="plate-letter" placeholder="A" maxlength="1"
@@ -1016,6 +1021,9 @@
               <span class="plate-sep">-</span>
               <input formControlName="immatNum2" class="plate-num2" placeholder="18" maxlength="2"
                      (input)="filterDigits($event.target)" />
+            </div>
+            <div class="plate-input" *ngIf="isWwPlate">
+              <input formControlName="immatWW" class="plate-ww" placeholder="WWW 757501" maxlength="20" />
             </div>
           </div>
           <div class="edit-field"><label>{{ t('vin') }}</label><input formControlName="vin" /></div>
