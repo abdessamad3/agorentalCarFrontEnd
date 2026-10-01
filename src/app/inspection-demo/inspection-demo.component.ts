@@ -735,18 +735,28 @@ export class InspectionDemoComponent implements AfterViewInit, OnChanges, OnDest
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
+  private sceneReady = false;
+
+  /** Scene/renderer setup needs a live &lt;canvas&gt;, which only exists once
+   *  a car is selected (*ngIf="selectedVoitureId") -- in standalone mode
+   *  that isn't true until the user picks one from the dropdown. Safe to
+   *  call repeatedly; only runs once. */
+  private ensureSceneReady() {
+    if (this.sceneReady) return;
+    this.sceneReady = true;
+    this.initScene();
+    this.loadModel();
+    this.startLoop();
+    this.watchResize();
+  }
+
   ngAfterViewInit() {
     // If voitureId was provided via @Input, set selectedVoitureId first so the
     // *ngIf="selectedVoitureId" renders the canvas before initScene() runs.
     if (this.voitureId) {
       this.selectedVoitureId = this.voitureId;
       this.cdr.detectChanges(); // force DOM update so #canvas is present
-    }
-    this.initScene();
-    this.loadModel();
-    this.startLoop();
-    this.watchResize();
-    if (this.voitureId) {
+      this.ensureSceneReady();
       this.loadDamages(this.voitureId);
     } else {
       this.loadVoitures();
@@ -802,6 +812,8 @@ export class InspectionDemoComponent implements AfterViewInit, OnChanges, OnDest
     this.selectedId = null;
     this.filterMode = 'all';
     if (this.selectedVoitureId) {
+      this.cdr.detectChanges(); // canvas only renders once selectedVoitureId is truthy
+      this.ensureSceneReady();
       this.loadDamages(this.selectedVoitureId);
     }
     this.cdr.markForCheck();
