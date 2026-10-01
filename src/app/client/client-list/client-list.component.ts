@@ -49,11 +49,13 @@ export class ClientListComponent implements OnInit, OnDestroy {
     'dateNaissance', 'lieuNaissance', 'adresseMaroc', 'adresseEtranger',
   ];
 
-  private readonly MOROCCAN_LABELS = new Set(['Marocaine', 'Moroccan', 'مغربي']);
+  private readonly MOROCCAN_LABELS_NORMALIZED = new Set(
+    ['Marocaine', 'Moroccan', 'مغربي'].map(l => ClientListComponent.normalize(l))
+  );
 
   get isMoroccan(): boolean {
     const nat = (this.form.get('nationalite')?.value || '').trim();
-    return !nat || this.MOROCCAN_LABELS.has(nat);
+    return !nat || this.MOROCCAN_LABELS_NORMALIZED.has(ClientListComponent.normalize(nat));
   }
 
   private updateDocumentValidators(): void {
@@ -68,6 +70,18 @@ export class ClientListComponent implements OnInit, OnDestroy {
     }
     cin.updateValueAndValidity({ emitEvent: false });
     passeport.updateValueAndValidity({ emitEvent: false });
+    this.updateExpirationValidators();
+  }
+
+  /** cinExpiration/passeportExpiration are only required once their
+   *  parent document number has actually been entered. */
+  private updateExpirationValidators(): void {
+    const cinExpiration = this.form.get('cinExpiration')!;
+    const passeportExpiration = this.form.get('passeportExpiration')!;
+    cinExpiration.setValidators((this.form.get('cin')!.value || '').trim() ? Validators.required : null);
+    passeportExpiration.setValidators((this.form.get('passeport')!.value || '').trim() ? Validators.required : null);
+    cinExpiration.updateValueAndValidity({ emitEvent: false });
+    passeportExpiration.updateValueAndValidity({ emitEvent: false });
   }
 
   readonly nationalitesList = NATIONALITES;
@@ -108,7 +122,7 @@ export class ClientListComponent implements OnInit, OnDestroy {
       passeportDelivreLe:   [''],
       passeportDelivreA:    [''],
       permisConduite:       ['', Validators.required],
-      permisExpiration:     [''],
+      permisExpiration:     ['', Validators.required],
       permisDelivreLe:      [''],
       permisDelivreA:       [''],
       nationalite:          ['', Validators.required],
@@ -125,6 +139,12 @@ export class ClientListComponent implements OnInit, OnDestroy {
     this.ts.direction$.subscribe(d => this.dir = d);
     this.form.get('nationalite')!.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
       this.updateDocumentValidators();
+    });
+    this.form.get('cin')!.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
+      this.updateExpirationValidators();
+    });
+    this.form.get('passeport')!.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
+      this.updateExpirationValidators();
     });
     this.searchSubject.pipe(
       debounceTime(300),

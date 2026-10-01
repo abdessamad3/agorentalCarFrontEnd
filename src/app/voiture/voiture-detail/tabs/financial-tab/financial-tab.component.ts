@@ -575,4 +575,30 @@ export class FinancialTabComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   t(key: string): string { return this.ts.translate(key); }
+
+  txTypeLabel(type: string): string {
+    const found = this.FIN_TX_TYPES.find(ft => ft.value === type);
+    if (found) return this.t(found.labelKey);
+    if (type === 'income')  return this.t('income');
+    if (type === 'expense') return this.t('expense');
+    return type || '—';
+  }
+
+  private static readonly DESC_TYPE_MAP: Record<string, string> = {
+    vignette:        'vignettes',
+    assurance:       'insuranceDoc',
+    suivi_technique: 'technicalDoc',
+    suivitechnique:  'technicalDoc',
+    reparation:      'reparations',
+    vidange:         'vidanges',
+    adblue:          'adblue',
+  };
+
+  txDescLabel(desc: string | null | undefined): string {
+    if (!desc) return '—';
+    const resMatch = desc.match(/^R[ée]servation #(\d+)$/i);
+    if (resMatch) return `${this.t('reservation')} #${resMatch[1]}`;
+    const key = FinancialTabComponent.DESC_TYPE_MAP[desc.toLowerCase().trim()];
+    return key ? this.t(key) : desc;
+  }
 }

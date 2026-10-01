@@ -73,7 +73,7 @@
       <div class="exec-rank-list">
         <div *ngFor="let c of topByRevenue; let i = index" class="exec-rank-row">
           <span class="exec-rank-medal">{{ rankLabel(i) }}</span>
-          <div class="exec-rank-info" style="min-width:140px; max-width:180px">
+          <div class="exec-rank-info">
             <span class="exec-rank-name">{{ c.name }}</span>
             <span class="exec-rank-plate">{{ c.phone || '—' }}</span>
           </div>
@@ -97,7 +97,7 @@
       <div class="exec-rank-list">
         <div *ngFor="let c of topByRentals; let i = index" class="exec-rank-row">
           <span class="exec-rank-medal">{{ rankLabel(i) }}</span>
-          <div class="exec-rank-info" style="min-width:140px; max-width:180px">
+          <div class="exec-rank-info">
             <span class="exec-rank-name">{{ c.name }}</span>
             <span class="exec-rank-plate">{{ c.phone || '—' }}</span>
           </div>

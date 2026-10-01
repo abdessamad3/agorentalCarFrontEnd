@@ -227,4 +227,147 @@ export class TopHeaderComponent implements OnInit, OnDestroy {
 
   t(key: string) { return this.ts.translate(key); }
   changeLang(lang: string) { this.ts.setLanguage(lang); }
+
+  private static readonly MONTHS: Record<'fr' | 'en' | 'ar', string[]> = {
+    fr: ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc'],
+    en: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+    ar: ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'],
+  };
+
+  fmtDate(raw: string | Date | null | undefined): string {
+    if (!raw) return '';
+    const d = raw instanceof Date ? raw : new Date(raw);
+    if (isNaN(d.getTime())) return String(raw);
+    const lang = (this.currentLang as 'fr' | 'en' | 'ar') in TopHeaderComponent.MONTHS
+      ? this.currentLang as 'fr' | 'en' | 'ar' : 'fr';
+    const month = TopHeaderComponent.MONTHS[lang][d.getMonth()];
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    return `${d.getDate()} ${month}، ${hh}:${mm}`;
+  }
+
+  notifTitle(n: AppNotification): string {
+    const lang = this.currentLang as 'fr' | 'en' | 'ar';
+    if (lang === 'fr') return n.title;
+    const sep = n.title.lastIndexOf(' — ');
+    const suffix = sep >= 0 ? n.title.slice(sep + 3) : n.title;
+    switch (n.type) {
+      case 'reservation_created': {
+        const car = n.title.replace(/^[^-]+-\s*/, '');
+        return lang === 'ar' ? `حجز جديد — ${car}` : `New Booking — ${car}`;
+      }
+      case 'compliance_expired':
+        return lang === 'ar' ? `وثيقة منتهية الصلاحية — ${suffix}` : `Compliance expired — ${suffix}`;
+      case 'compliance_warning':
+        return lang === 'ar' ? `وثيقة تنتهي قريباً — ${suffix}` : `Compliance expiring — ${suffix}`;
+      case 'compliance_assurance':
+      case 'compliance_vignette':
+      case 'compliance_visite': {
+        const docLabels: Record<string, Record<'en' | 'ar', string>> = {
+          compliance_assurance: { en: 'Insurance',  ar: 'التأمين' },
+          compliance_vignette:  { en: 'Vignette',   ar: 'الونيت' },
+          compliance_visite:    { en: 'Inspection', ar: 'الفحص التقني' },
+        };
+        const lbl = docLabels[n.type][lang];
+        if (n.title.includes('expiré'))   return lang === 'ar' ? `${lbl} منتهٍ — ${suffix}`  : `${lbl} expired — ${suffix}`;
+        if (n.title.includes('critique')) return lang === 'ar' ? `${lbl} حرج — ${suffix}`    : `${lbl} critical — ${suffix}`;
+        return lang === 'ar' ? `${lbl} قريباً — ${suffix}` : `${lbl} due soon — ${suffix}`;
+      }
+      case 'oil_change_overdue':
+        return lang === 'ar' ? `تغيير الزيت متأخر — ${suffix}` : `Oil change overdue — ${suffix}`;
+      case 'oil_change_due':
+      case 'oil_change':
+        return lang === 'ar' ? `تغيير الزيت قريباً — ${suffix}` : `Oil change due — ${suffix}`;
+      case 'credit_overdue':
+        return lang === 'ar' ? `قسط التمويل متأخر — ${suffix}` : `Credit installment overdue — ${suffix}`;
+      case 'credit_due':
+      case 'credit_installment':
+        return lang === 'ar' ? `قسط التمويل مستحق — ${suffix}` : `Credit installment due — ${suffix}`;
+      case 'credit_payment': {
+        const isToday = n.title.includes("aujourd'hui");
+        if (isToday) return lang === 'ar' ? `قسط ائتماني مستحق اليوم — ${suffix}` : `Credit installment due today — ${suffix}`;
+        const days = n.title.match(/(\d+)j? avant/)?.[1] ?? '?';
+        const carSep = n.title.lastIndexOf(' — ');
+        const car = carSep > 7 ? n.title.slice('Crédit '.length, carSep) : suffix;
+        return lang === 'ar' ? `قسط ائتماني — ${car} — خلال ${days} أيام` : `Credit installment — ${car} — in ${days} day(s)`;
+      }
+      case 'vehicle_sold':
+        return lang === 'ar' ? `مركبة مباعة — ${suffix}` : `Vehicle sold — ${suffix}`;
+      case 'recurring_expense_due':
+        return lang === 'ar' ? `نفقة متكررة مستحقة — ${suffix}` : `Recurring expense due — ${suffix}`;
+      case 'reservation_conflict':
+        return lang === 'ar' ? `تعارض في حجز — ${suffix}` : `Booking conflict — ${suffix}`;
+      default:
+        return n.title;
+    }
+  }
+
+  notifMsg(n: AppNotification): string {
+    const lang = this.currentLang as 'fr' | 'en' | 'ar';
+    if (lang === 'fr') return n.message;
+    const nums = n.message.match(/[\d.]+/g) ?? [];
+    switch (n.type) {
+      case 'reservation_created': {
+        const dates = n.message.match(/\d{2}\/\d{2}\/\d{4}/g) ?? [];
+        const client = n.message.replace(/^.*?(?:pour|for)\s*/i, '').replace(/,.*$/, '').trim();
+        return lang === 'ar' ? `تم إنشاء حجز لـ ${client}، ${dates.join(' › ')}`
+                             : `Booking created for ${client}, ${dates.join(' › ')}`;
+      }
+      case 'compliance_expired': {
+        const d = nums[0];
+        return d ? (lang === 'ar' ? `انتهت الصلاحية منذ ${d} يوم.` : `Expired ${d} day(s) ago.`)
+                 : (lang === 'ar' ? `الوثيقة منتهية الصلاحية.`      : `Document has expired.`);
+      }
+      case 'compliance_warning': {
+        const d = nums[0] ?? '?';
+        return lang === 'ar' ? `الوثيقة تنتهي خلال ${d} يوم.` : `Document expires in ${d} day(s).`;
+      }
+      case 'compliance_assurance':
+      case 'compliance_vignette':
+      case 'compliance_visite': {
+        if (n.message.startsWith('Expiré depuis')) {
+          const d = nums[0] ?? '?';
+          return lang === 'ar' ? `انتهت الصلاحية منذ ${d} يوم.` : `Expired ${d} day(s) ago.`;
+        }
+        const d = nums[0] ?? '?';
+        const date = n.message.match(/:\s*(.+)$/)?.[1]?.trim() ?? '';
+        return lang === 'ar' ? `تنتهي خلال ${d} يوم${date ? ` (${date})` : ''}.`
+                             : `Expires in ${d} day(s)${date ? ` (${date})` : ''}.`;
+      }
+      case 'oil_change_overdue': {
+        const km = nums[0] ?? '?';
+        return lang === 'ar' ? `تأخر تغيير الزيت بـ ${km} كم.` : `Oil change overdue by ${km} km.`;
+      }
+      case 'oil_change_due':
+      case 'oil_change': {
+        const km = nums[0] ?? '?';
+        return lang === 'ar' ? `تغيير الزيت خلال ${km} كم.` : `Oil change due in ${km} km.`;
+      }
+      case 'credit_overdue': {
+        const amt = nums[0] ?? '?';
+        return lang === 'ar' ? `المنسالة البالغة ${amt} درهم متأخرة.` : `Installment of ${amt} MAD is past due.`;
+      }
+      case 'credit_due':
+      case 'credit_installment': {
+        const amt = nums[0] ?? '?';
+        return lang === 'ar' ? `المنسالة البالغة ${amt} درهم مستحقة.` : `Installment of ${amt} MAD is due.`;
+      }
+      case 'credit_payment': {
+        const installNum = n.message.match(/n°(\d+)/)?.[1] ?? nums[0] ?? '?';
+        const amount = n.message.match(/de\s+([\d.]+)\s+MAD/)?.[1] ?? nums[1] ?? '?';
+        const date = n.message.match(/le\s+(\d{2}\/\d{2}\/\d{4})/)?.[1] ?? '';
+        return lang === 'ar'
+          ? `القسط رقم ${installNum} بمبلغ ${amount} درهم${date ? `، مستحق بتاريخ ${date}` : ''}.`
+          : `Installment #${installNum} of ${amount} MAD${date ? `, due on ${date}` : ''}.`;
+      }
+      case 'vehicle_sold':
+        return lang === 'ar' ? `تم بيع المركبة وإزالتها من الأسطول.` : `Vehicle sold and removed from the active fleet.`;
+      case 'recurring_expense_due':
+        return lang === 'ar' ? `النفقة مستحقة خلال أقل من 10 أيام.` : `Expense due in less than 10 days.`;
+      case 'reservation_conflict':
+        return lang === 'ar' ? `تم اكتشاف تعارض في تواريخ الحجز.` : `A booking conflict has been detected.`;
+      default:
+        return n.message;
+    }
+  }
 }

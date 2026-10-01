@@ -70,9 +70,9 @@
           >
             <span class="notif-type-icon">{{ notifTypeIcon(n.type) }}</span>
             <div class="notif-body">
-              <div class="notif-item-title">{{ n.title }}</div>
-              <div class="notif-item-msg">{{ n.message }}</div>
-              <div class="notif-item-time">{{ n.createdAt | date:'d MMM, HH:mm' }}</div>
+              <div class="notif-item-title">{{ notifTitle(n) }}</div>
+              <div class="notif-item-msg">{{ notifMsg(n) }}</div>
+              <div class="notif-item-time">{{ fmtDate(n.createdAt) }}</div>
             </div>
             <span class="notif-dot" *ngIf="!n.isRead"></span>
           </div>

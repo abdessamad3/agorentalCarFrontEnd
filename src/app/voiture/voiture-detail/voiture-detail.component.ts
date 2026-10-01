@@ -1,5 +1,5 @@
 import { Component, OnInit, HostListener } from '@angular/core';
-import { vehicleStatusClass } from '../../shared/utils/status.utils';
+import { vehicleStatusClass, vehicleStatusLabel } from '../../shared/utils/status.utils';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
@@ -369,7 +369,7 @@ export class VoitureDetailComponent implements OnInit {
   readonly statusClass = vehicleStatusClass;
 
   get lifecycleLabel(): string {
-    return this.effectiveStatus;
+    return vehicleStatusLabel(this.effectiveStatus, this.ts.getCurrentLanguage());
   }
 
   /** Returns true for terminal states where no actions are available */

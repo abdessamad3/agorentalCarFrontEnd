@@ -5,6 +5,7 @@ import { map, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { ToastService } from './toast.service';
 import { CompanyService } from './company.service';
+import { TranslationService } from './translation.service';
 
 // ─── Standard API envelope types ─────────────────────────────────────────────
 
@@ -26,39 +27,6 @@ export interface ApiPage<T = any> {
 }
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
-
-const LABELS: Record<string, string> = {
-  voiture:            'Car',
-  reservation:        'Reservation',
-  client:             'Client',
-  bureau:             'Bureau',
-  utilisateur:        'User',
-  contrat:            'Contract',
-  paiement:           'Payment',
-  depense:            'Expense',
-  fournisseur:        'Supplier',
-  achat:              'Purchase',
-  'achat-voiture':    'Purchase',
-  vente:              'Sale',
-  credit:             'Credit',
-  assurance:          'Insurance',
-  reparation:         'Repair',
-  vidange:            'Oil change',
-  vignette:           'Vignette',
-  infraction:         'Infraction',
-  accessoire:         'Accessory',
-  mensualite:         'Installment',
-  adblue:             'AdBlue',
-  'suivi-technique':  'Technical follow-up',
-  'vehicle-credit':   'Financing contract',
-  'historique-paiement': 'Payment record',
-  'paiement-depense': 'Expense payment',
-};
-
-function label(endpoint: string): string {
-  const base = endpoint.split('/')[0];
-  return LABELS[base] ?? (base.charAt(0).toUpperCase() + base.slice(1));
-}
 
 /** Unwrap { success, data } or paginated { data, meta } envelopes. Falls back to raw value. */
 function unwrap(r: any): any {
@@ -83,6 +51,7 @@ export class CrudService {
     private http: HttpClient,
     private toast: ToastService,
     private companyService: CompanyService,
+    private ts: TranslationService,
   ) {}
 
   // ── Read ──────────────────────────────────────────────────────────────────
@@ -123,9 +92,9 @@ export class CrudService {
   create(endpoint: string, data: any): Observable<any> {
     return this.http.post(`${environment.apiUrl}/${endpoint}`, data).pipe(
       tap({
-        next: () => this.toast.show(`${label(endpoint)} created successfully`, 'success'),
+        next: () => this.toast.show(this.ts.translate('genericCreated'), 'success'),
         error: (err) => this.toast.show(
-          err?.error?.message || `Failed to create ${label(endpoint)}`, 'error'
+          err?.error?.message || this.ts.translate('genericCreateFailed'), 'error'
         ),
       })
     );
@@ -134,9 +103,9 @@ export class CrudService {
   update(endpoint: string, id: number, data: any): Observable<any> {
     return this.http.put(`${environment.apiUrl}/${endpoint}/${id}`, data).pipe(
       tap({
-        next: () => this.toast.show(`${label(endpoint)} updated successfully`, 'success'),
+        next: () => this.toast.show(this.ts.translate('genericUpdated'), 'success'),
         error: (err) => this.toast.show(
-          err?.error?.message || `Failed to update ${label(endpoint)}`, 'error'
+          err?.error?.message || this.ts.translate('genericUpdateFailed'), 'error'
         ),
       })
     );
@@ -145,9 +114,9 @@ export class CrudService {
   remove(endpoint: string, id: number): Observable<any> {
     return this.http.delete(`${environment.apiUrl}/${endpoint}/${id}`).pipe(
       tap({
-        next: () => this.toast.show(`${label(endpoint)} deleted`, 'info'),
+        next: () => this.toast.show(this.ts.translate('genericDeleted'), 'info'),
         error: (err) => this.toast.show(
-          err?.error?.message || `Failed to delete ${label(endpoint)}`, 'error'
+          err?.error?.message || this.ts.translate('genericDeleteFailed'), 'error'
         ),
       })
     );

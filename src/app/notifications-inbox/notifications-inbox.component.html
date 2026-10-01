@@ -97,7 +97,7 @@
             <span class="nc-priority-badge" [ngClass]="priorityClass(n.priority)">
               {{ priorityLabel(n.priority) }}
             </span>
-            <span class="nc-card-time">{{ n.createdAt | date:'d MMM, HH:mm' }}</span>
+            <span class="nc-card-time">{{ fmtDate(n.createdAt) }}</span>
             <span class="nc-unread-dot" *ngIf="!n.isRead"></span>
           </div>
         </div>

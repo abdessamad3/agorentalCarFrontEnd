@@ -13,6 +13,7 @@ import { complianceSeverity } from '../../shared/utils/compliance.utils';
 import { PrintContratComponent } from '../../contrat/print-contrat/print-contrat.component';
 import { ClientDocumentsComponent } from '../../client/client-documents/client-documents.component';
 import { VehicleMapComponent, VEHICLE_ZONES } from '../../shared/vehicle-map/vehicle-map.component';
+import { LocationOption, filterMoroccoLocations, locationIcon } from '../../shared/data/morocco-locations';
 
 @Component({
   selector: 'app-location-dossier',
@@ -38,6 +39,42 @@ export class LocationDossierComponent implements OnInit {
   departForm: any = {};
   savingDepart = false;
 
+  // ── Départ location autocomplete ────────────────────────────────────────
+  showLivraisonDropdown = false;
+  showRetourLocDropdown = false;
+  filteredLivraison: LocationOption[] = [];
+  filteredRetourLoc: LocationOption[] = [];
+
+  locIcon(type: string) { return locationIcon(type); }
+
+  onLivraisonFocus() {
+    this.filteredLivraison = filterMoroccoLocations(this.departForm.lieuLivraison || '');
+    this.showLivraisonDropdown = true;
+  }
+  onLivraisonInput() {
+    this.filteredLivraison = filterMoroccoLocations(this.departForm.lieuLivraison || '');
+    this.showLivraisonDropdown = true;
+  }
+  selectLivraison(loc: LocationOption) {
+    this.departForm.lieuLivraison = loc.label;
+    this.showLivraisonDropdown = false;
+  }
+  hideLivraison() { setTimeout(() => { this.showLivraisonDropdown = false; }, 150); }
+
+  onRetourLocFocus() {
+    this.filteredRetourLoc = filterMoroccoLocations(this.departForm.lieuRetour || '');
+    this.showRetourLocDropdown = true;
+  }
+  onRetourLocInput() {
+    this.filteredRetourLoc = filterMoroccoLocations(this.departForm.lieuRetour || '');
+    this.showRetourLocDropdown = true;
+  }
+  selectRetourLoc(loc: LocationOption) {
+    this.departForm.lieuRetour = loc.label;
+    this.showRetourLocDropdown = false;
+  }
+  hideRetourLoc() { setTimeout(() => { this.showRetourLocDropdown = false; }, 150); }
+
   // ── Retour form ──────────────────────────────────────────────────────────
   retourForm: any = {};
   savingRetour = false;
@@ -59,6 +96,15 @@ export class LocationDossierComponent implements OnInit {
   // ── Vehicle damage (departure read-only display) ─────────────────────────
   departureDamages: any[] = [];
   loadingDamages = false;
+
+  get durationDays(): number | null {
+    const start = this.dossier?.reservation?.dateDebut;
+    const end   = this.dossier?.reservation?.dateFin;
+    if (!start || !end) return null;
+    const ms = new Date(end).getTime() - new Date(start).getTime();
+    if (!Number.isFinite(ms) || ms <= 0) return null;
+    return Math.round(ms / (1000 * 60 * 60 * 24));
+  }
 
   get departureOpenDamages(): any[] {
     return this.departureDamages.filter(d => d.status === 'open');

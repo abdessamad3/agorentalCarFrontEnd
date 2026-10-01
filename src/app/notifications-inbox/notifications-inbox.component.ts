@@ -217,6 +217,26 @@ export class NotificationsInboxComponent implements OnInit {
 
   t(key: string): string { return this.ts.translate(key); }
 
+  private static readonly MONTHS: Record<'fr' | 'en' | 'ar', string[]> = {
+    fr: ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc'],
+    en: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+    ar: ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'],
+  };
+
+  fmtDate(raw: string | Date | null | undefined): string {
+    if (!raw) return '';
+    const d = raw instanceof Date ? raw : new Date(raw);
+    if (isNaN(d.getTime())) return String(raw);
+    const lang = (this.ts.getCurrentLanguage() as 'fr' | 'en' | 'ar') in NotificationsInboxComponent.MONTHS
+      ? this.ts.getCurrentLanguage() as 'fr' | 'en' | 'ar'
+      : 'fr';
+    const month = NotificationsInboxComponent.MONTHS[lang][d.getMonth()];
+    const day   = d.getDate();
+    const hh    = String(d.getHours()).padStart(2, '0');
+    const mm    = String(d.getMinutes()).padStart(2, '0');
+    return `${day} ${month}، ${hh}:${mm}`;
+  }
+
   typeIcon(type: string): string {
     const map: Record<string, string> = {
       compliance_expired:   '🚨',
@@ -279,6 +299,37 @@ export class NotificationsInboxComponent implements OnInit {
         return lang === 'ar' ? `قسط التمويل مستحق — ${suffix}` : `Credit installment due — ${suffix}`;
       case 'vehicle_sold':
         return lang === 'ar' ? `مركبة مباعة — ${suffix}` : `Vehicle sold — ${suffix}`;
+      case 'credit_payment': {
+        const isToday = n.title.includes("aujourd'hui");
+        if (isToday) {
+          return lang === 'ar' ? `قسط ائتماني مستحق اليوم — ${suffix}` : `Credit installment due today — ${suffix}`;
+        }
+        const days = n.title.match(/(\d+)j? avant/)?.[1] ?? '?';
+        const carSep = n.title.lastIndexOf(' — ');
+        const car = carSep > 7 ? n.title.slice('Crédit '.length, carSep) : suffix;
+        return lang === 'ar' ? `قسط ائتماني — ${car} — خلال ${days} أيام` : `Credit installment — ${car} — in ${days} day(s)`;
+      }
+      case 'credit_installment':
+        return lang === 'ar' ? `قسط ائتماني مستحق — ${suffix}` : `Credit installment due — ${suffix}`;
+      case 'oil_change':
+        return lang === 'ar' ? `تغيير الزيت قريباً — ${suffix}` : `Oil change due — ${suffix}`;
+      case 'recurring_expense_due':
+        return lang === 'ar' ? `نفقة متكررة مستحقة — ${suffix}` : `Recurring expense due — ${suffix}`;
+      case 'reservation_conflict':
+        return lang === 'ar' ? `تعارض في حجز — ${suffix}` : `Booking conflict — ${suffix}`;
+      case 'compliance_assurance':
+      case 'compliance_vignette':
+      case 'compliance_visite': {
+        const docLabels: Record<string, Record<'en' | 'ar', string>> = {
+          compliance_assurance: { en: 'Insurance',   ar: 'التأمين' },
+          compliance_vignette:  { en: 'Vignette',    ar: 'الونيت' },
+          compliance_visite:    { en: 'Inspection',  ar: 'الفحص التقني' },
+        };
+        const lbl = docLabels[n.type][lang];
+        if (n.title.includes('expiré'))  return lang === 'ar' ? `${lbl} منتهٍ — ${suffix}` : `${lbl} expired — ${suffix}`;
+        if (n.title.includes('critique')) return lang === 'ar' ? `${lbl} حرج — ${suffix}`   : `${lbl} critical — ${suffix}`;
+        return lang === 'ar' ? `${lbl} قريباً — ${suffix}` : `${lbl} due soon — ${suffix}`;
+      }
       default:
         return n.title;
     }
@@ -330,6 +381,39 @@ export class NotificationsInboxComponent implements OnInit {
       case 'vehicle_sold':
         return lang === 'ar' ? `تم بيع المركبة وإزالتها من الأسطول.`
                              : `Vehicle sold and removed from the active fleet.`;
+      case 'credit_payment': {
+        const installNum = n.message.match(/n°(\d+)/)?.[1] ?? nums[0] ?? '?';
+        const amount = n.message.match(/de\s+([\d.]+)\s+MAD/)?.[1] ?? nums[1] ?? '?';
+        const date = n.message.match(/le\s+(\d{2}\/\d{2}\/\d{4})/)?.[1] ?? '';
+        return lang === 'ar'
+          ? `القسط رقم ${installNum} بمبلغ ${amount} درهم${date ? `، مستحق بتاريخ ${date}` : ''}.`
+          : `Installment #${installNum} of ${amount} MAD${date ? `, due on ${date}` : ''}.`;
+      }
+      case 'credit_installment': {
+        const amt2 = nums[0] ?? '?';
+        return lang === 'ar' ? `المنسالة البالغة ${amt2} درهم مستحقة.` : `Installment of ${amt2} MAD is due.`;
+      }
+      case 'oil_change': {
+        const km = nums[0] ?? '?';
+        return lang === 'ar' ? `تغيير الزيت خلال ${km} كم.` : `Oil change due in ${km} km.`;
+      }
+      case 'recurring_expense_due':
+        return lang === 'ar' ? `النفقة مستحقة خلال أقل من 10 أيام.` : `Expense due in less than 10 days.`;
+      case 'reservation_conflict':
+        return lang === 'ar' ? `تم اكتشاف تعارض في تواريخ الحجز.` : `A booking conflict has been detected.`;
+      case 'compliance_assurance':
+      case 'compliance_vignette':
+      case 'compliance_visite': {
+        if (n.message.startsWith('Expiré depuis')) {
+          const d = nums[0] ?? '?';
+          return lang === 'ar' ? `انتهت الصلاحية منذ ${d} يوم.` : `Expired ${d} day(s) ago.`;
+        }
+        const d = nums[0] ?? '?';
+        const date = n.message.match(/:\s*(.+)$/)?.[1]?.trim() ?? '';
+        return lang === 'ar'
+          ? `تنتهي خلال ${d} يوم${date ? ` (${date})` : ''}.`
+          : `Expires in ${d} day(s)${date ? ` (${date})` : ''}.`;
+      }
       default:
         return n.message;
     }

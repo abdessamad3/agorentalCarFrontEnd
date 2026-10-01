@@ -193,10 +193,13 @@
                 <input type="text" formControlName="cin" [class.invalid]="form.get('cin')?.invalid && form.get('cin')?.touched" />
                 <span class="field-error" *ngIf="form.get('cin')?.invalid && form.get('cin')?.touched">{{ 'required' | translate }}</span>
               </div>
-              <div class="form-group"><label>{{ 'cinExpiration' | translate }}</label><input type="date" formControlName="cinExpiration" /></div>
+              <div class="form-group">
+                <label>{{ 'cinExpiration' | translate }} <span class="required" *ngIf="form.get('cinExpiration')?.validator">*</span></label>
+                <input type="date" dir="ltr" formControlName="cinExpiration" [class.invalid]="form.get('cinExpiration')?.invalid && form.get('cinExpiration')?.touched" />
+                <span class="field-error" *ngIf="form.get('cinExpiration')?.invalid && form.get('cinExpiration')?.touched">{{ 'required' | translate }}</span>
+              </div>
             </div>
             <div class="form-row" *ngIf="isAdmin">
-              <div class="form-group"><label>{{ 'cinIssueDate' | translate }}</label><input type="date" formControlName="cinDelivreLe" /></div>
               <div class="form-group"><label>{{ 'cinIssuedAt' | translate }}</label><input type="text" formControlName="cinDelivreA" /></div>
             </div>
             <div class="form-row">
@@ -205,10 +208,13 @@
                 <input type="text" formControlName="passeport" [class.invalid]="form.get('passeport')?.invalid && form.get('passeport')?.touched" />
                 <span class="field-error" *ngIf="form.get('passeport')?.invalid && form.get('passeport')?.touched">{{ 'required' | translate }}</span>
               </div>
-              <div class="form-group"><label>{{ 'passeportExpiration' | translate }}</label><input type="date" formControlName="passeportExpiration" /></div>
+              <div class="form-group">
+                <label>{{ 'passeportExpiration' | translate }} <span class="required" *ngIf="form.get('passeportExpiration')?.validator">*</span></label>
+                <input type="date" dir="ltr" formControlName="passeportExpiration" [class.invalid]="form.get('passeportExpiration')?.invalid && form.get('passeportExpiration')?.touched" />
+                <span class="field-error" *ngIf="form.get('passeportExpiration')?.invalid && form.get('passeportExpiration')?.touched">{{ 'required' | translate }}</span>
+              </div>
             </div>
             <div class="form-row" *ngIf="isAdmin">
-              <div class="form-group"><label>{{ 'passportIssueDate' | translate }}</label><input type="date" formControlName="passeportDelivreLe" /></div>
               <div class="form-group"><label>{{ 'passportIssuedAt' | translate }}</label><input type="text" formControlName="passeportDelivreA" /></div>
             </div>
             <div class="form-row">
@@ -217,10 +223,13 @@
                 <input type="text" formControlName="permisConduite" [class.invalid]="form.get('permisConduite')?.invalid && form.get('permisConduite')?.touched" />
                 <span class="field-error" *ngIf="form.get('permisConduite')?.invalid && form.get('permisConduite')?.touched">{{ 'required' | translate }}</span>
               </div>
-              <div class="form-group"><label>{{ 'permisExpiration' | translate }}</label><input type="date" formControlName="permisExpiration" /></div>
+              <div class="form-group">
+                <label>{{ 'permisExpiration' | translate }} <span class="required">*</span></label>
+                <input type="date" dir="ltr" formControlName="permisExpiration" [class.invalid]="form.get('permisExpiration')?.invalid && form.get('permisExpiration')?.touched" />
+                <span class="field-error" *ngIf="form.get('permisExpiration')?.invalid && form.get('permisExpiration')?.touched">{{ 'required' | translate }}</span>
+              </div>
             </div>
             <div class="form-row" *ngIf="isAdmin">
-              <div class="form-group"><label>{{ 'licenseIssueDate' | translate }}</label><input type="date" formControlName="permisDelivreLe" /></div>
               <div class="form-group"><label>{{ 'licenseIssuedAt' | translate }}</label><input type="text" formControlName="permisDelivreA" /></div>
             </div>
           </ng-container>

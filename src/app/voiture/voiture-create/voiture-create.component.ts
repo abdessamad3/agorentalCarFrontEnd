@@ -74,7 +74,7 @@ export class VoitureCreateComponent implements OnInit {
   complianceError: string | null = null;
 
   readonly FUEL_OPTIONS  = ['Essence', 'Diesel', 'Hybride', 'Electrique', 'GPL'];
-  readonly CAT_OPTIONS   = ['Citadine', 'Berline', 'SUV', '4x4', 'Monospace', 'Cabriolet', 'Utilitaire', 'Coupé', 'Pick-up'];
+  readonly CAT_OPTIONS   = ['Économique', 'Citadine', 'Berline', 'SUV', '4x4', 'Monospace', 'Cabriolet', 'Utilitaire', 'Coupé', 'Pick-up'];
   readonly currentYear   = new Date().getFullYear();
 
   loanResult: LoanResult | null = null;
@@ -114,9 +114,11 @@ export class VoitureCreateComponent implements OnInit {
       modele:            ['', Validators.required],
       version:           [''],
       annee:             [new Date().getFullYear(), [Validators.required, Validators.min(1990), Validators.max(2030)]],
+      plateType:         ['standard'], // 'standard' (NNNNN-L-NN) | 'ww' (WW transit plate)
       immatNum1:         [''],
       immatLetter:       [''],
       immatNum2:         [''],
+      immatWW:           [''],
       vin:               [''],
       typeCarburant:     ['Essence'],
       transmission:      ['Manuelle'],
@@ -387,8 +389,15 @@ export class VoitureCreateComponent implements OnInit {
     return f ? (f.raisonSociale || f.nom || f.name || '-') : '-';
   }
 
+  get isWwPlate(): boolean { return this.form.value.plateType === 'ww'; }
+
+  setPlateType(type: 'standard' | 'ww'): void {
+    this.form.patchValue({ plateType: type });
+  }
+
   get plate(): string {
-    const { immatNum1, immatLetter, immatNum2 } = this.form.value;
+    const { plateType, immatNum1, immatLetter, immatNum2, immatWW } = this.form.value;
+    if (plateType === 'ww') return (immatWW || '').trim() || '—';
     return [immatNum1, (immatLetter || '').toUpperCase(), immatNum2].filter(Boolean).join('-') || '—';
   }
 
@@ -409,8 +418,10 @@ export class VoitureCreateComponent implements OnInit {
     this.complianceError = null;
     const fd = new FormData();
 
-    const { immatNum1, immatLetter, immatNum2, fournisseurId, typeFinancement, apport, mensualite, dureeMois, ...rest } = this.form.value;
-    const plateStr = [immatNum1, (immatLetter || '').toUpperCase(), immatNum2].filter(Boolean).join('-');
+    const { plateType, immatNum1, immatLetter, immatNum2, immatWW, fournisseurId, typeFinancement, apport, mensualite, dureeMois, ...rest } = this.form.value;
+    const plateStr = plateType === 'ww'
+      ? (immatWW || '').trim()
+      : [immatNum1, (immatLetter || '').toUpperCase(), immatNum2].filter(Boolean).join('-');
     if (plateStr) fd.append('immatriculation', plateStr);
 
     Object.entries(rest).forEach(([k, v]) => {

@@ -1,3 +1,7 @@
 .btn-file-label {
   display: inline-block;
 }
+
+@media (max-width: 768px) {
+  .table-container { display: block !important; }
+}

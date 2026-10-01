@@ -73,6 +73,10 @@
             <span class="info-label">{{ t('expectedReturn') }}</span>
             <span>{{ dossier.reservation.dateFin | date:'dd/MM/yyyy HH:mm' }}</span>
           </div>
+          <div class="info-row" *ngIf="durationDays !== null">
+            <span class="info-label">{{ t('duration') }}</span>
+            <span>{{ durationDays }} {{ t('days') }}</span>
+          </div>
           <div class="info-row">
             <span class="info-label">{{ t('deliveryLocation') }}</span>
             <span>{{ dossier.reservation.lieuLivraison || '—' }}</span>
@@ -195,11 +199,39 @@
           <div class="form-grid mt-2">
             <div class="form-group">
               <label>{{ t('deliveryLocation') }}</label>
-              <input type="text" [(ngModel)]="departForm.lieuLivraison" [placeholder]="t('deliveryLocationExample')" />
+              <div class="loc-wrap">
+                <input type="text" [(ngModel)]="departForm.lieuLivraison"
+                  (focus)="onLivraisonFocus()" (input)="onLivraisonInput()" (blur)="hideLivraison()"
+                  [placeholder]="t('deliveryLocationExample')" autocomplete="off" />
+                <div class="loc-dropdown" *ngIf="showLivraisonDropdown && filteredLivraison.length > 0">
+                  <div class="loc-option" *ngFor="let loc of filteredLivraison"
+                    (mousedown)="selectLivraison(loc)">
+                    <span class="loc-icon">{{ locIcon(loc.type) }}</span>
+                    <span class="loc-label">{{ loc.label }}</span>
+                    <span class="loc-badge loc-badge--{{ loc.type }}">
+                      {{ loc.type === 'airport' ? '✈' : loc.type === 'train' ? 'ONCF' : '🏙' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
             <div class="form-group">
               <label>{{ t('returnLocation') }}</label>
-              <input type="text" [(ngModel)]="departForm.lieuRetour" [placeholder]="t('returnLocationExample')" />
+              <div class="loc-wrap">
+                <input type="text" [(ngModel)]="departForm.lieuRetour"
+                  (focus)="onRetourLocFocus()" (input)="onRetourLocInput()" (blur)="hideRetourLoc()"
+                  [placeholder]="t('returnLocationExample')" autocomplete="off" />
+                <div class="loc-dropdown" *ngIf="showRetourLocDropdown && filteredRetourLoc.length > 0">
+                  <div class="loc-option" *ngFor="let loc of filteredRetourLoc"
+                    (mousedown)="selectRetourLoc(loc)">
+                    <span class="loc-icon">{{ locIcon(loc.type) }}</span>
+                    <span class="loc-label">{{ loc.label }}</span>
+                    <span class="loc-badge loc-badge--{{ loc.type }}">
+                      {{ loc.type === 'airport' ? '✈' : loc.type === 'train' ? 'ONCF' : '🏙' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

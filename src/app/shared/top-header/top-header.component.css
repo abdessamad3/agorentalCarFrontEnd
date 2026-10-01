@@ -278,6 +278,14 @@
   text-align: left;
 }
 
+/* RTL: the bell sits on the visual left (flex order flipped by <html dir="rtl">),
+   so anchor the panel from its wrapper's left edge instead of right, or it
+   extends off-screen to the left. */
+.top-header.rtl .notif-panel {
+  right: auto;
+  left: 0;
+}
+
 .notif-panel-header {
   display: flex;
   align-items: center;
@@ -450,10 +458,9 @@
 }
 
 /* ══ RTL ════════════════════════════════════════════════════════════════════ */
-.top-header.rtl { flex-direction: row-reverse; }
-.top-header.rtl .header-left  { flex-direction: row-reverse; }
-.top-header.rtl .header-right { flex-direction: row-reverse; margin-left: 0; margin-right: auto; }
-.top-header.rtl .header-kpis  { flex-direction: row-reverse; }
+/* <html dir="rtl"> (set by TranslationService) already applies direction:rtl to
+   every flex container, reversing item order automatically. No flex-direction
+   override needed — adding row-reverse on top would double-reverse back to LTR. */
 /* panel always anchors right:0 so it opens to the LEFT of the bell,
    away from the lang-switcher regardless of LTR/RTL direction */
 

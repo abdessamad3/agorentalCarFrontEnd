@@ -170,6 +170,15 @@
 
 .dh-weekend { color: rgba(242,153,74,0.85); }
 
+/* Arabic script needs letter-joining, so no letter-spacing/uppercase, and
+   higher contrast + slightly larger size since the labels are short glyph runs. */
+.cal-page.rtl .dh {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.75);
+}
+
 /* ─── Calendar Grid ─── */
 .cal-grid {
   display: grid;
@@ -741,6 +750,13 @@
   letter-spacing: 0.05em;
 }
 .mob-dh-weekend { color: rgba(242,153,74,0.9); }
+
+.cal-mobile-page.rtl .mob-dh {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.8);
+}
 
 .mob-month-grid {
   display: grid;

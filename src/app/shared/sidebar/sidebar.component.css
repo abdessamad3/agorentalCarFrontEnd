@@ -306,17 +306,20 @@
   border-left: 1px solid var(--sb-border);
 }
 
-.sidebar.rtl .sidebar-header { flex-direction: row-reverse; }
-.sidebar.rtl .logo-text { text-align: right; }
+/* direction: rtl (from [attr.dir]) automatically reverses flex order — no row-reverse needed */
+
+/* Icon: in RTL flex the icon is rightmost (first in DOM), margin goes on its LEFT side */
+.sidebar.rtl .nav-icon { margin-right: 0; margin-left: 0.65rem; }
 
 .sidebar.rtl .nav-item { transform-origin: right; }
 .sidebar.rtl .nav-item:hover { transform: translateX(-2px); }
 
-.sidebar.rtl .nav-icon { margin-right: 0; margin-left: 0.65rem; }
-
-.sidebar.rtl .nav-badge { margin-left: 0; margin-right: auto; }
-
-.sidebar.rtl .nav-group-label { text-align: right; }
+/* Bureau switcher: flip the dropdown arrow to the left */
+.sidebar.rtl .bureau-switcher select {
+  background-position: left 0.65rem center;
+  padding-right: 0.7rem;
+  padding-left: 2rem;
+}
 
 @media (max-width: 768px) {
   .sidebar.rtl {

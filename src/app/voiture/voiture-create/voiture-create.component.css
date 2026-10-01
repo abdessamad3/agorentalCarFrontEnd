@@ -81,10 +81,19 @@
   background: transparent; text-align: center; font-family: 'Courier New', monospace;
   font-weight: 700; font-size: 1rem; color: #2d3748; padding: 0.5rem 0.4rem;
 }
-.plate-num1   { width: 58px; }
+.plate-num1   { width: 70px; }
 .plate-letter { width: 36px; text-transform: uppercase; border-inline: 1.5px solid #e2e8f0 !important; }
 .plate-num2   { width: 40px; }
+.plate-ww     { width: 160px; text-transform: uppercase; }
 .plate-sep { font-weight: 700; color: #a0aec0; font-size: 1rem; padding: 0 3px; user-select: none; }
+
+.plate-type-toggle { display: flex; gap: 6px; margin-bottom: 6px; }
+.plate-type-toggle button {
+  padding: 3px 10px; border: 1.5px solid #cbd5e0; border-radius: 6px;
+  background: white; color: #718096; font-size: 0.78rem; font-weight: 600;
+  cursor: pointer; transition: all 0.15s;
+}
+.plate-type-toggle button.active { background: #3182ce; border-color: #3182ce; color: white; }
 
 /* ── Checkbox row ────────────────────────────────────────────────────────── */
 .check-row   { margin-top: 1.25rem; }

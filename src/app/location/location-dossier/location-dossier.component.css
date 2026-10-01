@@ -695,3 +695,62 @@
   /* Undo closure btn full width */
   .undo-cloture-btn { display: block; margin: 0.5rem 0 0; width: 100%; }
 }
+
+/* ── Location autocomplete (delivery / return) ─────────────────────────── */
+.loc-wrap {
+  position: relative;
+}
+
+.loc-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  z-index: 200;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.loc-option {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.85rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background 0.15s;
+}
+
+.loc-option:hover { background: #f0f7ff; }
+.loc-option:not(:last-child) { border-bottom: 1px solid #f0f4f8; }
+
+.loc-icon { font-size: 1rem; flex-shrink: 0; }
+
+.loc-label { flex: 1; color: #2d3748; font-weight: 500; }
+
+.loc-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+
+.loc-badge--airport { background: #ebf8ff; color: #2b6cb0; }
+.loc-badge--train   { background: #f0fff4; color: #276749; }
+.loc-badge--city    { background: #faf5ff; color: #6b46c1; }
+
+@media (prefers-color-scheme: dark) {
+  .loc-dropdown { background: #1e2533; border-color: #2d3748; }
+  .loc-option:hover { background: #2d3748; }
+  .loc-option:not(:last-child) { border-color: #2d3748; }
+  .loc-label { color: #e2e8f0; }
+  .loc-badge--airport { background: #1a365d; color: #90cdf4; }
+  .loc-badge--train   { background: #1c4532; color: #9ae6b4; }
+  .loc-badge--city    { background: #322659; color: #d6bcfa; }
+}

@@ -80,6 +80,8 @@ export class NotificationsComponent implements OnInit {
     private exportSvc: ExportService,
   ) {}
 
+  t(key: string): string { return this.ts.translate(key); }
+
   ngOnInit() {
     this.ts.direction$.subscribe(d => this.dir = d);
     this.loadBureaux();

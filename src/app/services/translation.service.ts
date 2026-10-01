@@ -22,11 +22,14 @@ export class TranslationService {
       // Common states
       loading: 'Loading...', noData: 'No data found',
       loadError: 'Failed to load data. Please try again.',
+      genericCreated: 'Created successfully', genericUpdated: 'Updated successfully',
+      genericDeleted: 'Deleted', genericCreateFailed: 'Failed to create',
+      genericUpdateFailed: 'Failed to update', genericDeleteFailed: 'Failed to delete',
       carAlreadyReserved: 'This vehicle is already reserved for the selected dates.',
       booked: 'Booked',
 
       // Calendar
-      today: 'Today', returningToday: 'Returning Today', thisMonth: 'This Month', fleetCalendar: 'Fleet Calendar',
+      today: 'Today', returningToday: 'Returning Today', thisMonth: 'This Month', fleetCalendar: 'Fleet Calendar', weekend: 'Weekend',
       confirmed: 'Confirmed', inProgress: 'In Progress', pending: 'Pending',
       cancelled: 'Cancelled', more: 'more',
 
@@ -342,6 +345,7 @@ export class TranslationService {
       // Technical fields
       version: 'Version / Trim', vin: 'VIN / Chassis',
       immatriculation: 'License Plate', licensePlate: 'License Plate',
+      plateStandard: 'Standard', plateWw: 'WW Transit',
       transmission: 'Transmission', manuelle: 'Manual', automatique: 'Automatic',
       puissanceCv: 'Engine Power (hp)', enginePower: 'Engine Power',
       places: 'Seats', portes: 'Doors', vehicleCategory: 'Category',
@@ -918,6 +922,24 @@ export class TranslationService {
       saveInspection: 'Save Inspection', deleteInspectionTitle: 'Delete Inspection',
       deleteInspectionConfirm: 'Are you sure you want to delete this inspection? This action cannot be undone.',
       editInspectionTitle: 'Edit Return Inspection', newInspectionTitle: 'New Return Inspection',
+
+      // Compliance Center page
+      ccSubtitle: 'Expired & upcoming — insurance · vignette · inspection · contracts',
+      pdfReport: 'PDF Report',
+      ccLoading: 'Loading compliance data…',
+      ccCriticalCard: 'Critical (≤7d)', ccDueSoonCard: 'Due Soon (≤30d)', ok: 'OK',
+      ccSearch: 'Search vehicle or detail…',
+      ccAllTypes: 'All Types', ccAllBureaux: 'All Bureaux', ccAllVehicles: 'All Vehicles',
+      ccNoAlerts: 'No compliance alerts match your current filters',
+      show: '▶ Show', hide: '▼ Hide',
+      ccCriticalSection: 'Critical — expires within 7 days',
+      ccWarningSection: 'Warning — expires within 30 days',
+      ccKmOverdue: 'km overdue', ccKmLeft: 'km left',
+      ccCompany: 'Company', ccCompanyNamePh: 'Enter company name…',
+      ccCoverage: 'Coverage', ccContractNo: 'Contract №', ccContractNoPh: 'N° contrat…',
+      ccExpiryDate: 'Expiry date', ccAmountMad: 'Amount (MAD)',
+      ccVisitDate: 'Visit date', ccValidUntil: 'Valid until', ccAdjustmentDate: 'Adjustment date',
+      ccUploadDoc: 'Upload document (photo / PDF)', ccSaveRenew: 'Save & Renew',
     },
 
     fr: {
@@ -933,11 +955,14 @@ export class TranslationService {
 
       loading: 'Chargement...', noData: 'Aucune donnée trouvée',
       loadError: 'Échec du chargement. Veuillez réessayer.',
+      genericCreated: 'Créé avec succès', genericUpdated: 'Modifié avec succès',
+      genericDeleted: 'Supprimé', genericCreateFailed: 'Échec de la création',
+      genericUpdateFailed: 'Échec de la modification', genericDeleteFailed: 'Échec de la suppression',
       carAlreadyReserved: 'Ce véhicule est déjà réservé pour les dates sélectionnées.',
       booked: 'Réservé',
 
       // Calendrier
-      today: "Aujourd'hui", returningToday: 'Retours du jour', thisMonth: 'Ce Mois', fleetCalendar: 'Calendrier Flotte',
+      today: "Aujourd'hui", returningToday: 'Retours du jour', thisMonth: 'Ce Mois', fleetCalendar: 'Calendrier Flotte', weekend: 'Week-end',
       confirmed: 'Confirmé', inProgress: 'En Cours', pending: 'En Attente',
       cancelled: 'Annulé', more: 'de plus',
 
@@ -1068,7 +1093,7 @@ export class TranslationService {
       customersWithDebt: 'Clients avec dettes', crSearchPlaceholder: 'Rechercher par nom ou téléphone…',
       topByRevenue: 'Meilleurs clients par revenus', topByRentals: 'Meilleurs clients par locations',
       thCustomer: 'Client', thPhone: 'Téléphone', thRentalsNum: '# Locations',
-      thCollected: 'Encaissé', thOutstanding: 'En attente', thPctPaid: '% Payé',
+      thCollected: 'Encaissé', thOutstanding: 'Restant dû', thPctPaid: '% Payé',
       customersLabel: 'clients', noOutstandingDebt: 'Aucune dette impayée',
       allSettled: 'Tous les clients sont entièrement réglés', noCustomerData: 'Aucune donnée client trouvée.',
       exTitle: 'Tableau de Bord Exécutif', exSubtitle: "Vue d'ensemble opérationnelle et financière pour la direction",
@@ -1243,6 +1268,7 @@ export class TranslationService {
 
       version: 'Version / Finition', vin: 'N° Chassis / VIN',
       immatriculation: 'Immatriculation', licensePlate: 'Immatriculation',
+      plateStandard: 'Standard', plateWw: 'WW Transit',
       transmission: 'Transmission', manuelle: 'Manuelle', automatique: 'Automatique',
       puissanceCv: 'Puissance (CV)', enginePower: 'Puissance moteur',
       places: 'Places', portes: 'Portes', vehicleCategory: 'Catégorie',
@@ -1799,6 +1825,24 @@ export class TranslationService {
       saveInspection: 'Enregistrer l\'inspection', deleteInspectionTitle: 'Supprimer l\'inspection',
       deleteInspectionConfirm: 'Voulez-vous supprimer cette inspection ? Cette action est irréversible.',
       editInspectionTitle: 'Modifier l\'inspection de retour', newInspectionTitle: 'Nouvelle inspection de retour',
+
+      // Compliance Center page
+      ccSubtitle: 'Expirés & à venir — assurance · vignette · inspection · contrats',
+      pdfReport: 'Rapport PDF',
+      ccLoading: 'Chargement des données de conformité…',
+      ccCriticalCard: 'Critique (≤7j)', ccDueSoonCard: 'Bientôt (≤30j)', ok: 'OK',
+      ccSearch: 'Rechercher un véhicule ou détail…',
+      ccAllTypes: 'Tous les types', ccAllBureaux: 'Tous les bureaux', ccAllVehicles: 'Tous les véhicules',
+      ccNoAlerts: 'Aucune alerte de conformité ne correspond à vos filtres',
+      show: '▶ Afficher', hide: '▼ Masquer',
+      ccCriticalSection: 'Critique — expire dans 7 jours',
+      ccWarningSection: 'Attention — expire dans 30 jours',
+      ccKmOverdue: 'km dépassés', ccKmLeft: 'km restants',
+      ccCompany: 'Compagnie', ccCompanyNamePh: 'Nom de la compagnie…',
+      ccCoverage: 'Couverture', ccContractNo: 'N° contrat', ccContractNoPh: 'N° contrat…',
+      ccExpiryDate: 'Date d\'expiration', ccAmountMad: 'Montant (MAD)',
+      ccVisitDate: 'Date de visite', ccValidUntil: 'Valide jusqu\'au', ccAdjustmentDate: 'Date de réglages',
+      ccUploadDoc: 'Joindre un document (photo / PDF)', ccSaveRenew: 'Enregistrer & Renouveler',
     },
 
     ar: {
@@ -1814,11 +1858,14 @@ export class TranslationService {
 
       loading: 'جاري التحميل...', noData: 'لا توجد بيانات',
       loadError: 'فشل التحميل. حاول مرة أخرى.',
+      genericCreated: 'تم الإنشاء بنجاح', genericUpdated: 'تم التعديل بنجاح',
+      genericDeleted: 'تم الحذف', genericCreateFailed: 'فشل الإنشاء',
+      genericUpdateFailed: 'فشل التعديل', genericDeleteFailed: 'فشل الحذف',
       carAlreadyReserved: 'هذه السيارة محجوزة بالفعل في التواريخ المحددة.',
       booked: 'محجوز',
 
       // التقويم
-      today: 'اليوم', returningToday: 'إرجاعات اليوم', thisMonth: 'هذا الشهر', fleetCalendar: 'تقويم الأسطول',
+      today: 'اليوم', returningToday: 'إرجاعات اليوم', thisMonth: 'هذا الشهر', fleetCalendar: 'تقويم الأسطول', weekend: 'عطلة نهاية الأسبوع',
       confirmed: 'مؤكد', inProgress: 'جاري', pending: 'قيد الانتظار',
       cancelled: 'ملغى', more: 'المزيد',
 
@@ -2124,6 +2171,7 @@ export class TranslationService {
 
       version: 'الإصدار / التجهيز', vin: 'رقم الهيكل / VIN',
       immatriculation: 'رقم اللوحة', licensePlate: 'رقم اللوحة',
+      plateStandard: 'عادية', plateWw: 'WW عبور',
       transmission: 'ناقل الحركة', manuelle: 'يدوي', automatique: 'أوتوماتيك',
       puissanceCv: 'القوة (حصان)', enginePower: 'قوة المحرك',
       places: 'عدد المقاعد', portes: 'عدد الأبواب', vehicleCategory: 'الفئة',
@@ -2680,6 +2728,24 @@ export class TranslationService {
       saveInspection: 'حفظ الفحص', deleteInspectionTitle: 'حذف الفحص',
       deleteInspectionConfirm: 'هل تريد حذف هذا الفحص؟ لا يمكن التراجع عن هذا الإجراء.',
       editInspectionTitle: 'تعديل فحص الإرجاع', newInspectionTitle: 'فحص إرجاع جديد',
+
+      // Compliance Center page
+      ccSubtitle: 'منتهية الصلاحية والقادمة — التأمين · الوينيت · الفحص · العقود',
+      pdfReport: 'تقرير PDF',
+      ccLoading: 'جارٍ تحميل بيانات الامتثال…',
+      ccCriticalCard: 'حرج (≤7أيام)', ccDueSoonCard: 'قريب (≤30يوم)', ok: 'جيد',
+      ccSearch: 'البحث عن مركبة أو تفصيل…',
+      ccAllTypes: 'جميع الأنواع', ccAllBureaux: 'جميع المكاتب', ccAllVehicles: 'جميع المركبات',
+      ccNoAlerts: 'لا توجد تنبيهات امتثال تطابق الفلاتر الحالية',
+      show: '▶ عرض', hide: '▼ إخفاء',
+      ccCriticalSection: 'حرج — ينتهي خلال 7 أيام',
+      ccWarningSection: 'تحذير — ينتهي خلال 30 يومًا',
+      ccKmOverdue: 'كم متجاوز', ccKmLeft: 'كم متبقي',
+      ccCompany: 'الشركة', ccCompanyNamePh: 'أدخل اسم الشركة…',
+      ccCoverage: 'التغطية', ccContractNo: 'رقم العقد', ccContractNoPh: 'رقم العقد…',
+      ccExpiryDate: 'تاريخ الانتهاء', ccAmountMad: 'المبلغ (درهم)',
+      ccVisitDate: 'تاريخ الزيارة', ccValidUntil: 'صالح حتى', ccAdjustmentDate: 'تاريخ الضبط',
+      ccUploadDoc: 'إرفاق مستند (صورة / PDF)', ccSaveRenew: 'حفظ وتجديد',
     }
   };
 

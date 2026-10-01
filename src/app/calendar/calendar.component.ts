@@ -219,6 +219,30 @@ export class CalendarComponent implements OnInit {
     return `${daysFull[d.getDay()]}, ${d.getDate()} ${monthsShort[d.getMonth()]}`;
   }
 
+  /** Localized "Weekday, d Month" label for a day-detail modal/sheet header — same pattern as currentDayLabel. */
+  dayCellLabel(date: Date): string {
+    const lang = this.ts.getCurrentLanguage();
+    const days = this.dayNamesFull[lang] || this.dayNamesFull['en'];
+    const months = this.monthNamesShort[lang] || this.monthNamesShort['en'];
+    return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]}`;
+  }
+
+  /** Localized "dd Mon" for a booking's date range. */
+  fmtShortDate(value: string | Date): string {
+    const d = new Date(value);
+    const lang = this.ts.getCurrentLanguage();
+    const months = this.monthNamesShort[lang] || this.monthNamesShort['en'];
+    return `${String(d.getDate()).padStart(2, '0')} ${months[d.getMonth()]}`;
+  }
+
+  /** Localized "dd Mon yyyy" for a booking's date range. */
+  fmtShortDateYear(value: string | Date): string {
+    const d = new Date(value);
+    const lang = this.ts.getCurrentLanguage();
+    const months = this.monthNamesShort[lang] || this.monthNamesShort['en'];
+    return `${String(d.getDate()).padStart(2, '0')} ${months[d.getMonth()]} ${d.getFullYear()}`;
+  }
+
   private makeCell(date: Date, isCurrentMonth: boolean, today: Date): DayCell {
     const source = this.filterStatus === 'all'
       ? this.reservations
