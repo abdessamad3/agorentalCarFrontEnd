@@ -1,0 +1,95 @@
+.el-page {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Header */
+.el-header { display: flex; align-items: center; justify-content: space-between; }
+.el-title  { display: flex; align-items: center; gap: 12px; }
+.el-icon   { font-size: 32px; }
+.el-title h1 { margin: 0; font-size: 22px; font-weight: 700; color: #1e293b; }
+.el-title p  { margin: 2px 0 0; font-size: 13px; color: #64748b; }
+
+/* Filters */
+.el-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  background: #fff;
+  padding: 14px 16px;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+.el-select, .el-input {
+  padding: 7px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+  font-size: 13px;
+  color: #334155;
+  background: #f8fafc;
+  outline: none;
+  transition: border-color .15s;
+}
+.el-select:focus, .el-input:focus { border-color: #dc2626; background: #fff; }
+.el-date-range { display: flex; align-items: center; gap: 6px; }
+.el-dash { color: #94a3b8; font-size: 13px; }
+
+.btn-primary {
+  padding: 7px 18px; background: #dc2626; color: #fff;
+  border: none; border-radius: 7px; font-size: 13px; cursor: pointer;
+  transition: background .15s;
+}
+.btn-primary:hover { background: #b91c1c; }
+.btn-ghost {
+  padding: 7px 14px; background: #f1f5f9; color: #475569;
+  border: none; border-radius: 7px; font-size: 13px; cursor: pointer;
+}
+.btn-ghost:hover { background: #e2e8f0; }
+
+/* Error / Loading */
+.el-error   { background: #fef2f2; color: #dc2626; padding: 12px 16px; border-radius: 8px; font-size: 13px; }
+.el-loading { display: flex; align-items: center; gap: 10px; padding: 24px; color: #dc2626; font-size: 14px; }
+.spinner    { width: 20px; height: 20px; border: 3px solid #fee2e2; border-top-color: #dc2626; border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Table */
+.el-table-wrap { background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.06); overflow-x: auto; }
+.el-table      { width: 100%; min-width: 640px; border-collapse: collapse; }
+.el-table thead tr { background: #f8fafc; }
+.el-table th   { padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid #e2e8f0; }
+.el-table td   { padding: 11px 14px; font-size: 13px; color: #334155; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+.el-table tbody tr:hover td { background: #f8fafc; }
+.el-row-expanded td { background: #fef2f2 !important; }
+
+/* Cell types */
+.el-cell-date     { white-space: nowrap; color: #64748b; font-size: 12px; }
+.el-cell-message  { max-width: 420px; }
+.el-exception     { display: block; font-family: monospace; font-size: 11px; color: #dc2626; font-weight: 600; margin-bottom: 2px; }
+.el-cell-location { font-family: monospace; font-size: 11px; color: #7c3aed; white-space: nowrap; }
+.el-cell-user     { color: #64748b; font-size: 12px; }
+.el-empty         { text-align: center; padding: 40px; color: #94a3b8; }
+
+/* Source badges */
+.el-badge          { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
+.el-badge-backend   { background: #fee2e2; color: #dc2626; }
+.el-badge-frontend  { background: #dbeafe; color: #2563eb; }
+
+/* Expand button */
+.btn-expand {
+  background: none; border: 1px solid #e2e8f0; border-radius: 5px;
+  padding: 3px 8px; cursor: pointer; font-size: 11px; color: #64748b;
+}
+.btn-expand:hover { background: #f1f5f9; }
+
+/* Detail row */
+.el-detail-row td { padding: 0; background: #fff7ed !important; }
+.el-detail        { padding: 14px 24px; display: flex; flex-direction: column; gap: 8px; }
+.el-detail-row-item { font-size: 12px; color: #475569; }
+.el-trace {
+  margin: 0; padding: 12px; background: #1e293b; color: #e2e8f0;
+  border-radius: 8px; font-size: 11px; line-height: 1.5; overflow-x: auto;
+  white-space: pre-wrap; word-break: break-word;
+}
