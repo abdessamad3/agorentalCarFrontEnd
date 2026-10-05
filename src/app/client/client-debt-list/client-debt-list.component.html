@@ -119,7 +119,7 @@
             </thead>
             <tbody>
               <tr *ngFor="let r of c.reservations">
-                <td class="res-id">#{{ r.id }}</td>
+                <td class="res-id res-id-link" (click)="goToReservation(r.id)" [title]="t('view') || 'View'">#{{ r.id }}</td>
                 <td class="res-matricule">{{ r.matricule || '—' }}</td>
                 <td class="res-date">{{ r.dateDebut | date:'dd/MM/yy' }}</td>
                 <td class="res-date">{{ r.dateFin   | date:'dd/MM/yy' }}</td>
@@ -145,96 +145,15 @@
 
 </div>
 
-<!-- ═══ Payment modal ══════════════════════════════════════════════════════════ -->
-<div class="modal-overlay" *ngIf="payModalOpen" (click)="closePayModal()">
-  <div class="pay-modal" (click)="$event.stopPropagation()" [attr.dir]="dir">
-
-    <div class="pay-modal-header">
-      <div>
-        <div class="pay-modal-title">💳 {{ t('addPayment') || 'Register Payment' }}</div>
-        <div class="pay-modal-sub" *ngIf="payReservation">
-          {{ t('reservation') }} #{{ payReservation.id }} — {{ payClientName }}
-        </div>
-      </div>
-      <button class="modal-close" (click)="closePayModal()">✕</button>
-    </div>
-
-    <form [formGroup]="payForm" (ngSubmit)="submitPayment()">
-      <div class="pay-modal-body">
-
-        <!-- Amount + date -->
-        <div class="pay-row">
-          <div class="pay-group">
-            <label class="pay-label">
-              {{ t('montantPaye') || 'Amount' }} (MAD) <span class="req">*</span>
-            </label>
-            <input
-              type="number"
-              formControlName="montant"
-              class="pay-input"
-              min="0.01"
-              [max]="payReservation?.remaining ?? null"
-              step="0.01"
-              placeholder="0.00"
-            />
-            <div class="pay-hint" *ngIf="payReservation">
-              {{ t('remaining') || 'Remaining' }}: <strong>{{ payReservation.remaining | number:'1.0-0' }} MAD</strong>
-            </div>
-            <div class="pay-field-error" *ngIf="payForm.get('montant')?.invalid && payForm.get('montant')?.touched">
-              {{ t('amountExceedsRemaining') || 'Amount cannot exceed remaining balance' }}
-            </div>
-          </div>
-
-          <div class="pay-group">
-            <label class="pay-label">
-              {{ t('paymentDate') || 'Payment Date' }} <span class="req">*</span>
-            </label>
-            <input
-              type="date"
-              formControlName="datePaiement"
-              class="pay-input"
-            />
-          </div>
-        </div>
-
-        <!-- Mode -->
-        <div class="pay-group">
-          <label class="pay-label">{{ t('modePaiement') || 'Payment Method' }}</label>
-          <select formControlName="modePaiement" class="pay-select">
-            <option *ngFor="let m of PAY_MODES" [value]="m.value">{{ m.label }}</option>
-          </select>
-        </div>
-
-        <!-- Note -->
-        <div class="pay-group">
-          <label class="pay-label">{{ t('note') || 'Note' }}</label>
-          <input
-            type="text"
-            formControlName="note"
-            class="pay-input"
-            [placeholder]="t('note') || 'Optional note…'"
-          />
-        </div>
-
-        <!-- API error -->
-        <div class="pay-api-error" *ngIf="payError">⚠️ {{ payError }}</div>
-
-      </div>
-
-      <div class="pay-modal-footer">
-        <button type="button" class="btn-cancel" (click)="closePayModal()">
-          {{ t('cancel') || 'Cancel' }}
-        </button>
-        <button
-          type="submit"
-          class="btn-submit"
-          [disabled]="payForm.invalid || paySubmitting"
-        >
-          <span *ngIf="paySubmitting">{{ t('saving') || 'Saving…' }}</span>
-          <span *ngIf="!paySubmitting">✔ {{ t('save') || 'Save Payment' }}</span>
-        </button>
-      </div>
-    </form>
-
-  </div>
-</div>
+<!-- ═══ Payment history panel ══════════════════════════════════════════════════ -->
+<app-pay-res-panel
+  [open]="payPanelOpen"
+  [reservationId]="payPanelResId"
+  [montantTotal]="payPanelTotal"
+  [montantPaye]="payPanelPaid"
+  [title]="payPanelTitle"
+  [dir]="dir"
+  (closed)="closePayPanel()"
+  (paymentChanged)="onPaymentChanged()"
+  *ngIf="payPanelOpen"
+></app-pay-res-panel>

@@ -1,0 +1,116 @@
+<div class="pay-res-backdrop" (click)="close()">
+  <div class="pay-res-panel" (click)="$event.stopPropagation()" [attr.dir]="dir">
+
+    <div class="pay-res-head">
+      <div class="pay-res-title">
+        <span class="pay-res-title-icon">💳</span>
+        <div>
+          <div class="pay-res-title-main">{{ t('paymentHistory') || 'Historique paiements' }}</div>
+          <div class="pay-res-title-sub">{{ title }}</div>
+        </div>
+      </div>
+      <button class="pay-res-close" (click)="close()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="pay-res-kpi">
+      <div class="pay-res-kpi-item">
+        <span class="pay-res-kpi-label">{{ t('total') }}</span>
+        <span class="pay-res-kpi-value">{{ montantTotal | number:'1.0-0' }} MAD</span>
+      </div>
+      <div class="pay-res-kpi-item pay-res-kpi-green">
+        <span class="pay-res-kpi-label">{{ t('paid') || 'Payé' }}</span>
+        <span class="pay-res-kpi-value">{{ montantPaye | number:'1.0-0' }} MAD</span>
+      </div>
+      <div class="pay-res-kpi-item" [class.pay-res-kpi-red]="reste > 0">
+        <span class="pay-res-kpi-label">{{ t('remaining') }}</span>
+        <span class="pay-res-kpi-value">{{ reste | number:'1.0-0' }} MAD</span>
+      </div>
+    </div>
+
+    <div class="pay-res-progress-wrap" *ngIf="montantTotal > 0">
+      <div class="pay-res-progress-bar">
+        <div class="pay-res-progress-fill" [style.width.%]="progressPct"></div>
+      </div>
+      <span class="pay-res-progress-pct">{{ progressPct }}%</span>
+    </div>
+
+    <div class="pay-res-history">
+      <div class="pay-res-section-title">{{ t('installments') || 'Versements' }}</div>
+      <div *ngIf="loading" class="pay-res-loading"><span class="spin-sm"></span> {{ t('loading') }}</div>
+      <div *ngIf="!loading && paiements.length === 0" class="pay-res-empty">{{ t('noPayments') || 'Aucun versement enregistré.' }}</div>
+
+      <div *ngIf="!loading && paiements.length > 0" class="pay-res-list">
+        <div *ngFor="let p of paiements" class="pay-res-item">
+          <div class="pay-res-item-left">
+            <span class="pay-res-item-date">{{ p.datePaiement | date:'dd/MM/yyyy' }}</span>
+            <span class="pay-res-item-mode">{{ paymentModeLabel(p.modePaiement) }}</span>
+            <span class="pay-res-item-note" *ngIf="p.note">{{ p.note }}</span>
+          </div>
+          <div class="pay-res-item-right">
+            <span class="pay-res-item-amount">{{ p.montant | number:'1.0-0' }} MAD</span>
+            <button class="pay-res-del-btn" [disabled]="deleteId === p.id"
+                    (click)="deletePay(p.id)" [title]="t('deletePayment') || 'Supprimer'">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pay-res-add-form" [formGroup]="form" *ngIf="reste > 0">
+      <div class="pay-res-section-title">{{ t('addInstallment') || 'Ajouter un versement' }}</div>
+      <div class="pay-res-form-row">
+        <div class="pay-res-field">
+          <label>{{ t('montantPaye') || 'Montant' }} (MAD)</label>
+          <input type="number" formControlName="montant" min="0.01" [max]="reste" step="0.01"
+                 class="pay-res-input" placeholder="0.00"
+                 [class.is-invalid]="(form.get('montant')?.invalid && form.get('montant')?.touched)">
+          <span class="pay-res-field-error" *ngIf="+form.get('montant')?.value > reste">
+            {{ t('amountExceedsRemaining') || 'Dépasse le restant' }} ({{ reste | number:'1.0-0' }} MAD)
+          </span>
+        </div>
+        <div class="pay-res-field">
+          <label>{{ t('paymentDate') || 'Date' }}</label>
+          <input type="date" formControlName="datePaiement" class="pay-res-input"
+                 [class.is-invalid]="(form.get('datePaiement')?.invalid && form.get('datePaiement')?.touched)">
+        </div>
+      </div>
+      <div class="pay-res-form-row">
+        <div class="pay-res-field">
+          <label>{{ t('modePaiement') || 'Mode' }}</label>
+          <select formControlName="modePaiement" class="pay-res-input">
+            <option *ngFor="let m of PAY_MODES" [value]="m.value">{{ m.label }}</option>
+          </select>
+        </div>
+        <div class="pay-res-field pay-res-field-wide">
+          <label>{{ t('note') || 'Note' }}</label>
+          <input type="text" formControlName="note" class="pay-res-input" [placeholder]="t('note') || 'Optionnel'">
+        </div>
+      </div>
+      <div class="pay-res-form-actions">
+        <button class="btn-pay-res-submit" (click)="submit()" [disabled]="submitting || form.invalid">
+          <span *ngIf="submitting" class="spin-sm"></span>
+          <svg *ngIf="!submitting" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          {{ submitting ? (t('saving') || 'Enregistrement…') : (t('addInstallment') || 'Ajouter le versement') }}
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="reste <= 0 && montantTotal > 0" class="pay-res-paid-banner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+      {{ t('fullyPaid') || 'Entièrement payé' }}
+    </div>
+
+  </div>
+</div>

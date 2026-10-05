@@ -13,13 +13,14 @@ import { ClientDocumentsComponent } from '../client-documents/client-documents.c
 import { debtRiskClass } from '../../shared/utils/debt.utils';
 import { environment } from '../../../environments/environment';
 import { StatusPipe } from '../../shared/pipes/status.pipe';
+import { PayResPanelComponent } from '../../shared/pay-res-panel/pay-res-panel.component';
 
 const CAR_PLACEHOLDER = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzIwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2VkZjJmNyIvPjx0ZXh0IHg9IjE2MCIgeT0iMTAwIiBmaWxsPSIjYTBhZWMwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiBmb250LXNpemU9IjUwIj7wn5qlPC90ZXh0Pjwvc3ZnPg==`;
 
 @Component({
   selector: 'app-client-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, BtnComponent, ClientDocumentsComponent, StatusPipe],
+  imports: [CommonModule, FormsModule, RouterModule, BtnComponent, ClientDocumentsComponent, StatusPipe, PayResPanelComponent],
   templateUrl: './client-detail.component.html',
   styleUrls: ['./client-detail.component.css']
 })
@@ -37,13 +38,12 @@ export class ClientDetailComponent implements OnInit {
   filterDateTo = '';
   readonly debtRiskClass = debtRiskClass;
 
-  // Payment history drawer modal
-  selectedResForPayment: any = null;
-  paymentPanelResId: number | null = null;
-  paymentCache: Record<number, any[]> = {};
-  paymentLoading: Record<number, boolean> = {};
-  newPayment = { montant: 0, datePaiement: '', note: '', modePaiement: 'especes' };
-  addingPayment = false;
+  // Payment history panel
+  payPanelOpen  = false;
+  payPanelResId: number | null = null;
+  payPanelTotal = 0;
+  payPanelPaid  = 0;
+  payPanelTitle = '';
 
   constructor(
     private route: ActivatedRoute,
@@ -75,6 +75,14 @@ export class ClientDetailComponent implements OnInit {
         this.contrats = allContrats.filter(c => c.clientId === id || c.client?.id === id);
         this.financialSummary = financialSummary;
         this.loading = false;
+
+        if (this.payPanelResId) {
+          const updated = this.reservations.find(r => r.id === this.payPanelResId);
+          if (updated) {
+            this.payPanelTotal = +updated.total || 0;
+            this.payPanelPaid  = +updated.montantPaye || 0;
+          }
+        }
       },
       error: () => { this.error = 'Erreur de chargement.'; this.loading = false; }
     });
@@ -117,62 +125,22 @@ export class ClientDetailComponent implements OnInit {
   }
 
   togglePaymentPanel(r: any): void {
-    if (this.selectedResForPayment?.id === r.id) { this.closePaymentModal(); return; }
-    this.selectedResForPayment = r;
-    this.paymentPanelResId = r.id;
-    if (this.paymentCache[r.id] !== undefined) return;
-    this.paymentLoading[r.id] = true;
-    this.crud.getAll('paiement', { reservationId: r.id }).pipe(catchError(() => of([]))).subscribe((data: any) => {
-      this.paymentCache[r.id] = Array.isArray(data) ? data : (data?.data ?? []);
-      this.paymentLoading[r.id] = false;
-    });
+    if (this.payPanelResId === r.id) { this.closePaymentModal(); return; }
+    this.payPanelResId = r.id;
+    this.payPanelTotal = +r.total || 0;
+    this.payPanelPaid  = +r.montantPaye || 0;
+    this.payPanelTitle = `${this.clientName} — #${r.id}`;
+    this.payPanelOpen  = true;
   }
 
   closePaymentModal(): void {
-    this.selectedResForPayment = null;
-    this.paymentPanelResId = null;
-    this.newPayment = { montant: 0, datePaiement: '', note: '', modePaiement: 'especes' };
+    this.payPanelOpen  = false;
+    this.payPanelResId = null;
   }
 
-  get payProgressPct(): number {
-    if (!this.selectedResForPayment) return 0;
-    const total = +this.selectedResForPayment.total || 0;
-    if (total === 0) return 0;
-    const paid = +this.selectedResForPayment.montantPaye || 0;
-    return Math.min(100, Math.round((paid / total) * 100));
-  }
-
-  addInstallment(): void {
-    if (!this.selectedResForPayment || !this.newPayment.montant || !this.newPayment.datePaiement) return;
-    this.addingPayment = true;
-    const res = this.selectedResForPayment;
-    const payload = {
-      reservationId: res.id,
-      montant: this.newPayment.montant,
-      datePaiement: this.newPayment.datePaiement,
-      note: this.newPayment.note,
-      modePaiement: this.newPayment.modePaiement,
-    };
-    this.crud.create('paiement', payload).pipe(catchError(() => of(null))).subscribe((result: any) => {
-      this.addingPayment = false;
-      if (result) {
-        delete this.paymentCache[res.id];
-        this.newPayment = { montant: 0, datePaiement: '', note: '', modePaiement: 'especes' };
-        this.paymentLoading[res.id] = true;
-        this.crud.getAll('paiement', { reservationId: res.id }).pipe(catchError(() => of([]))).subscribe((data: any) => {
-          this.paymentCache[res.id] = Array.isArray(data) ? data : (data?.data ?? []);
-          this.paymentLoading[res.id] = false;
-        });
-      }
-    });
-  }
-
-  paymentModeLabel(m: string | null): string {
-    const map: Record<string, string> = {
-      especes: 'Espèces', virement: 'Virement', cheque: 'Chèque',
-      carte: 'Carte', cb: 'Carte', online: 'En ligne',
-    };
-    return m ? (map[m.toLowerCase()] ?? m) : '—';
+  onPaymentChanged(): void {
+    const id = +this.route.snapshot.paramMap.get('id')!;
+    this.loadAll(id);
   }
 
   setTab(t: 'reservations' | 'documents') { this.activeTab = t; }

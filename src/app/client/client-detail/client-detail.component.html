@@ -183,7 +183,7 @@
                   <button *ngIf="r.reservationStatus !== 'annulee' && r.reservationStatus !== 'cancelled'"
                           class="btn-act" (click)="downloadInvoice(r)" title="Télécharger la facture">🧾</button>
                   <button class="btn-act btn-act-pay"
-                          [class.btn-act-pay-active]="selectedResForPayment?.id === r.id"
+                          [class.btn-act-pay-active]="payPanelResId === r.id"
                           (click)="togglePaymentPanel(r)" title="Historique paiement">💳</button>
                 </td>
               </tr>
@@ -205,111 +205,15 @@
 
 </div>
 
-<!-- Payment History Drawer Modal -->
-<div class="pay-modal-overlay" *ngIf="selectedResForPayment" (click)="closePaymentModal()">
-  <div class="pay-modal-drawer" (click)="$event.stopPropagation()">
-
-    <!-- Header -->
-    <div class="pay-drawer-header">
-      <div class="pay-drawer-header-left">
-        <span class="pay-drawer-icon">💳</span>
-        <div>
-          <div class="pay-drawer-title">Historique paiements</div>
-          <div class="pay-drawer-subtitle">Réservation #{{ selectedResForPayment.id }}</div>
-        </div>
-      </div>
-      <button class="pay-drawer-close" (click)="closePaymentModal()">✕</button>
-    </div>
-
-    <!-- Summary boxes -->
-    <div class="pay-drawer-summary">
-      <div class="pay-sum-box pay-sum-box-total">
-        <div class="pay-sum-box-label">Total</div>
-        <div class="pay-sum-box-value">{{ selectedResForPayment.total | number:'1.0-0' }} MAD</div>
-      </div>
-      <div class="pay-sum-box pay-sum-box-paid">
-        <div class="pay-sum-box-label">Payé</div>
-        <div class="pay-sum-box-value">{{ (selectedResForPayment.montantPaye || 0) | number:'1.0-0' }} MAD</div>
-      </div>
-      <div class="pay-sum-box pay-sum-box-remaining">
-        <div class="pay-sum-box-label">Restant</div>
-        <div class="pay-sum-box-value">{{ (+selectedResForPayment.total - +selectedResForPayment.montantPaye) | number:'1.0-0' }} MAD</div>
-      </div>
-    </div>
-
-    <!-- Progress bar -->
-    <div class="pay-drawer-progress-wrap">
-      <div class="pay-drawer-progress-bar">
-        <div class="pay-drawer-progress-fill" [style.width]="payProgressPct + '%'"></div>
-      </div>
-      <span class="pay-drawer-progress-pct">{{ payProgressPct }}%</span>
-    </div>
-
-    <!-- Installments list -->
-    <div class="pay-drawer-section-label">Versements</div>
-
-    <div *ngIf="paymentLoading[selectedResForPayment.id]" class="pay-drawer-loading">
-      <span class="pay-spinner"></span> Chargement…
-    </div>
-
-    <div *ngIf="!paymentLoading[selectedResForPayment.id] && paymentCache[selectedResForPayment.id] && paymentCache[selectedResForPayment.id].length === 0"
-         class="pay-drawer-empty">Aucun versement enregistré.</div>
-
-    <div *ngIf="!paymentLoading[selectedResForPayment.id] && paymentCache[selectedResForPayment.id] && paymentCache[selectedResForPayment.id].length > 0"
-         class="pay-drawer-list">
-      <div *ngFor="let p of paymentCache[selectedResForPayment.id]" class="pay-drawer-item">
-        <div class="pay-drawer-item-left">
-          <span class="pay-drawer-item-date">{{ p.datePaiement | date:'dd/MM/yyyy' }}</span>
-          <span class="pay-drawer-item-mode">{{ paymentModeLabel(p.modePaiement) }}</span>
-          <span class="pay-drawer-item-note" *ngIf="p.note">{{ p.note }}</span>
-        </div>
-        <div class="pay-drawer-item-right">
-          <span class="pay-drawer-item-amount">{{ p.montant | number:'1.0-0' }} MAD</span>
-          <span class="pay-status"
-            [class.pay-status-ok]="['payee','active'].includes(p.statut)"
-            [class.pay-status-pending]="['pending','en_attente','partiel'].includes(p.statut)"
-            [class.pay-status-bad]="['impaye','annulee','non_payee'].includes(p.statut)">
-            {{ p.statut }}
-          </span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Add installment form -->
-    <div class="pay-drawer-add-section">
-      <div class="pay-drawer-section-label">Ajouter un versement</div>
-      <div class="pay-drawer-form">
-        <div class="pay-form-row">
-          <div class="pay-form-group">
-            <label class="pay-form-label">Montant (MAD)</label>
-            <input class="pay-form-input" type="number" [(ngModel)]="newPayment.montant" min="1" placeholder="0" />
-          </div>
-          <div class="pay-form-group">
-            <label class="pay-form-label">Date</label>
-            <input class="pay-form-input" type="date" [(ngModel)]="newPayment.datePaiement" />
-          </div>
-        </div>
-        <div class="pay-form-row">
-          <div class="pay-form-group">
-            <label class="pay-form-label">Mode</label>
-            <select class="pay-form-input" [(ngModel)]="newPayment.modePaiement">
-              <option value="especes">Espèces</option>
-              <option value="virement">Virement</option>
-              <option value="cheque">Chèque</option>
-              <option value="carte">Carte</option>
-            </select>
-          </div>
-          <div class="pay-form-group">
-            <label class="pay-form-label">Note</label>
-            <input class="pay-form-input" type="text" [(ngModel)]="newPayment.note" placeholder="Optionnel" />
-          </div>
-        </div>
-        <button class="pay-form-btn" (click)="addInstallment()" [disabled]="addingPayment">
-          <span *ngIf="addingPayment" class="pay-spinner"></span>
-          {{ addingPayment ? 'Enregistrement…' : '+ Ajouter le versement' }}
-        </button>
-      </div>
-    </div>
-
-  </div>
-</div>
+<!-- Payment history panel -->
+<app-pay-res-panel
+  [open]="payPanelOpen"
+  [reservationId]="payPanelResId"
+  [montantTotal]="payPanelTotal"
+  [montantPaye]="payPanelPaid"
+  [title]="payPanelTitle"
+  [dir]="dir"
+  (closed)="closePaymentModal()"
+  (paymentChanged)="onPaymentChanged()"
+  *ngIf="payPanelOpen"
+></app-pay-res-panel>

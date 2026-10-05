@@ -251,7 +251,7 @@ export class TranslationService {
       // Entity names (plural)
       clients: 'Clients', reservations: 'Reservations', contrats: 'Contracts', returnInspections: 'Return Inspections',
       paiements: 'Payments', clientPayments: 'Client Payments', addPayment: 'Add Payment', totalCollected: 'Total Collected', reservationDates: 'Reservation Dates', payments: 'Payments',
-      paymentHistory: 'Payment History', noPayments: 'No payments yet', deletePayment: 'Delete Payment', addInstallment: 'Add Installment', totalPaid: 'Total Paid', amountTotal: 'Total Amount', note: 'Note', initialPayment: 'Initial', exceeds_remaining: 'Exceeds remaining', paymentBeforeInvoice: 'Cannot be before invoice date',
+      paymentHistory: 'Payment History', noPayments: 'No payments yet', deletePayment: 'Delete Payment', addInstallment: 'Add Installment', totalPaid: 'Total Paid', amountTotal: 'Total Amount', note: 'Note', initialPayment: 'Initial', exceeds_remaining: 'Exceeds remaining', paymentBeforeInvoice: 'Cannot be before invoice date', fullyPaid: 'Fully Paid',
       reparations: 'Repairs', vidanges: 'Oil Changes',
       adblue: 'AdBlue', suiviTechnique: 'Technical Inspection', assurances: 'Insurance',
       inspectionResult: 'Inspection Result',
@@ -1182,7 +1182,7 @@ export class TranslationService {
 
       clients: 'Clients', reservations: 'Réservations', contrats: 'Contrats', returnInspections: 'Retours Inspections',
       paiements: 'Paiements', clientPayments: 'Paiements clients', addPayment: 'Ajouter paiement', totalCollected: 'Total encaissé', reservationDates: 'Dates réservation', payments: 'Paiements',
-      paymentHistory: 'Historique paiements', noPayments: 'Aucun paiement', deletePayment: 'Supprimer paiement', addInstallment: 'Ajouter versement', totalPaid: 'Total payé', amountTotal: 'Montant total', note: 'Note', initialPayment: 'Initial', exceeds_remaining: 'Dépasse le solde', paymentBeforeInvoice: 'Antérieur à la date de facture',
+      paymentHistory: 'Historique paiements', noPayments: 'Aucun paiement', deletePayment: 'Supprimer paiement', addInstallment: 'Ajouter versement', totalPaid: 'Total payé', amountTotal: 'Montant total', note: 'Note', initialPayment: 'Initial', exceeds_remaining: 'Dépasse le solde', paymentBeforeInvoice: 'Antérieur à la date de facture', fullyPaid: 'Entièrement payé',
       reparations: 'Réparations', vidanges: 'Vidanges',
       adblue: 'AdBlue', suiviTechnique: 'Contrôle Technique', assurances: 'Assurances',
       inspectionResult: 'Résultat du contrôle',
@@ -2088,7 +2088,7 @@ export class TranslationService {
 
       clients: 'العملاء', reservations: 'الحجوزات', contrats: 'العقود', returnInspections: 'فحص الإرجاع',
       paiements: 'المدفوعات', clientPayments: 'مدفوعات العملاء', addPayment: 'إضافة دفعة', totalCollected: 'إجمالي المحصل', reservationDates: 'تواريخ الحجز', payments: 'مدفوعات',
-      paymentHistory: 'سجل الدفعات', noPayments: 'لا توجد دفعات', deletePayment: 'حذف الدفعة', addInstallment: 'إضافة قسط', totalPaid: 'إجمالي المدفوع', amountTotal: 'المبلغ الإجمالي', note: 'ملاحظة', initialPayment: 'دفعة أولى', exceeds_remaining: 'يتجاوز الرصيد المتبقي', paymentBeforeInvoice: 'لا يمكن أن يكون قبل تاريخ الفاتورة',
+      paymentHistory: 'سجل الدفعات', noPayments: 'لا توجد دفعات', deletePayment: 'حذف الدفعة', addInstallment: 'إضافة قسط', totalPaid: 'إجمالي المدفوع', amountTotal: 'المبلغ الإجمالي', note: 'ملاحظة', initialPayment: 'دفعة أولى', exceeds_remaining: 'يتجاوز الرصيد المتبقي', paymentBeforeInvoice: 'لا يمكن أن يكون قبل تاريخ الفاتورة', fullyPaid: 'مدفوع بالكامل',
       reparations: 'الإصلاحات', vidanges: 'تغيير الزيت',
       adblue: 'أدبلو', suiviTechnique: 'الفحص التقني', assurances: 'التأمينات',
       inspectionResult: 'نتيجة الفحص',

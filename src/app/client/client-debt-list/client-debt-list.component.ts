@@ -1,6 +1,6 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -8,6 +8,7 @@ import { CrudService } from '../../services/crud.service';
 import { TranslationService } from '../../services/translation.service';
 import { EventBusService } from '../../services/event-bus.service';
 import { debtRiskClass, debtRiskLevel } from '../../shared/utils/debt.utils';
+import { PayResPanelComponent } from '../../shared/pay-res-panel/pay-res-panel.component';
 
 export interface ClientDebt {
   clientId: number;
@@ -32,7 +33,7 @@ export interface ReservationDebt {
 @Component({
   selector: 'app-client-debt-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, PayResPanelComponent],
   templateUrl: './client-debt-list.component.html',
   styleUrls: ['./client-debt-list.component.css']
 })
@@ -44,38 +45,22 @@ export class ClientDebtListComponent implements OnInit {
   dir = 'ltr';
   expandedId: number | null = null;
 
-  // Payment modal state
-  payModalOpen = false;
-  payReservation: ReservationDebt | null = null;
-  payClientName = '';
-  paySubmitting = false;
-  payError = '';
-  payForm: FormGroup;
+  // Payment history panel state
+  payPanelOpen  = false;
+  payPanelResId: number | null = null;
+  payPanelTotal = 0;
+  payPanelPaid  = 0;
+  payPanelTitle = '';
 
   readonly debtRiskClass = debtRiskClass;
   readonly debtRiskLevel = debtRiskLevel;
 
-  readonly PAY_MODES = [
-    { value: 'especes',   label: 'Espèces / Cash' },
-    { value: 'virement',  label: 'Virement' },
-    { value: 'cheque',    label: 'Chèque' },
-    { value: 'carte',     label: 'Carte bancaire' },
-  ];
-
   constructor(
     private crud: CrudService,
     private ts: TranslationService,
-    private fb: FormBuilder,
     private bus: EventBusService,
     private router: Router
-  ) {
-    this.payForm = this.fb.group({
-      montant:      [null, [Validators.required, Validators.min(0.01)]],
-      datePaiement: ['',   Validators.required],
-      modePaiement: ['especes'],
-      note:         [''],
-    });
-  }
+  ) {}
 
   ngOnInit() {
     this.ts.direction$.subscribe(d => this.dir = d);
@@ -158,51 +143,37 @@ export class ClientDebtListComponent implements OnInit {
 
   goProfile(clientId: number) { this.router.navigate(['/client', clientId]); }
 
-  // ── Payment modal ────────────────────────────────────────────────────────────
+  goToReservation(id: number) { this.router.navigate(['/location', id]); }
+
+  // ── Payment history panel ────────────────────────────────────────────────────
 
   openPayment(r: ReservationDebt, clientName: string) {
-    this.payReservation = r;
-    this.payClientName  = clientName;
-    this.payError       = '';
-    const today = new Date().toISOString().split('T')[0];
-    this.payForm.reset({
-      montant:      r.remaining,
-      datePaiement: today,
-      modePaiement: 'especes',
-      note:         '',
-    });
-    this.payForm.get('montant')!.setValidators([Validators.required, Validators.min(0.01), Validators.max(r.remaining)]);
-    this.payForm.get('montant')!.updateValueAndValidity();
-    this.payModalOpen = true;
+    this.payPanelResId = r.id;
+    this.payPanelTotal = r.total;
+    this.payPanelPaid  = r.montantPaye;
+    this.payPanelTitle = `${clientName} — #${r.id}`;
+    this.payPanelOpen  = true;
   }
 
-  closePayModal() {
-    this.payModalOpen   = false;
-    this.payReservation = null;
-    this.payClientName  = '';
-    this.payError       = '';
-    this.paySubmitting  = false;
+  closePayPanel() {
+    this.payPanelOpen  = false;
+    this.payPanelResId = null;
   }
 
-  submitPayment() {
-    if (this.payForm.invalid || !this.payReservation) return;
-    this.paySubmitting = true;
-    this.payError = '';
-    const payload = { ...this.payForm.value, reservationId: this.payReservation.id };
-    this.crud.create('paiement', payload).subscribe({
-      next: () => {
-        this.bus.paymentsChanged$.next();
-        this.closePayModal();
-        this.load();
-      },
-      error: (err: any) => {
-        this.paySubmitting = false;
-        this.payError = err?.error?.message || this.ts.translate('saveError') || 'Error saving payment';
-      },
-    });
+  onPaymentChanged() {
+    this.bus.paymentsChanged$.next();
+    this.load();
+    // A reservation that just became fully paid drops out of the debtors list entirely,
+    // so refresh the panel's own totals straight from the reservation, not from `debtors`.
+    if (this.payPanelResId) {
+      this.crud.getById('reservation', this.payPanelResId).subscribe((r: any) => {
+        if (r) {
+          this.payPanelTotal = parseFloat(r.total || 0);
+          this.payPanelPaid  = parseFloat(r.montantPaye || 0);
+        }
+      });
+    }
   }
-
-  @HostListener('document:keydown.escape') onEsc() { this.closePayModal(); }
 
   t(key: string) { return this.ts.translate(key); }
 }

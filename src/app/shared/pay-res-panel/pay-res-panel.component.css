@@ -1,0 +1,120 @@
+:host {
+  --navy:       #0B2D4E;
+  --navy-mid:   #1a4a7a;
+  --blue:       #2F80ED;
+  --green:      #27AE60;
+  --red:        #EB5757;
+  --bg:         #F5F7FA;
+  --border:     #E8EEFA;
+  --text-dark:  #1A202C;
+  --text-mid:   #4A5568;
+  --text-soft:  #718096;
+  --text-muted: #A0AEC0;
+  --radius-sm:  8px;
+}
+
+.pay-res-backdrop {
+  position: fixed; inset: 0; background: rgba(11,45,78,0.3); z-index: 950;
+  display: flex; justify-content: flex-end; backdrop-filter: blur(2px);
+}
+.pay-res-panel {
+  width: 460px; max-width: 95vw; height: 100%; background: #fff;
+  box-shadow: -4px 0 32px rgba(11,45,78,0.13);
+  display: flex; flex-direction: column; overflow: hidden;
+  animation: pay-res-drawer-in 0.22s cubic-bezier(0.16,1,0.3,1);
+}
+@keyframes pay-res-drawer-in { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+.pay-res-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.1rem 1.4rem; border-bottom: 1.5px solid var(--border);
+  background: var(--bg);
+}
+.pay-res-title { display: flex; align-items: center; gap: 0.75rem; }
+.pay-res-title-icon { font-size: 1.6rem; line-height: 1; }
+.pay-res-title-main { font-size: 1rem; font-weight: 700; color: var(--text-dark); }
+.pay-res-title-sub  { font-size: 0.75rem; color: var(--text-soft); margin-top: 0.1rem; }
+.pay-res-close {
+  background: none; border: none; cursor: pointer; color: var(--text-muted);
+  padding: 0.3rem; border-radius: 6px; display: flex; transition: color 0.15s;
+}
+.pay-res-close:hover { color: var(--red); }
+
+.pay-res-kpi {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 0; border-bottom: 1px solid var(--border);
+}
+.pay-res-kpi-item { padding: 0.9rem 1rem; text-align: center; border-right: 1px solid var(--border); }
+.pay-res-kpi-item:last-child { border-right: none; }
+.pay-res-kpi-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-soft); display: block; margin-bottom: 0.25rem; }
+.pay-res-kpi-value { font-size: 1.05rem; font-weight: 800; color: var(--text-dark); }
+.pay-res-kpi-green .pay-res-kpi-value { color: var(--green); }
+.pay-res-kpi-red   .pay-res-kpi-value { color: var(--red); }
+
+.pay-res-progress-wrap { display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 1.4rem; border-bottom: 1px solid var(--border); }
+.pay-res-progress-bar { flex: 1; height: 8px; background: #e2e8f0; border-radius: 99px; overflow: hidden; }
+.pay-res-progress-fill { height: 100%; background: var(--green); border-radius: 99px; transition: width 0.4s ease; }
+.pay-res-progress-pct { font-size: 0.78rem; font-weight: 700; color: var(--green); min-width: 36px; text-align: end; }
+
+.pay-res-history { flex: 1; overflow-y: auto; padding: 1rem 1.4rem; border-bottom: 1px solid var(--border); }
+.pay-res-section-title { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-soft); margin-bottom: 0.65rem; }
+.pay-res-loading { color: var(--text-soft); font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; }
+.pay-res-empty   { color: var(--text-muted); font-size: 0.85rem; font-style: italic; padding: 0.5rem 0; }
+
+.pay-res-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.pay-res-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.55rem 0.7rem; background: var(--bg); border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+}
+.pay-res-item-left  { display: flex; flex-direction: column; gap: 0.15rem; }
+.pay-res-item-date  { font-weight: 600; color: var(--text-dark); }
+.pay-res-item-mode  { font-size: 0.72rem; color: var(--text-soft); }
+.pay-res-item-note  { font-size: 0.72rem; color: var(--text-muted); font-style: italic; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pay-res-item-right { display: flex; align-items: center; gap: 0.5rem; }
+.pay-res-item-amount { font-weight: 700; color: var(--green); }
+.pay-res-del-btn {
+  background: none; border: none; cursor: pointer; color: var(--text-muted);
+  padding: 0.25rem; border-radius: 4px; transition: color 0.15s; display: inline-flex;
+}
+.pay-res-del-btn:hover:not(:disabled) { color: var(--red); }
+.pay-res-del-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.pay-res-add-form { padding: 1rem 1.4rem; background: var(--bg); border-top: 1px solid var(--border); }
+.pay-res-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 0.75rem; }
+.pay-res-field { display: flex; flex-direction: column; gap: 0.25rem; }
+.pay-res-field label { font-size: 0.72rem; font-weight: 600; color: var(--text-soft); }
+.pay-res-input {
+  padding: 0.44rem 0.7rem; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  font-size: 0.83rem; color: var(--text-dark); background: #fff; outline: none;
+  transition: border-color 0.15s; width: 100%; box-sizing: border-box;
+}
+.pay-res-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(47,128,237,0.12); }
+.pay-res-input.is-invalid { border-color: var(--red); }
+.pay-res-field-error { font-size: 0.7rem; color: var(--red); margin-top: 0.1rem; }
+.pay-res-field-wide { grid-column: span 1; }
+.pay-res-form-actions { display: flex; justify-content: flex-end; }
+.btn-pay-res-submit {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.5rem 1.2rem; border: none; border-radius: var(--radius-sm);
+  background: var(--blue); color: #fff; font-size: 0.85rem; font-weight: 700;
+  cursor: pointer; transition: background 0.15s;
+}
+.btn-pay-res-submit:hover:not(:disabled) { background: var(--navy-mid); }
+.btn-pay-res-submit:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.pay-res-paid-banner {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.75rem 1rem; margin: 0.5rem 1.25rem 1.25rem;
+  background: #f0fff4; border: 1px solid #9ae6b4;
+  border-radius: 8px; font-size: 0.85rem; font-weight: 600; color: #276749;
+}
+
+.spin-sm { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(255,255,255,0.35); border-top-color: white; border-radius: 50%; animation: pay-res-spin 0.7s linear infinite; }
+@keyframes pay-res-spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 500px) {
+  .pay-res-panel { width: 100vw; }
+  .pay-res-form-row { grid-template-columns: 1fr; }
+  .pay-res-field-wide { grid-column: span 1; }
+}
