@@ -108,6 +108,7 @@
             <thead>
               <tr>
                 <th>{{ t('reservation') || '#' }}</th>
+                <th>{{ t('car') }}</th>
                 <th>{{ t('startDate') || 'Start' }}</th>
                 <th>{{ t('endDate') || 'End' }}</th>
                 <th class="col-num">{{ t('total') }}</th>
@@ -119,6 +120,7 @@
             <tbody>
               <tr *ngFor="let r of c.reservations">
                 <td class="res-id">#{{ r.id }}</td>
+                <td class="res-matricule">{{ r.matricule || '—' }}</td>
                 <td class="res-date">{{ r.dateDebut | date:'dd/MM/yy' }}</td>
                 <td class="res-date">{{ r.dateFin   | date:'dd/MM/yy' }}</td>
                 <td class="col-num">{{ r.total       | number:'1.0-0' }}</td>

@@ -279,6 +279,7 @@
 .col-num    { text-align: right; }
 .col-action { text-align: center; white-space: nowrap; }
 .res-id     { font-family: monospace; color: #64748b; font-size: 0.78rem; }
+.res-matricule { font-family: monospace; color: #475569; font-size: 0.78rem; white-space: nowrap; }
 .res-date   { white-space: nowrap; font-size: 0.8rem; }
 
 /* Profile button in card header */
@@ -467,6 +468,7 @@
 [dir="rtl"] .cin-tag,
 [dir="rtl"] .rank-num,
 [dir="rtl"] .res-id,
+[dir="rtl"] .res-matricule,
 [dir="rtl"] .res-date,
 [dir="rtl"] .col-num,
 [dir="rtl"] .pay-modal-sub {

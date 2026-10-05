@@ -26,6 +26,7 @@ export interface ReservationDebt {
   total: number;
   montantPaye: number;
   remaining: number;
+  matricule: string;
 }
 
 @Component({
@@ -123,7 +124,7 @@ export class ClientDebtListComponent implements OnInit {
         }
         const entry = map.get(c.id)!;
         entry.totalOwed += remaining;
-        entry.reservations.push({ id: r.id, dateDebut: r.dateDebut, dateFin: r.dateFin, total: parseFloat(r.total || 0), montantPaye: parseFloat(r.montantPaye || 0), remaining });
+        entry.reservations.push({ id: r.id, dateDebut: r.dateDebut, dateFin: r.dateFin, total: parseFloat(r.total || 0), montantPaye: parseFloat(r.montantPaye || 0), remaining, matricule: r.voiture?.immatriculation || '' });
       }
 
       this.debtors = Array.from(map.values()).sort((a, b) => b.totalOwed - a.totalOwed);
