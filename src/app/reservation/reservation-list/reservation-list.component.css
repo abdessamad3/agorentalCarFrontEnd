@@ -261,6 +261,8 @@
 
 .rc-vehicle  { font-size: 0.9rem; font-weight: 700; color: #2d3748; }
 .rc-client   { font-size: 0.82rem; color: #4a5568; }
+.rc-plate    { font-weight: 400; color: #718096; font-size: 0.8rem; margin-inline-start: 0.3rem; }
+.rc-num      { font-family: monospace; color: #a0aec0; font-size: 0.72rem; margin-inline-start: 0.4rem; }
 
 .rc-dates {
   display: flex;

@@ -37,10 +37,10 @@
       <div class="active-grid">
         <div *ngFor="let r of activeContracts" class="active-card">
           <div class="ac-top">
-            <div class="ac-vehicle">🚗 {{ r.voiture?.marque || r.voitureId }} {{ r.voiture?.modele || '' }}</div>
+            <div class="ac-vehicle">🚗 {{ r.voiture?.marque || r.voitureId }} {{ r.voiture?.modele || '' }}<span class="rc-plate" *ngIf="r.voiture?.immatriculation">({{ r.voiture?.immatriculation }})</span></div>
             <span class="status-chip chip-active">{{ getStatus(r) | appStatus:'reservation' }}</span>
           </div>
-          <div class="ac-client">👤 {{ r.client?.nom || r.clientId }}</div>
+          <div class="ac-client">👤 {{ r.client?.prenom }} {{ r.client?.nom || r.clientId }} <span class="rc-num">#{{ r.id }}</span></div>
           <div class="ac-dates">
             <span>{{ r.dateDebut | date:'dd/MM/yy HH:mm' }}</span>
             <span class="dates-sep">→</span>
@@ -78,13 +78,13 @@
       <div class="res-grid">
         <div *ngFor="let r of upcomingDepartures" class="upcoming-card" [class.card-urgent]="isUrgentPending(r)">
           <div class="rc-top">
-            <div class="rc-vehicle">🚗 {{ r.voiture?.marque || r.voitureId }} {{ r.voiture?.modele || '' }}</div>
+            <div class="rc-vehicle">🚗 {{ r.voiture?.marque || r.voitureId }} {{ r.voiture?.modele || '' }}<span class="rc-plate" *ngIf="r.voiture?.immatriculation">({{ r.voiture?.immatriculation }})</span></div>
             <div class="rc-badges">
               <span class="status-chip chip-upcoming">{{ getStatus(r) | appStatus:'reservation' }}</span>
               <span *ngIf="isUrgentPending(r)" class="badge-urgent">⚠ &lt;24h</span>
             </div>
           </div>
-          <div class="rc-client">👤 {{ r.client?.nom || r.clientId }}</div>
+          <div class="rc-client">👤 {{ r.client?.prenom }} {{ r.client?.nom || r.clientId }} <span class="rc-num">#{{ r.id }}</span></div>
           <div class="rc-dates">
             <span class="date-badge upcoming">{{ r.dateDebut | date:'dd/MM/yy HH:mm' }}</span>
             <span class="dates-sep">→</span>
@@ -133,10 +133,10 @@
           <div *ngIf="histCompleted.length === 0" class="hist-empty">—</div>
           <div *ngFor="let r of histCompleted" class="hist-card">
             <div class="rc-top">
-              <div class="rc-vehicle">🚗 {{ r.voiture?.marque || r.voitureId }} {{ r.voiture?.modele || '' }}</div>
+              <div class="rc-vehicle">🚗 {{ r.voiture?.marque || r.voitureId }} {{ r.voiture?.modele || '' }}<span class="rc-plate" *ngIf="r.voiture?.immatriculation">({{ r.voiture?.immatriculation }})</span></div>
               <span class="status-chip chip-done">{{ getStatus(r) | appStatus:'reservation' }}</span>
             </div>
-            <div class="rc-client">👤 {{ r.client?.nom || r.clientId }}</div>
+            <div class="rc-client">👤 {{ r.client?.prenom }} {{ r.client?.nom || r.clientId }} <span class="rc-num">#{{ r.id }}</span></div>
             <div class="rc-dates">
               <span class="rc-date-start">{{ r.dateDebut | date:'dd/MM/yy' }}</span>
               <span class="dates-sep">→</span>
@@ -174,10 +174,10 @@
           <div *ngIf="histUnclosed.length === 0" class="hist-empty">—</div>
           <div *ngFor="let r of histUnclosed" class="hist-card">
             <div class="rc-top">
-              <div class="rc-vehicle">🚗 {{ r.voiture?.marque || r.voitureId }} {{ r.voiture?.modele || '' }}</div>
+              <div class="rc-vehicle">🚗 {{ r.voiture?.marque || r.voitureId }} {{ r.voiture?.modele || '' }}<span class="rc-plate" *ngIf="r.voiture?.immatriculation">({{ r.voiture?.immatriculation }})</span></div>
               <span class="status-chip chip-done">{{ getStatus(r) | appStatus:'reservation' }}</span>
             </div>
-            <div class="rc-client">👤 {{ r.client?.nom || r.clientId }}</div>
+            <div class="rc-client">👤 {{ r.client?.prenom }} {{ r.client?.nom || r.clientId }} <span class="rc-num">#{{ r.id }}</span></div>
             <div class="rc-dates">
               <span class="rc-date-start">{{ r.dateDebut | date:'dd/MM/yy' }}</span>
               <span class="dates-sep">→</span>
@@ -215,10 +215,10 @@
           <div *ngIf="histCancelled.length === 0" class="hist-empty">—</div>
           <div *ngFor="let r of histCancelled" class="hist-card hist-card-cancelled">
             <div class="rc-top">
-              <div class="rc-vehicle">🚗 {{ r.voiture?.marque || r.voitureId }} {{ r.voiture?.modele || '' }}</div>
+              <div class="rc-vehicle">🚗 {{ r.voiture?.marque || r.voitureId }} {{ r.voiture?.modele || '' }}<span class="rc-plate" *ngIf="r.voiture?.immatriculation">({{ r.voiture?.immatriculation }})</span></div>
               <span class="status-chip chip-cancelled">{{ getStatus(r) | appStatus:'reservation' }}</span>
             </div>
-            <div class="rc-client">👤 {{ r.client?.nom || r.clientId }}</div>
+            <div class="rc-client">👤 {{ r.client?.prenom }} {{ r.client?.nom || r.clientId }} <span class="rc-num">#{{ r.id }}</span></div>
             <div class="rc-dates">
               <span class="rc-date-start">{{ r.dateDebut | date:'dd/MM/yy' }}</span>
               <span class="dates-sep">→</span>
