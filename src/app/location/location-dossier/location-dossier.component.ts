@@ -92,6 +92,9 @@ export class LocationDossierComponent implements OnInit {
   showDommages     = false;
   showRetourNotes  = false;
 
+  // collapsible section in Tab "Départ"
+  showDepartDamage = false;
+
   readonly CAR_ZONES = VEHICLE_ZONES;
 
   // ── Vehicle damage (departure read-only display) ─────────────────────────
@@ -275,6 +278,7 @@ export class LocationDossierComponent implements OnInit {
         hasCaution:         contrat?.hasCaution ?? false,
         cautionMontant:     contrat?.cautionMontant ?? 0,
         franchise:          contrat?.franchise ?? 0,
+        damagedParts:       [],
         nbJoursFactures:    contrat?.nbJoursFactures ?? null,
         lieuLivraison:      res?.lieuLivraison ?? '',
         lieuRetour:         res?.lieuRetour ?? '',
@@ -288,6 +292,7 @@ export class LocationDossierComponent implements OnInit {
         hasSiegeBebe: false, hasTriangle: false,
         equipementNotes: '', deliveryNotes: '',
         hasCaution: false, cautionMontant: 0, franchise: 0,
+        damagedParts: [],
         nbJoursFactures: null,
         lieuLivraison: res?.lieuLivraison ?? '',
         lieuRetour:    res?.lieuRetour ?? '',
@@ -397,6 +402,22 @@ export class LocationDossierComponent implements OnInit {
   carPartLabel(partId: string): string {
     const zone = VEHICLE_ZONES.find(z => z.value === partId);
     return zone ? this.t(zone.key) : partId;
+  }
+
+  // ── Damage noted at hand-over (separate from the read-only pre-existing list) ──
+
+  get hasDepartDamage(): boolean { return (this.departForm.damagedParts ?? []).length > 0; }
+
+  toggleDepartPart(partId: string): void {
+    if (this.isDeliveryDone) return;
+    const parts: string[] = this.departForm.damagedParts ?? [];
+    const idx = parts.indexOf(partId);
+    if (idx === -1) parts.push(partId); else parts.splice(idx, 1);
+    this.departForm.damagedParts = parts;
+  }
+
+  isDepartPartDamaged(partId: string): boolean {
+    return (this.departForm.damagedParts ?? []).includes(partId);
   }
 
   get totalChargesBeforeRemise(): number {

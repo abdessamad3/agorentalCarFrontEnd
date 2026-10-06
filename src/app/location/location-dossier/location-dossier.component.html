@@ -300,6 +300,43 @@
           </ng-container>
         </div>
 
+        <!-- Collapsible: Note damage observed at hand-over -->
+        <div class="form-section collapsible-section">
+          <button type="button" class="collapsible-header" (click)="showDepartDamage = !showDepartDamage" [disabled]="isDeliveryDone">
+            <span class="collapsible-title">{{ t('noteDamageAtHandover') }}</span>
+            <span class="frais-badge damage-badge" *ngIf="hasDepartDamage">
+              {{ departForm.damagedParts.length }} {{ t('parts') || 'parts' }}
+            </span>
+            <span class="collapse-arrow" [class.open]="showDepartDamage">▼</span>
+          </button>
+
+          <div class="collapsible-body" *ngIf="showDepartDamage">
+            <div class="car-diagram-wrap">
+              <div class="car-diagram-hint">{{ t('clickToMarkDamage') }}</div>
+
+              <app-vehicle-map
+                [damagedZones]="departForm.damagedParts ?? []"
+                mode="interactive"
+                (zoneClick)="toggleDepartPart($event)">
+              </app-vehicle-map>
+
+              <!-- Marked parts list -->
+              <div class="dpl-box" *ngIf="(departForm.damagedParts ?? []).length > 0">
+                <div class="dpl-title">{{ t('damagedParts') }}:</div>
+                <div class="dpl-tags">
+                  <span class="dpl-tag" *ngFor="let p of departForm.damagedParts">
+                    {{ carPartLabel(p) }}
+                    <button type="button" class="dpl-remove" (click)="toggleDepartPart(p)">×</button>
+                  </span>
+                </div>
+              </div>
+              <div class="dpl-empty" *ngIf="(departForm.damagedParts ?? []).length === 0">
+                {{ t('noDamagedPartsSelected') }}
+              </div>
+            </div><!-- /car-diagram-wrap -->
+          </div><!-- /collapsible-body -->
+        </div>
+
         <!-- Section 5: Tarification -->
         <div class="form-section">
           <h3>{{ t('pricing') }}</h3>
