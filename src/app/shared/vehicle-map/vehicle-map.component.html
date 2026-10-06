@@ -190,6 +190,7 @@
     (click)="handleClick('fl_wheel')">
     <title>{{ t('zoneFlWheel') }}</title>
   </ellipse>
+  <ellipse cx="16" cy="87" rx="4" ry="11" class="vm-wheel-rim"/>
 
   <ellipse cx="184" cy="87" rx="10" ry="24" class="vm-zone"
     [attr.fill]="isDamaged('fr_wheel') ? '#fca5a5' : '#64748b'"
@@ -198,6 +199,7 @@
     (click)="handleClick('fr_wheel')">
     <title>{{ t('zoneFrWheel') }}</title>
   </ellipse>
+  <ellipse cx="184" cy="87" rx="4" ry="11" class="vm-wheel-rim"/>
 
   <ellipse cx="16" cy="317" rx="10" ry="24" class="vm-zone"
     [attr.fill]="isDamaged('rl_wheel') ? '#fca5a5' : '#64748b'"
@@ -206,6 +208,7 @@
     (click)="handleClick('rl_wheel')">
     <title>{{ t('zoneRlWheel') }}</title>
   </ellipse>
+  <ellipse cx="16" cy="317" rx="4" ry="11" class="vm-wheel-rim"/>
 
   <ellipse cx="184" cy="317" rx="10" ry="24" class="vm-zone"
     [attr.fill]="isDamaged('rr_wheel') ? '#fca5a5' : '#64748b'"
@@ -214,4 +217,5 @@
     (click)="handleClick('rr_wheel')">
     <title>{{ t('zoneRrWheel') }}</title>
   </ellipse>
+  <ellipse cx="184" cy="317" rx="4" ry="11" class="vm-wheel-rim"/>
 </svg>

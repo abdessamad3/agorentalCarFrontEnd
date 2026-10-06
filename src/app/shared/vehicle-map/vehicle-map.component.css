@@ -5,24 +5,34 @@
 .vm-svg {
   display: block;
   width: 100%;
-  max-width: 160px;
+  max-width: 190px;
   margin: 0 auto;
+  filter: drop-shadow(0 8px 14px rgba(15, 23, 42, 0.12));
 }
 
 .vm-dir-lbl {
-  font-size: 7px;
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   fill: var(--text-muted, #94a3b8);
   pointer-events: none;
 }
 
 .vm-zone-lbl {
-  font-size: 7px;
-  fill: var(--text-secondary, #64748b);
+  font-size: 7.5px;
+  font-weight: 600;
+  fill: var(--text-secondary, #475569);
   pointer-events: none;
 }
 
 .vm-zone {
-  transition: opacity .1s;
+  transition: opacity .15s, filter .15s;
+}
+
+.vm-wheel-rim {
+  pointer-events: none;
+  fill: #94a3b8;
+  opacity: .55;
 }
 
 .vm-interactive .vm-zone {
@@ -30,5 +40,6 @@
 }
 
 .vm-interactive .vm-zone:hover {
-  opacity: .75;
+  opacity: .8;
+  filter: brightness(0.96);
 }
