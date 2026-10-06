@@ -571,7 +571,13 @@
 
       <!-- Add payment -->
       <div class="form-section" *ngIf="status !== 'terminee' && status !== 'annulee'">
-        <h3>{{ t('addPayment') }}</h3>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h3 style="margin:0">{{ t('addPayment') }}</h3>
+          <button type="button" class="btn-secondary" style="font-size:.8rem;padding:.3rem .7rem"
+                  *ngIf="dossier.montantPaye > 0" (click)="showRefundForm = !showRefundForm">
+            {{ showRefundForm ? t('cancel') : t('recordRefund') }}
+          </button>
+        </div>
         <div class="form-grid">
           <div class="form-group">
             <label>{{ t('montant') }} (MAD)</label>
@@ -599,6 +605,40 @@
         <button class="btn-primary mt-2" (click)="addPaiement()" [disabled]="savingPaiement">
           {{ savingPaiement ? t('saving') : t('addPayment') }}
         </button>
+
+        <!-- Refund form -->
+        <div *ngIf="showRefundForm" class="form-section" style="background:#fef2f2;border-color:#fca5a5;margin-top:1rem">
+          <h3 style="color:#991b1b">{{ t('recordRefund') }}</h3>
+          <p class="action-hint" style="margin-bottom:.75rem">{{ t('refundHint') }}</p>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>{{ t('montant') }} (MAD)</label>
+              <input type="number" [(ngModel)]="newRefund.montant" min="0.01" [max]="dossier.montantPaye" step="0.01" />
+              <span class="field-warning" *ngIf="newRefund.montant > dossier.montantPaye">{{ t('refundExceedsPaid') }}</span>
+            </div>
+            <div class="form-group">
+              <label>{{ t('date') }}</label>
+              <input type="date" [(ngModel)]="newRefund.datePaiement" />
+            </div>
+            <div class="form-group">
+              <label>{{ t('paymentMethod') }}</label>
+              <select [(ngModel)]="newRefund.modePaiement">
+                <option value="especes">{{ t('paymentCash') }}</option>
+                <option value="carte">{{ t('paymentCard') }}</option>
+                <option value="virement">{{ t('paymentTransfer') }}</option>
+                <option value="cheque">{{ t('cheque') }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>{{ t('note') }}</label>
+              <input type="text" [(ngModel)]="newRefund.note" [placeholder]="t('optional')" />
+            </div>
+          </div>
+          <button class="btn-danger mt-2" (click)="addRefund()"
+                  [disabled]="savingRefund || newRefund.montant > dossier.montantPaye">
+            {{ savingRefund ? t('saving') : t('recordRefund') }}
+          </button>
+        </div>
       </div>
 
       <!-- Payment history -->
@@ -614,9 +654,12 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let p of dossier.paiements">
+            <tr *ngFor="let p of dossier.paiements" [class.row-refund]="p.montant < 0">
               <td>{{ p.datePaiement | date:'dd/MM/yyyy' }}</td>
-              <td class="td-amount">{{ (p.montant | number:'1.2-2') }} MAD</td>
+              <td class="td-amount" [style.color]="p.montant < 0 ? '#dc2626' : null">
+                {{ p.montant < 0 ? '− ' : '' }}{{ (p.montant | number:'1.2-2') }} MAD
+                <span class="dpl-sev-badge" *ngIf="p.montant < 0">{{ t('refund') }}</span>
+              </td>
               <td>{{ p.modePaiement }}</td>
               <td>{{ p.note || '—' }}</td>
               <td *ngIf="status !== 'terminee'">

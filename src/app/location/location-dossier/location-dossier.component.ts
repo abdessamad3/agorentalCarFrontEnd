@@ -35,6 +35,12 @@ export class LocationDossierComponent implements OnInit {
   newPaiement = { montant: 0, datePaiement: '', modePaiement: 'especes', note: '' };
   savingPaiement = false;
 
+  // ── Refund form (recorded as its own negative payment, never by editing/deleting
+  //    the original — keeps the real history for cash/revenue reports) ───────────
+  newRefund = { montant: 0, datePaiement: '', modePaiement: 'especes', note: '' };
+  savingRefund = false;
+  showRefundForm = false;
+
   // ── Départ form ──────────────────────────────────────────────────────────
   departForm: any = {};
   savingDepart = false;
@@ -339,6 +345,7 @@ export class LocationDossierComponent implements OnInit {
     }
 
     this.newPaiement = { montant: 0, datePaiement: today, modePaiement: 'especes', note: '' };
+    this.newRefund   = { montant: 0, datePaiement: today, modePaiement: 'especes', note: '' };
     this.loadCarDamages();
   }
 
@@ -625,6 +632,31 @@ export class LocationDossierComponent implements OnInit {
     this.crud.remove('paiement', id).subscribe({
       next: () => { this.toast.show(this.t('paymentDeleted'), 'info'); this.bus.paymentsChanged$.next(); this.load(); },
       error: (err: any) => this.toast.show(err?.error?.message ?? this.t('error'), 'error')
+    });
+  }
+
+  addRefund() {
+    if (!this.newRefund.montant || this.newRefund.montant <= 0) {
+      this.toast.show(this.t('amountMustBeGreaterThanZero'), 'error');
+      return;
+    }
+    this.savingRefund = true;
+    this.crud.rawPost('paiement', {
+      ...this.newRefund,
+      montant: -Math.abs(this.newRefund.montant),
+      reservationId: this.reservationId
+    }).subscribe({
+      next: () => {
+        this.toast.show(this.t('refundAdded'), 'success');
+        this.savingRefund = false;
+        this.showRefundForm = false;
+        this.bus.paymentsChanged$.next();
+        this.load();
+      },
+      error: (err: any) => {
+        this.toast.show(err?.error?.error ?? this.t('error'), 'error');
+        this.savingRefund = false;
+      }
     });
   }
 

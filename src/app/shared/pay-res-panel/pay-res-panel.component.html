@@ -49,9 +49,12 @@
             <span class="pay-res-item-date">{{ p.datePaiement | date:'dd/MM/yyyy' }}</span>
             <span class="pay-res-item-mode">{{ paymentModeLabel(p.modePaiement) }}</span>
             <span class="pay-res-item-note" *ngIf="p.note">{{ p.note }}</span>
+            <span class="pay-res-item-note" *ngIf="+p.montant < 0" style="color:#dc2626;font-weight:600">{{ t('refund') }}</span>
           </div>
           <div class="pay-res-item-right">
-            <span class="pay-res-item-amount">{{ p.montant | number:'1.0-0' }} MAD</span>
+            <span class="pay-res-item-amount" [style.color]="+p.montant < 0 ? '#dc2626' : null">
+              {{ +p.montant < 0 ? '− ' : '' }}{{ p.montant | number:'1.0-0' }} MAD
+            </span>
             <button class="pay-res-del-btn" [disabled]="deleteId === p.id"
                     (click)="deletePay(p.id)" [title]="t('deletePayment') || 'Supprimer'">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
@@ -110,6 +113,52 @@
         <polyline points="20 6 9 17 4 12"/>
       </svg>
       {{ t('fullyPaid') || 'Entièrement payé' }}
+    </div>
+
+    <!-- Refund -->
+    <div *ngIf="montantPaye > 0" class="pay-res-add-form">
+      <button type="button" class="pay-res-del-btn" style="width:auto;height:auto;padding:.4rem .8rem;border-radius:6px;color:#dc2626;border-color:#fca5a5"
+              (click)="showRefundForm = !showRefundForm">
+        {{ showRefundForm ? t('cancel') : t('recordRefund') }}
+      </button>
+
+      <ng-container [formGroup]="refundForm" *ngIf="showRefundForm">
+        <div class="pay-res-section-title" style="color:#991b1b;margin-top:.75rem">{{ t('recordRefund') }}</div>
+        <p style="font-size:.75rem;color:#64748b;margin:0 0 .5rem">{{ t('refundHint') }}</p>
+        <div class="pay-res-form-row">
+          <div class="pay-res-field">
+            <label>{{ t('montantPaye') || 'Montant' }} (MAD)</label>
+            <input type="number" formControlName="montant" min="0.01" [max]="montantPaye" step="0.01"
+                   class="pay-res-input" placeholder="0.00"
+                   [class.is-invalid]="(refundForm.get('montant')?.invalid && refundForm.get('montant')?.touched)">
+            <span class="pay-res-field-error" *ngIf="+refundForm.get('montant')?.value > montantPaye">
+              {{ t('refundExceedsPaid') }}
+            </span>
+          </div>
+          <div class="pay-res-field">
+            <label>{{ t('paymentDate') || 'Date' }}</label>
+            <input type="date" formControlName="datePaiement" class="pay-res-input">
+          </div>
+        </div>
+        <div class="pay-res-form-row">
+          <div class="pay-res-field">
+            <label>{{ t('modePaiement') || 'Mode' }}</label>
+            <select formControlName="modePaiement" class="pay-res-input">
+              <option *ngFor="let m of PAY_MODES" [value]="m.value">{{ m.label }}</option>
+            </select>
+          </div>
+          <div class="pay-res-field pay-res-field-wide">
+            <label>{{ t('note') || 'Note' }}</label>
+            <input type="text" formControlName="note" class="pay-res-input" [placeholder]="t('note') || 'Optionnel'">
+          </div>
+        </div>
+        <div class="pay-res-form-actions">
+          <button class="btn-pay-res-submit" style="background:#dc2626" (click)="submitRefund()" [disabled]="submittingRefund || refundForm.invalid">
+            <span *ngIf="submittingRefund" class="spin-sm"></span>
+            {{ submittingRefund ? (t('saving') || 'Enregistrement…') : t('recordRefund') }}
+          </button>
+        </div>
+      </ng-container>
     </div>
 
   </div>

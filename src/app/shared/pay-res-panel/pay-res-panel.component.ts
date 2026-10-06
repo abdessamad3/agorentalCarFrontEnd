@@ -28,6 +28,12 @@ export class PayResPanelComponent implements OnChanges {
   deleteId: number | null = null;
   form!: FormGroup;
 
+  // ── Refund (recorded as its own negative payment, never by editing/deleting
+  //    the original — keeps the real history for cash/revenue reports) ───────
+  showRefundForm = false;
+  submittingRefund = false;
+  refundForm!: FormGroup;
+
   readonly PAY_MODES = [
     { value: 'especes',  label: 'Espèces' },
     { value: 'virement', label: 'Virement' },
@@ -46,6 +52,12 @@ export class PayResPanelComponent implements OnChanges {
       modePaiement: ['especes'],
       note:         [''],
     });
+    this.refundForm = this.fb.group({
+      montant:      [null, [Validators.required, Validators.min(0.01)]],
+      datePaiement: ['', Validators.required],
+      modePaiement: ['especes'],
+      note:         [''],
+    });
   }
 
   ngOnChanges(c: SimpleChanges): void {
@@ -54,6 +66,7 @@ export class PayResPanelComponent implements OnChanges {
       this.resetForm();
       this.paiements = [];
       this.deleteId  = null;
+      this.showRefundForm = false;
       this.loadPaiements();
     }
     if (c['reservationId'] && this.open && this.reservationId) {
@@ -62,9 +75,14 @@ export class PayResPanelComponent implements OnChanges {
   }
 
   private resetForm(): void {
-    this.form.reset({ datePaiement: new Date().toISOString().split('T')[0], modePaiement: 'especes' });
+    const today = new Date().toISOString().split('T')[0];
+    this.form.reset({ datePaiement: today, modePaiement: 'especes' });
     this.form.get('montant')!.setValidators([Validators.required, Validators.min(0.01), Validators.max(this.reste || 0.01)]);
     this.form.get('montant')!.updateValueAndValidity();
+
+    this.refundForm.reset({ datePaiement: today, modePaiement: 'especes' });
+    this.refundForm.get('montant')!.setValidators([Validators.required, Validators.min(0.01), Validators.max(this.montantPaye || 0.01)]);
+    this.refundForm.get('montant')!.updateValueAndValidity();
   }
 
   loadPaiements(): void {
@@ -97,6 +115,28 @@ export class PayResPanelComponent implements OnChanges {
         this.paymentChanged.emit();
       },
       error: () => { this.submitting = false; },
+    });
+  }
+
+  submitRefund(): void {
+    if (this.refundForm.invalid || !this.reservationId) return;
+    this.submittingRefund = true;
+    const v = this.refundForm.value;
+    this.crud.create('paiement', {
+      reservationId: this.reservationId,
+      montant:       -Math.abs(parseFloat(v.montant)),
+      datePaiement:  v.datePaiement,
+      modePaiement:  v.modePaiement,
+      note:          v.note || undefined,
+    }).subscribe({
+      next: () => {
+        this.submittingRefund = false;
+        this.showRefundForm = false;
+        this.resetForm();
+        this.loadPaiements();
+        this.paymentChanged.emit();
+      },
+      error: () => { this.submittingRefund = false; },
     });
   }
 
