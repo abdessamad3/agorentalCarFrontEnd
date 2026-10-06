@@ -5,7 +5,9 @@
 /* ── Shell ──────────────────────────────────────────────────────────────── */
 .sidebar {
   width: 260px;
-  height: 100vh;
+  height: 100vh;  /* fallback for browsers without dvh support */
+  height: 100dvh; /* true visible viewport on mobile — 100vh excludes the address bar's
+                      show/hide behavior and can leave the footer below the real fold */
   background: var(--sb-bg, #0f172a);
   color: var(--sb-text, #94a3b8);
   display: flex;
@@ -13,16 +15,12 @@
   position: fixed;
   top: 0;
   left: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden; /* only .sidebar-nav scrolls internally — a second scroll container
+                        here fights it for touch-scroll gestures on mobile and can cap
+                        the scroll short of the actual bottom (footer/logout) */
   z-index: 200;
   border-right: 1px solid var(--sb-border, rgba(255,255,255,.07));
 }
-
-/* Thin inner scrollbar */
-.sidebar::-webkit-scrollbar        { width: 4px; }
-.sidebar::-webkit-scrollbar-track  { background: transparent; }
-.sidebar::-webkit-scrollbar-thumb  { background: rgba(255,255,255,.12); border-radius: 2px; }
 
 @media (min-width: 769px) {
   .sidebar { transform: none !important; }
