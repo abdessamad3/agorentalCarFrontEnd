@@ -159,6 +159,8 @@
 /* ── Navigation ─────────────────────────────────────────────────────────── */
 .sidebar-nav {
   flex: 1;
+  min-height: 0; /* flex items default to min-height:auto, which stops this from ever
+                    shrinking/scrolling and pushes the footer off-screen instead */
   padding: 0.5rem 0 0.75rem;
   overflow-y: auto;
   overflow-x: hidden;
