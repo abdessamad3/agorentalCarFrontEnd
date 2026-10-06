@@ -38,6 +38,7 @@ export class LocationDossierComponent implements OnInit {
   // ── Départ form ──────────────────────────────────────────────────────────
   departForm: any = {};
   savingDepart = false;
+  undoingDelivery = false;
 
   // ── Départ location autocomplete ────────────────────────────────────────
   showLivraisonDropdown = false;
@@ -467,6 +468,17 @@ export class LocationDossierComponent implements OnInit {
     if (!closedAt) return false;
     return Date.now() - new Date(closedAt).getTime() <= 60 * 60 * 1000;
   }
+
+  /** "Undo Hand-over" mirrors canUndoClosure: only available within 1h of the delivery
+   *  itself (vehicleDelivery's server-set editAu, falling back to creeAu when it was
+   *  never re-edited). Only applies once the vehicle has been delivered but not yet
+   *  returned (en_cours) — once it's terminee, use "Undo Closure" first. */
+  get canUndoDelivery(): boolean {
+    if (this.status !== 'en_cours') return false;
+    const deliveredAt = this.dossier?.vehicleDelivery?.editAu ?? this.dossier?.vehicleDelivery?.creeAu;
+    if (!deliveredAt) return false;
+    return Date.now() - new Date(deliveredAt).getTime() <= 60 * 60 * 1000;
+  }
   get contractNumber(): string { return this.dossier?.contrat?.numero ?? '—'; }
 
   get vehicleLabel(): string {
@@ -539,6 +551,26 @@ export class LocationDossierComponent implements OnInit {
         const msg = err?.error?.message ?? err?.error?.error ?? this.t('errorHandingOverKeys');
         this.toast.show(msg, 'error');
         this.savingDepart = false;
+      }
+    });
+  }
+
+  /** Reverses a hand-over made within the last hour. Does NOT delete the Contrat (keeps its
+   *  already-issued contract number for reuse) and does NOT touch any payment collected at
+   *  hand-over — money already received isn't silently un-recorded; staff remove it
+   *  explicitly via the Paiements tab if it was genuinely a mistake. */
+  undoDelivery() {
+    if (!confirm(this.t('undoDeliveryConfirm'))) return;
+    this.undoingDelivery = true;
+    this.crud.rawPost(`location/${this.reservationId}/annuler-livraison`, {}).subscribe({
+      next: () => {
+        this.toast.show(this.t('undoDeliverySuccess'), 'success');
+        this.undoingDelivery = false;
+        this.load();
+      },
+      error: (err: any) => {
+        this.toast.show(err?.error?.message ?? this.t('undoDeliveryError'), 'error');
+        this.undoingDelivery = false;
       }
     });
   }

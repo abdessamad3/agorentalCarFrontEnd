@@ -171,6 +171,9 @@
       <div class="delivery-done-banner" *ngIf="isDeliveryDone">
         ✓ {{ t('vehicleHandedOver') }} — {{ t('contract') }} <strong>{{ contractNumber }}</strong> {{ t('activeSince') }}
         {{ dossier.vehicleDelivery?.deliveredAt | date:'dd/MM/yyyy HH:mm' }}
+        <button type="button" class="undo-cloture-btn" *ngIf="canUndoDelivery" [disabled]="undoingDelivery" (click)="undoDelivery()">
+          {{ undoingDelivery ? t('saving') : t('undoDelivery') }}
+        </button>
       </div>
 
       <fieldset [disabled]="isDeliveryDone" style="border:none;padding:0;margin:0;">
