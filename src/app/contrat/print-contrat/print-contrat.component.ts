@@ -37,6 +37,10 @@ export class PrintContratComponent implements OnChanges, OnDestroy {
         this._conditionsFetched = true;
         this.contratSvc.getConditionsContrat().subscribe({
           next: (cc: any) => {
+            // Only trust this once an admin has actually saved it at least once (updatedAt set) —
+            // the backend auto-creates a blank row with placeholder stub text ("À compléter.") on
+            // first read, which must NOT override the real legal articles below.
+            if (!cc?.updatedAt) return;
             this.conditionsFr = (cc?.texteFrancais ?? '').trim() || null;
             this.conditionsAr = (cc?.texteArabe ?? '').trim() || null;
           },
