@@ -9,7 +9,7 @@
   <div *ngIf="!loading && !error && filtered.length === 0" class="empty-state">
     <span class="empty-icon">📄</span>
     <div class="empty-title">No contracts</div>
-    <div class="empty-message">Contracts are automatically generated from confirmed reservations.</div>
+    <div class="empty-message">Contracts are created when a vehicle is delivered for a reservation (or created manually).</div>
   </div>
   <div *ngIf="!loading && !error && filtered.length > 0" class="table-container">
     <table class="bureaus-table">

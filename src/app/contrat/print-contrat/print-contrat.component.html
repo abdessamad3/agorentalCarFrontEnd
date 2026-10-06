@@ -311,8 +311,13 @@
 
       <div class="pct-cg-body">
 
-        <!-- French articles -->
-        <div class="pct-cg-fr">
+        <!-- French: admin-edited conditions (Settings > Conditions du contrat) when set -->
+        <div class="pct-cg-fr" *ngIf="conditionsFr">
+          <div class="pct-cg-custom">{{ conditionsFr }}</div>
+        </div>
+
+        <!-- French articles (fallback — shown only if no custom conditions are saved) -->
+        <div class="pct-cg-fr" *ngIf="!conditionsFr">
 
           <div class="pct-at">ARTICLE 1 : UTILISATION DE VOITURE</div>
           <div class="pct-ab">
@@ -380,8 +385,13 @@
 
         </div><!-- /cg-fr -->
 
-        <!-- Arabic articles -->
-        <div class="pct-cg-ar">
+        <!-- Arabic: admin-edited conditions (Settings > Conditions du contrat) when set -->
+        <div class="pct-cg-ar" *ngIf="conditionsAr" dir="rtl">
+          <div class="pct-cg-custom">{{ conditionsAr }}</div>
+        </div>
+
+        <!-- Arabic articles (fallback — shown only if no custom conditions are saved) -->
+        <div class="pct-cg-ar" *ngIf="!conditionsAr">
 
           <div class="pct-at">&#1575;&#1604;&#1576;&#1606;&#1583; 1 : &#1575;&#1587;&#1578;&#1593;&#1605;&#1575;&#1604; &#1575;&#1604;&#1587;&#1610;&#1575;&#1585;&#1577;</div>
           <div class="pct-ab">

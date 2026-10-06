@@ -4,6 +4,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CompanyService } from '../../services/company.service';
+import { ContratService } from '../../services/contrat.service';
 import { jsPDF } from 'jspdf';
 
 @Component({
@@ -20,12 +21,28 @@ export class PrintContratComponent implements OnChanges, OnDestroy {
   @Output() closed = new EventEmitter<void>();
 
   private _autoTriggered = false;
+  private _conditionsFetched = false;
 
-  constructor(private companySvc: CompanyService) {}
+  /** Admin-edited legal terms (Settings > Conditions du contrat). Null until loaded;
+   *  the template falls back to the hardcoded articles while null or empty. */
+  conditionsFr: string | null = null;
+  conditionsAr: string | null = null;
+
+  constructor(private companySvc: CompanyService, private contratSvc: ContratService) {}
 
   ngOnChanges(): void {
     if (this.contractData) {
       document.body.classList.add('pct-print-ready');
+      if (!this._conditionsFetched) {
+        this._conditionsFetched = true;
+        this.contratSvc.getConditionsContrat().subscribe({
+          next: (cc: any) => {
+            this.conditionsFr = (cc?.texteFrancais ?? '').trim() || null;
+            this.conditionsAr = (cc?.texteArabe ?? '').trim() || null;
+          },
+          error: () => { /* keep hardcoded fallback */ }
+        });
+      }
       if (this.autoDownload && !this._autoTriggered) {
         this._autoTriggered = true;
         setTimeout(() => this.downloadPdf(), 200);
