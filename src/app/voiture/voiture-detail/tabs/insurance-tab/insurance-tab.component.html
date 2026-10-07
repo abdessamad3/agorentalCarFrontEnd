@@ -133,7 +133,7 @@
   [title]="t('assurances') + ' #' + (payRecord?.id || '') + ' — ' + (payRecord?.compagnie || '')"
   [dir]="dir"
   (closed)="closePayPanel()"
-  (paymentChanged)="load()">
+  (paymentChanged)="onPaymentChanged()">
 </app-pay-dep-panel>
 
 <!-- ══════════════════════════════════════════ MODALS -->

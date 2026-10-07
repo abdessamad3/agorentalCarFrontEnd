@@ -156,6 +156,10 @@ export class PrintContratComponent implements OnChanges, OnDestroy {
     return new Date().toLocaleDateString('fr-FR');
   }
 
+  money(x: any): string {
+    return (x != null && x !== '') ? (+x).toLocaleString('fr-FR') + ' DH' : '';
+  }
+
   get bureauAdresse(): string   { return this.companySvc.getCurrentBureauAdresse(); }
   get bureauTelephone(): string { return this.companySvc.getCurrentBureauTelephone(); }
   get logoUrl(): string | null  { return this.companySvc.getCurrentLogo(); }
@@ -182,9 +186,14 @@ export class PrintContratComponent implements OnChanges, OnDestroy {
     return this.delivery?.damages ?? [];
   }
 
-  get fuelNeedle(): { x2: number; y2: number } {
-    const key = this.delivery?.fuelLevelOut ?? 'vide';
-    const f = this.fuelMap[key] ?? 0;
+  /** Damage recorded at return (VehicleReturnInspection.damageItems) — separate set
+   *  from deliveryDamages above, which only ever reflects hand-over-time damage. */
+  get returnDamages(): any[] {
+    return this.returnData?.damageItems ?? [];
+  }
+
+  private fuelNeedleFor(fuelLevel: string | null | undefined): { x2: number; y2: number } {
+    const f = this.fuelMap[fuelLevel ?? 'vide'] ?? 0;
     const theta = (1 - f) * Math.PI;
     return {
       x2: Math.round(100 + 72 * Math.cos(theta)),
@@ -192,9 +201,35 @@ export class PrintContratComponent implements OnChanges, OnDestroy {
     };
   }
 
-  get fuelBoxCount(): number {
-    const key = this.delivery?.fuelLevelOut;
-    const f = key ? (this.fuelMap[key] ?? 0) : 0;
+  private fuelBoxCountFor(fuelLevel: string | null | undefined): number {
+    const f = fuelLevel ? (this.fuelMap[fuelLevel] ?? 0) : 0;
     return Math.round(f * 5);
+  }
+
+  get fuelNeedle(): { x2: number; y2: number } {
+    return this.fuelNeedleFor(this.delivery?.fuelLevelOut);
+  }
+
+  get fuelBoxCount(): number {
+    return this.fuelBoxCountFor(this.delivery?.fuelLevelOut);
+  }
+
+  /** Same gauge, keyed to the return inspection's fuel level instead of hand-over's. */
+  get returnFuelNeedle(): { x2: number; y2: number } {
+    return this.fuelNeedleFor(this.returnData?.fuelLevelIn);
+  }
+
+  get returnFuelBoxCount(): number {
+    return this.fuelBoxCountFor(this.returnData?.fuelLevelIn);
+  }
+
+  get returnConditionLabel(): string {
+    const map: Record<string, string> = {
+      clean: 'Bon état / Aucun dommage',
+      scratch: 'Rayure(s) constatée(s)',
+      dent: 'Bosse(s) / dommage(s) constaté(s)',
+      major_damage: 'Dommage(s) important(s) constaté(s)',
+    };
+    return map[this.returnData?.condition] ?? this.v(this.returnData?.condition);
   }
 }

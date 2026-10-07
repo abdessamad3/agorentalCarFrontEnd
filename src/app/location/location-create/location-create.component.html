@@ -80,6 +80,16 @@
             </div>
           </div>
         </div>
+
+        <!-- Outstanding debt — informational only, never blocks booking creation -->
+        <div *ngIf="showDebtWarning" class="expiry-warning-alert debt-warning-alert">
+          <button type="button" class="ewa-dismiss" (click)="dismissDebtWarning()">×</button>
+          <span class="ewa-icon">💰</span>
+          <div class="ewa-body">
+            <strong>{{ t('clientHasOutstandingDebt') }}</strong>
+            <span>{{ (selectedClient.outstandingDebt | number:'1.0-2') }} MAD</span>
+          </div>
+        </div>
       </div>
 
       <!-- Dates & lieux -->

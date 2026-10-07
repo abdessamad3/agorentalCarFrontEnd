@@ -9,6 +9,7 @@ import { BtnComponent } from '../../shared/btn/btn.component';
 import { PaginatorComponent } from '../../shared/paginator/paginator.component';
 import { Paiement } from '../../models/paiement.model';
 import { PAGE_SIZE } from '../../shared/constants/pagination';
+import { EventBusService } from '../../services/event-bus.service';
 
 @Component({
   selector: 'app-paiement-list',
@@ -28,7 +29,7 @@ export class PaiementListComponent implements OnInit {
   readonly objectEntries = Object.entries;
   voitures: any[] = [];
 
-  constructor(private crud: CrudService, private ts: TranslationService, private fb: FormBuilder) {
+  constructor(private crud: CrudService, private ts: TranslationService, private fb: FormBuilder, private bus: EventBusService) {
     this.form = this.fb.group({
       reservationId: ['', Validators.required],
       montant:       [0, [Validators.required, Validators.min(0)]],
@@ -91,12 +92,12 @@ export class PaiementListComponent implements OnInit {
     const req = this.isEditing
       ? this.crud.update(this.endpoint, this.selected.id, this.form.value)
       : this.crud.create(this.endpoint, this.form.value);
-    req.subscribe({ next: () => { this.closeModal(); this.load(); }, error: () => { this.isSubmitting = false; } });
+    req.subscribe({ next: () => { this.bus.paymentsChanged$.next(); this.closeModal(); this.load(); }, error: () => { this.isSubmitting = false; } });
   }
 
   confirmDelete() {
     if (!this.deleteId) return;
-    this.crud.remove(this.endpoint, this.deleteId).subscribe({ next: () => { this.closeModal(); this.load(); }, error: () => this.closeModal() });
+    this.crud.remove(this.endpoint, this.deleteId).subscribe({ next: () => { this.bus.paymentsChanged$.next(); this.closeModal(); this.load(); }, error: () => this.closeModal() });
   }
   carForPayment(item: any): any {
     const vId = item.reservation?.voiture?.id ?? item.reservation?.voitureId;

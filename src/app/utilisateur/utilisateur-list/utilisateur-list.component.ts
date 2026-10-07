@@ -19,7 +19,6 @@ import { SignaturePadComponent } from '../../shared/signature-pad/signature-pad.
 export class UtilisateurListComponent implements OnInit {
   items: any[] = [];
   bureaux: any[] = [];
-  companies: any[] = [];
   loading = true;
   error = '';
   dir = 'ltr';
@@ -81,7 +80,6 @@ export class UtilisateurListComponent implements OnInit {
       telephone: [''],
       roles:     [['ROLE_STAFF'] as string[]],
       bureauId:  [null],
-      companyId: [null],
       actif:     [true],
       password:  [''],
     });
@@ -91,21 +89,11 @@ export class UtilisateurListComponent implements OnInit {
     });
   }
 
-  get filteredBureaux(): any[] {
-    const companyId = this.form.get('companyId')?.value;
-    if (!companyId) return [];
-    return this.bureaux.filter(b => b.companyId === companyId);
-  }
-
   ngOnInit() {
     this.ts.direction$.subscribe(d => this.dir = d);
     this.isAdmin = this.auth.hasRole('ROLE_ADMIN');
     this.load();
     this.loadBureaux();
-    this.loadCompanies();
-    this.form.get('companyId')!.valueChanges.subscribe(() => {
-      this.form.get('bureauId')!.setValue(null, { emitEvent: false });
-    });
   }
 
   load() {
@@ -120,13 +108,6 @@ export class UtilisateurListComponent implements OnInit {
   loadBureaux() {
     this.crud.getAll('bureau').subscribe({
       next: r => { this.bureaux = Array.isArray(r) ? r : (r?.data ?? []); },
-      error: () => {}
-    });
-  }
-
-  loadCompanies() {
-    this.crud.getAll('company').subscribe({
-      next: r => { this.companies = Array.isArray(r) ? r : (r?.data ?? []); },
       error: () => {}
     });
   }
@@ -300,11 +281,9 @@ export class UtilisateurListComponent implements OnInit {
   openCreate() {
     this.isCreateMode = true;
     this.selected = null;
-    this.form.reset({ nom: '', prenom: '', email: '', telephone: '', roles: ['ROLE_STAFF'], bureauId: null, companyId: null, actif: true, password: '' });
+    this.form.reset({ nom: '', prenom: '', email: '', telephone: '', roles: ['ROLE_STAFF'], bureauId: null, actif: true, password: '' });
     this.form.get('password')!.setValidators([Validators.required, Validators.minLength(8)]);
     this.form.get('password')!.updateValueAndValidity();
-    this.form.get('companyId')!.setValidators([Validators.required]);
-    this.form.get('companyId')!.updateValueAndValidity();
     this.form.get('bureauId')!.setValidators([Validators.required]);
     this.form.get('bureauId')!.updateValueAndValidity();
     this.modalMode = 'form';
@@ -316,14 +295,12 @@ export class UtilisateurListComponent implements OnInit {
     this.selected = item;
     this.form.get('password')!.clearValidators();
     this.form.get('password')!.updateValueAndValidity();
-    this.form.get('companyId')!.clearValidators();
-    this.form.get('companyId')!.updateValueAndValidity();
     this.form.get('bureauId')!.clearValidators();
     this.form.get('bureauId')!.updateValueAndValidity();
     this.form.patchValue({
       nom: item.nom || '', prenom: item.prenom || '', email: item.email || '',
       telephone: item.telephone || '', roles: item.roles || ['ROLE_STAFF'],
-      bureauId: item.bureau || null, companyId: item.companyId || null,
+      bureauId: item.bureau || null,
       actif: item.actif, password: '',
     });
     this.modalMode = 'form';

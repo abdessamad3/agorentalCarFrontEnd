@@ -9,6 +9,7 @@ import { PayDepPanelComponent } from '../../../../shared/pay-dep-panel/pay-dep-p
 import { environment } from '../../../../../environments/environment';
 import { daysUntil as daysUntilUtil } from '../../../../shared/utils/date.utils';
 import { Vignette } from '../../../../models/compliance.model';
+import { EventBusService } from '../../../../services/event-bus.service';
 
 @Component({
   selector: 'app-vignette-tab',
@@ -36,7 +37,12 @@ export class VignetteTabComponent implements OnChanges {
   payPanelOpen = false;
   payRecord: any = null;
 
-  constructor(private crud: CrudService, private ts: TranslationService) {}
+  constructor(private crud: CrudService, private ts: TranslationService, private bus: EventBusService) {}
+
+  onPaymentChanged(): void {
+    this.bus.paymentsChanged$.next();
+    this.load();
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if ((changes['carId'] || changes['car']) && this.carId) this.load();

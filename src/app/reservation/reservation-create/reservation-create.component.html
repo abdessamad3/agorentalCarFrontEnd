@@ -83,15 +83,13 @@
             </div>
           </div>
 
-          <!-- Outstanding debt warning — informational here, the actual block/confirm gate is
-               enforced server-side at submit time (role + configured threshold live there). -->
+          <!-- Outstanding debt — informational only, never blocks booking creation. -->
           <div *ngIf="showDebtWarning" class="expiry-warning-alert debt-warning-alert">
             <button type="button" class="ewa-dismiss" (click)="dismissDebtWarning()">×</button>
             <span class="ewa-icon">💰</span>
             <div class="ewa-body">
               <strong>{{ t('clientHasOutstandingDebt') }}</strong>
               <span>{{ (selectedClient.outstandingDebt | number:'1.0-2') }} MAD</span>
-              <span *ngIf="!isManagerOrAdmin" class="ewa-staff-note">{{ t('debtBlocked') }}</span>
             </div>
           </div>
 
@@ -243,11 +241,7 @@
 
         <!-- Submit -->
         <div *ngIf="submitError" class="submit-error">{{ submitError }}</div>
-        <button type="button" *ngIf="debtConfirmRequired" class="btn-submit debt-confirm-btn"
-          [disabled]="isSubmitting" (click)="confirmDebtOverrideAndSubmit()">
-          {{ isSubmitting ? t('saving') : t('confirmAndContinue') }}
-        </button>
-        <button type="submit" *ngIf="!debtConfirmRequired" class="btn-submit"
+        <button type="submit" class="btn-submit"
           [disabled]="form.invalid || !selectedVoiture || isSubmitting || isComplianceBlocked">
           {{ isSubmitting ? t('saving') : t('createBooking') }}
         </button>

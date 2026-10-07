@@ -11,6 +11,7 @@ import { BtnComponent } from '../../shared/btn/btn.component';
 import { UploadBtnComponent } from '../../shared/btn/upload-btn.component';
 import { PaginatorComponent } from '../../shared/paginator/paginator.component';
 import { AuthService } from '../../services/auth.service';
+import { CompanyService } from '../../services/company.service';
 import { PAGE_SIZE } from '../../shared/constants/pagination';
 
 @Component({
@@ -52,6 +53,7 @@ export class CompanyListComponent implements OnInit, OnDestroy {
     private fb:          FormBuilder,
     private authService: AuthService,
     private ts:          TranslationService,
+    private companyService: CompanyService,
   ) {
     this.form = this.fb.group({
       nom:       ['', Validators.required],
@@ -179,12 +181,12 @@ export class CompanyListComponent implements OnInit, OnDestroy {
     const payload = { ...this.form.value };
 
     const uploadLogoThen = (id: number) => {
-      if (!this.logoFile) { this.closeModal(); this.load(); return; }
+      if (!this.logoFile) { this.closeModal(); this.load(); this.companyService.refreshBureaux(); return; }
       const fd = new FormData();
       fd.append('logoFile', this.logoFile);
       this.http.post(`${this.api}/${id}/logo`, fd).subscribe({
-        next:  () => { this.closeModal(); this.load(); },
-        error: () => { this.closeModal(); this.load(); }
+        next:  () => { this.closeModal(); this.load(); this.companyService.refreshBureaux(); },
+        error: () => { this.closeModal(); this.load(); this.companyService.refreshBureaux(); }
       });
     };
 
@@ -205,7 +207,7 @@ export class CompanyListComponent implements OnInit, OnDestroy {
   confirmDelete() {
     if (!this.deleteId) return;
     this.http.delete(`${this.api}/${this.deleteId}`).subscribe({
-      next:  () => { this.toast.show(this.t('companyDeleted'), 'info'); this.closeModal(); this.load(); },
+      next:  () => { this.toast.show(this.t('companyDeleted'), 'info'); this.closeModal(); this.load(); this.companyService.refreshBureaux(); },
       error: (err) => { this.toast.show(err?.error?.error || this.t('error'), 'error'); this.closeModal(); }
     });
   }

@@ -11,6 +11,7 @@ import { TranslationService } from '../../../../services/translation.service';
 import { AuthService } from '../../../../services/auth.service';
 import { environment } from '../../../../../environments/environment';
 import { PayDepPanelComponent } from '../../../../shared/pay-dep-panel/pay-dep-panel.component';
+import { EventBusService } from '../../../../services/event-bus.service';
 
 @Component({
   selector: 'app-financial-tab',
@@ -92,6 +93,7 @@ export class FinancialTabComponent implements OnInit, OnChanges, OnDestroy {
     private ts: TranslationService,
     private auth: AuthService,
     private excelSvc: FinancialExcelService,
+    private bus: EventBusService,
   ) {}
 
   ngOnInit(): void {
@@ -186,6 +188,7 @@ export class FinancialTabComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   onPaymentChanged(): void {
+    this.bus.paymentsChanged$.next();
     this.applyFilters();
     this.loadProfitability();
   }

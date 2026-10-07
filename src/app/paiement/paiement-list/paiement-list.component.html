@@ -48,6 +48,30 @@
       (pageChange)="onPageChange($event)">
     </app-paginator>
   </div>
+
+  <div *ngIf="!loading && !error && filtered.length > 0" class="mobile-cards">
+    <div *ngFor="let item of paged" class="expense-card">
+      <div class="ec-top">
+        <span class="name-cell">{{ contratForPayment(item)?.numero || ('#' + (item.reservationId ?? item.reservation?.id ?? '—')) }}</span>
+        <span class="name-cell" style="margin-left:auto;">{{ item.montant }} MAD</span>
+      </div>
+      <div class="ec-desc">
+        <span>{{ item.datePaiement | date:'shortDate' }}</span>
+        <span> · {{ item.modePaiement }}</span>
+      </div>
+      <div class="ec-footer">
+        <span class="status-badge" [ngClass]="'status-' + item.statut">{{ item.statut | appStatus:'payment' }}</span>
+        <div class="ec-actions">
+          <app-btn variant="icon-view"   (click)="openView(item)"      [title]="'view'   | translate"></app-btn>
+          <app-btn variant="icon-edit"   (click)="openEdit(item)"      [title]="'edit'   | translate"></app-btn>
+          <app-btn variant="icon-delete" (click)="openDelete(item.id)" [title]="'delete' | translate"></app-btn>
+        </div>
+      </div>
+    </div>
+    <app-paginator [page]="page" [limit]="limit" [total]="filtered.length"
+      (pageChange)="onPageChange($event)">
+    </app-paginator>
+  </div>
 </div>
 
 <div *ngIf="modalMode" class="modal-overlay" (click)="closeModal()">

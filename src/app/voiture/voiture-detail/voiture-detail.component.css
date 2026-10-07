@@ -3812,6 +3812,15 @@
 .dmg-repair-btn:hover:not(:disabled) { background: #15803d; }
 .dmg-repair-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
+.dmg-delete-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 2rem; padding: 0.3rem; border-radius: 6px; border: 1px solid #fecaca;
+  background: #fef2f2; color: #dc2626; font-size: 0.85rem; cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.dmg-delete-btn:hover:not(:disabled) { background: #fee2e2; border-color: #fca5a5; }
+.dmg-delete-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
 .dmg-pay-hist-btn {
   display: inline-flex; align-items: center; gap: 0.35rem;
   padding: 0.28rem 0.65rem; border: 1.5px solid #dbeafe;

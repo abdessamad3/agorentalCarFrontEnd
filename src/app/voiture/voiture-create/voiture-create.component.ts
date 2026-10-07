@@ -113,7 +113,7 @@ export class VoitureCreateComponent implements OnInit {
       marque:            ['', Validators.required],
       modele:            ['', Validators.required],
       version:           [''],
-      annee:             [new Date().getFullYear(), [Validators.required, Validators.min(1990), Validators.max(2030)]],
+      annee:             [null, [Validators.required, Validators.min(1990), Validators.max(2030)]],
       plateType:         ['standard'], // 'standard' (NNNNN-L-NN) | 'ww' (WW transit plate)
       immatNum1:         [''],
       immatLetter:       [''],
@@ -122,7 +122,7 @@ export class VoitureCreateComponent implements OnInit {
       vin:               [''],
       typeCarburant:     ['Essence'],
       transmission:      ['Manuelle'],
-      kilometrageActuel: [0, Validators.min(0)],
+      kilometrageActuel: [null, [Validators.required, Validators.min(0)]],
 
       // Step 1 — Purchase Details
       prixAchat:       [0, [Validators.required, Validators.min(0)]],
@@ -214,7 +214,8 @@ export class VoitureCreateComponent implements OnInit {
       case 'vehicleInfo':
         return !!(this.form.get('marque')?.valid &&
                   this.form.get('modele')?.valid &&
-                  this.form.get('annee')?.valid);
+                  this.form.get('annee')?.valid &&
+                  this.form.get('kilometrageActuel')?.valid);
       case 'purchase':
         return !!(this.form.get('dateAchat')?.valid && this.form.get('prixAchat')?.valid);
       case 'assurance':
@@ -404,7 +405,7 @@ export class VoitureCreateComponent implements OnInit {
   // ── Submit ────────────────────────────────────────────────────────────────
 
   onSubmit(): void {
-    if (this.form.get('marque')?.invalid || this.form.get('modele')?.invalid || this.form.get('annee')?.invalid) {
+    if (this.form.get('marque')?.invalid || this.form.get('modele')?.invalid || this.form.get('annee')?.invalid || this.form.get('kilometrageActuel')?.invalid) {
       this.currentStep = 0; return;
     }
     if (this.form.get('dateAchat')?.invalid || this.form.get('prixAchat')?.invalid) {

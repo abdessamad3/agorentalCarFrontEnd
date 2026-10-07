@@ -431,6 +431,12 @@ export const routes: Routes = [
     data: { roles: ['ROLE_ADMIN'], breadcrumbs: ['Administration', 'Activity Log'] }
   },
   {
+    path: 'error-log',
+    loadComponent: () => import('./error-log/error-log-list/error-log-list.component').then(m => m.ErrorLogListComponent),
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ROLE_ADMIN'], breadcrumbs: ['Administration', 'Error Log'] }
+  },
+  {
     path: 'email-log',
     loadComponent: () => import('./email-log/email-log-list/email-log-list.component').then(m => m.EmailLogListComponent),
     canActivate: [authGuard, roleGuard],

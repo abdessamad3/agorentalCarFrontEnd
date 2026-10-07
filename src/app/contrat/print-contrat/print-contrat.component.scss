@@ -603,6 +603,19 @@
   line-height: 1.4;
 }
 
+/* ── Return-state page (page 3, only when a return inspection exists) ── */
+.pct-ret-body {
+  border: 2px solid #000;
+  border-top: 0;
+  padding: 3mm 6mm;
+}
+
+.pct-ret-body .pct-car-svg,
+.pct-ret-body .pct-fuel-svg {
+  width: 90mm;
+  height: auto;
+}
+
 .pct-cgf-ar {
   direction: rtl;
   font-style: italic;
@@ -726,8 +739,9 @@
     margin: 1mm 0 0.5mm !important;
   }
 
-  /* Force page break between recto and verso */
-  .pct-recto {
+  /* Force page break between recto and verso, and (when present) verso and the return-state page */
+  .pct-recto,
+  .pct-force-break {
     page-break-after: always !important;
     break-after: page !important;
   }

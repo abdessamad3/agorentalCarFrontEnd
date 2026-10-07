@@ -73,7 +73,7 @@
   [title]="t('vignettes') + ' #' + (payRecord?.id || '') + ' — ' + (payRecord?.annee || '')"
   [dir]="dir"
   (closed)="closePayPanel()"
-  (paymentChanged)="load()">
+  (paymentChanged)="onPaymentChanged()">
 </app-pay-dep-panel>
 
 <app-vignette-modal

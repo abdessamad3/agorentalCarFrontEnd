@@ -1,5 +1,7 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 interface Translations { [key: string]: { [key: string]: string } }
 
@@ -2779,23 +2781,59 @@ export class TranslationService {
   currentLang$ = this.currentLanguage.asObservable();
   direction$   = this.currentDirection.asObservable();
 
-  constructor() { this.initializeLanguage(); }
+  constructor(private http: HttpClient) { this.initializeLanguage(); }
 
   private initializeLanguage(): void {
-    const saved   = localStorage.getItem('language');
+    const saved = localStorage.getItem('language');
+    if (saved && ['en','fr','ar'].includes(saved)) {
+      this.setLanguage(saved, false);
+      return;
+    }
+    // No per-browser choice saved yet — prefer the user's saved account
+    // preference (so logging in on a new device/browser picks it up),
+    // falling back to the browser's own language.
+    const stored  = this.getStoredUserLangue();
     const browser = navigator.language.split('-')[0];
-    const lang = (saved && ['en','fr','ar'].includes(saved)) ? saved
+    const lang = (stored && ['en','fr','ar'].includes(stored)) ? stored
                : (['en','fr','ar'].includes(browser) ? browser : 'en');
-    this.setLanguage(lang);
+    this.setLanguage(lang, false);
   }
 
-  setLanguage(lang: string): void {
+  private getStoredUserLangue(): string | null {
+    try {
+      const raw = localStorage.getItem('autoloc_user');
+      const user = raw ? JSON.parse(raw) : null;
+      return user?.langue ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  /** @param sync Push this choice to the backend so it's used for emails too. Pass false for internal/automatic (re)application. */
+  setLanguage(lang: string, sync: boolean = true): void {
     if (!['en','fr','ar'].includes(lang)) return;
     this.currentLanguage.next(lang);
     localStorage.setItem('language', lang);
     const dir = lang === 'ar' ? 'rtl' : 'ltr';
     this.currentDirection.next(dir);
     document.documentElement.setAttribute('dir', dir);
+
+    if (sync) this.syncLanguageToBackend(lang);
+  }
+
+  private syncLanguageToBackend(lang: string): void {
+    try {
+      const raw = localStorage.getItem('autoloc_user');
+      const user = raw ? JSON.parse(raw) : null;
+      if (!user?.id) return;
+      this.http.put(`${environment.apiUrl}/utilisateur/${user.id}`, { langue: lang }).subscribe({
+        next: () => {
+          user.langue = lang;
+          localStorage.setItem('autoloc_user', JSON.stringify(user));
+        },
+        error: () => {},
+      });
+    } catch {}
   }
 
   translate(key: string): string {

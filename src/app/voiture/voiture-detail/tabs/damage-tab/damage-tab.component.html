@@ -132,11 +132,17 @@
                 <span *ngIf="d.estimatedCost">{{ d.estimatedCost }} MAD</span>
                 <span *ngIf="!d.estimatedCost" style="color:var(--text-muted)">—</span>
               </td>
-              <td>
+              <td style="display:flex;gap:.4rem">
                 <button class="dmg-repair-btn"
                   [disabled]="repairFormId !== null"
                   (click)="openRepairForm(d)">
                   {{ t('markRepaired') }}
+                </button>
+                <button class="dmg-delete-btn"
+                  [disabled]="repairFormId !== null"
+                  [title]="t('delete')"
+                  (click)="openDeleteConfirm(d)">
+                  🗑
                 </button>
               </td>
             </tr>
@@ -284,3 +290,29 @@
   (closed)="closePayPanel()"
   (paymentChanged)="onRepairPaymentChanged()">
 </app-pay-dep-panel>
+
+<!-- ── Delete Confirmation ──────────────────────────────────────────────────── -->
+<app-modal
+  *ngIf="deleteTarget"
+  [title]="t('confirmDelete')"
+  icon="🗑"
+  iconColor="red"
+  maxWidth="420px"
+  [dir]="dir"
+  (closed)="cancelDelete()">
+
+  <div class="am-body">
+    <p>{{ t('deleteWarning') }}</p>
+  </div>
+
+  <div class="am-footer">
+    <button class="dmg-cancel-btn" (click)="cancelDelete()" [disabled]="deleting">
+      {{ t('cancel') }}
+    </button>
+    <button class="am-btn-confirm am-btn-confirm-red" (click)="confirmDelete()" [disabled]="deleting">
+      <span *ngIf="deleting" class="spin" style="width:14px;height:14px;border-width:2px"></span>
+      <span>{{ deleting ? t('loading') : t('delete') }}</span>
+    </button>
+  </div>
+
+</app-modal>

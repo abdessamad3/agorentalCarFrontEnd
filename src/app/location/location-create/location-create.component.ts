@@ -68,6 +68,18 @@ export class LocationCreateComponent implements OnInit {
   savingDocType: ExpiredDocType | null = null;
   clientDocs: ClientDoc[] = [];
 
+  // Outstanding debt warning (same logic as reservation-create) — informational
+  // only, never blocks booking creation.
+  debtWarningDismissed = false;
+
+  get showDebtWarning(): boolean {
+    return !this.debtWarningDismissed && (this.selectedClient?.outstandingDebt ?? 0) > 0;
+  }
+
+  dismissDebtWarning(): void {
+    this.debtWarningDismissed = true;
+  }
+
   private static readonly DOC_DATE_FIELDS: Record<ExpiredDocType, string> = {
     cin:       'cinExpiration',
     passeport: 'passeportExpiration',
@@ -229,6 +241,7 @@ export class LocationCreateComponent implements OnInit {
     this.clientSearch           = c.nom;
     this.showClientDropdown     = false;
     this.expiryWarningDismissed = false;
+    this.debtWarningDismissed   = false;
     this.uploadedDocTypes.clear();
     this.resetExpiredDocUpdates();
     this.loadClientDocs();
@@ -239,6 +252,7 @@ export class LocationCreateComponent implements OnInit {
     this.clientSearch           = '';
     this.showClientDropdown     = false;
     this.expiryWarningDismissed = false;
+    this.debtWarningDismissed   = false;
     this.uploadedDocTypes.clear();
     this.resetExpiredDocUpdates();
     this.clientDocs             = [];

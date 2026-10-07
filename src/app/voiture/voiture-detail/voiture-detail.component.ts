@@ -459,8 +459,8 @@ export class VoitureDetailComponent implements OnInit {
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const hasActiveRepair = this.reparations.some(r => {
       if (!r.dateFin) return true;
-      const fin = new Date(r.dateFin); fin.setHours(23, 59, 59, 999);
-      return fin >= today;
+      const fin = new Date(r.dateFin); fin.setHours(0, 0, 0, 0);
+      return fin > today;
     });
     const repairScore = hasActiveRepair ? 25 : 100;
     const sixMonthsAgo = new Date(); sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
@@ -656,10 +656,9 @@ export class VoitureDetailComponent implements OnInit {
   get activeRepairCount(): number {
     const today = new Date(); today.setHours(0, 0, 0, 0);
     return this.reparations.filter(r => {
-      if (r.statut === 'termine') return false;
       if (!r.dateFin) return true;
-      const fin = new Date(r.dateFin); fin.setHours(23, 59, 59, 999);
-      return fin >= today;
+      const fin = new Date(r.dateFin); fin.setHours(0, 0, 0, 0);
+      return fin > today;
     }).length;
   }
 
@@ -670,10 +669,9 @@ export class VoitureDetailComponent implements OnInit {
     const today = new Date(); today.setHours(0, 0, 0, 0);
 
     const activeRepairs = this.reparations.filter(r => {
-      if (r.statut === 'termine') return false;
       if (!r.dateFin) return true;
-      const fin = new Date(r.dateFin); fin.setHours(23, 59, 59, 999);
-      return fin >= today;
+      const fin = new Date(r.dateFin); fin.setHours(0, 0, 0, 0);
+      return fin > today;
     });
     if (activeRepairs.length > 0) {
       blockers.push(`${activeRepairs.length} active repair${activeRepairs.length > 1 ? 's' : ''} still in progress`);

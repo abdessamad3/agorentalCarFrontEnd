@@ -11,6 +11,7 @@ import { UploadBtnComponent } from '../../../../shared/btn/upload-btn.component'
 import { TranslatePipe } from '../../../../pipes/translate.pipe';
 import { PayDepPanelComponent } from '../../../../shared/pay-dep-panel/pay-dep-panel.component';
 import { payNotExceedTotal } from '../../../../shared/validators/pay-not-exceed-total.validator';
+import { EventBusService } from '../../../../services/event-bus.service';
 
 @Component({
   selector: 'app-documents-tab',
@@ -92,6 +93,7 @@ export class DocumentsTabComponent implements OnInit {
     private crud: CrudService,
     private ts: TranslationService,
     private fb: FormBuilder,
+    private bus: EventBusService,
   ) {
     this.repairForm = this.fb.group({
       descriptionTechnique: ['', Validators.required],
@@ -690,6 +692,7 @@ export class DocumentsTabComponent implements OnInit {
   }
 
   refreshExpenseAfterPayment(): void {
+    this.bus.paymentsChanged$.next();
     const expType = Object.entries(this.EXPENSE_TYPE_MAP).find(([, v]) => v === this.payDepType)?.[0];
     if (!expType) return;
     if (expType === 'repairs') {

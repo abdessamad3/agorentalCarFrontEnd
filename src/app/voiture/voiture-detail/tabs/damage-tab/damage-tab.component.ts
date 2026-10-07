@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule, TitleCasePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -39,6 +39,7 @@ export class DamageTabComponent implements OnInit {
   @Input() car!: any;
   @Input() dir = 'ltr';
   @Input() isAdmin = false;
+  @Output() carRefresh = new EventEmitter<void>();
 
   // 3D view toggle
   view3D = false;
@@ -74,6 +75,7 @@ export class DamageTabComponent implements OnInit {
   onRepairPaymentChanged(): void {
     this.load();
     this.bus.paymentsChanged$.next();
+    this.carRefresh.emit();
   }
 
   // ── Repair modal ─────────────────────────────────────────────────────────────
@@ -83,6 +85,10 @@ export class DamageTabComponent implements OnInit {
   repairFile: File | null = null;
   submittingRepair = false;
   repairFormError = '';
+
+  // ── Delete ────────────────────────────────────────────────────────────────
+  deleteTarget: DamageRecord | null = null;
+  deleting = false;
 
   readonly ZONES = VEHICLE_ZONES;
 
@@ -166,7 +172,7 @@ export class DamageTabComponent implements OnInit {
         estimatedCost: this.addEstimatedCost ? Number(this.addEstimatedCost) : null,
       }
     ).subscribe({
-      next: () => { this.adding = false; this.showAddForm = false; this.load(); },
+      next: () => { this.adding = false; this.showAddForm = false; this.load(); this.carRefresh.emit(); },
       error: (err) => { this.adding = false; this.addError = err?.error?.error || 'Failed to add damage.'; },
     });
   }
@@ -216,10 +222,34 @@ export class DamageTabComponent implements OnInit {
         this.repairFile = null;
         this.load();
         this.bus.paymentsChanged$.next();
+        this.carRefresh.emit();
       },
       error: (err) => {
         this.submittingRepair = false;
         this.repairFormError = err?.error?.error || 'Failed to mark as repaired.';
+      },
+    });
+  }
+
+  // ── Delete ────────────────────────────────────────────────────────────────
+
+  openDeleteConfirm(damage: DamageRecord): void { this.deleteTarget = damage; }
+  cancelDelete(): void { this.deleteTarget = null; }
+
+  confirmDelete(): void {
+    if (this.deleting || !this.deleteTarget) return;
+    this.deleting = true;
+    this.http.delete(`${environment.apiUrl}/damage/${this.deleteTarget.id}`).subscribe({
+      next: () => {
+        this.deleting = false;
+        this.deleteTarget = null;
+        this.load();
+        this.bus.paymentsChanged$.next();
+        this.carRefresh.emit();
+      },
+      error: () => {
+        this.deleting = false;
+        this.deleteTarget = null;
       },
     });
   }

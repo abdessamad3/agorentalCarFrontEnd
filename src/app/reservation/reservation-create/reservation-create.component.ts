@@ -5,7 +5,6 @@ import { HttpClient } from '@angular/common/http';
 import { Router, RouterModule } from '@angular/router';
 import { CrudService } from '../../services/crud.service';
 import { TranslationService } from '../../services/translation.service';
-import { AuthService } from '../../services/auth.service';
 import { UploadBtnComponent } from '../../shared/btn/upload-btn.component';
 import { ClientDocumentsComponent } from '../../client/client-documents/client-documents.component';
 import { NATIONALITES, NationaliteEntry } from '../../shared/constants/nationalites';
@@ -73,8 +72,6 @@ export class ReservationCreateComponent implements OnInit {
   };
 
   debtWarningDismissed = false;
-  debtConfirmRequired = false;
-  overrideDebtWarning = false;
 
   selectedVoiture: any = null;
 
@@ -133,7 +130,6 @@ export class ReservationCreateComponent implements OnInit {
     private ts: TranslationService,
     private router: Router,
     private http: HttpClient,
-    private auth: AuthService,
   ) {
     this.form = this.fb.group({
       clientId:   [null, Validators.required],
@@ -224,8 +220,6 @@ export class ReservationCreateComponent implements OnInit {
     this.resetExpiredDocUpdates();
     this.loadClientDocs();
     this.debtWarningDismissed = false;
-    this.debtConfirmRequired = false;
-    this.overrideDebtWarning = false;
   }
 
   private loadClientDocs(): void {
@@ -314,10 +308,6 @@ export class ReservationCreateComponent implements OnInit {
     this.debtWarningDismissed = true;
   }
 
-  get isManagerOrAdmin(): boolean {
-    return this.auth.hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN');
-  }
-
   onExpiredDocFiles(files: File[], type: ExpiredDocType): void {
     if (!this.selectedClient || !files.length) return;
     files.forEach(file => {
@@ -339,8 +329,6 @@ export class ReservationCreateComponent implements OnInit {
     this.resetExpiredDocUpdates();
     this.clientDocs = [];
     this.debtWarningDismissed = false;
-    this.debtConfirmRequired = false;
-    this.overrideDebtWarning = false;
   }
 
   /** Updates the client's expiration/issue date for one expired document type, then re-fetches
@@ -508,14 +496,12 @@ export class ReservationCreateComponent implements OnInit {
     }
     this.isSubmitting = true;
     this.submitError = '';
-    this.debtConfirmRequired = false;
 
     const payload = {
       ...this.form.value,
       montant: this.totalAmount,
       total: this.totalAmount,
       accessoireIds: Array.from(this.selectedAccessoires),
-      overrideDebtWarning: this.overrideDebtWarning,
     };
 
     this.crud.create('reservation', payload).subscribe({
@@ -525,27 +511,9 @@ export class ReservationCreateComponent implements OnInit {
       },
       error: (err: any) => {
         this.isSubmitting = false;
-        const code = err?.error?.error;
-        if (code === 'debt_blocked') {
-          this.submitError = err.error.message || this.t('debtBlocked');
-        } else if (code === 'debt_warning') {
-          // Only a manager/admin reaches this branch (staff get debt_blocked instead) — show
-          // the confirm-and-retry control instead of a dead-end error.
-          this.submitError = err.error.message || this.t('debtWarningConfirm');
-          this.debtConfirmRequired = true;
-        } else {
-          this.submitError = this.ts.translate('loadError');
-        }
+        this.submitError = err?.error?.message || this.ts.translate('loadError');
       }
     });
-  }
-
-  /** Manager/admin explicitly acknowledging the debt warning — resubmits with the override
-   *  flag set, which the backend logs for accountability. */
-  confirmDebtOverrideAndSubmit(): void {
-    this.overrideDebtWarning = true;
-    this.debtConfirmRequired = false;
-    this.submit();
   }
 
   t(key: string) { return this.ts.translate(key); }

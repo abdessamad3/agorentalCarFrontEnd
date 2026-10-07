@@ -1,0 +1,101 @@
+<div class="el-page">
+
+  <!-- Header -->
+  <div class="el-header">
+    <div class="el-title">
+      <span class="el-icon">🚨</span>
+      <div>
+        <h1>{{ t('errorLog') || 'Journal des erreurs' }}</h1>
+        <p>{{ total }} {{ t('recordsFound') || 'enregistrements' }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="el-filters">
+    <select [(ngModel)]="source" class="el-select">
+      <option value="">{{ t('allSources') || 'Toutes sources' }}</option>
+      <option value="backend">Backend</option>
+      <option value="frontend">Frontend</option>
+    </select>
+
+    <div class="el-date-range">
+      <input type="date" [(ngModel)]="dateFrom" class="el-input">
+      <span class="el-dash">→</span>
+      <input type="date" [(ngModel)]="dateTo" class="el-input">
+    </div>
+
+    <button class="btn-primary" (click)="applyFilters()">{{ t('applyFilters') || 'Filtrer' }}</button>
+    <button class="btn-ghost"   (click)="resetFilters()">{{ t('reset') || 'Réinitialiser' }}</button>
+  </div>
+
+  <div *ngIf="error" class="el-error">{{ error }}</div>
+
+  <div *ngIf="loading" class="el-loading">
+    <div class="spinner"></div> {{ t('loading') }}
+  </div>
+
+  <div *ngIf="!loading" class="el-table-wrap">
+    <table class="el-table">
+      <thead>
+        <tr>
+          <th>{{ t('date') }}</th>
+          <th>{{ t('source') || 'Source' }}</th>
+          <th>{{ t('message') || 'Message' }}</th>
+          <th>{{ t('location') || 'Emplacement' }}</th>
+          <th>{{ t('user') }}</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let log of logs">
+          <tr [class.el-row-expanded]="expandedId === log.id">
+            <td class="el-cell-date">{{ log.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+            <td>
+              <span class="el-badge" [ngClass]="log.source === 'backend' ? 'el-badge-backend' : 'el-badge-frontend'">
+                {{ log.source }}
+              </span>
+            </td>
+            <td class="el-cell-message">
+              <span class="el-exception" *ngIf="log.exceptionClass">{{ log.exceptionClass }}</span>
+              <span>{{ shortMessage(log.message) }}</span>
+            </td>
+            <td class="el-cell-location">
+              <span *ngIf="log.file">{{ fileName(log.file) }}:{{ log.line }}</span>
+              <span *ngIf="!log.file && log.requestUrl">{{ log.requestMethod }} {{ log.requestUrl }}</span>
+              <span *ngIf="!log.file && !log.requestUrl">—</span>
+            </td>
+            <td class="el-cell-user">{{ log.user?.nom ?? '—' }}</td>
+            <td>
+              <button class="btn-expand" (click)="toggleExpand(log.id)" *ngIf="log.trace">
+                {{ expandedId === log.id ? '▲' : '▼' }}
+              </button>
+            </td>
+          </tr>
+
+          <tr *ngIf="expandedId === log.id" class="el-detail-row">
+            <td colspan="6">
+              <div class="el-detail">
+                <div class="el-detail-row-item" *ngIf="log.requestUrl">
+                  <strong>{{ t('request') || 'Requête' }}:</strong> {{ log.requestMethod }} {{ log.requestUrl }}
+                </div>
+                <div class="el-detail-row-item" *ngIf="log.ipAddress">
+                  <strong>IP:</strong> {{ log.ipAddress }}
+                </div>
+                <pre class="el-trace">{{ log.trace }}</pre>
+              </div>
+            </td>
+          </tr>
+        </ng-container>
+
+        <tr *ngIf="logs.length === 0">
+          <td colspan="6" class="el-empty">{{ t('noErrorsFound') || 'Aucune erreur enregistrée.' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <app-paginator [page]="page" [limit]="limit" [total]="total" (pageChange)="onPageChange($event)">
+  </app-paginator>
+
+</div>

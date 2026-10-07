@@ -7,6 +7,7 @@ import { PayDepPanelComponent } from '../../../../shared/pay-dep-panel/pay-dep-p
 import { environment } from '../../../../../environments/environment';
 import { complianceDaysRemaining as complianceDaysRemainingUtil } from '../../../../shared/utils/compliance.utils';
 import { Assurance } from '../../../../models/compliance.model';
+import { EventBusService } from '../../../../services/event-bus.service';
 
 @Component({
   selector: 'app-insurance-tab',
@@ -43,7 +44,13 @@ export class InsuranceTabComponent implements OnChanges {
   constructor(
     private crud: CrudService,
     private ts: TranslationService,
+    private bus: EventBusService,
   ) {}
+
+  onPaymentChanged(): void {
+    this.bus.paymentsChanged$.next();
+    this.load();
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if ((changes['carId'] || changes['car']) && this.carId) {

@@ -1,12 +1,10 @@
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../services/auth.service';
 import { TranslationService } from '../../services/translation.service';
 import { CompanyService } from '../../services/company.service';
 import { filter } from 'rxjs/operators';
-import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-sidebar',
@@ -104,6 +102,7 @@ export class SidebarComponent implements OnInit {
         { link: '/settings/parametres-societe',  icon: '🏷️', key: 'parametresSociete', roles: ['ROLE_ADMIN'] },
         { link: '/settings/conditions-contrat',  icon: '📝', key: 'conditionsContrat', roles: ['ROLE_ADMIN'] },
         { link: '/activity-log',                 icon: '📋', key: 'activityLog',       roles: ['ROLE_ADMIN'] },
+        { link: '/error-log',                    icon: '🚨', key: 'errorLog',          roles: ['ROLE_ADMIN'] },
         { link: '/email-log',                    icon: '📧', key: 'emailHistory',      roles: ['ROLE_ADMIN'] },
         { link: '/accessoire',                   icon: '🔧', key: 'accessoires' },
         { link: '/notifications',                icon: '🔔', key: 'notificationsNav' },
@@ -117,7 +116,6 @@ export class SidebarComponent implements OnInit {
     public router: Router,
     private translationService: TranslationService,
     private companyService: CompanyService,
-    private http: HttpClient,
   ) {}
 
   ngOnInit() {
@@ -146,12 +144,7 @@ export class SidebarComponent implements OnInit {
     });
 
     if (this.companyService.getBureaux().length === 0) {
-      this.http.get<any>(`${environment.apiUrl}/bureau`).subscribe({
-        next: (res) => {
-          const list = Array.isArray(res) ? res : (res?.data ?? []);
-          this.companyService.setBureaux(list.map((b: any) => ({ id: b.id, nom: b.nom, adresse: b.adresse ?? '', telephone: b.telephone ?? '' })));
-        }
-      });
+      this.companyService.refreshBureaux();
     }
 
     this.router.events
@@ -159,8 +152,8 @@ export class SidebarComponent implements OnInit {
       .subscribe(() => this.closeSidebar.emit());
   }
 
-  // Company branding (name/logo) is global now, not per-bureau -- no need to
-  // refetch it on bureau switch, just navigate.
+  // Switching bureau re-derives branding from that bureau's company
+  // (CompanyService.setCurrentBureau -> applyBrandingForCurrentBureau).
   onBureauSwitch(event: Event) {
     const id = +(event.target as HTMLSelectElement).value;
     this.companyService.setCurrentBureau(id);

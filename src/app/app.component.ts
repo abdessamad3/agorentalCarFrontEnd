@@ -67,26 +67,17 @@ export class AppComponent implements OnInit {
   }
 
   /**
-   * Company name/logo is global (ParametresSociete, single row) — refresh it for
-   * every role on every fresh session so the sidebar never relies on stale
-   * localStorage or on the admin having revisited the settings page.
+   * Branding (name/logo) reflects whichever company owns the active bureau —
+   * this is a multi-company platform, so there's no single global identity.
+   * Refresh the bureau list (with each one's company) on every fresh session
+   * so branding never relies on stale cached data.
    * Bureau locking is separate: only managers/staff are pinned to one bureau
    * (via their user), fetched from /auth/me since the admin may have assigned
    * the bureau after this user's session/token was already created. Admins
-   * pick their own bureau filter via the sidebar switcher — never touched here.
+   * pick their own bureau via the sidebar switcher — never touched here.
    */
   private syncCompanyBranding(): void {
-    this.http.get<any>(`${environment.apiUrl}/parametres-societe`).subscribe({
-      next: (ps) => {
-        const rawLogo = ps?.logoPath || null;
-        const logoUrl = rawLogo && !rawLogo.startsWith('http')
-          ? `${environment.serverUrl}${rawLogo}`
-          : rawLogo;
-        this.companyService.setCompanyName(ps?.raisonSociale || 'AGOCAR');
-        this.companyService.setLogo(logoUrl);
-      },
-      error: () => {}
-    });
+    this.companyService.refreshBureaux();
 
     if (!this.authService.hasAnyRole('ROLE_MANAGER', 'ROLE_STAFF')) return;
 

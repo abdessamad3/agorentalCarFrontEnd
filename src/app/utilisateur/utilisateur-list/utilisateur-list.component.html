@@ -440,25 +440,11 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label>Company <span *ngIf="isCreateMode" class="required">*</span></label>
-            <select formControlName="companyId"
-              [class.invalid]="form.get('companyId')?.invalid && form.get('companyId')?.touched">
-              <option [ngValue]="null">— Select company —</option>
-              <option *ngFor="let c of companies" [ngValue]="c.id">{{ c.nom }}</option>
-            </select>
-            <span *ngIf="form.get('companyId')?.invalid && form.get('companyId')?.touched" class="field-error">
-              Company is required.
-            </span>
-          </div>
-          <div class="form-group">
             <label>Bureau <span *ngIf="isCreateMode" class="required">*</span></label>
             <select formControlName="bureauId"
-              [disabled]="!form.get('companyId')?.value"
               [class.invalid]="form.get('bureauId')?.invalid && form.get('bureauId')?.touched">
-              <option [ngValue]="null">
-                {{ form.get('companyId')?.value ? '— Select bureau —' : '— Select company first —' }}
-              </option>
-              <option *ngFor="let b of filteredBureaux" [ngValue]="b.id">{{ b.nom }}</option>
+              <option [ngValue]="null">— Select bureau —</option>
+              <option *ngFor="let b of bureaux" [ngValue]="b.id">{{ b.nom }}{{ b.companyNom ? ' (' + b.companyNom + ')' : '' }}</option>
             </select>
             <span *ngIf="form.get('bureauId')?.invalid && form.get('bureauId')?.touched" class="field-error">
               Bureau is required.

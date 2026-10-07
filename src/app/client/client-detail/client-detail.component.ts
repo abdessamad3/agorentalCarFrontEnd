@@ -14,6 +14,7 @@ import { debtRiskClass } from '../../shared/utils/debt.utils';
 import { environment } from '../../../environments/environment';
 import { StatusPipe } from '../../shared/pipes/status.pipe';
 import { PayResPanelComponent } from '../../shared/pay-res-panel/pay-res-panel.component';
+import { EventBusService } from '../../services/event-bus.service';
 
 const CAR_PLACEHOLDER = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzIwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2VkZjJmNyIvPjx0ZXh0IHg9IjE2MCIgeT0iMTAwIiBmaWxsPSIjYTBhZWMwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiBmb250LXNpemU9IjUwIj7wn5qlPC90ZXh0Pjwvc3ZnPg==`;
 
@@ -51,6 +52,7 @@ export class ClientDetailComponent implements OnInit {
     private invoiceSvc: InvoiceService,
     private ts: TranslationService,
     private activityLog: ActivityLogService,
+    private bus: EventBusService,
   ) {}
 
   ngOnInit() {
@@ -139,6 +141,7 @@ export class ClientDetailComponent implements OnInit {
   }
 
   onPaymentChanged(): void {
+    this.bus.paymentsChanged$.next();
     const id = +this.route.snapshot.paramMap.get('id')!;
     this.loadAll(id);
   }

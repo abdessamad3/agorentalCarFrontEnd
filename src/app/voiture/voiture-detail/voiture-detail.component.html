@@ -807,7 +807,8 @@
         [carId]="car.id"
         [car]="car"
         [dir]="dir"
-        [isAdmin]="isAdmin">
+        [isAdmin]="isAdmin"
+        (carRefresh)="load(car.id)">
       </app-damage-tab>
 
       <!-- ══════════════════════════════════════════════ CREDIT TAB -->
@@ -996,7 +997,7 @@
                  (error)="$any($event.target).src = placeholderImg" />
             <button class="edit-gallery-del" (click)="removeGalleryImage(img.id)">✕</button>
           </div>
-          <app-upload-btn variant="tile" accept="image/jpeg,image/png,image/webp" title="Add gallery photo"
+          <app-upload-btn variant="tile" accept="image/jpeg,image/png,image/webp" title="Add gallery photo" [multiple]="true"
             (fileSelected)="addGalleryImage($event)"></app-upload-btn>
         </div>
         <!-- Basic Info -->
