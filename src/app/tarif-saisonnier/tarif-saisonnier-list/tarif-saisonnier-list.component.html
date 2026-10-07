@@ -1,0 +1,110 @@
+<div class="list-container" [attr.dir]="dir">
+  <div class="header"><div class="header-left"><h1>{{ 'seasonalRates' | translate }}</h1></div><app-btn variant="primary" (click)="openAdd()">+ {{ 'add' | translate }}</app-btn></div>
+  <div class="search-filter-bar"><div class="search-input"><input type="text" [(ngModel)]="search" (ngModelChange)="onSearch()" [placeholder]="'search' | translate" /></div></div>
+  <div *ngIf="loading" class="loading-state"><p>{{ 'loading' | translate }}</p></div>
+  <div *ngIf="error && !loading" class="error-state"><p>{{ error }}</p><button (click)="load()" class="btn-retry">{{ 'retry' | translate }}</button></div>
+  <div *ngIf="!loading && !error && filtered.length === 0" class="empty-state">
+    <span class="empty-icon">📅</span>
+    <div class="empty-title">{{ 'noSeasonalRates' | translate }}</div>
+    <div class="empty-message">{{ 'seasonalRatesHint' | translate }}</div>
+    <button class="empty-action" (click)="openAdd()">+ {{ 'add' | translate }}</button>
+  </div>
+  <div *ngIf="!loading && !error && filtered.length > 0" class="table-container">
+    <table class="bureaus-table">
+      <thead><tr><th>{{ 'label' | translate }}</th><th>{{ 'startDate' | translate }}</th><th>{{ 'expectedEndDate' | translate }}</th><th>{{ 'adjustment' | translate }}</th><th>{{ 'bureau' | translate }}</th><th>{{ 'status' | translate }}</th><th>{{ 'actions' | translate }}</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let item of paged" class="bureau-row">
+          <td>{{ item.libelle }}</td>
+          <td>{{ item.dateDebut | date:'dd/MM/yyyy' }}</td>
+          <td>{{ item.dateFin | date:'dd/MM/yyyy' }}</td>
+          <td [class.text-green]="adjustmentLabel(item).startsWith('-')" [class.text-red]="!adjustmentLabel(item).startsWith('-')">{{ adjustmentLabel(item) }}</td>
+          <td>{{ bureauLabel(item.bureauId) }}</td>
+          <td><span class="status-chip" [ngClass]="item.actif ? 'chip-active' : 'chip-inactive'">{{ (item.actif ? 'active' : 'inactive') | translate }}</span></td>
+          <td class="actions-cell">
+            <app-btn variant="icon-view" (click)="openView(item)" [title]="'view'|translate"></app-btn>
+            <app-btn variant="icon-edit" (click)="openEdit(item)" [title]="'edit'|translate"></app-btn>
+            <app-btn variant="icon-delete" (click)="openDelete(item.id)" [title]="'delete'|translate"></app-btn>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <app-paginator [page]="page" [limit]="limit" [total]="filtered.length"
+      (pageChange)="onPageChange($event)">
+    </app-paginator>
+  </div>
+</div>
+<div *ngIf="modalMode" class="modal-overlay" (click)="closeModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <ng-container *ngIf="modalMode === 'form'">
+      <div class="modal-header"><h2>{{ (isEditing ? 'edit' : 'add') | translate }} {{ 'seasonalRate' | translate }}</h2><button class="modal-close" (click)="closeModal()">&times;</button></div>
+      <form [formGroup]="form" (ngSubmit)="save()">
+        <div class="modal-body">
+          <div class="form-group"><label>{{ 'label' | translate }} <span class="required">*</span></label><input type="text" formControlName="libelle" [placeholder]="'seasonalRateLabelExample' | translate" /></div>
+          <div class="form-row">
+            <div class="form-group"><label>{{ 'startDate' | translate }} <span class="required">*</span></label><input type="date" formControlName="dateDebut" /></div>
+            <div class="form-group"><label>{{ 'expectedEndDate' | translate }} <span class="required">*</span></label><input type="date" formControlName="dateFin" /></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>{{ 'adjustmentType' | translate }}</label>
+              <select formControlName="typeAjustement">
+                <option value="percentage">{{ 'percentage' | translate }}</option>
+                <option value="fixed">{{ 'fixedAmount' | translate }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>{{ 'adjustmentValue' | translate }} <span class="required">*</span></label>
+              <input type="number" formControlName="valeur" step="0.01" [placeholder]="'adjustmentValueHint' | translate" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>{{ 'bureau' | translate }}</label>
+            <select formControlName="bureauId">
+              <option value="">{{ 'allBureaus' | translate }}</option>
+              <option *ngFor="let b of bureaux" [value]="b.id">{{ b.nom }}</option>
+            </select>
+          </div>
+          <label class="checkbox-item"><input type="checkbox" formControlName="actif" /> {{ 'active' | translate }}</label>
+        </div>
+        <div class="modal-footer"><app-btn variant="secondary" (click)="closeModal()">{{ 'cancel' | translate }}</app-btn><app-btn variant="primary" type="submit" [disabled]="form.invalid || isSubmitting">{{ (isSubmitting ? 'saving' : 'save') | translate }}</app-btn></div>
+      </form>
+    </ng-container>
+    <ng-container *ngIf="modalMode === 'delete'">
+      <div class="modal-header"><h2>{{ 'confirmDelete' | translate }}</h2><button class="modal-close" (click)="closeModal()">&times;</button></div>
+      <div class="modal-body"><p class="delete-warning">{{ 'deleteWarning' | translate }}</p></div>
+      <div class="modal-footer"><app-btn variant="secondary" (click)="closeModal()">{{ 'cancel' | translate }}</app-btn><app-btn variant="danger" (click)="confirmDelete()">{{ 'delete' | translate }}</app-btn></div>
+    </ng-container>
+  </div>
+</div>
+
+<!-- DRAWER: View -->
+<div class="drawer-backdrop" [class.visible]="drawerOpen" (click)="closeDrawer()"></div>
+<div class="drawer" [class.open]="drawerOpen">
+  <ng-container *ngIf="drawerItem">
+    <div class="drawer-header">
+      <span class="drawer-title">{{ 'details' | translate }}</span>
+      <button class="drawer-close" (click)="closeDrawer()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="drawer-body">
+      <div class="drawer-section">
+        <div class="drawer-section-head">{{ 'information' | translate }}</div>
+        <div class="drawer-row" *ngFor="let e of objectEntries(drawerItem)">
+          <span class="drawer-lbl">{{ e[0] }}</span>
+          <span class="drawer-val">{{ displayValue(e[1]) }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <button class="btn-outline-danger" (click)="openDelete(drawerItem.id); closeDrawer()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+        {{ 'delete' | translate }}
+      </button>
+      <button class="btn-primary-sm" (click)="openEdit(drawerItem); closeDrawer()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        {{ 'edit' | translate }}
+      </button>
+    </div>
+  </ng-container>
+</div>

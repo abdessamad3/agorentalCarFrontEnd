@@ -45,6 +45,11 @@ export class LocationDossierComponent implements OnInit {
   departForm: any = {};
   savingDepart = false;
   undoingDelivery = false;
+  /** True once staff actively types a different billed-days value this session -- NOT just
+   *  because nbJoursFactures happens to be populated from a saved contract on load (it almost
+   *  always is, for an already-delivered reservation, since the backend auto-fills it from the
+   *  rental dates). Drives departTotalNet below. */
+  departDaysOverridden = false;
 
   // ── Départ location autocomplete ────────────────────────────────────────
   showLivraisonDropdown = false;
@@ -262,6 +267,7 @@ export class LocationDossierComponent implements OnInit {
   private syncForms() {
     const today = new Date().toISOString().split('T')[0];
     const now   = new Date().toISOString().slice(0, 16);
+    this.departDaysOverridden = false;
 
     // ── Départ form ─────────────────────────────────────────────────────────
     const vd = this.dossier?.vehicleDelivery;
@@ -441,8 +447,15 @@ export class LocationDossierComponent implements OnInit {
   }
 
   get retourMontantFinalDu(): number {
-    const total  = +(this.dossier?.montantTotal ?? 0);
-    const paid   = +(this.dossier?.montantPaye ?? 0);
+    const total = +(this.dossier?.montantTotal ?? 0);
+    const paid  = +(this.dossier?.montantPaye ?? 0);
+    // Once the contract is actually closed, the backend has already folded the return
+    // charges (minus any remise) into the reservation's real total at closing time -- so
+    // dossier.montantTotal already reflects them. Only add them here as a live preview
+    // while still in the act of closing (status still en_cours), before that happens.
+    if (this.isRetourDone) {
+      return Math.max(0, total - paid);
+    }
     const remise = +(this.retourForm.remiseMontant ?? 0);
     return Math.max(0, total + this.totalChargesBeforeRemise - remise - paid);
   }
@@ -470,13 +483,45 @@ export class LocationDossierComponent implements OnInit {
              this.dossier?.reservation?.voiture?.prixJour ?? 0);
   }
 
+  /** Staff hasn't actively overridden the billed days this session -> trust the reservation's
+   *  actual agreed rental amount instead of silently recomputing days x rate, which can
+   *  legitimately differ from the stored total (discount, custom quoted price, accessories
+   *  baked into the total, ...). Checking "nbJoursFactures == null" isn't enough: for an
+   *  already-delivered reservation it's always pre-filled from the saved contract, never null.
+   *  Only recompute once departDaysOverridden is actually set by the user editing the field
+   *  (see template). Uses retourBaseRentalAmount rather than the raw total so that, once the
+   *  contract is closed, this hand-over-time figure doesn't silently include return charges
+   *  that didn't exist yet when the car was handed over. */
   get departTotalNet(): number {
+    if (!this.departDaysOverridden) {
+      return this.retourBaseRentalAmount;
+    }
     const jours = +(this.departForm.nbJoursFactures ?? this.departNbJours);
     return jours * this.effectiveDailyRate;
   }
 
   get departReste(): number {
     return Math.max(0, this.departTotalNet - +(this.dossier?.montantPaye ?? 0));
+  }
+
+  /** The rental-only portion of the reservation's total. Once closed, the backend folds
+   *  return-time charges (minus any remise) into dossier.montantTotal at closing time, so
+   *  that field alone is no longer just "the rental price" for an already-closed dossier --
+   *  back the charges/remise back out to get the comparable base amount. */
+  get retourBaseRentalAmount(): number {
+    const total = +(this.dossier?.montantTotal ?? 0);
+    if (!this.isRetourDone) return total;
+    const remise = +(this.retourForm.remiseMontant ?? 0);
+    return total - this.totalChargesBeforeRemise + remise;
+  }
+
+  /** True when "billed days x daily rate" actually equals the rental's base amount --
+   *  i.e. the literal breakdown shown on the Retour tab's totals line is truthful and
+   *  not just coincidentally-labeled next to an unrelated total. */
+  get rentalLineMatchesDaysRate(): boolean {
+    const jours = +(this.dossier?.contrat?.nbJoursFactures ?? this.departNbJours);
+    const computed = jours * this.effectiveDailyRate;
+    return Math.abs(computed - this.retourBaseRentalAmount) < 0.01;
   }
 
   // ── Status helpers ───────────────────────────────────────────────────────
@@ -551,6 +596,17 @@ export class LocationDossierComponent implements OnInit {
 
   get validationAllDone(): boolean {
     return this.validationChecks.every(c => c.done);
+  }
+
+  /** The rental workflow itself (hand-over, return, closure) is fully done -- the only thing
+   *  left is collecting an outstanding balance. Distinct from validationAllDone so the UI can
+   *  say "closed, balance owed" instead of the more alarming "dossier incomplete", which reads
+   *  as if the closing workflow itself was left unfinished. */
+  get onlyPaymentPending(): boolean {
+    return !this.validationAllDone
+        && this.isDeliveryDone
+        && this.isRetourDone
+        && this.dossier?.paymentStatus !== 'paid';
   }
 
   paymentStatusClass(): string {

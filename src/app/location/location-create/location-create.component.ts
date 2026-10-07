@@ -46,6 +46,16 @@ export class LocationCreateComponent implements OnInit {
   lieuRetour    = '';
   modePaiement  = 'especes';
   montantPaye   = 0;
+  remiseMontant: number | null = null;
+  remiseMotif    = '';
+
+  /** Server-computed live preview -- the only source of truth for pricing (seasonal rate
+   *  rules live server-side). Never sent as-is on submit; the backend independently
+   *  recomputes the real total from voitureId/dates/accessoireIds/remiseMontant, so this
+   *  can never become the saved total even if tampered with client-side. */
+  preview: { prixParJour: number; nbJours: number; accessoireTotal: number; total: number } | null = null;
+  previewLoading = false;
+  private previewTimer: any = null;
 
   showLivraisonDropdown = false;
   showRetourDropdown    = false;
@@ -296,12 +306,14 @@ export class LocationCreateComponent implements OnInit {
 
   selectVoiture(v: any) {
     this.selectedVoiture = this.selectedVoiture?.id === v.id ? null : v;
+    this.refreshPreview();
   }
 
   toggleAccessoire(id: number) {
     this.selectedAccessoireIds.has(id)
       ? this.selectedAccessoireIds.delete(id)
       : this.selectedAccessoireIds.add(id);
+    this.refreshPreview();
   }
 
   onDateDebutChange() {
@@ -311,6 +323,34 @@ export class LocationCreateComponent implements OnInit {
       this.dateFin = next.toISOString().slice(0, 16);
     }
     this.clearBookedVehicle();
+    this.refreshPreview();
+  }
+
+  onDateFinChange() {
+    this.refreshPreview();
+  }
+
+  onRemiseChange() {
+    this.refreshPreview();
+  }
+
+  refreshPreview(): void {
+    clearTimeout(this.previewTimer);
+    if (!this.selectedVoiture || !this.dateDebut || !this.dateFin) { this.preview = null; return; }
+
+    this.previewTimer = setTimeout(() => {
+      this.previewLoading = true;
+      this.http.post(`${environment.apiUrl}/reservation/preview-total`, {
+        voitureId: this.selectedVoiture.id,
+        dateDebut: this.dateDebut,
+        dateFin:   this.dateFin,
+        accessoireIds: Array.from(this.selectedAccessoireIds),
+        remiseMontant: this.remiseMontant || null,
+      }).subscribe({
+        next: (r: any) => { this.preview = r; this.previewLoading = false; },
+        error: () => { this.previewLoading = false; },
+      });
+    }, 250);
   }
 
   clearBookedVehicle() {
@@ -325,18 +365,15 @@ export class LocationCreateComponent implements OnInit {
     return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
   }
 
-  get vehicleTotal(): number {
-    return (this.selectedVoiture?.prixJour ?? 0) * this.numberOfDays;
+  get effectiveDailyRate(): number {
+    return this.preview?.prixParJour ?? (this.selectedVoiture?.prixJour ?? 0);
   }
 
   get accessoryTotal(): number {
-    return Array.from(this.selectedAccessoireIds)
-      .map(id => this.accessoires.find((a: any) => a.id === id))
-      .filter(Boolean)
-      .reduce((s, a: any) => s + parseFloat(a.prix ?? 0) * this.numberOfDays, 0);
+    return this.preview?.accessoireTotal ?? 0;
   }
 
-  get totalAmount(): number { return this.vehicleTotal + this.accessoryTotal; }
+  get totalAmount(): number { return this.preview?.total ?? 0; }
 
   get remaining(): number { return this.totalAmount - (this.montantPaye ?? 0); }
 
@@ -365,15 +402,17 @@ export class LocationCreateComponent implements OnInit {
     if (!this.canSubmit) return;
     this.isSubmitting = true;
 
+    // total/prixParJour are never sent -- the backend computes the authoritative total
+    // itself (ReservationPricingService), same figures the preview above already showed.
     const payload = {
       clientId:          this.selectedClient.id,
       voitureId:         this.selectedVoiture.id,
       dateDebut:         this.dateDebut,
       dateFin:           this.dateFin,
-      total:             this.totalAmount.toFixed(2),
-      prixParJour:       this.selectedVoiture.prixJour ?? 0,
       modePaiement:      this.modePaiement,
       montantPaye:       this.montantPaye,
+      remiseMontant:     this.remiseMontant || null,
+      remiseMotif:       this.remiseMotif || null,
       lieuLivraison:     this.lieuLivraison || null,
       lieuRetour:        this.lieuRetour    || null,
       accessoireIds:     Array.from(this.selectedAccessoireIds),

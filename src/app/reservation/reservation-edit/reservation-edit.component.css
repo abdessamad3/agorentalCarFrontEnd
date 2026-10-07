@@ -1,5 +1,13 @@
 .edit-form { max-width: 860px; }
 
+.input-computed {
+  background: var(--input-disabled-bg, #f1f5f9);
+  font-weight: 700;
+  cursor: default;
+}
+
+.preview-loading { opacity: .6; font-weight: 400; }
+
 .form-section {
   background: var(--card-bg, #fff);
   border: 1px solid var(--border, #e2e8f0);

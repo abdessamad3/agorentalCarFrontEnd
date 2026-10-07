@@ -2,6 +2,7 @@
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { TranslationService } from '../../services/translation.service';
 import { CrudService } from '../../services/crud.service';
@@ -14,6 +15,7 @@ import { Subject, forkJoin, of } from 'rxjs';
 import { debounceTime, switchMap, takeUntil, catchError } from 'rxjs/operators';
 import { PAGE_SIZE } from '../../shared/constants/pagination';
 import { StatusPipe } from '../../shared/pipes/status.pipe';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-reservation-list',
@@ -47,6 +49,14 @@ export class ReservationListComponent implements OnInit, OnDestroy {
   private searchSubject = new Subject<void>();
   private destroy$ = new Subject<void>();
 
+  /** Server-computed live preview -- the only source of truth for pricing (seasonal rate
+   *  rules live server-side). Never sent as-is on save; the backend independently
+   *  recomputes the real total, so this can never become the saved total even if
+   *  tampered with client-side. */
+  preview: { prixParJour: number; nbJours: number; accessoireTotal: number; total: number } | null = null;
+  previewLoading = false;
+  private previewTimer: any = null;
+
   constructor(
     private crud: CrudService,
     private ts: TranslationService,
@@ -54,6 +64,7 @@ export class ReservationListComponent implements OnInit, OnDestroy {
     private exportSvc: ExportService,
     private invoiceSvc: InvoiceService,
     private router: Router,
+    private http: HttpClient,
   ) {
     this.form = this.fb.group({
       clientId:          ['', Validators.required],
@@ -62,9 +73,34 @@ export class ReservationListComponent implements OnInit, OnDestroy {
       dateFin:           [''],
       reservationStatus: ['confirmee'],
       modePaiement:      ['especes'],
-      total:             [0],
       montantPaye:       [0, [Validators.min(0)]],
+      remiseMontant:     [null, [Validators.min(0)]],
+      remiseMotif:       [''],
     });
+    this.form.valueChanges.subscribe(() => this.refreshPreview());
+  }
+
+  refreshPreview(): void {
+    clearTimeout(this.previewTimer);
+    const voitureId = this.form.get('voitureId')?.value;
+    const dateDebut = this.form.get('dateDebut')?.value;
+    const dateFin   = this.form.get('dateFin')?.value;
+    if (!voitureId || !dateDebut || !dateFin) { this.preview = null; return; }
+
+    this.previewTimer = setTimeout(() => {
+      this.previewLoading = true;
+      this.http.post(`${environment.apiUrl}/reservation/preview-total`, {
+        voitureId, dateDebut, dateFin,
+        remiseMontant: this.form.get('remiseMontant')?.value || null,
+      }).subscribe({
+        next: (r: any) => { this.preview = r; this.previewLoading = false; },
+        error: () => { this.previewLoading = false; },
+      });
+    }, 250);
+  }
+
+  get previewTotal(): number {
+    return this.preview?.total ?? 0;
   }
 
   ngOnInit() {
@@ -195,13 +231,15 @@ export class ReservationListComponent implements OnInit, OnDestroy {
   openAdd() {
     this.selected  = null;
     this.isEditing = false;
-    this.form.reset({ reservationStatus: 'confirmee', modePaiement: 'especes', total: 0, montantPaye: 0 });
+    this.preview   = null;
+    this.form.reset({ reservationStatus: 'confirmee', modePaiement: 'especes', montantPaye: 0 });
     this.modalMode = 'form';
   }
 
   openEdit(item: any) {
     this.selected  = item;
     this.isEditing = true;
+    this.preview   = null;
     this.form.patchValue({
       clientId:          item.client?.id  ?? item.clientId  ?? '',
       voitureId:         item.voiture?.id ?? item.voitureId ?? '',
@@ -209,10 +247,12 @@ export class ReservationListComponent implements OnInit, OnDestroy {
       dateFin:           item.dateFin     ?? '',
       reservationStatus: item.reservationStatus || item.statut || 'confirmee',
       modePaiement:      item.modePaiement || 'especes',
-      total:             item.total ?? item.montant ?? 0,
       montantPaye:       item.montantPaye ?? 0,
+      remiseMontant:     item.remiseMontant ?? null,
+      remiseMotif:       item.remiseMotif ?? '',
     });
     this.modalMode = 'form';
+    this.refreshPreview();
   }
 
   openDelete(id: number) { this.deleteId = id; this.modalMode = 'delete'; }
@@ -281,9 +321,8 @@ export class ReservationListComponent implements OnInit, OnDestroy {
   }
 
   get editRemaining(): number {
-    const total = parseFloat(this.form.get('total')?.value || 0);
-    const paid  = parseFloat(this.form.get('montantPaye')?.value || 0);
-    return total - paid;
+    const paid = parseFloat(this.form.get('montantPaye')?.value || 0);
+    return this.previewTotal - paid;
   }
 
   remaining(r: any): number {

@@ -97,6 +97,17 @@
             <span class="info-label">{{ t('billedDays') }}</span>
             <span>{{ dossier.contrat.nbJoursFactures }}</span>
           </div>
+          <!-- Daily rate x billed days doesn't actually equal the total (a discount, custom
+               price, or return-time charges folded in at closing) -- show the real breakdown
+               instead of leaving two numbers next to the total that don't multiply to it. -->
+          <div class="info-row" *ngIf="!rentalLineMatchesDaysRate">
+            <span class="info-label">{{ t('rental') }}</span>
+            <span>{{ (retourBaseRentalAmount | number:'1.2-2') }} MAD</span>
+          </div>
+          <div class="info-row" *ngIf="totalChargesBeforeRemise > 0">
+            <span class="info-label">{{ t('additionalFees') }}</span>
+            <span>+ {{ (totalChargesBeforeRemise | number:'1.2-2') }} MAD</span>
+          </div>
           <div class="info-row">
             <span class="info-label">{{ t('total') }}</span>
             <strong>{{ (dossier.montantTotal | number:'1.2-2') }} MAD</strong>
@@ -196,7 +207,7 @@
             </div>
             <div class="form-group">
               <label>{{ t('billedDays') }} <small>({{ t('editable') }})</small></label>
-              <input type="number" [(ngModel)]="departForm.nbJoursFactures" min="1" [placeholder]="departNbJours" />
+              <input type="number" [(ngModel)]="departForm.nbJoursFactures" (ngModelChange)="departDaysOverridden = true" min="1" [placeholder]="departNbJours" />
             </div>
           </div>
           <div class="form-grid mt-2">
@@ -347,7 +358,7 @@
             </div>
             <div class="form-group">
               <label>{{ t('billedDays') }}</label>
-              <input type="number" [(ngModel)]="departForm.nbJoursFactures" min="1" [placeholder]="departNbJours" />
+              <input type="number" [(ngModel)]="departForm.nbJoursFactures" (ngModelChange)="departDaysOverridden = true" min="1" [placeholder]="departNbJours" />
             </div>
             <div class="form-group">
               <label>{{ t('netTotalDue') }}</label>
@@ -358,8 +369,9 @@
               <input type="text" [value]="(dossier.montantPaye | number:'1.2-2') + ' MAD'" readonly class="input-readonly" />
             </div>
             <div class="form-group">
-              <label>{{ t('remaining') }}</label>
+              <label>{{ isRetourDone ? t('remainingAtHandover') : t('remaining') }}</label>
               <input type="text" [value]="(departReste | number:'1.2-2') + ' MAD'" readonly class="input-computed" />
+              <small class="field-warning" *ngIf="isRetourDone && dossier.montantRestant > departReste">{{ t('currentBalanceDiffersHint') }}</small>
             </div>
             <div class="form-group">
               <label>{{ t('franchise') }} (MAD)</label>
@@ -569,8 +581,11 @@
         </div>
       </div>
 
-      <!-- Add payment -->
-      <div class="form-section" *ngIf="status !== 'terminee' && status !== 'annulee'">
+      <!-- Add payment -- allowed even once the contract is closed (terminee): a client can
+           still owe money after return, and the backend places no such restriction. Only
+           cancelled reservations (annulee) don't need new payments. Deleting an existing
+           payment stays blocked once closed (below), to protect the historical record. -->
+      <div class="form-section" *ngIf="status !== 'annulee'">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <h3 style="margin:0">{{ t('addPayment') }}</h3>
           <button type="button" class="btn-secondary" style="font-size:.8rem;padding:.3rem .7rem"
@@ -881,8 +896,9 @@
         <!-- Live totals -->
         <div class="totals-summary">
           <div class="totals-row">
-            <span>{{ t('rental') }} ({{ dossier.contrat?.nbJoursFactures ?? departNbJours }} {{ t('daysAbbrev') }} × {{ (effectiveDailyRate | number:'1.2-2') }} MAD)</span>
-            <span class="totals-value">{{ (dossier.montantTotal | number:'1.2-2') }} MAD</span>
+            <span *ngIf="rentalLineMatchesDaysRate">{{ t('rental') }} ({{ dossier.contrat?.nbJoursFactures ?? departNbJours }} {{ t('daysAbbrev') }} × {{ (effectiveDailyRate | number:'1.2-2') }} MAD)</span>
+            <span *ngIf="!rentalLineMatchesDaysRate">{{ t('rental') }}</span>
+            <span class="totals-value">{{ (retourBaseRentalAmount | number:'1.2-2') }} MAD</span>
           </div>
           <div class="totals-row totals-charge" *ngIf="totalChargesBeforeRemise > 0">
             <span>{{ t('additionalFees') }}</span>
@@ -1048,8 +1064,17 @@
         </div>
       </div>
 
-      <!-- Pending actions when not yet complete -->
-      <div class="info-alert" *ngIf="!validationAllDone">
+      <!-- Pending actions when not yet complete. The rental workflow itself (hand-over,
+           return, closure) may already be fully done -- in that case this is just an
+           outstanding balance, not an unfinished closing process, so it gets its own,
+           less alarming wording instead of reusing "dossier incomplete". -->
+      <div class="info-alert" *ngIf="onlyPaymentPending">
+        <strong>{{ t('contractClosedBalanceOwed') }}</strong> {{ t('collectRemainingBalance') }}
+        <div style="margin-top:.5rem">
+          <button class="btn-secondary" (click)="setTab('paiements')">→ {{ t('paiements') }}</button>
+        </div>
+      </div>
+      <div class="info-alert" *ngIf="!validationAllDone && !onlyPaymentPending">
         <strong>{{ t('dossierIncomplete') }}</strong> {{ t('completeRemainingSteps') }}
         <div style="margin-top:.5rem;display:flex;gap:.5rem;flex-wrap:wrap">
           <button class="btn-secondary" *ngIf="!isDeliveryDone"    (click)="setTab('depart')">    → {{ t('depart') }}</button>

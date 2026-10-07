@@ -40,7 +40,7 @@ function unwrap(r: any): any {
 // Endpoints that must NOT receive an automatic bureauId query param
 const NO_BUREAU_FILTER = new Set([
   'bureau', 'auth', 'utilisateur', 'parametres', 'email-log',
-  'company', 'notification', 'activity-log',
+  'company', 'notification', 'activity-log', 'tarif-saisonnier',
 ]);
 
 // ─── Service ─────────────────────────────────────────────────────────────────

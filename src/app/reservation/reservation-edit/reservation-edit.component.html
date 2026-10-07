@@ -100,9 +100,9 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label>{{ t('totalAmount') }} (MAD)</label>
-            <input type="number" min="0" formControlName="total" />
-            <span class="field-hint" *ngIf="days > 0">Auto-calculated: {{ days }} days</span>
+            <label>{{ t('totalAmount') }} (MAD) <span *ngIf="previewLoading" class="preview-loading">…</span></label>
+            <input type="text" [value]="(total | number:'1.2-2') + ' MAD'" readonly class="input-computed" />
+            <span class="field-hint" *ngIf="days > 0">{{ days }} {{ t('days') }}</span>
           </div>
           <div class="form-group">
             <label>{{ t('amountPaid') }} (MAD)</label>
@@ -110,7 +110,18 @@
           </div>
         </div>
 
-        <div class="payment-summary" *ngIf="form.get('total')?.value > 0">
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t('discountAmount') }} (MAD)</label>
+            <input type="number" min="0" formControlName="remiseMontant" />
+          </div>
+          <div class="form-group" *ngIf="form.get('remiseMontant')?.value > 0">
+            <label>{{ t('discountReason') }}</label>
+            <input type="text" formControlName="remiseMotif" />
+          </div>
+        </div>
+
+        <div class="payment-summary" *ngIf="total > 0">
           <span class="pay-label">{{ t('remaining') }}:</span>
           <span class="pay-amount" [class.overdue]="remaining > 0">{{ remaining | number:'1.0-0' }} MAD</span>
         </div>

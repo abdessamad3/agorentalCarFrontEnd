@@ -105,6 +105,7 @@ export class SidebarComponent implements OnInit {
         { link: '/error-log',                    icon: '🚨', key: 'errorLog',          roles: ['ROLE_ADMIN'] },
         { link: '/email-log',                    icon: '📧', key: 'emailHistory',      roles: ['ROLE_ADMIN'] },
         { link: '/accessoire',                   icon: '🔧', key: 'accessoires' },
+        { link: '/tarif-saisonnier',             icon: '📅', key: 'seasonalRates',     roles: ['ROLE_ADMIN', 'ROLE_MANAGER'] },
         { link: '/notifications',                icon: '🔔', key: 'notificationsNav' },
         { link: '/profile',                      icon: '👤', key: 'myProfile' },
       ]

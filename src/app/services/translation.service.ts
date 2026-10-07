@@ -263,6 +263,9 @@ export class TranslationService {
       cancelInsuranceWarning: 'This marks the policy as cancelled (voided before/during its term) and keeps it in History. Use this instead of Delete when payments are already recorded against it.',
       depenses: 'Expenses', vehicleExpenses: 'Vehicle Expenses', bureauExpenses: 'Bureau Expenses', credits: 'Credits', infractions: 'Infractions',
       accessoires: 'Accessories', utilisateurs: 'Users', vignettes: 'Vignettes',
+      seasonalRates: 'Seasonal Rates', noSeasonalRates: 'No seasonal rates', seasonalRatesHint: 'Set up date ranges where a vehicle\'s daily rate automatically goes up or down, e.g. a summer surcharge or a winter promo.',
+      seasonalRate: 'seasonal rate', seasonalRateLabelExample: 'e.g. Summer high season', adjustment: 'Adjustment', adjustmentType: 'Adjustment type', adjustmentValue: 'Adjustment value', adjustmentValueHint: 'Negative = discount, positive = surcharge',
+      percentage: 'Percentage', fixedAmount: 'Fixed amount', allBureaus: 'All offices', label: 'Label',
 
       // Bureau expense page
       beSubtitle: 'Overhead & office costs (rent, utilities, salaries…)',
@@ -693,6 +696,10 @@ export class TranslationService {
       downloadPdf: 'Download PDF', pdfGenerationError: 'Failed to generate PDF.', print: 'Print',
       dossierIncomplete: 'Dossier incomplete.',
       completeRemainingSteps: 'Complete the remaining steps in the corresponding tabs before closing.',
+      contractClosedBalanceOwed: 'Contract closed — balance still owed.',
+      collectRemainingBalance: 'The rental itself is fully closed. The client still owes a balance — collect it from the Paiements tab.',
+      remainingAtHandover: 'Remaining (at hand-over)',
+      currentBalanceDiffersHint: 'Current balance is higher — see Paiements.',
       loadingDossier: 'Loading dossier...', cannotLoadDossier: 'Unable to load the dossier.',
       deliveryBlockedComplianceExpired: 'Delivery blocked: vehicle compliance expired',
       vehicleHandedOverContractActive: 'Vehicle handed over. Contract active.',
@@ -1199,6 +1206,9 @@ export class TranslationService {
       cancelInsuranceWarning: 'Ceci marque la police comme annulée (résiliée avant ou pendant sa durée) et la conserve dans l\'historique. À utiliser à la place de Supprimer lorsque des paiements ont déjà été enregistrés.',
       depenses: 'Dépenses', vehicleExpenses: 'Dépenses Véhicules', bureauExpenses: 'Dépenses Bureau', credits: 'Crédits', infractions: 'Infractions',
       accessoires: 'Accessoires', utilisateurs: 'Utilisateurs', vignettes: 'Vignettes',
+      seasonalRates: 'Tarifs saisonniers', noSeasonalRates: 'Aucun tarif saisonnier', seasonalRatesHint: 'Définissez des périodes pendant lesquelles le tarif journalier d\'un véhicule augmente ou baisse automatiquement, par exemple une majoration estivale ou une promo d\'hiver.',
+      seasonalRate: 'tarif saisonnier', seasonalRateLabelExample: 'ex. Haute saison été', adjustment: 'Ajustement', adjustmentType: 'Type d\'ajustement', adjustmentValue: 'Valeur de l\'ajustement', adjustmentValueHint: 'Négatif = remise, positif = majoration',
+      percentage: 'Pourcentage', fixedAmount: 'Montant fixe', allBureaus: 'Tous les bureaux', label: 'Libellé',
 
       // Bureau expense page
       beSubtitle: 'Frais généraux (loyer, charges, salaires…)',
@@ -1617,6 +1627,10 @@ export class TranslationService {
       downloadPdf: 'Télécharger PDF', pdfGenerationError: 'Échec de la génération du PDF.', print: 'Imprimer',
       dossierIncomplete: 'Dossier incomplet.',
       completeRemainingSteps: 'Complétez les étapes manquantes dans les onglets correspondants avant de clôturer.',
+      contractClosedBalanceOwed: 'Contrat clôturé — solde restant dû.',
+      collectRemainingBalance: 'La location elle-même est entièrement clôturée. Le client doit encore un solde — encaissez-le depuis l\'onglet Paiements.',
+      remainingAtHandover: 'Reste à payer (à la remise)',
+      currentBalanceDiffersHint: 'Le solde actuel est plus élevé — voir Paiements.',
       loadingDossier: 'Chargement du dossier...', cannotLoadDossier: 'Impossible de charger le dossier.',
       deliveryBlockedComplianceExpired: 'Livraison bloquée : conformité véhicule expirée',
       vehicleHandedOverContractActive: 'Véhicule remis. Contrat actif.',
@@ -2110,6 +2124,9 @@ export class TranslationService {
       cancelInsuranceWarning: 'هذا يحدد الوثيقة كملغاة (أُلغيت قبل أو أثناء مدتها) ويحتفظ بها في السجل. استخدم هذا بدلاً من الحذف عند وجود مدفوعات مسجلة بالفعل.',
       depenses: 'المصاريف', vehicleExpenses: 'مصاريف المركبات', bureauExpenses: 'مصاريف المكتب', credits: 'الائتمانات', infractions: 'المخالفات',
       accessoires: 'الملحقات', utilisateurs: 'المستخدمون', vignettes: 'الضريبة',
+      seasonalRates: 'الأسعار الموسمية', noSeasonalRates: 'لا توجد أسعار موسمية', seasonalRatesHint: 'حدد فترات زمنية يتغير خلالها السعر اليومي للسيارة تلقائيًا، كزيادة في الصيف أو تخفيض في الشتاء.',
+      seasonalRate: 'سعر موسمي', seasonalRateLabelExample: 'مثال: موسم الصيف المرتفع', adjustment: 'التعديل', adjustmentType: 'نوع التعديل', adjustmentValue: 'قيمة التعديل', adjustmentValueHint: 'سالب = تخفيض، موجب = زيادة',
+      percentage: 'نسبة مئوية', fixedAmount: 'مبلغ ثابت', allBureaus: 'جميع المكاتب', label: 'التسمية',
 
       // Bureau expense page
       beSubtitle: 'التكاليف العامة (الإيجار، الخدمات، الرواتب…)',
@@ -2528,6 +2545,10 @@ export class TranslationService {
       downloadPdf: 'تحميل PDF', pdfGenerationError: 'فشل إنشاء ملف PDF.', print: 'طباعة',
       dossierIncomplete: 'الملف غير مكتمل.',
       completeRemainingSteps: 'أكمل الخطوات المتبقية في علامات التبويب المعنية قبل الإغلاق.',
+      contractClosedBalanceOwed: 'العقد مغلق — رصيد متبقٍ مستحق.',
+      collectRemainingBalance: 'الكراء نفسه مغلق بالكامل. ما زال العميل مدينًا برصيد — قم بتحصيله من علامة التبويب المدفوعات.',
+      remainingAtHandover: 'المتبقي (عند التسليم)',
+      currentBalanceDiffersHint: 'الرصيد الحالي أعلى — راجع المدفوعات.',
       loadingDossier: 'جاري تحميل الملف...', cannotLoadDossier: 'تعذر تحميل الملف.',
       deliveryBlockedComplianceExpired: 'التسليم محظور: انتهت صلاحية امتثال المركبة',
       vehicleHandedOverContractActive: 'تم تسليم المركبة. العقد نشط.',

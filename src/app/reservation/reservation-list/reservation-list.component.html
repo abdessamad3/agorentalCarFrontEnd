@@ -308,7 +308,10 @@
                 <option value="cancelled">{{ t('cancelled') }}</option>
               </select>
             </div>
-            <div class="form-group"><label>{{ t('montant') }}</label><input type="number" formControlName="total" min="0" /></div>
+            <div class="form-group">
+              <label>{{ t('montant') }} <span *ngIf="previewLoading" class="preview-loading">…</span></label>
+              <input type="text" [value]="(previewTotal | number:'1.2-2') + ' MAD'" readonly class="input-computed" />
+            </div>
           </div>
           <div class="form-row">
             <div class="form-group">
@@ -321,6 +324,16 @@
               </select>
             </div>
             <div class="form-group"><label>{{ t('amountPaid') }}</label><input type="number" formControlName="montantPaye" min="0" /></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>{{ t('discountAmount') }}</label>
+              <input type="number" formControlName="remiseMontant" min="0" />
+            </div>
+            <div class="form-group" *ngIf="form.get('remiseMontant')?.value > 0">
+              <label>{{ t('discountReason') }}</label>
+              <input type="text" formControlName="remiseMotif" />
+            </div>
           </div>
           <div class="remaining-row" [class.overpaid]="editRemaining < 0">
             <span>{{ t('remaining') }}</span>

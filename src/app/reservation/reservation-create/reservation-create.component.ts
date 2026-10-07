@@ -77,32 +77,51 @@ export class ReservationCreateComponent implements OnInit {
 
   selectedAccessoires: Set<number> = new Set();
 
+  /** The server is the only source of truth for pricing (seasonal rate rules live there) --
+   *  this is a live preview only, refreshed on every relevant field change, and is NOT what
+   *  gets sent on submit(). The backend independently recomputes the real total from the
+   *  submitted voiture/dates/accessoires/remise, so a stale or tampered preview can never
+   *  become the saved total. */
+  preview: { prixParJour: number; nbJours: number; accessoireTotal: number; total: number } | null = null;
+  previewLoading = false;
+  private previewTimer: any = null;
+
   get numberOfDays(): number {
-    const start = this.form.get('dateDebut')?.value;
-    const end = this.form.get('dateFin')?.value;
-    if (!start || !end) return 0;
-    const diff = new Date(end).getTime() - new Date(start).getTime();
-    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+    return this.preview?.nbJours ?? 0;
   }
 
   get dailyRate(): number {
-    return this.selectedVoiture?.prixJour || 0;
-  }
-
-  get vehicleTotal(): number {
-    return this.dailyRate * this.numberOfDays;
+    return this.preview?.prixParJour ?? (this.selectedVoiture?.prixJour || 0);
   }
 
   get accessoryTotal(): number {
-    return this.voitures.length === 0 ? 0 :
-      Array.from(this.selectedAccessoires)
-        .map(id => this.accessoires.find((a: any) => a.id === id))
-        .filter(Boolean)
-        .reduce((s, a: any) => s + (parseFloat(a.prix || 0) * this.numberOfDays), 0);
+    return this.preview?.accessoireTotal ?? 0;
   }
 
   get totalAmount(): number {
-    return this.vehicleTotal + this.accessoryTotal;
+    return this.preview?.total ?? 0;
+  }
+
+  refreshPreview(): void {
+    clearTimeout(this.previewTimer);
+    const voitureId = this.form.get('voitureId')?.value;
+    const dateDebut = this.form.get('dateDebut')?.value;
+    const dateFin   = this.form.get('dateFin')?.value;
+    if (!voitureId || !dateDebut || !dateFin) { this.preview = null; return; }
+
+    this.previewTimer = setTimeout(() => {
+      this.previewLoading = true;
+      // Plain HTTP call, not CrudService.create() -- this fires on every field change and
+      // must stay silent (no "created successfully" toast, no error toast for a live preview).
+      this.http.post(`${environment.apiUrl}/reservation/preview-total`, {
+        voitureId, dateDebut, dateFin,
+        accessoireIds: Array.from(this.selectedAccessoires),
+        remiseMontant: this.form.get('remiseMontant')?.value || null,
+      }).subscribe({
+        next: (r: any) => { this.preview = r; this.previewLoading = false; },
+        error: () => { this.previewLoading = false; },
+      });
+    }, 250);
   }
 
   get isComplianceBlocked(): boolean {
@@ -139,6 +158,8 @@ export class ReservationCreateComponent implements OnInit {
       reservationStatus: ['pending'],
       modePaiement: ['especes'],
       montantPaye: [0, [Validators.min(0)]],
+      remiseMontant: [null, [Validators.min(0)]],
+      remiseMotif: [''],
       notes:      [''],
     });
 
@@ -171,6 +192,10 @@ export class ReservationCreateComponent implements OnInit {
   ngOnInit() {
     this.ts.direction$.subscribe(d => this.dir = d);
     this.loadData();
+    // valueChanges fires on every keystroke (despite the name, FormControl's default
+    // updateOn:'change' means the native 'input' event, not blur) -- more reliable than
+    // the (change) handler in the template, which only fires on blur/Enter.
+    this.form.get('remiseMontant')?.valueChanges.subscribe(() => this.refreshPreview());
 
     const today = new Date();
     const tomorrow = new Date(today);
@@ -464,6 +489,7 @@ export class ReservationCreateComponent implements OnInit {
     this.selectedVoiture = voiture;
     this.form.patchValue({ voitureId: voiture.id });
     this.submitError = '';
+    this.refreshPreview();
   }
 
   toggleAccessoire(id: number) {
@@ -472,6 +498,7 @@ export class ReservationCreateComponent implements OnInit {
     } else {
       this.selectedAccessoires.add(id);
     }
+    this.refreshPreview();
   }
 
   isAccessoireSelected(id: number): boolean {
@@ -486,6 +513,7 @@ export class ReservationCreateComponent implements OnInit {
       newEnd.setDate(newEnd.getDate() + 1);
       this.form.patchValue({ dateFin: newEnd.toISOString().slice(0, 16) });
     }
+    this.refreshPreview();
   }
 
   submit() {
@@ -497,10 +525,11 @@ export class ReservationCreateComponent implements OnInit {
     this.isSubmitting = true;
     this.submitError = '';
 
+    // total/montant are never sent -- the backend computes the authoritative total itself
+    // from voitureId/dateDebut/dateFin/accessoireIds/remiseMontant (same as the preview above,
+    // but never trusted from the client). See ReservationPricingService.
     const payload = {
       ...this.form.value,
-      montant: this.totalAmount,
-      total: this.totalAmount,
       accessoireIds: Array.from(this.selectedAccessoires),
     };
 

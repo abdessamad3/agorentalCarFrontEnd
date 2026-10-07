@@ -4,6 +4,8 @@
   padding: 1.5rem;
 }
 
+.preview-loading { opacity: .6; font-weight: 400; }
+
 /* Header */
 .page-header {
   display: flex;

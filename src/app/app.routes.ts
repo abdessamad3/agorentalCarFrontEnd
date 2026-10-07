@@ -407,6 +407,12 @@ export const routes: Routes = [
     data: { breadcrumbs: ['Administration', 'Accessories'], roles: ['ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_STAFF'] }
   },
   {
+    path: 'tarif-saisonnier',
+    loadComponent: () => import('./tarif-saisonnier/tarif-saisonnier-list/tarif-saisonnier-list.component').then(m => m.TarifSaisonnierListComponent),
+    canActivate: [authGuard, roleGuard],
+    data: { breadcrumbs: ['Administration', 'Seasonal Rates'], roles: ['ROLE_ADMIN', 'ROLE_MANAGER'] }
+  },
+  {
     path: 'utilisateur',
     loadComponent: () => import('./utilisateur/utilisateur-list/utilisateur-list.component').then(m => m.UtilisateurListComponent),
     canActivate: [authGuard, roleGuard],

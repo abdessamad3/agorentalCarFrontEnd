@@ -167,7 +167,7 @@
 
         <!-- Pricing Summary -->
         <div class="form-section summary-section">
-          <div class="section-title">💰 {{ t('totalAmount') }}</div>
+          <div class="section-title">💰 {{ t('totalAmount') }} <span *ngIf="previewLoading" class="preview-loading">…</span></div>
           <div class="summary-rows">
             <div class="summary-row">
               <span>{{ t('dailyRate') }}</span>
@@ -180,6 +180,14 @@
             <div class="summary-row">
               <span>{{ t('accessories') }}</span>
               <span>{{ accessoryTotal | number:'1.0-2' }} MAD</span>
+            </div>
+            <div class="form-group">
+              <label>{{ t('discountAmount') }}</label>
+              <input type="number" formControlName="remiseMontant" min="0" />
+            </div>
+            <div class="form-group" *ngIf="form.get('remiseMontant')?.value > 0">
+              <label>{{ t('discountReason') }}</label>
+              <input type="text" formControlName="remiseMotif" />
             </div>
             <div class="summary-divider"></div>
             <div class="summary-row total-row">

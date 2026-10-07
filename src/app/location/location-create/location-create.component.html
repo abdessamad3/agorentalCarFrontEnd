@@ -102,7 +102,7 @@
           </div>
           <div class="form-group">
             <label>{{ t('returnDate') }}</label>
-            <input type="datetime-local" [(ngModel)]="dateFin" [min]="dateDebut || null" (change)="clearBookedVehicle()" />
+            <input type="datetime-local" [(ngModel)]="dateFin" [min]="dateDebut || null" (change)="clearBookedVehicle(); onDateFinChange()" />
           </div>
           <div class="days-chip" *ngIf="numberOfDays > 0">
             <span class="days-num">{{ numberOfDays }}</span>
@@ -196,11 +196,11 @@
 
       <!-- Summary -->
       <div class="form-section summary-section">
-        <div class="section-title">💰 {{ t('summary') }}</div>
+        <div class="section-title">💰 {{ t('summary') }} <span *ngIf="previewLoading" class="preview-loading">…</span></div>
         <div class="summary-rows">
           <div class="summary-row">
             <span>{{ t('dailyRate') }}</span>
-            <span>{{ selectedVoiture?.prixJour ?? 0 }} MAD</span>
+            <span>{{ effectiveDailyRate | number:'1.2-2' }} MAD</span>
           </div>
           <div class="summary-row">
             <span>{{ t('numberOfDays') }}</span>
@@ -209,6 +209,14 @@
           <div class="summary-row">
             <span>{{ t('accessories') }}</span>
             <span>{{ accessoryTotal | number:'1.2-2' }} MAD</span>
+          </div>
+          <div class="form-group">
+            <label>{{ t('discountAmount') }}</label>
+            <input type="number" [(ngModel)]="remiseMontant" min="0" (ngModelChange)="onRemiseChange()" />
+          </div>
+          <div class="form-group" *ngIf="remiseMontant && remiseMontant > 0">
+            <label>{{ t('discountReason') }}</label>
+            <input type="text" [(ngModel)]="remiseMotif" />
           </div>
           <div class="summary-divider"></div>
           <div class="summary-row total-row">

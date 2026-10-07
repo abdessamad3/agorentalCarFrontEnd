@@ -1,3 +1,5 @@
+.preview-loading { opacity: .6; font-weight: 400; }
+
 /* Expired docs warning — matches reservation-create */
 .expiry-warning-alert {
   position: relative; display: flex; align-items: flex-start; gap: 10px;
