@@ -82,7 +82,9 @@ export class ClientDetailComponent implements OnInit {
         this.client = client;
         this.reservations = Array.isArray(reservations) ? reservations : (reservations as any)?.data ?? [];
         const allContrats: any[] = Array.isArray(contrats) ? contrats : (contrats as any)?.data ?? [];
-        this.contrats = allContrats.filter(c => c.clientId === id || c.client?.id === id);
+        this.contrats = allContrats.filter(c =>
+          c.clientId === id || c.client?.id === id || c.reservation?.client?.id === id
+        );
         this.financialSummary = financialSummary;
         this.loading = false;
 
