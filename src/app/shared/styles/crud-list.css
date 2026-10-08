@@ -333,8 +333,9 @@ tr.row-dismissed td { border-color: #fca5a5; }
   .filter-pills-bar::-webkit-scrollbar { height: 4px; }
   .filter-pills-bar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
   .form-row { grid-template-columns: 1fr; }
-  /* switch table → cards */
-  .table-container { display: none; }
+  /* switch table → cards, but only on pages that actually built a card layout —
+     otherwise hiding the table here leaves the page with nothing to show at all. */
+  .list-container.has-mobile-cards .table-container { display: none; }
   .mobile-cards { display: block; }
 }
 
