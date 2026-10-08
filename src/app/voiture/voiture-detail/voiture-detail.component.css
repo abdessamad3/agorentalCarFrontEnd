@@ -374,13 +374,13 @@
 /* Performance KPI strip (Revenue/Expenses/Profit/Occupancy/Compliance/Status) */
 .kpi-perf-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.9rem; margin-bottom: 1.5rem; }
 .kpi-perf-card {
-  display: flex; flex-direction: column; gap: 0.25rem;
+  display: flex; flex-direction: column; gap: 0.25rem; min-width: 0;
   padding: 1.1rem 1.2rem; border-radius: var(--radius-md);
   background: white; border: 1.5px solid var(--border); box-shadow: var(--shadow-sm);
 }
 .kpi-perf-lbl { font-size: 0.72rem; font-weight: 600; color: var(--text-soft); text-transform: uppercase; letter-spacing: 0.04em; }
 .kpi-perf-val { font-size: 1.3rem; font-weight: 800; color: var(--text-dark); line-height: 1.2; }
-.kpi-perf-trend { font-size: 0.72rem; font-weight: 700; }
+.kpi-perf-trend { font-size: 0.72rem; font-weight: 700; white-space: normal; overflow-wrap: break-word; }
 .kpi-perf-trend-up   { color: var(--green); }
 .kpi-perf-trend-down { color: #EB5757; }
 .kpi-perf-trend-flat { color: var(--text-soft); font-weight: 500; }
@@ -1643,7 +1643,7 @@
   .exp-kpi-card { padding: 0.6rem 0.65rem; gap: 0.45rem; }
   .exp-kpi-icon-wrap { width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0; }
   .exp-kpi-icon-wrap svg { width: 15px; height: 15px; }
-  .exp-kpi-val { font-size: 1rem; }
+  .exp-kpi-val { font-size: 1rem; white-space: normal; overflow-wrap: break-word; }
   .exp-kpi-curr { font-size: 0.58rem; }
   .exp-kpi-lbl { font-size: 0.6rem; margin-top: 0.1rem; }
 

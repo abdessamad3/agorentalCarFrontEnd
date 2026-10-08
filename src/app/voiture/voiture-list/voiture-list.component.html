@@ -3,7 +3,7 @@
   <!-- ══ Page Header ══════════════════════════════════════════════════════ -->
   <div class="page-header">
     <div class="page-header-left">
-      <h1 class="page-title">{{ t('fleetManagement') }}</h1>
+      <h1 class="page-title">{{ t('myCars') }}</h1>
       <p class="page-sub">{{ visibleTotal }} {{ t('totalFleet') }}</p>
     </div>
     <div class="page-header-right">
@@ -64,22 +64,7 @@
   <!-- ══ Filter & Search Bar ══════════════════════════════════════════════ -->
   <div class="filter-card">
 
-    <!-- Row 1 – Status tabs -->
-    <div class="filter-tabs-row">
-      <ng-container *ngFor="let tab of visibleStatusTabs">
-        <button *ngIf="tab.key === 'all' || statCount(tab.key) > 0"
-          class="tab-btn"
-          [class.active]="statusFilter === tab.key"
-          (click)="statusFilter = tab.key">
-          {{ t(tab.labelKey) }}
-          <span class="tab-count">{{ statCount(tab.key) }}</span>
-        </button>
-      </ng-container>
-    </div>
-
-    <div class="filter-sep"></div>
-
-    <!-- Row 2 – Search + dropdowns + view toggle -->
+    <!-- Search + dropdowns + view toggle -->
     <div class="filter-controls-row">
       <div class="search-wrap">
         <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>

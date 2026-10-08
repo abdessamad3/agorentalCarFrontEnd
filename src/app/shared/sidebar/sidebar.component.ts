@@ -17,7 +17,6 @@ export class SidebarComponent implements OnInit {
   @Input() isSidebarOpen = false;
   @Output() closeSidebar = new EventEmitter<void>();
 
-  currentLang = 'en';
   dir = 'ltr';
   logoUrl: string | null = null;
   companyName = 'AGOCAR';
@@ -120,10 +119,6 @@ export class SidebarComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.translationService.currentLang$.subscribe(lang => {
-      this.currentLang = lang;
-    });
-
     this.translationService.direction$.subscribe(dir => {
       this.dir = dir;
     });
@@ -173,10 +168,6 @@ export class SidebarComponent implements OnInit {
 
   getLabel(key: string): string {
     return this.translationService.translate(key);
-  }
-
-  changeLanguage(lang: string): void {
-    this.translationService.setLanguage(lang);
   }
 
   onNavClick(): void {

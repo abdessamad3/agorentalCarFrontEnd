@@ -8,7 +8,8 @@
 .header-info { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
 .contract-number { font-size: 1.25rem; font-weight: 700; color: var(--text-primary, #111827); }
 .vehicle-info, .client-info { font-size: .9rem; color: var(--text-secondary, #6b7280); }
-.payment-summary { margin-top: .25rem; }
+.payment-summary { margin-top: .25rem; display: flex; align-items: center; gap: .4rem; }
+.payment-summary-label { font-size: .75rem; color: var(--text-secondary, #6b7280); }
 
 /* Compliance badge */
 .compliance-badge { font-size: .7rem; font-weight: 600; padding: .2rem .55rem; border-radius: 9999px; text-transform: uppercase; letter-spacing: .05em; }
@@ -19,7 +20,9 @@
 .compliance-unknown  { background: #e5e7eb; color: #6b7280; }
 
 /* Tabs */
-.tab-bar { display: flex; gap: .25rem; border-bottom: 2px solid var(--border, #e5e7eb); margin-bottom: 1.5rem; overflow-x: auto; }
+.tab-bar { display: flex; gap: .25rem; border-bottom: 2px solid var(--border, #e5e7eb); margin-bottom: 1.5rem; overflow-x: auto; scrollbar-width: thin; }
+.tab-bar::-webkit-scrollbar { height: 4px; }
+.tab-bar::-webkit-scrollbar-thumb { background: var(--border, #e5e7eb); border-radius: 4px; }
 .tab-btn { background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -2px; padding: .6rem 1.25rem; font-size: .9rem; cursor: pointer; color: var(--text-secondary, #6b7280); white-space: nowrap; transition: color .15s, border-color .15s; }
 .tab-btn:hover { color: var(--primary, #3b82f6); }
 .tab-btn.active { color: var(--primary, #3b82f6); border-bottom-color: var(--primary, #3b82f6); font-weight: 600; }
@@ -147,7 +150,7 @@
 }
 
 /* Driver info grid (2-col inside form-section) */
-.driver-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+.driver-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1.5rem; }
 .driver-info-grid .info-row { padding: .35rem .1rem; }
 @media (max-width: 600px) { .driver-info-grid { grid-template-columns: 1fr; } }
 

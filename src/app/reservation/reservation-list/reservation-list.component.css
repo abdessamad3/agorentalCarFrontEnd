@@ -284,6 +284,16 @@
 .rc-date-start { font-weight: 600; color: #2d3748; }
 .rc-date-end   { color: #718096; }
 
+.rc-overdue-badge {
+  background: #fee2e2;
+  color: #b91c1c;
+  font-weight: 700;
+  font-size: 0.7rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  margin-inline-start: 0.3rem;
+}
+
 .rc-accessories { font-size: 0.78rem; color: #5a6785; }
 
 .rc-status-row {

@@ -28,7 +28,8 @@
                 + {{ t('addNewClient') }}
               </button>
             </div>
-            <div class="client-dropdown" *ngIf="showClientDropdown && filteredClients.length > 0">
+            <div class="client-dropdown" *ngIf="showClientDropdown && (filteredClients.length > 0 || searchingClients)">
+              <div class="client-option client-searching" *ngIf="searchingClients">{{ t('searching') }}…</div>
               <div class="client-option" *ngFor="let c of filteredClients | slice:0:8"
                 (click)="selectClient(c)">
                 <span class="client-avatar">{{ (c.nom || '?')[0].toUpperCase() }}</span>

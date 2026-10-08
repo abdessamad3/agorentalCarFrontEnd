@@ -35,7 +35,7 @@
     </div>
 
     <!-- Expenses breakdown (paid) -->
-    <div class="prof-metric prof-metric-exp">
+    <div class="prof-metric prof-metric-exp" [title]="t('totalExpensePaidHint')">
       <div class="pm-icon">📉</div>
       <div class="pm-body">
         <div class="pm-val">{{ profitRow.totalCost | number:'1.0-0' }} <span class="pm-curr">MAD</span></div>
@@ -44,13 +44,17 @@
           <span *ngIf="profitRow.insuranceCost > 0">🛡️ {{ profitRow.insuranceCost | number:'1.0-0' }}</span>
           <span *ngIf="profitRow.repairCost > 0">🔧 {{ profitRow.repairCost | number:'1.0-0' }}</span>
           <span *ngIf="profitRow.vignetteCost > 0">📄 {{ profitRow.vignetteCost | number:'1.0-0' }}</span>
+          <span *ngIf="profitRow.vidangeCost > 0">🛢️ {{ profitRow.vidangeCost | number:'1.0-0' }}</span>
+          <span *ngIf="profitRow.adblueCost > 0">💧 {{ profitRow.adblueCost | number:'1.0-0' }}</span>
+          <span *ngIf="profitRow.suiviCost > 0">🔬 {{ profitRow.suiviCost | number:'1.0-0' }}</span>
           <span *ngIf="profitRow.otherCost > 0">📦 {{ profitRow.otherCost | number:'1.0-0' }}</span>
+          <span *ngIf="profitRow.creditCost > 0">🏦 {{ profitRow.creditCost | number:'1.0-0' }}</span>
         </div>
       </div>
     </div>
 
     <!-- Expenses breakdown (unpaid) -->
-    <div class="prof-metric prof-metric-unpaid">
+    <div class="prof-metric prof-metric-unpaid" [title]="t('totalExpenseUnpaidHint')">
       <div class="pm-icon">🧾</div>
       <div class="pm-body">
         <div class="pm-val">{{ profitRow.unpaidCost | number:'1.0-0' }} <span class="pm-curr">MAD</span></div>
@@ -59,7 +63,7 @@
     </div>
 
     <!-- Net Profit -->
-    <div class="prof-metric" [class.prof-metric-net-pos]="profitRow.net >= 0" [class.prof-metric-net-neg]="profitRow.net < 0">
+    <div class="prof-metric" [class.prof-metric-net-pos]="profitRow.net >= 0" [class.prof-metric-net-neg]="profitRow.net < 0" [title]="t('netProfitHint')">
       <div class="pm-icon">{{ profitRow.net >= 0 ? '📈' : '📉' }}</div>
       <div class="pm-body">
         <div class="pm-val" [class.pm-pos]="profitRow.net >= 0" [class.pm-neg]="profitRow.net < 0">
@@ -133,6 +137,7 @@
     <div class="frc-sub">{{ t('monthly') }}</div>
   </div>
 </div>
+<div class="fin-tx-empty" *ngIf="isAdmin && !car.prixJour">{{ t('noRatesConfigured') }}</div>
 
 
 <!-- Transactions -->

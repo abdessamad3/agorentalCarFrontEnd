@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
+import { TranslationService } from '../../services/translation.service';
 
 @Component({
   selector: 'app-breadcrumb',
@@ -11,11 +12,11 @@ import { filter } from 'rxjs/operators';
     <nav class="g-breadcrumb" *ngIf="crumbs.length > 0">
       <a routerLink="/dashboard" class="bc-home">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        Dashboard
+        {{ ts.translate('dashboard') }}
       </a>
       <ng-container *ngFor="let crumb of crumbs; let last = last">
         <svg class="bc-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-        <span [class.bc-current]="last" class="bc-item">{{ crumb }}</span>
+        <span [class.bc-current]="last" class="bc-item">{{ ts.translate(crumb) }}</span>
       </ng-container>
     </nav>
   `,
@@ -49,7 +50,7 @@ import { filter } from 'rxjs/operators';
 export class BreadcrumbComponent implements OnInit {
   crumbs: string[] = [];
 
-  constructor(private router: Router, private activatedRoute: ActivatedRoute) {}
+  constructor(private router: Router, private activatedRoute: ActivatedRoute, public ts: TranslationService) {}
 
   ngOnInit() {
     this.router.events

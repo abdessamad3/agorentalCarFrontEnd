@@ -41,6 +41,16 @@ export class PaiementListComponent implements OnInit {
 
   ngOnInit() { this.ts.direction$.subscribe(d => this.dir = d); this.load(); }
 
+  private static readonly MODE_LABEL_KEYS: Record<string, string> = {
+    especes: 'paymentCash', carte: 'paymentCard', virement: 'paymentTransfer', cheque: 'cheque',
+  };
+
+  paymentModeLabel(mode: string | null | undefined): string {
+    if (!mode) return '—';
+    const key = PaiementListComponent.MODE_LABEL_KEYS[mode.toLowerCase()];
+    return key ? this.ts.translate(key) : mode;
+  }
+
   load() {
     this.loading = true; this.error = '';
     this.crud.getPage(this.endpoint, { page: this.page, limit: this.limit, search: this.search }).subscribe({

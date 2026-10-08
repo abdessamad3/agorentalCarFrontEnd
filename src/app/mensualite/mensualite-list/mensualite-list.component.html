@@ -83,7 +83,7 @@
           <td>{{ fmt(inst.balance) }}</td>
           <td>
             <span class="badge" [ngClass]="payStatusClass(inst.status)">{{ t('pay_' + inst.status) }}</span>
-            <div *ngIf="inst.paidDate" style="font-size:.72rem;color:#718096;margin-top:.2rem">{{ inst.paidDate | date:'shortDate' }}</div>
+            <div *ngIf="inst.paidDate" style="font-size:.72rem;color:#718096;margin-top:.2rem">{{ inst.paidDate | date:'dd/MM/yy' }}</div>
           </td>
           <td class="invoice-cell">
             <ng-container *ngIf="!inst.invoiceFile">

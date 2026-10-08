@@ -18,7 +18,7 @@ import { environment } from '../../../environments/environment';
 import { complianceSeverity } from '../../shared/utils/compliance.utils';
 import { PAGE_SIZE } from '../../shared/constants/pagination';
 
-const PLACEHOLDER = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjI1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjI1MCIgZmlsbD0iI2VkZjJmNyIvPjx0ZXh0IHg9IjIwMCIgeT0iMTI1IiBmaWxsPSIjYTBhZWMwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiBmb250LXNpemU9IjYwIj7wn5qlPC90ZXh0Pjwvc3ZnPg==`;
+const PLACEHOLDER = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjI1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjI1MCIgZmlsbD0iI2VkZjJmNyIvPjx0ZXh0IHg9IjIwMCIgeT0iMTI1IiBmaWxsPSIjYTBhZWMwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiBmb250LXNpemU9IjYwIj7wn5qXPC90ZXh0Pjwvc3ZnPg==`;
 
 @Component({
   selector: 'app-voiture-list',
@@ -63,11 +63,6 @@ export class VoitureListComponent implements OnInit, OnDestroy {
     return this.stats.total - this.stats.brouillon - this.stats.setup;
   }
 
-  get visibleStatusTabs() {
-    if (this.isAdmin) return this.STATUS_TABS;
-    return this.STATUS_TABS.filter(t => t.key !== 'brouillon' && t.key !== 'setup');
-  }
-
   modalMode: 'edit' | 'delete' | null = null;
   selectedVoiture: any = null;
   isSubmitting = false;
@@ -82,20 +77,6 @@ export class VoitureListComponent implements OnInit, OnDestroy {
   private toastTimer: any;
 
   editForm: FormGroup;
-
-  readonly STATUS_TABS = [
-    { key: 'all',            labelKey: 'all'            },
-    { key: 'brouillon',      labelKey: 'brouillon'      },
-    { key: 'setup',          labelKey: 'setup'          },
-    { key: 'disponible',     labelKey: 'disponible'     },
-    { key: 'reserve',        labelKey: 'reserve'        },
-    { key: 'louee',          labelKey: 'louee'          },
-    { key: 'maintenance',    labelKey: 'maintenance'    },
-    { key: 'hors_service',   labelKey: 'horsService'    },
-    { key: 'decommissioned', labelKey: 'decommissioned' },
-    { key: 'vendu',          labelKey: 'vendu'          },
-    { key: 'archive',        labelKey: 'archive'        },
-  ];
 
   readonly FUEL_OPTIONS = ['Essence','Diesel','Hybride','Electrique'];
   readonly TRANSMISSION_OPTIONS = ['Manuelle','Automatique'];
@@ -174,7 +155,9 @@ export class VoitureListComponent implements OnInit, OnDestroy {
     this.calcStats();
     if (data.some((v: any) => v.effectiveStatus && v.voitureStatus &&
         v.effectiveStatus.toLowerCase() !== v.voitureStatus.toLowerCase())) {
-      this.crud.create('voiture/sync-statuses', {}).pipe(catchError(() => of(null))).subscribe();
+      // rawPost, not create() -- this is a silent background status reconciliation, not a
+      // resource creation, and create() would wrongly fire a "Créé avec succès" toast.
+      this.crud.rawPost('voiture/sync-statuses', {}).pipe(catchError(() => of(null))).subscribe();
     }
     if (openEditId) {
       const car = this.voitures.find(v => v.id === openEditId);
@@ -308,11 +291,6 @@ export class VoitureListComponent implements OnInit, OnDestroy {
   // ── Status display ───────────────────────────────────────────────────────
 
   readonly statusClass = vehicleStatusClass;
-
-  statCount(key: string): number {
-    if (key === 'all') return this.stats.total;
-    return (this.stats as any)[key === 'hors_service' ? 'horsService' : key] ?? 0;
-  }
 
   // ── Next booking ─────────────────────────────────────────────────────────
 

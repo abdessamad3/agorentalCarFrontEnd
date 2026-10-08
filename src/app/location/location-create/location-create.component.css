@@ -168,6 +168,8 @@
 }
 
 .client-option:hover { background: #f7fafc; }
+.client-searching { color: #94a3b8; font-style: italic; cursor: default; }
+.client-searching:hover { background: transparent; }
 
 .client-avatar {
   width: 36px;

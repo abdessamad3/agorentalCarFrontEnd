@@ -8,7 +8,7 @@
         <span class="contract-number">{{ contractNumber }}</span>
         <span class="status-chip" [ngClass]="statusClass(status)">{{ status | appStatus:'reservation' }}</span>
         <span class="compliance-badge" [ngClass]="complianceClass(complianceOverall)">
-          {{ complianceOverall }}
+          {{ complianceLabel(complianceOverall) }}
         </span>
       </div>
     </div>
@@ -16,6 +16,7 @@
       <div class="vehicle-info">🚗 {{ vehicleLabel }}</div>
       <div class="client-info">👤 {{ clientLabel }}</div>
       <div class="payment-summary">
+        <span class="payment-summary-label" *ngIf="status !== 'annulee'">{{ t('paymentSummaryLabel') }}:</span>
         <span class="status-chip" [ngClass]="status === 'annulee' ? 'chip-done' : paymentStatusClass()">
           <ng-container *ngIf="status !== 'annulee'">{{ (dossier.montantPaye | number:'1.2-2') }} / {{ (dossier.montantTotal | number:'1.2-2') }} MAD</ng-container>
           <ng-container *ngIf="status === 'annulee'">—</ng-container>
@@ -175,13 +176,13 @@
       <!-- Compliance blocked banner -->
       <div class="compliance-alert" *ngIf="isComplianceBlocked && !isDeliveryDone">
         <strong>{{ t('deliveryBlocked') }}</strong> — {{ t('vehicleComplianceIs') }}
-        <strong>{{ complianceOverall }}</strong>. {{ t('updateVehicleDocsBeforeKeys') }}
+        <strong>{{ complianceLabel(complianceOverall) }}</strong>. {{ t('updateVehicleDocsBeforeKeys') }}
       </div>
 
       <!-- Delivery done banner -->
       <div class="delivery-done-banner" *ngIf="isDeliveryDone">
         ✓ {{ t('vehicleHandedOver') }} — {{ t('contract') }} <strong>{{ contractNumber }}</strong> {{ t('activeSince') }}
-        {{ dossier.vehicleDelivery?.deliveredAt | date:'dd/MM/yyyy HH:mm' }}
+        {{ (dossier.vehicleDelivery?.editAu ?? dossier.vehicleDelivery?.creeAu) | date:'dd/MM/yyyy HH:mm' }}
         <button type="button" class="undo-cloture-btn" *ngIf="canUndoDelivery" [disabled]="undoingDelivery" (click)="undoDelivery()">
           {{ undoingDelivery ? t('saving') : t('undoDelivery') }}
         </button>

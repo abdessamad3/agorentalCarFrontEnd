@@ -22,8 +22,8 @@
         <tr *ngFor="let item of paged" class="bureau-row">
           <td>{{ item.reservation?.client?.nom || item.client?.nom || item.clientId }}</td>
           <td>{{ item.reservation?.voiture?.marque || item.voiture?.marque || item.voitureId }}</td>
-          <td class="date-cell">{{ item.reservation?.dateDebut | date:'shortDate' }}</td>
-          <td class="date-cell">{{ item.reservation?.dateFin | date:'shortDate' }}</td>
+          <td class="date-cell">{{ item.reservation?.dateDebut | date:'dd/MM/yy' }}</td>
+          <td class="date-cell">{{ item.reservation?.dateFin | date:'dd/MM/yy' }}</td>
           <td>{{ item.reservation?.total }} MAD</td>
           <td>
             <span class="status-badge" [ngClass]="'status-' + reservationStatus(item)">

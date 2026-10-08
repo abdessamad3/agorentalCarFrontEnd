@@ -20,7 +20,7 @@
 
   <!-- KPI chips — inline on desktop, second row on tablet/mobile -->
   <div class="header-kpis">
-    <div class="profit-chip" [class.profit-positive]="netProfit >= 0" [class.profit-negative]="netProfit < 0">
+    <div class="profit-chip" [class.profit-positive]="netProfit >= 0" [class.profit-negative]="netProfit < 0" [title]="t('globalNetProfitHint')">
       <span class="profit-icon">{{ netProfit >= 0 ? '📈' : '📉' }}</span>
       <span class="profit-label">{{ t('netProfit') }}:</span>
       <span class="profit-value">{{ netProfit | number:'1.0-0' }} MAD</span>

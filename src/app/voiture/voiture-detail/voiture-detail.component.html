@@ -489,14 +489,36 @@
       </app-readiness-panel>
     </div>
 
+    <!-- ══════════════════════════════════════════════════ TAB NAVIGATION -->
+    <div class="vd-tabs-wrap">
+      <div class="vd-tabs-nav">
+        <ng-container *ngFor="let tab of TABS">
+          <button
+            *ngIf="!tab.adminOnly || isAdmin"
+            class="vd-tab-btn"
+            [class.active]="activeTab === tab.key"
+            (click)="setActiveTab(tab.key)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16">
+              <path [attr.d]="tab.icon"/>
+            </svg>
+            <span class="tab-label">{{ t(tab.labelKey) }}</span>
+            <span *ngIf="tab.key === 'repairs' && activeRepairCount > 0"
+                  class="tab-alert-badge">{{ activeRepairCount }}</span>
+            <span *ngIf="tab.key === 'reservations' && reservations.length > 0"
+                  class="tab-count-badge">{{ reservations.length }}</span>
+          </button>
+        </ng-container>
+      </div>
+    </div>
+
     <!-- ══════════════════════════════════════════════ VEHICLE TIMELINE -->
     <div class="vehicle-timeline" *ngIf="timelineEvents.length > 0">
       <div class="vtl-header">
         <div class="vtl-title-row">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          <span class="vtl-title">Vehicle Timeline</span>
+          <span class="vtl-title">{{ t('vehicleTimeline') }}</span>
         </div>
-        <span class="vtl-count">{{ timelineEvents.length }} events</span>
+        <span class="vtl-count">{{ timelineEvents.length }} {{ t('events') }}</span>
       </div>
       <div class="vtl-list">
         <div *ngFor="let evt of timelineEvents; let last = last"
@@ -522,19 +544,19 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
             <path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
           </svg>
-          <span class="sp-title">Sale Preparation</span>
+          <span class="sp-title">{{ t('salePreparation') }}</span>
         </div>
 
         <!-- Ready badge -->
         <div *ngIf="isSaleReady" class="sp-ready-badge">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>
-          Ready for Sale
+          {{ t('saleReadyForSale') }}
         </div>
 
         <!-- Not ready badge -->
         <div *ngIf="!isSaleReady && effectiveStatus !== 'vendu' && effectiveStatus !== 'archive'" class="sp-notready-badge">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          Not Ready
+          {{ t('saleNotReady') }}
         </div>
 
         <!-- Sold / archived badge -->
@@ -580,34 +602,12 @@
 
       <!-- Sold / archive info -->
       <div *ngIf="effectiveStatus === 'vendu'" class="sp-done-msg">
-        This vehicle has been sold. All records are read-only.
+        {{ t('saleSoldReadOnly') }}
       </div>
       <div *ngIf="effectiveStatus === 'archive'" class="sp-done-msg">
-        This vehicle is archived. Contact an administrator to reactivate or proceed with sale.
+        {{ t('saleArchivedContact') }}
       </div>
 
-    </div>
-
-    <!-- ══════════════════════════════════════════════════ TAB NAVIGATION -->
-    <div class="vd-tabs-wrap">
-      <div class="vd-tabs-nav">
-        <ng-container *ngFor="let tab of TABS">
-          <button
-            *ngIf="!tab.adminOnly || isAdmin"
-            class="vd-tab-btn"
-            [class.active]="activeTab === tab.key"
-            (click)="setActiveTab(tab.key)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16">
-              <path [attr.d]="tab.icon"/>
-            </svg>
-            <span class="tab-label">{{ t(tab.labelKey) }}</span>
-            <span *ngIf="tab.key === 'repairs' && activeRepairCount > 0"
-                  class="tab-alert-badge">{{ activeRepairCount }}</span>
-            <span *ngIf="tab.key === 'reservations' && reservations.length > 0"
-                  class="tab-count-badge">{{ reservations.length }}</span>
-          </button>
-        </ng-container>
-      </div>
     </div>
 
     <!-- ══════════════════════════════════════════════════════ TAB CONTENT -->

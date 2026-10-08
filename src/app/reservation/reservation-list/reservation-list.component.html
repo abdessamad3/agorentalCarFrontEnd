@@ -182,6 +182,7 @@
               <span class="rc-date-start">{{ r.dateDebut | date:'dd/MM/yy' }}</span>
               <span class="dates-sep">→</span>
               <span class="rc-date-end">{{ r.dateFin | date:'dd/MM/yy' }}</span>
+              <span class="rc-overdue-badge" *ngIf="daysLeft(r.dateFin) < 0">{{ -daysLeft(r.dateFin) }} {{ t('daysOverdue') }}</span>
             </div>
             <div class="rc-accessories" *ngIf="getAccessoireLabels(r) !== '—'">🎒 {{ getAccessoireLabels(r) }}</div>
             <div class="rc-status-row">
@@ -225,11 +226,11 @@
               <span class="rc-date-end">{{ r.dateFin | date:'dd/MM/yy' }}</span>
             </div>
             <div class="rc-accessories" *ngIf="getAccessoireLabels(r) !== '—'">🎒 {{ getAccessoireLabels(r) }}</div>
+            <!-- No Edit/Dossier here -- a cancelled reservation has no active rental
+                 workflow to continue; Restore is the primary recovery action. -->
             <div class="rc-actions">
               <app-btn variant="icon-view"    (click)="openView(r)"        [title]="t('view')"></app-btn>
-              <app-btn variant="icon-edit"    (click)="openEdit(r)"        [title]="t('edit')"></app-btn>
               <app-btn variant="icon-delete"  (click)="openDelete(r.id)"   [title]="t('delete')"></app-btn>
-              <app-btn variant="primary" size="sm" (click)="goToDossier(r)">{{ t('locationDossier') }}</app-btn>
               <app-btn variant="secondary" size="sm"
                        (click)="restoreReservation(r)"
                        [disabled]="restoringId === r.id">

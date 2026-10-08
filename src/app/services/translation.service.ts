@@ -37,6 +37,7 @@ export class TranslationService {
 
       // Top header
       newClient: 'Client', newBooking: 'Booking', netProfit: 'Net Profit', clientsOwed: 'Clients Owe',
+      globalNetProfitHint: 'Company-wide, all-time: cash collected minus every committed expense (including unpaid ones) and credit installments paid.',
       calendar: 'Calendar',
 
       // Dashboard
@@ -266,6 +267,8 @@ export class TranslationService {
       seasonalRates: 'Seasonal Rates', noSeasonalRates: 'No seasonal rates', seasonalRatesHint: 'Set up date ranges where a vehicle\'s daily rate automatically goes up or down, e.g. a summer surcharge or a winter promo.',
       seasonalRate: 'seasonal rate', seasonalRateLabelExample: 'e.g. Summer high season', adjustment: 'Adjustment', adjustmentType: 'Adjustment type', adjustmentValue: 'Adjustment value', adjustmentValueHint: 'Negative = discount, positive = surcharge',
       percentage: 'Percentage', fixedAmount: 'Fixed amount', allBureaus: 'All offices', label: 'Label',
+      pageNotFound: 'Page not found', pageNotFoundHint: 'The page you\'re looking for doesn\'t exist or has moved.', backToDashboard: 'Back to dashboard',
+      daysOverdue: 'day(s) overdue', searching: 'Searching',
 
       // Bureau expense page
       beSubtitle: 'Overhead & office costs (rent, utilities, salaries…)',
@@ -336,6 +339,18 @@ export class TranslationService {
       bureau: 'Bureau', none: 'None',
       loginBtn: 'Login', registerBtn: 'Register',
       loginTitle: 'Sign in to AGOCAR', registerTitle: 'Create Account',
+      brandTagline: 'Car Rental Management Platform',
+      loginSubtitle: 'Sign in to your account to continue',
+      featAnalyticsTitle: 'Fleet Analytics', featAnalyticsDesc: 'Real-time profitability & KPI tracking',
+      featReservationTitle: 'Reservation Management', featReservationDesc: 'Contracts, calendar & client tracking',
+      featFinanceTitle: 'Finance & Compliance', featFinanceDesc: 'Payments, credits, insurance & vignettes',
+      formInvalid: 'Form is invalid',
+      loginSuccessRedirecting: 'Login successful! Redirecting...',
+      welcomeBackToast: 'Welcome back! Login successful',
+      accountDisabledMsg: 'Your account is disabled. Please contact the administrator.',
+      accountDisabledToast: 'Account disabled. Contact administrator.',
+      loginFailedGeneric: 'Login failed. Please try again.',
+      loginFailedToast: 'Login failed. Please check your credentials.',
       noAccount: "Don't have an account?", hasAccount: 'Already have an account?',
       loginLink: 'Sign in', registerLink: 'Register',
 
@@ -463,6 +478,9 @@ export class TranslationService {
       allTime: 'All time', allMonths: 'All months', lastMonth: 'Last Month', thisYear: 'This Year',
       profitable: 'Profitable', loss: 'Loss',
       totalExpensePaid: 'Total Expense Paid', totalExpenseUnpaid: 'Total Expense Unpaid',
+      totalExpensePaidHint: 'Paid operational expenses plus vehicle credit installments due (not only cash already out the door).',
+      totalExpenseUnpaidHint: 'Outstanding balance across all time, not limited to the year selected above.',
+      netProfitHint: 'Based on this year’s full committed expenses (paid and unpaid) plus credit installments due — not simply revenue minus the two expense totals shown here.',
       margin: 'Margin', vsPurchasePrice: 'vs. purchase price', vsTotalCosts: 'vs. total costs',
       rentals: 'rentals',
       computingProfitability: 'Computing profitability…',
@@ -577,6 +595,7 @@ export class TranslationService {
       advanceBookingLimitLabel: 'Advance Booking Limit (days)',
       pickupReturn: 'Pickup & Return', defaultPickupTimeLabel: 'Default Pickup Time',
       defaultReturnTimeLabel: 'Default Return Time', gracePeriodLabel: 'Grace Period for Late Return (hours)',
+      deposit: 'Deposit',
       depositFees: 'Deposit & Fees', defaultDepositLabel: 'Default Deposit Amount',
       lateReturnFeeLabel: 'Late Return Fee per Hour',
       requireDepositLabel: 'Require Deposit', requireDepositDesc: 'Clients must pay a security deposit before vehicle handover',
@@ -607,7 +626,7 @@ export class TranslationService {
 
       // Location create page
       clientCreated: 'Client created', dossierCreated: 'Dossier created',
-      newRental: 'New Rental', datesAndLocations: 'Dates & Locations',
+      newRental: 'New Booking', datesAndLocations: 'Dates & Locations',
       createDossier: 'Create Dossier', creating: 'Creating...',
       checkDates: 'Check dates', noVehiclesAvailable: 'No vehicles available',
       searchByNameOrPhone: 'Search by name or phone...',
@@ -775,6 +794,15 @@ export class TranslationService {
       showResolved: 'Show resolved', markOverdueDone: '✓ Mark overdue done',
       allUrgencies: 'All urgencies', allCategoriesFilter: 'All categories',
       colUrgency: 'Urgency', colDetail: 'Detail', colAction: 'Action',
+      new: 'New', contractDetail: 'Contract Detail',
+      complianceValid: 'Valid', complianceWarning: 'Warning', complianceCritical: 'Critical',
+      complianceExpired: 'Expired', complianceUpcoming: 'Upcoming', complianceNotRequired: 'Not required',
+      complianceUnknown: 'Unknown', paymentSummaryLabel: 'Payment',
+      vehicleTimeline: 'Vehicle Timeline', events: 'events', salePreparation: 'Sale Preparation',
+      saleReadyForSale: 'Ready for Sale', saleNotReady: 'Not Ready',
+      saleSoldReadOnly: 'This vehicle has been sold. All records are read-only.',
+      saleArchivedContact: 'This vehicle is archived. Contact an administrator to reactivate or proceed with sale.',
+      noRatesConfigured: 'No rental rates configured for this vehicle yet.',
       markDone: '✓ Done', resolvedLbl: 'Resolved',
       estTotalCost: 'Est. Total Cost',
 
@@ -985,6 +1013,7 @@ export class TranslationService {
 
       // Top header
       newClient: 'Client', newBooking: 'Réservation', netProfit: 'Bénéfice net', clientsOwed: 'Dû par clients',
+      globalNetProfitHint: 'À l\'échelle de l\'entreprise, toute période confondue : encaissements moins toute dépense engagée (y compris impayées) et échéances de crédit payées.',
       calendar: 'Calendrier',
 
       available: 'Disponible', activeRentals: 'Locations actives',
@@ -1209,6 +1238,8 @@ export class TranslationService {
       seasonalRates: 'Tarifs saisonniers', noSeasonalRates: 'Aucun tarif saisonnier', seasonalRatesHint: 'Définissez des périodes pendant lesquelles le tarif journalier d\'un véhicule augmente ou baisse automatiquement, par exemple une majoration estivale ou une promo d\'hiver.',
       seasonalRate: 'tarif saisonnier', seasonalRateLabelExample: 'ex. Haute saison été', adjustment: 'Ajustement', adjustmentType: 'Type d\'ajustement', adjustmentValue: 'Valeur de l\'ajustement', adjustmentValueHint: 'Négatif = remise, positif = majoration',
       percentage: 'Pourcentage', fixedAmount: 'Montant fixe', allBureaus: 'Tous les bureaux', label: 'Libellé',
+      pageNotFound: 'Page introuvable', pageNotFoundHint: 'La page que vous recherchez n\'existe pas ou a été déplacée.', backToDashboard: 'Retour au tableau de bord',
+      daysOverdue: 'jour(s) de retard', searching: 'Recherche en cours',
 
       // Bureau expense page
       beSubtitle: 'Frais généraux (loyer, charges, salaires…)',
@@ -1276,6 +1307,18 @@ export class TranslationService {
       bureau: 'Bureau', none: 'Aucun',
       loginBtn: 'Connexion', registerBtn: "S'inscrire",
       loginTitle: 'Connexion à AGOCAR', registerTitle: 'Créer un compte',
+      brandTagline: 'Plateforme de gestion de location de voitures',
+      loginSubtitle: 'Connectez-vous à votre compte pour continuer',
+      featAnalyticsTitle: 'Analyse de flotte', featAnalyticsDesc: 'Suivi de la rentabilité & des KPI en temps réel',
+      featReservationTitle: 'Gestion des réservations', featReservationDesc: 'Contrats, calendrier & suivi des clients',
+      featFinanceTitle: 'Finance & Conformité', featFinanceDesc: 'Paiements, crédits, assurances & vignettes',
+      formInvalid: 'Le formulaire est invalide',
+      loginSuccessRedirecting: 'Connexion réussie ! Redirection...',
+      welcomeBackToast: 'Bon retour ! Connexion réussie',
+      accountDisabledMsg: 'Votre compte est désactivé. Veuillez contacter l\'administrateur.',
+      accountDisabledToast: 'Compte désactivé. Contactez l\'administrateur.',
+      loginFailedGeneric: 'Connexion échouée. Veuillez réessayer.',
+      loginFailedToast: 'Connexion échouée. Vérifiez vos identifiants.',
       noAccount: 'Pas encore de compte ?', hasAccount: 'Déjà un compte ?',
       loginLink: 'Se connecter', registerLink: "S'inscrire",
 
@@ -1394,6 +1437,9 @@ export class TranslationService {
       allTime: 'Toute la période', allMonths: 'Tous les mois', lastMonth: 'Mois dernier', thisYear: 'Cette année',
       profitable: 'Rentable', loss: 'Perte',
       totalExpensePaid: 'Total dépenses payées', totalExpenseUnpaid: 'Total dépenses impayées',
+      totalExpensePaidHint: 'Dépenses opérationnelles payées plus les échéances de crédit véhicule dues (pas uniquement l\'argent déjà sorti).',
+      totalExpenseUnpaidHint: 'Solde impayé sur toute la période, pas seulement l\'année sélectionnée ci-dessus.',
+      netProfitHint: 'Basé sur les dépenses engagées cette année (payées et impayées) plus les échéances de crédit dues — pas simplement les revenus moins les deux totaux de dépenses affichés ici.',
       margin: 'Marge', vsPurchasePrice: 'vs. prix d\'achat', vsTotalCosts: 'vs. coûts totaux',
       rentals: 'locations',
       computingProfitability: 'Calcul de la rentabilité…',
@@ -1508,6 +1554,7 @@ export class TranslationService {
       advanceBookingLimitLabel: 'Limite de réservation anticipée (jours)',
       pickupReturn: 'Prise en charge & Retour', defaultPickupTimeLabel: 'Heure de prise en charge par défaut',
       defaultReturnTimeLabel: 'Heure de retour par défaut', gracePeriodLabel: 'Délai de grâce pour retour tardif (heures)',
+      deposit: 'Caution',
       depositFees: 'Caution & Frais', defaultDepositLabel: 'Montant de caution par défaut',
       lateReturnFeeLabel: 'Frais de retard par heure',
       requireDepositLabel: 'Caution obligatoire', requireDepositDesc: 'Les clients doivent payer une caution avant la remise du véhicule',
@@ -1538,7 +1585,7 @@ export class TranslationService {
 
       // Location create page
       clientCreated: 'Client créé', dossierCreated: 'Dossier créé',
-      newRental: 'Nouvelle location', datesAndLocations: 'Dates & lieux',
+      newRental: 'Nouvelle réservation', datesAndLocations: 'Dates & lieux',
       createDossier: 'Créer le dossier', creating: 'Création...',
       checkDates: 'Vérifiez les dates', noVehiclesAvailable: 'Aucun véhicule disponible',
       searchByNameOrPhone: 'Rechercher par nom ou téléphone...',
@@ -1701,6 +1748,15 @@ export class TranslationService {
       showResolved: 'Afficher résolus', markOverdueDone: '✓ Marquer retards comme faits',
       allUrgencies: 'Toutes les urgences', allCategoriesFilter: 'Toutes les catégories',
       colUrgency: 'Urgence', colDetail: 'Détail', colAction: 'Action',
+      new: 'Nouveau', contractDetail: 'Détail du contrat',
+      complianceValid: 'Valide', complianceWarning: 'Avertissement', complianceCritical: 'Critique',
+      complianceExpired: 'Expiré', complianceUpcoming: 'À venir', complianceNotRequired: 'Non requis',
+      complianceUnknown: 'Inconnu', paymentSummaryLabel: 'Paiement',
+      vehicleTimeline: 'Historique du véhicule', events: 'événements', salePreparation: 'Préparation à la vente',
+      saleReadyForSale: 'Prêt à la vente', saleNotReady: 'Pas prêt',
+      saleSoldReadOnly: 'Ce véhicule a été vendu. Toutes les données sont en lecture seule.',
+      saleArchivedContact: 'Ce véhicule est archivé. Contactez un administrateur pour le réactiver ou procéder à la vente.',
+      noRatesConfigured: 'Aucun tarif de location configuré pour ce véhicule.',
       markDone: '✓ Fait', resolvedLbl: 'Résolu',
       estTotalCost: 'Coût total est.',
 
@@ -1903,6 +1959,7 @@ export class TranslationService {
 
       // Top header
       newClient: 'عميل جديد', newBooking: 'حجز جديد', netProfit: 'صافي الربح', clientsOwed: 'مستحق من العملاء',
+      globalNetProfitHint: 'على مستوى الشركة، منذ البداية: المبالغ المحصلة ناقص كل مصروف ملتزم به (بما في ذلك غير المدفوع) وأقساط الائتمان المدفوعة.',
       calendar: 'التقويم',
 
       available: 'متاح', activeRentals: 'الإيجارات النشطة',
@@ -2127,6 +2184,8 @@ export class TranslationService {
       seasonalRates: 'الأسعار الموسمية', noSeasonalRates: 'لا توجد أسعار موسمية', seasonalRatesHint: 'حدد فترات زمنية يتغير خلالها السعر اليومي للسيارة تلقائيًا، كزيادة في الصيف أو تخفيض في الشتاء.',
       seasonalRate: 'سعر موسمي', seasonalRateLabelExample: 'مثال: موسم الصيف المرتفع', adjustment: 'التعديل', adjustmentType: 'نوع التعديل', adjustmentValue: 'قيمة التعديل', adjustmentValueHint: 'سالب = تخفيض، موجب = زيادة',
       percentage: 'نسبة مئوية', fixedAmount: 'مبلغ ثابت', allBureaus: 'جميع المكاتب', label: 'التسمية',
+      pageNotFound: 'الصفحة غير موجودة', pageNotFoundHint: 'الصفحة التي تبحث عنها غير موجودة أو تم نقلها.', backToDashboard: 'العودة إلى لوحة التحكم',
+      daysOverdue: 'يوم(أيام) تأخير', searching: 'جارٍ البحث',
 
       // Bureau expense page
       beSubtitle: 'التكاليف العامة (الإيجار، الخدمات، الرواتب…)',
@@ -2194,6 +2253,18 @@ export class TranslationService {
       bureau: 'المكتب', none: 'لا شيء',
       loginBtn: 'تسجيل الدخول', registerBtn: 'إنشاء حساب',
       loginTitle: 'تسجيل الدخول إلى AGOCAR', registerTitle: 'إنشاء حساب جديد',
+      brandTagline: 'منصة إدارة تأجير السيارات',
+      loginSubtitle: 'سجّل الدخول إلى حسابك للمتابعة',
+      featAnalyticsTitle: 'تحليلات الأسطول', featAnalyticsDesc: 'تتبع الربحية ومؤشرات الأداء في الوقت الفعلي',
+      featReservationTitle: 'إدارة الحجوزات', featReservationDesc: 'العقود، التقويم، وتتبع العملاء',
+      featFinanceTitle: 'المالية والامتثال', featFinanceDesc: 'المدفوعات، القروض، التأمين، والضريبة',
+      formInvalid: 'النموذج غير صالح',
+      loginSuccessRedirecting: 'تم تسجيل الدخول بنجاح! إعادة التوجيه...',
+      welcomeBackToast: 'مرحباً بعودتك! تم تسجيل الدخول بنجاح',
+      accountDisabledMsg: 'حسابك معطل. يرجى الاتصال بالمسؤول.',
+      accountDisabledToast: 'الحساب معطل. اتصل بالمسؤول.',
+      loginFailedGeneric: 'فشل تسجيل الدخول. يرجى المحاولة مرة أخرى.',
+      loginFailedToast: 'فشل تسجيل الدخول. تحقق من بيانات اعتمادك.',
       noAccount: 'ليس لديك حساب؟', hasAccount: 'لديك حساب بالفعل؟',
       loginLink: 'تسجيل الدخول', registerLink: 'إنشاء حساب',
 
@@ -2312,6 +2383,9 @@ export class TranslationService {
       allTime: 'كل الأوقات', allMonths: 'كل الأشهر', lastMonth: 'الشهر الماضي', thisYear: 'هذه السنة',
       profitable: 'مربح', loss: 'خسارة',
       totalExpensePaid: 'إجمالي المصاريف المدفوعة', totalExpenseUnpaid: 'إجمالي المصاريف غير المدفوعة',
+      totalExpensePaidHint: 'المصاريف التشغيلية المدفوعة بالإضافة إلى أقساط ائتمان السيارة المستحقة (ليس فقط ما تم دفعه فعليًا).',
+      totalExpenseUnpaidHint: 'الرصيد المستحق منذ البداية، وليس فقط للسنة المحددة أعلاه.',
+      netProfitHint: 'يعتمد على المصاريف الملتزم بها هذا العام (مدفوعة وغير مدفوعة) بالإضافة إلى أقساط الائتمان المستحقة — وليس ببساطة الإيرادات ناقص إجمالي المصروفين المعروضين هنا.',
       margin: 'الهامش', vsPurchasePrice: 'مقارنة بسعر الشراء', vsTotalCosts: 'مقارنة بالتكاليف الإجمالية',
       rentals: 'إيجارات',
       computingProfitability: 'جاري حساب الربحية…',
@@ -2426,6 +2500,7 @@ export class TranslationService {
       advanceBookingLimitLabel: 'حد الحجز المسبق (أيام)',
       pickupReturn: 'الاستلام والإرجاع', defaultPickupTimeLabel: 'وقت الاستلام الافتراضي',
       defaultReturnTimeLabel: 'وقت الإرجاع الافتراضي', gracePeriodLabel: 'فترة السماح للعودة المتأخرة (ساعات)',
+      deposit: 'الضمان',
       depositFees: 'الضمان والرسوم', defaultDepositLabel: 'مبلغ الضمان الافتراضي',
       lateReturnFeeLabel: 'رسوم التأخير لكل ساعة',
       requireDepositLabel: 'ضمان إلزامي', requireDepositDesc: 'يجب على العملاء دفع ضمان أمان قبل استلام المركبة',
@@ -2456,7 +2531,7 @@ export class TranslationService {
 
       // Location create page
       clientCreated: 'تم إنشاء العميل', dossierCreated: 'تم إنشاء الملف',
-      newRental: 'إيجار جديد', datesAndLocations: 'التواريخ والأماكن',
+      newRental: 'حجز جديد', datesAndLocations: 'التواريخ والأماكن',
       createDossier: 'إنشاء الملف', creating: 'جارٍ الإنشاء...',
       checkDates: 'تحقق من التواريخ', noVehiclesAvailable: 'لا توجد مركبات متاحة',
       searchByNameOrPhone: 'البحث بالاسم أو الهاتف...',
@@ -2619,6 +2694,15 @@ export class TranslationService {
       showResolved: 'عرض المحلولة', markOverdueDone: '✓ تحديد المتأخرة كمنجزة',
       allUrgencies: 'كل مستويات الإلحاح', allCategoriesFilter: 'كل الفئات',
       colUrgency: 'الإلحاح', colDetail: 'التفاصيل', colAction: 'الإجراء',
+      new: 'جديد', contractDetail: 'تفاصيل العقد',
+      complianceValid: 'صالح', complianceWarning: 'تحذير', complianceCritical: 'حرج',
+      complianceExpired: 'منتهي', complianceUpcoming: 'قريباً', complianceNotRequired: 'غير مطلوب',
+      complianceUnknown: 'غير معروف', paymentSummaryLabel: 'الدفع',
+      vehicleTimeline: 'سجل المركبة', events: 'أحداث', salePreparation: 'التحضير للبيع',
+      saleReadyForSale: 'جاهز للبيع', saleNotReady: 'غير جاهز',
+      saleSoldReadOnly: 'تم بيع هذه المركبة. جميع السجلات للقراءة فقط.',
+      saleArchivedContact: 'هذه المركبة مؤرشفة. اتصل بالمسؤول لإعادة تنشيطها أو متابعة البيع.',
+      noRatesConfigured: 'لا توجد أسعار تأجير محددة لهذه المركبة بعد.',
       markDone: '✓ منجز', resolvedLbl: 'محلول',
       estTotalCost: 'إجمالي التكلفة التقديرية',
 

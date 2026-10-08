@@ -7,28 +7,28 @@
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 4v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
       </div>
       <h1 class="brand-name">AGOCAR</h1>
-      <p class="brand-tagline">Car Rental Management Platform</p>
+      <p class="brand-tagline">{{ 'brandTagline' | translate }}</p>
 
       <ul class="brand-features">
         <li>
           <span class="feat-icon">📊</span>
           <div>
-            <strong>Fleet Analytics</strong>
-            <span>Real-time profitability &amp; KPI tracking</span>
+            <strong>{{ 'featAnalyticsTitle' | translate }}</strong>
+            <span>{{ 'featAnalyticsDesc' | translate }}</span>
           </div>
         </li>
         <li>
           <span class="feat-icon">📅</span>
           <div>
-            <strong>Reservation Management</strong>
-            <span>Contracts, calendar &amp; client tracking</span>
+            <strong>{{ 'featReservationTitle' | translate }}</strong>
+            <span>{{ 'featReservationDesc' | translate }}</span>
           </div>
         </li>
         <li>
           <span class="feat-icon">💳</span>
           <div>
-            <strong>Finance &amp; Compliance</strong>
-            <span>Payments, credits, insurance &amp; vignettes</span>
+            <strong>{{ 'featFinanceTitle' | translate }}</strong>
+            <span>{{ 'featFinanceDesc' | translate }}</span>
           </div>
         </li>
       </ul>
@@ -41,8 +41,8 @@
 
       <div class="form-header">
         <div class="form-logo-mobile">🚗</div>
-        <h2>Welcome back</h2>
-        <p>Sign in to your account to continue</p>
+        <h2>{{ 'loginTitle' | translate }}</h2>
+        <p>{{ 'loginSubtitle' | translate }}</p>
       </div>
 
       <div *ngIf="errorMessage" class="alert alert-error">

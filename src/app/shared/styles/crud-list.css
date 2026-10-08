@@ -61,8 +61,9 @@
 }
 .filter-pill:hover { border-color: #94a3b8; color: #334155; background: #f8fafc; }
 .filter-pill.active {
-  background: #ede9fe; border-color: var(--primary, #7c3aed);
-  color: var(--primary, #7c3aed); font-weight: 600;
+  background: var(--primary, #7c3aed); border-color: var(--primary, #7c3aed);
+  color: #fff; font-weight: 600;
+  box-shadow: 0 1px 4px rgba(124, 58, 237, 0.35);
 }
 
 .loading-state { background: white; padding: 3rem 2rem; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
@@ -178,7 +179,9 @@
 .badge-archived, .badge-inactive { background: #e2e8f0; color: #4a5568; }
 .badge-louee, .badge-maintenance { background: #bee3f8; color: #2a4365; }
 
-.actions-cell { display: flex; gap: 0.5rem; white-space: nowrap; align-items: center; }
+.actions-cell { gap: 0.5rem; white-space: nowrap; vertical-align: middle; }
+.actions-cell > * { display: inline-flex; vertical-align: middle; margin-inline-end: 0.5rem; }
+.actions-cell > *:last-child { margin-inline-end: 0; }
 
 /* Auto-generated recurring expense rows */
 tr.row-pending-auto { background: #fffbeb !important; }
@@ -326,8 +329,9 @@ tr.row-dismissed td { border-color: #fca5a5; }
   .search-filter-bar { flex-direction: column; gap: 8px; }
   .search-input { width: 100%; }
   .filter-select { width: 100%; max-width: 100%; min-width: unset; }
-  .filter-pills-bar { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
-  .filter-pills-bar::-webkit-scrollbar { display: none; }
+  .filter-pills-bar { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+  .filter-pills-bar::-webkit-scrollbar { height: 4px; }
+  .filter-pills-bar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
   .form-row { grid-template-columns: 1fr; }
   /* switch table → cards */
   .table-container { display: none; }

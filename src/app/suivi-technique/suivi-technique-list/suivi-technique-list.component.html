@@ -20,8 +20,8 @@
       <tbody>
         <tr *ngFor="let item of paged" class="bureau-row">
           <td>{{ item.voiture || item.voitureId || '—' }}</td>
-          <td class="date-cell">{{ item.dateReglages | date:'shortDate' }}</td>
-          <td class="date-cell">{{ item.dateFin | date:'shortDate' }}</td>
+          <td class="date-cell">{{ item.dateReglages | date:'dd/MM/yy' }}</td>
+          <td class="date-cell">{{ item.dateFin | date:'dd/MM/yy' }}</td>
           <td class="actions-cell">
             <app-btn variant="icon-view"   (click)="openView(item)"      [title]="'view'|translate"></app-btn>
             <app-btn variant="icon-edit"   (click)="openEdit(item)"      [title]="'edit'|translate"></app-btn>

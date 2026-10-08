@@ -33,8 +33,8 @@
         <tr *ngFor="let item of paged" class="bureau-row">
           <td>{{ contratForPayment(item)?.numero || ('#' + (item.reservationId ?? item.reservation?.id ?? '—')) }}</td>
           <td>{{ item.montant }} MAD</td>
-          <td class="date-cell">{{ item.datePaiement | date:'shortDate' }}</td>
-          <td>{{ item.modePaiement }}</td>
+          <td class="date-cell">{{ item.datePaiement | date:'dd/MM/yy' }}</td>
+          <td>{{ paymentModeLabel(item.modePaiement) }}</td>
           <td><span class="status-badge" [ngClass]="'status-' + item.statut">{{ item.statut | appStatus:'payment' }}</span></td>
           <td class="actions-cell">
             <app-btn variant="icon-view"   (click)="openView(item)"      [title]="'view'   | translate"></app-btn>
@@ -56,8 +56,8 @@
         <span class="name-cell" style="margin-left:auto;">{{ item.montant }} MAD</span>
       </div>
       <div class="ec-desc">
-        <span>{{ item.datePaiement | date:'shortDate' }}</span>
-        <span> · {{ item.modePaiement }}</span>
+        <span>{{ item.datePaiement | date:'dd/MM/yy' }}</span>
+        <span> · {{ paymentModeLabel(item.modePaiement) }}</span>
       </div>
       <div class="ec-footer">
         <span class="status-badge" [ngClass]="'status-' + item.statut">{{ item.statut | appStatus:'payment' }}</span>

@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
+import { TranslationService } from '../../services/translation.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 
 @Component({
@@ -23,7 +24,8 @@ export class LoginComponent {
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
-    private toast: ToastService
+    private toast: ToastService,
+    private ts: TranslationService
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -33,7 +35,7 @@ export class LoginComponent {
 
   onSubmit() {
     if (this.loginForm.invalid) {
-      this.errorMessage = 'Form is invalid';
+      this.errorMessage = this.ts.translate('formInvalid');
       return;
     }
 
@@ -46,8 +48,8 @@ export class LoginComponent {
     this.authService.login(email, password).subscribe({
       next: () => {
         this.isLoading = false;
-        this.successMessage = 'Login successful! Redirecting...';
-        this.toast.show('Welcome back! Login successful', 'success');
+        this.successMessage = this.ts.translate('loginSuccessRedirecting');
+        this.toast.show(this.ts.translate('welcomeBackToast'), 'success');
         setTimeout(() => {
           this.router.navigate(['/dashboard']);
         }, 1000);
@@ -55,11 +57,11 @@ export class LoginComponent {
       error: (err) => {
         this.isLoading = false;
         if (err.status === 403) {
-          this.errorMessage = 'Your account is disabled. Please contact the administrator.';
-          this.toast.show('Account disabled. Contact administrator.', 'error');
+          this.errorMessage = this.ts.translate('accountDisabledMsg');
+          this.toast.show(this.ts.translate('accountDisabledToast'), 'error');
         } else {
-          this.errorMessage = err.error?.error || err.error?.message || 'Login failed. Please try again.';
-          this.toast.show('Login failed. Please check your credentials.', 'error');
+          this.errorMessage = err.error?.error || err.error?.message || this.ts.translate('loginFailedGeneric');
+          this.toast.show(this.ts.translate('loginFailedToast'), 'error');
         }
       }
     });

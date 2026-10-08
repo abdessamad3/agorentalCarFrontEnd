@@ -22,7 +22,7 @@
           <td>{{ item.voiture || item.voitureId || '—' }}</td>
           <td>{{ item.annee || '—' }}</td>
           <td>{{ item.montant || '—' }} MAD</td>
-          <td class="date-cell">{{ item.dateLimite | date:'shortDate' }}</td>
+          <td class="date-cell">{{ item.dateLimite | date:'dd/MM/yy' }}</td>
           <td class="actions-cell">
             <app-btn variant="icon-view"   (click)="openView(item)"      [title]="'view'|translate"></app-btn>
             <app-btn variant="icon-edit"   (click)="openEdit(item)"      [title]="'edit'|translate"></app-btn>

@@ -30,6 +30,13 @@ interface ClientDoc {
   styleUrls: ['./reservation-create.component.css']
 })
 export class ReservationCreateComponent implements OnInit {
+  /** Mirrors the backend's VehicleLifecycleState::blocksRental() -- a car in any of these
+   *  states cannot start a new rental. Previously only 'brouillon'/'setup' were excluded
+   *  here, so maintenance/hors_service/decommissioned/archive/vendu cars were selectable. */
+  private static readonly BLOCKING_STATUSES = new Set([
+    'brouillon', 'setup', 'maintenance', 'hors_service', 'decommissioned', 'vendu', 'archive',
+  ]);
+
   form: FormGroup;
   dir = 'ltr';
   isSubmitting = false;
@@ -215,7 +222,7 @@ export class ReservationCreateComponent implements OnInit {
       const allCars: any[] = Array.isArray(voitures) ? voitures : (voitures as any)?.data ?? [];
       this.voitures = allCars.filter(v => {
         const s = (v.effectiveStatus || v.voitureStatus || '').toLowerCase();
-        return s !== 'brouillon' && s !== 'setup';
+        return !ReservationCreateComponent.BLOCKING_STATUSES.has(s);
       });
       this.accessoires  = Array.isArray(accessoires)  ? accessoires  : (accessoires  as any)?.data ?? [];
       this.reservations = Array.isArray(reservations) ? reservations : (reservations as any)?.data ?? [];
@@ -227,12 +234,25 @@ export class ReservationCreateComponent implements OnInit {
     });
   }
 
+  searchingClients = false;
+  private clientSearchTimer: any = null;
+
+  /** Was filtering the first 100 clients loaded at page init -- a client created earlier
+   *  than that simply could never be found, no matter what was typed, and with no feedback
+   *  that anything was wrong. Now does a real, debounced server-side search. */
   onClientSearch() {
-    const q = this.clientSearch.toLowerCase();
-    this.filteredClients = q
-      ? this.clients.filter(c => `${c.nom} ${c.prenom}`.toLowerCase().includes(q) || (c.telephone || '').includes(q))
-      : this.clients;
     this.showClientDropdown = true;
+    clearTimeout(this.clientSearchTimer);
+    const q = this.clientSearch.trim();
+    if (!q) { this.filteredClients = this.clients; this.searchingClients = false; return; }
+
+    this.clientSearchTimer = setTimeout(() => {
+      this.searchingClients = true;
+      this.crud.getPage('client', { search: q, limit: 20 }).pipe(catchError(() => of({ data: [] } as any))).subscribe((r: any) => {
+        this.filteredClients = r?.data ?? [];
+        this.searchingClients = false;
+      });
+    }, 300);
   }
 
   selectClient(client: any) {
@@ -483,7 +503,7 @@ export class ReservationCreateComponent implements OnInit {
 
   selectVoiture(voiture: any) {
     const s = (voiture.effectiveStatus || voiture.voitureStatus || '').toLowerCase();
-    if (s === 'brouillon' || s === 'setup') return;
+    if (ReservationCreateComponent.BLOCKING_STATUSES.has(s)) return;
     if (this.isVoitureConflicted(voiture.id)) return;
     if (this.isVignetteExpired(voiture)) return;
     this.selectedVoiture = voiture;

@@ -188,7 +188,9 @@ export class VoitureDetailComponent implements OnInit {
         this.car = data;
         if (data.effectiveStatus && data.voitureStatus &&
             data.effectiveStatus.toLowerCase() !== data.voitureStatus.toLowerCase()) {
-          this.crud.create('voiture/sync-statuses', {}).pipe(catchError(() => of(null))).subscribe();
+          // rawPost, not create() -- this is a silent background status reconciliation, not a
+          // resource creation, and create() would wrongly fire a "Créé avec succès" toast.
+          this.crud.rawPost('voiture/sync-statuses', {}).pipe(catchError(() => of(null))).subscribe();
         }
         this.buildGallery();
         this.loading = false;

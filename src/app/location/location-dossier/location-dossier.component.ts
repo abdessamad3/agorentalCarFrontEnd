@@ -569,6 +569,15 @@ export class LocationDossierComponent implements OnInit {
 
   readonly statusClass = reservationStatusClass;
 
+  complianceLabel(s: string): string {
+    const key: Record<string, string> = {
+      VALID: 'complianceValid', WARNING: 'complianceWarning', CRITICAL: 'complianceCritical',
+      EXPIRED: 'complianceExpired', UPCOMING: 'complianceUpcoming', NOT_REQUIRED: 'complianceNotRequired',
+      UNKNOWN: 'complianceUnknown',
+    };
+    return this.t(key[s] ?? 'complianceUnknown');
+  }
+
   complianceClass(s: string): string {
     const sev = complianceSeverity(s);
     if (sev === 'ok')      return 'compliance-valid';

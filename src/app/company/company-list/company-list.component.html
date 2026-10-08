@@ -52,7 +52,7 @@
             </span>
             <span *ngIf="!c.staff?.length" style="color:#aaa">—</span>
           </td>
-          <td class="date-cell">{{ c.creeAu | date:'shortDate' }}</td>
+          <td class="date-cell">{{ c.creeAu | date:'dd/MM/yy' }}</td>
           <td class="actions-cell">
             <span *ngIf="!isAdmin" style="color:#aaa">—</span>
             <ng-container *ngIf="isAdmin">

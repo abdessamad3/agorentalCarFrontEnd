@@ -17,13 +17,6 @@
     </select>
   </div>
 
-  <!-- Language Switcher -->
-  <div class="lang-switcher">
-    <button [class.active]="currentLang === 'en'" (click)="changeLanguage('en')">EN</button>
-    <button [class.active]="currentLang === 'fr'" (click)="changeLanguage('fr')">FR</button>
-    <button [class.active]="currentLang === 'ar'" (click)="changeLanguage('ar')">AR</button>
-  </div>
-
   <!-- Navigation -->
   <nav class="sidebar-nav">
     <ng-container *ngFor="let group of menuGroups">

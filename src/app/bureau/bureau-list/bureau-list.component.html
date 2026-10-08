@@ -66,7 +66,7 @@
           <td>
             <span class="status-badge" [ngClass]="'status-' + bureau.statut">{{ bureau.statut | translate }}</span>
           </td>
-          <td class="date-cell">{{ bureau.creeAu | date:'shortDate' }}</td>
+          <td class="date-cell">{{ bureau.creeAu | date:'dd/MM/yy' }}</td>
           <td class="actions-cell">
             <app-btn variant="icon-view" (click)="openView(bureau)" [title]="'view' | translate"></app-btn>
             <app-btn *ngIf="isAdmin" variant="icon-edit" (click)="openEdit(bureau)" [title]="'edit' | translate"></app-btn>

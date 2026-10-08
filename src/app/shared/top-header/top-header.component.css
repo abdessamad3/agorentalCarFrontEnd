@@ -467,6 +467,11 @@
 /* ══ TABLET & MOBILE ════════════════════════════════════════════════════════ */
 @media (max-width: 1200px) {
   .page-title-area { display: none; }
+}
+
+/* Tablet band only — below 768px the KPI strip becomes its own full-width
+   row with room to spare, so the labels come back there. */
+@media (max-width: 1200px) and (min-width: 769px) {
   .profit-label, .pending-label { display: none; }
 }
 
@@ -515,6 +520,4 @@
   .top-header { padding-left: 0.75rem; padding-right: 0.75rem; }
   .notif-panel { width: calc(100vw - 1.5rem); right: 0; }
   .brand-logo { display: none; }
-  /* Very small: drop text labels, keep icon + value */
-  .profit-label, .pending-label { display: none; }
 }

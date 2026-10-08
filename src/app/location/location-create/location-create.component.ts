@@ -27,6 +27,14 @@ interface ClientDoc {
   styleUrls: ['./location-create.component.css']
 })
 export class LocationCreateComponent implements OnInit {
+  /** Mirrors the backend's VehicleLifecycleState::blocksRental() -- a car in any of these
+   *  states cannot start a new rental. Previously only 'brouillon'/'setup'/'vendu'/'vendue'
+   *  were excluded here, so maintenance/hors_service/decommissioned/archive cars were
+   *  still selectable. */
+  private static readonly BLOCKING_STATUSES = new Set([
+    'brouillon', 'setup', 'maintenance', 'hors_service', 'decommissioned', 'vendu', 'vendue', 'archive',
+  ]);
+
   clients: any[]      = [];
   voitures: any[]     = [];
   accessoires: any[]  = [];
@@ -220,7 +228,7 @@ export class LocationCreateComponent implements OnInit {
       const allCars: any[] = Array.isArray(voitures) ? voitures : (voitures as any)?.data ?? [];
       this.voitures = allCars.filter((v: any) => {
         const s = (v.effectiveStatus || v.voitureStatus || '').toLowerCase();
-        return s !== 'brouillon' && s !== 'setup' && s !== 'vendu' && s !== 'vendue';
+        return !LocationCreateComponent.BLOCKING_STATUSES.has(s);
       });
       this.accessoires  = Array.isArray(accessoires)  ? accessoires  : (accessoires  as any)?.data ?? [];
       this.reservations = Array.isArray(reservations) ? reservations : (reservations as any)?.data ?? [];
@@ -238,12 +246,25 @@ export class LocationCreateComponent implements OnInit {
     });
   }
 
+  searchingClients = false;
+  private clientSearchTimer: any = null;
+
+  /** Was filtering the first 100 clients loaded at page init -- a client created earlier
+   *  than that simply could never be found, no matter what was typed, and with no feedback
+   *  that anything was wrong. Now does a real, debounced server-side search. */
   onClientSearch() {
-    const q = this.clientSearch.toLowerCase();
-    this.filteredClients = q
-      ? this.clients.filter(c => (c.nom || '').toLowerCase().includes(q) || (c.telephone || '').includes(q))
-      : this.clients;
     this.showClientDropdown = true;
+    clearTimeout(this.clientSearchTimer);
+    const q = this.clientSearch.trim();
+    if (!q) { this.filteredClients = this.clients; this.searchingClients = false; return; }
+
+    this.clientSearchTimer = setTimeout(() => {
+      this.searchingClients = true;
+      this.crud.getPage('client', { search: q, limit: 20 }).pipe(catchError(() => of({ data: [] } as any))).subscribe((r: any) => {
+        this.filteredClients = r?.data ?? [];
+        this.searchingClients = false;
+      });
+    }, 300);
   }
 
   selectClient(c: any) {

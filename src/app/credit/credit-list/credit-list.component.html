@@ -34,7 +34,7 @@
           <td>{{ item.mensualite }} MAD</td>
           <td>{{ item.dureeMois }}</td>
           <td>{{ item.dernierMensualite ?? 0 }} MAD</td>
-          <td class="date-cell">{{ item.dateDebut | date:'shortDate' }}</td>
+          <td class="date-cell">{{ item.dateDebut | date:'dd/MM/yy' }}</td>
           <td>{{ item.statut || '-' }}</td>
           <td class="actions-cell">
             <app-btn variant="icon-view" (click)="openView(item)" [title]="'view'|translate"></app-btn>
