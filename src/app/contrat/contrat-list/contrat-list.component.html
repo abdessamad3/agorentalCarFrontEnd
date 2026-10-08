@@ -32,12 +32,12 @@
           </td>
           <td class="actions-cell">
             <button *ngIf="reservationStatus(item) === 'confirmed' || reservationStatus(item) === 'confirmee'"
-              (click)="openDelivery(item)" class="btn-action btn-deliver"
+              (click)="goToDelivery(item)" class="btn-action btn-deliver"
               [title]="'deliverLbl' | translate">
               {{ 'deliverLbl' | translate }}
             </button>
             <button *ngIf="reservationStatus(item) === 'en_cours'"
-              (click)="openReturn(item)" class="btn-action btn-return"
+              (click)="goToReturn(item)" class="btn-action btn-return"
               [title]="'returnLbl' | translate">
               {{ 'returnLbl' | translate }}
             </button>
@@ -64,23 +64,6 @@
     </app-paginator>
   </div>
 </div>
-
-<!-- Delivery form modal -->
-<app-vehicle-delivery-form
-  *ngIf="deliveryItem"
-  [reservation]="deliveryItem"
-  (saved)="onDeliverySaved()"
-  (closed)="onDeliveryClosed()">
-</app-vehicle-delivery-form>
-
-<!-- Return inspection form modal -->
-<app-vehicle-return-form
-  *ngIf="returnItem"
-  [reservation]="returnItem"
-  [delivery]="deliveryData"
-  (saved)="onReturnSaved()"
-  (closed)="onReturnClosed()">
-</app-vehicle-return-form>
 
 <div *ngIf="modalMode" class="modal-overlay" (click)="closeModal()">
   <div class="modal" (click)="$event.stopPropagation()">

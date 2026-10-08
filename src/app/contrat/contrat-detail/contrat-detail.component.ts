@@ -7,8 +7,6 @@ import { ToastService } from '../../services/toast.service';
 import { ActivityLogService } from '../../services/activity-log.service';
 import { FuelGaugeComponent } from '../../shared/fuel-gauge/fuel-gauge.component';
 import { ContratTimelineComponent } from '../contrat-timeline/contrat-timeline.component';
-import { VehicleDeliveryFormComponent } from '../vehicle-delivery-form/vehicle-delivery-form.component';
-import { VehicleReturnFormComponent } from '../vehicle-return-form/vehicle-return-form.component';
 import { PrintContratComponent } from '../print-contrat/print-contrat.component';
 import { StatusPipe } from '../../shared/pipes/status.pipe';
 
@@ -18,7 +16,7 @@ import { StatusPipe } from '../../shared/pipes/status.pipe';
   imports: [
     CommonModule, RouterModule,
     FuelGaugeComponent,
-    ContratTimelineComponent, VehicleDeliveryFormComponent, VehicleReturnFormComponent,
+    ContratTimelineComponent,
     PrintContratComponent, StatusPipe,
   ],
   templateUrl: './contrat-detail.component.html',
@@ -33,9 +31,6 @@ export class ContratDetailComponent implements OnInit {
   autoDownloadPdf = false;
 
   activeTab: 'contrat' | 'delivery' | 'return' | 'finance' | 'documents' = 'contrat';
-
-  showDeliveryModal = false;
-  showReturnModal   = false;
 
   readonly tabs = [
     { key: 'contrat',   label: 'Contrat' },
@@ -114,13 +109,10 @@ export class ContratDetailComponent implements OnInit {
     return Math.ceil(ms / 86_400_000);
   }
 
-  openDeliveryModal() { this.showDeliveryModal = true; }
-  openReturnModal()   { this.showReturnModal   = true; }
-
-  onDeliverySaved()  { this.showDeliveryModal = false; this.load(); }
-  onDeliveryClosed() { this.showDeliveryModal = false; }
-  onReturnSaved()    { this.showReturnModal   = false; this.load(); }
-  onReturnClosed()   { this.showReturnModal   = false; }
+  // Delivery/return go through the reservation dossier's own Départ/Retour tabs —
+  // the one real implementation — instead of this page's own separate form.
+  goToDelivery() { this.router.navigate(['/location', this.reservation.id], { fragment: 'depart' }); }
+  goToReturn()   { this.router.navigate(['/location', this.reservation.id], { fragment: 'retour' }); }
 
   onTimelineDeliveryClick() {
     this.activeTab = 'delivery';

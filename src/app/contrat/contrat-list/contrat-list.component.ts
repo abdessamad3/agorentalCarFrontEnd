@@ -10,8 +10,6 @@ import { ExportService } from '../../services/export.service';
 import { InvoiceService } from '../../services/invoice.service';
 import { ToastService } from '../../services/toast.service';
 import { PrintContratComponent } from '../print-contrat/print-contrat.component';
-import { VehicleDeliveryFormComponent } from '../vehicle-delivery-form/vehicle-delivery-form.component';
-import { VehicleReturnFormComponent } from '../vehicle-return-form/vehicle-return-form.component';
 import { BtnComponent } from '../../shared/btn/btn.component';
 import { PaginatorComponent } from '../../shared/paginator/paginator.component';
 import { Subject, of } from 'rxjs';
@@ -22,7 +20,7 @@ import { StatusPipe } from '../../shared/pipes/status.pipe';
 @Component({
   selector: 'app-contrat-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, TranslatePipe, PrintContratComponent, VehicleDeliveryFormComponent, VehicleReturnFormComponent, BtnComponent, PaginatorComponent, StatusPipe],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, TranslatePipe, PrintContratComponent, BtnComponent, PaginatorComponent, StatusPipe],
   templateUrl: './contrat-list.component.html',
   styleUrls: ['../../shared/styles/crud-list.css', './contrat-list.component.css']
 })
@@ -40,10 +38,6 @@ export class ContratListComponent implements OnInit, OnDestroy {
 
   drawerOpen = false;
   drawerItem: any = null;
-
-  deliveryItem: any  = null;
-  returnItem: any    = null;
-  deliveryData: any  = null;
 
   private searchSubject = new Subject<void>();
   private destroy$ = new Subject<void>();
@@ -163,25 +157,18 @@ export class ContratListComponent implements OnInit, OnDestroy {
 
   exportPDF(item: any)   { this.exportSvc.rentalContract(item); }
 
-  openDelivery(item: any) {
-    this.deliveryItem = item.reservation;
-    this.returnItem   = null;
+  // Delivery/return are handled by exactly one real workflow — the reservation
+  // dossier's own Départ/Retour tabs — instead of duplicating it here via a
+  // second form bound to a second backend endpoint (the two used to drift out
+  // of sync: the signature pads and the mileage-overwrite safeguard each only
+  // existed on one side until today).
+  goToDelivery(item: any) {
+    this.router.navigate(['/location', item.reservation.id], { fragment: 'depart' });
   }
 
-  openReturn(item: any) {
-    this.returnItem   = item.reservation;
-    this.deliveryItem = null;
-    this.deliveryData = null;
-    this.crud.getById('vehicle-delivery/contrat', item.id).subscribe({
-      next: (d: any) => { this.deliveryData = d; },
-      error: () => {}
-    });
+  goToReturn(item: any) {
+    this.router.navigate(['/location', item.reservation.id], { fragment: 'retour' });
   }
-
-  onDeliverySaved()  { this.deliveryItem = null; this.load(); }
-  onDeliveryClosed() { this.deliveryItem = null; }
-  onReturnSaved()    { this.returnItem = null; this.deliveryData = null; this.load(); }
-  onReturnClosed()   { this.returnItem = null; this.deliveryData = null; }
 
   reservationStatus(item: any): string {
     return item.reservation?.reservationStatus ?? '';

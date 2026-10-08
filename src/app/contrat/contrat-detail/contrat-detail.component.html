@@ -39,10 +39,10 @@
       </div>
 
       <div class="header-actions">
-        <button *ngIf="status === 'confirmed'" (click)="openDeliveryModal()" class="btn-action btn-deliver">
+        <button *ngIf="status === 'confirmed'" (click)="goToDelivery()" class="btn-action btn-deliver">
           Livrer le véhicule
         </button>
-        <button *ngIf="status === 'en_cours'" (click)="openReturnModal()" class="btn-action btn-return">
+        <button *ngIf="status === 'en_cours'" (click)="goToReturn()" class="btn-action btn-return">
           Enregistrer le retour
         </button>
         <button (click)="downloadPdf()" class="btn-action btn-pdf">
@@ -167,7 +167,7 @@
           <div class="empty-tab">
             <div class="empty-icon-lg">⬆</div>
             <p>Aucune livraison enregistrée.</p>
-            <button *ngIf="status === 'confirmed'" (click)="openDeliveryModal()" class="btn-action btn-deliver">
+            <button *ngIf="status === 'confirmed'" (click)="goToDelivery()" class="btn-action btn-deliver">
               Livrer le véhicule
             </button>
           </div>
@@ -228,7 +228,7 @@
           </div>
 
           <div class="return-action-row" *ngIf="status === 'en_cours'">
-            <button (click)="openReturnModal()" class="btn-action btn-return">Modifier le retour</button>
+            <button (click)="goToReturn()" class="btn-action btn-return">Modifier le retour</button>
           </div>
         </ng-container>
 
@@ -236,7 +236,7 @@
           <div class="empty-tab">
             <div class="empty-icon-lg">⬇</div>
             <p>Aucun retour enregistré.</p>
-            <button *ngIf="status === 'en_cours'" (click)="openReturnModal()" class="btn-action btn-return">
+            <button *ngIf="status === 'en_cours'" (click)="goToReturn()" class="btn-action btn-return">
               Enregistrer le retour
             </button>
           </div>
@@ -337,23 +337,6 @@
   <p>{{ error }}</p>
   <button (click)="load()">Réessayer</button>
 </div>
-
-<!-- ── Delivery modal ─────────────────────────────────────────────────── -->
-<app-vehicle-delivery-form
-  *ngIf="showDeliveryModal && reservation"
-  [reservation]="reservation"
-  (saved)="onDeliverySaved()"
-  (closed)="onDeliveryClosed()">
-</app-vehicle-delivery-form>
-
-<!-- ── Return modal ───────────────────────────────────────────────────── -->
-<app-vehicle-return-form
-  *ngIf="showReturnModal && reservation"
-  [reservation]="reservation"
-  [delivery]="delivery"
-  (saved)="onReturnSaved()"
-  (closed)="onReturnClosed()">
-</app-vehicle-return-form>
 
 <!-- Print overlay — silent auto-download when triggered from downloadPdf() -->
 <app-print-contrat
