@@ -41,6 +41,9 @@ export class ContratFormComponent implements OnInit {
   // Vehicle (readonly from reservation)
   vehiculeLabel = '';
   reservationData: any = null;
+  /** The vehicle's real current odometer reading, used to pre-fill kilometrageDepart
+   *  so the field is never left blank/0 and accidentally overwrites it on save. */
+  vehiculeKilometrageActuel: number | null = null;
 
   // Mileage & fuel
   kilometrageDepart: number | null = null;
@@ -162,7 +165,7 @@ export class ContratFormComponent implements OnInit {
           next: (d: any) => {
             if (!d) { this.loading = false; return; }
             this.deliveryId              = d.id;
-            this.kilometrageDepart       = d.mileageOut ?? null;
+            this.kilometrageDepart       = d.mileageOut ?? this.vehiculeKilometrageActuel ?? null;
             this.niveauCarburantDepart   = d.fuelLevelOut ?? 'vide';
             this.signatureClient         = d.signatureClientDepart ?? null;
             this.signatureDeuxiemeChauffeur = d.signatureDeuxiemeChauffeur ?? null;
@@ -207,6 +210,8 @@ export class ContratFormComponent implements OnInit {
     const modele = v.modele ?? '';
     const immat  = v.immatriculation ? ` (${v.immatriculation})` : '';
     this.vehiculeLabel = `${marque} ${modele}${immat}`.trim();
+    this.vehiculeKilometrageActuel = v.kilometrageActuel ?? null;
+    if (this.kilometrageDepart === null) this.kilometrageDepart = this.vehiculeKilometrageActuel;
   }
 
   private fillClient(c: any) {
@@ -240,6 +245,16 @@ export class ContratFormComponent implements OnInit {
   save() {
     if (!this.reservationId) {
       this.toast.show('Réservation manquante', 'error');
+      return;
+    }
+    // An odometer reading never decreases — block an accidental 0/blank or lower-than-current
+    // value here instead of silently losing the edit server-side (which guards the same way).
+    if (this.kilometrageDepart !== null && this.vehiculeKilometrageActuel !== null
+        && this.kilometrageDepart < this.vehiculeKilometrageActuel) {
+      this.toast.show(
+        `Le kilométrage départ (${this.kilometrageDepart}) est inférieur au kilométrage actuel du véhicule (${this.vehiculeKilometrageActuel}). Vérifiez la valeur saisie.`,
+        'error'
+      );
       return;
     }
     this.saving = true;
