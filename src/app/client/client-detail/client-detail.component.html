@@ -182,9 +182,11 @@
                 <td class="actions-cell">
                   <button *ngIf="r.reservationStatus !== 'annulee' && r.reservationStatus !== 'cancelled'"
                           class="btn-act" (click)="downloadContract(r)" [title]="t('downloadContractTitle')">🧾</button>
+                  <button *ngIf="r.reservationStatus !== 'annulee' && r.reservationStatus !== 'cancelled'"
+                          class="btn-act" (click)="downloadInvoice(r)" [title]="t('downloadInvoiceTitle')">📄</button>
                   <button class="btn-act btn-act-pay"
                           [class.btn-act-pay-active]="payPanelResId === r.id"
-                          (click)="togglePaymentPanel(r)" title="Historique paiement">💳</button>
+                          (click)="togglePaymentPanel(r)" [title]="t('paymentHistory')">💳</button>
                 </td>
               </tr>
 

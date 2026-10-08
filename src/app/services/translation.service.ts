@@ -816,6 +816,7 @@ export class TranslationService {
       saveDateLbl: 'Save date', passportDocLbl: 'Passport', drivingLicenceDocLbl: 'Driving Licence',
       otherDocLbl: 'Other',
       downloadContractTitle: 'Download contract', noContractYetMsg: 'No contract has been generated for this reservation yet.',
+      downloadInvoiceTitle: 'Download invoice',
       markDone: '✓ Done', resolvedLbl: 'Resolved',
       estTotalCost: 'Est. Total Cost',
 
@@ -1783,6 +1784,7 @@ export class TranslationService {
       saveDateLbl: 'Enregistrer la date', passportDocLbl: 'Passeport', drivingLicenceDocLbl: 'Permis de conduire',
       otherDocLbl: 'Autre',
       downloadContractTitle: 'Télécharger le contrat', noContractYetMsg: 'Aucun contrat n\'a encore été généré pour cette réservation.',
+      downloadInvoiceTitle: 'Télécharger la facture',
       markDone: '✓ Fait', resolvedLbl: 'Résolu',
       estTotalCost: 'Coût total est.',
 
@@ -2742,6 +2744,7 @@ export class TranslationService {
       saveDateLbl: 'حفظ التاريخ', passportDocLbl: 'جواز السفر', drivingLicenceDocLbl: 'رخصة القيادة',
       otherDocLbl: 'أخرى',
       downloadContractTitle: 'تحميل العقد', noContractYetMsg: 'لم يتم إنشاء عقد لهذا الحجز بعد.',
+      downloadInvoiceTitle: 'تحميل الفاتورة',
       markDone: '✓ منجز', resolvedLbl: 'محلول',
       estTotalCost: 'إجمالي التكلفة التقديرية',
 

@@ -5,6 +5,7 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { CrudService } from '../../services/crud.service';
+import { InvoiceService } from '../../services/invoice.service';
 import { TranslationService } from '../../services/translation.service';
 import { ActivityLogService } from '../../services/activity-log.service';
 import { ToastService } from '../../services/toast.service';
@@ -54,6 +55,7 @@ export class ClientDetailComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private crud: CrudService,
+    private invoiceSvc: InvoiceService,
     private ts: TranslationService,
     private activityLog: ActivityLogService,
     private bus: EventBusService,
@@ -127,6 +129,10 @@ export class ClientDetailComponent implements OnInit {
       in_progress: 'status-active',
     };
     return m[s] || '';
+  }
+
+  downloadInvoice(r: any) {
+    this.invoiceSvc.generateFromData(r);
   }
 
   downloadContract(r: any) {
