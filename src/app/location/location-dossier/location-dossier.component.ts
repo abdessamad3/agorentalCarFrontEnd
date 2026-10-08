@@ -14,11 +14,13 @@ import { PrintContratComponent } from '../../contrat/print-contrat/print-contrat
 import { ClientDocumentsComponent } from '../../client/client-documents/client-documents.component';
 import { VehicleMapComponent, VEHICLE_ZONES } from '../../shared/vehicle-map/vehicle-map.component';
 import { LocationOption, filterMoroccoLocations, locationIcon } from '../../shared/data/morocco-locations';
+import { SignaturePadComponent } from '../../shared/signature-pad/signature-pad.component';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-location-dossier',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, PrintContratComponent, ClientDocumentsComponent, VehicleMapComponent, StatusPipe],
+  imports: [CommonModule, FormsModule, RouterModule, PrintContratComponent, ClientDocumentsComponent, VehicleMapComponent, StatusPipe, SignaturePadComponent],
   templateUrl: './location-dossier.component.html',
   styleUrls: ['./location-dossier.component.css']
 })
@@ -40,6 +42,13 @@ export class LocationDossierComponent implements OnInit {
   newRefund = { montant: 0, datePaiement: '', modePaiement: 'especes', note: '' };
   savingRefund = false;
   showRefundForm = false;
+
+  // ── Signatures ───────────────────────────────────────────────────────────
+  // The agent's own saved signature (Profile page) — pre-fills their pad on both
+  // tabs since it acts as a recurring authorized mark, not a per-transaction
+  // consent gesture. The client's signature is never pre-filled from anywhere;
+  // it must be drawn fresh at each delivery/return.
+  myProfileSignature: string | null = null;
 
   // ── Départ form ──────────────────────────────────────────────────────────
   departForm: any = {};
@@ -224,6 +233,7 @@ export class LocationDossierComponent implements OnInit {
     private ts: TranslationService,
     private contratSvc: ContratService,
     private bus: EventBusService,
+    private auth: AuthService,
   ) {}
 
   t(key: string) { return this.ts.translate(key); }
@@ -236,6 +246,14 @@ export class LocationDossierComponent implements OnInit {
     const frag = this.route.snapshot.fragment as typeof this.activeTab | null;
     if (frag && this.VALID_TABS.includes(frag)) this.activeTab = frag;
     this.load();
+    this.auth.getMySignature().subscribe(sig => {
+      this.myProfileSignature = sig;
+      if (!sig) return;
+      // syncForms() may already have run with no profile signature available yet —
+      // backfill the agent pad now if it's still empty and nothing was saved before.
+      if (!this.departForm.signatureSocieteDepart) this.departForm.signatureSocieteDepart = sig;
+      if (!this.retourForm?.signatureSocieteRetour) this.retourForm.signatureSocieteRetour = sig;
+    });
   }
 
   load() {
@@ -294,6 +312,8 @@ export class LocationDossierComponent implements OnInit {
         nbJoursFactures:    contrat?.nbJoursFactures ?? null,
         lieuLivraison:      res?.lieuLivraison ?? '',
         lieuRetour:         res?.lieuRetour ?? '',
+        signatureClientDepart:  vd.signatureClientDepart ?? null,
+        signatureSocieteDepart: vd.signatureSocieteDepart ?? this.myProfileSignature ?? null,
       };
     } else {
       this.departForm = {
@@ -308,6 +328,8 @@ export class LocationDossierComponent implements OnInit {
         nbJoursFactures: null,
         lieuLivraison: res?.lieuLivraison ?? '',
         lieuRetour:    res?.lieuRetour ?? '',
+        signatureClientDepart:  null,
+        signatureSocieteDepart: this.myProfileSignature ?? null,
       };
     }
 
@@ -327,6 +349,8 @@ export class LocationDossierComponent implements OnInit {
         remiseMontant:   vri.remiseMontant ?? 0,
         remiseMotif:     vri.remiseMotif ?? '',
         notes:           vri.notes ?? '',
+        signatureClientRetour:  vri.signatureClientRetour ?? null,
+        signatureSocieteRetour: vri.signatureSocieteRetour ?? this.myProfileSignature ?? null,
       };
       this.retourConfirmed = true;
     } else {
@@ -346,6 +370,8 @@ export class LocationDossierComponent implements OnInit {
         remiseMontant:   0,
         remiseMotif:     '',
         notes:           '',
+        signatureClientRetour:  null,
+        signatureSocieteRetour: this.myProfileSignature ?? null,
       };
       this.retourConfirmed = false;
     }
@@ -625,6 +651,26 @@ export class LocationDossierComponent implements OnInit {
     return 'chip-pay-unpaid';
   }
 
+  // ── Signatures ───────────────────────────────────────────────────────────
+
+  onSignatureClientDepart(sig: string | null) { this.departForm.signatureClientDepart = sig; }
+  onSignatureAgentDepart(sig: string | null)  { this.departForm.signatureSocieteDepart = sig; }
+  onSignatureClientRetour(sig: string | null) { this.retourForm.signatureClientRetour = sig; }
+  onSignatureAgentRetour(sig: string | null)  { this.retourForm.signatureSocieteRetour = sig; }
+
+  /** If the agent had no saved profile signature yet and just drew one here, save it to
+   *  their profile so it auto-fills on every future delivery/return. Never touches an
+   *  existing profile signature — redrawing here only affects this one record. */
+  private maybeSaveAgentSignatureToProfile(sig: string | null | undefined) {
+    if (!sig || this.myProfileSignature) return;
+    const userId = this.auth.getStoredUser()?.id;
+    if (!userId) return;
+    this.crud.rawPut(`utilisateur/${userId}/signature`, { signatureBlob: sig }).subscribe({
+      next: () => { this.myProfileSignature = sig; },
+      error: () => {},
+    });
+  }
+
   // ── Départ (Remettre les clés) ───────────────────────────────────────────
 
   remettreLesCles() {
@@ -638,6 +684,7 @@ export class LocationDossierComponent implements OnInit {
       next: () => {
         this.toast.show(this.t('vehicleHandedOverContractActive'), 'success');
         this.savingDepart = false;
+        this.maybeSaveAgentSignatureToProfile(this.departForm.signatureSocieteDepart);
         this.load();
       },
       error: (err: any) => {
@@ -746,6 +793,7 @@ export class LocationDossierComponent implements OnInit {
       next: () => {
         this.toast.show(this.t('contractClosed'), 'success');
         this.savingRetour = false;
+        this.maybeSaveAgentSignatureToProfile(this.retourForm.signatureSocieteRetour);
         this.bus.paymentsChanged$.next();
         this.load();
       },

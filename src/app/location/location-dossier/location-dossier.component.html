@@ -434,6 +434,20 @@
                     [placeholder]="t('deliveryNotesPlaceholder')"></textarea>
         </div>
 
+        <!-- Section 9: Signatures (hidden once delivered — canvas pads aren't native form
+             controls, so fieldset[disabled] above wouldn't actually stop drawing on them) -->
+        <div class="form-section" *ngIf="!isDeliveryDone">
+          <h3>{{ t('signaturesSection') }}</h3>
+          <div class="signatures-row">
+            <div class="sig-block">
+              <app-signature-pad [label]="t('signatureClient')" (signatureChange)="onSignatureClientDepart($event)"></app-signature-pad>
+            </div>
+            <div class="sig-block">
+              <app-signature-pad [label]="t('signatureAgent')" [existingSignature]="departForm.signatureSocieteDepart" (signatureChange)="onSignatureAgentDepart($event)"></app-signature-pad>
+            </div>
+          </div>
+        </div>
+
       </fieldset>
 
       <!-- Section 2: 1er Conducteur -->
@@ -951,6 +965,19 @@
                 <option value="virement">{{ t('paymentTransfer') }}</option>
                 <option value="cheque">{{ t('cheque') }}</option>
               </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Signatures (hidden once closed, same reason as the départ tab) -->
+        <div class="form-section" *ngIf="!isRetourDone">
+          <h3>{{ t('signaturesSection') }}</h3>
+          <div class="signatures-row">
+            <div class="sig-block">
+              <app-signature-pad [label]="t('signatureClient')" (signatureChange)="onSignatureClientRetour($event)"></app-signature-pad>
+            </div>
+            <div class="sig-block">
+              <app-signature-pad [label]="t('signatureAgent')" [existingSignature]="retourForm.signatureSocieteRetour" (signatureChange)="onSignatureAgentRetour($event)"></app-signature-pad>
             </div>
           </div>
         </div>

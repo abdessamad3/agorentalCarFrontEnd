@@ -767,3 +767,13 @@
   .loc-badge--train   { background: #1c4532; color: #9ae6b4; }
   .loc-badge--city    { background: #322659; color: #d6bcfa; }
 }
+
+/* Signatures (Départ / Retour tabs) */
+.signatures-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 4px;
+}
+.sig-block { display: flex; flex-direction: column; gap: 6px; }
+
+@media (max-width: 600px) {
+  .signatures-row { grid-template-columns: 1fr; }
+}
