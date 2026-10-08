@@ -489,6 +489,14 @@
   margin-bottom: 1mm;
 }
 
+.pct-sig-img {
+  display: block;
+  height: 9mm;
+  max-width: 100%;
+  object-fit: contain;
+  margin: 1mm auto;
+}
+
 .pct-sig-conds {
   display: flex;
   margin-top: 13mm;

@@ -273,6 +273,7 @@
         <div class="pct-sig-row">
           <div class="pct-sig-l">
             <div class="pct-sig-l-ttl">Signature du Locataire</div>
+            <img *ngIf="delivery?.signatureClientDepart" [src]="delivery.signatureClientDepart" class="pct-sig-img" alt="" />
             <div class="pct-sig-conds">
               <div class="pct-sig-cond">&#9679;&nbsp;1er conducteur</div>
               <div class="pct-sig-cond">&#9679;&nbsp;2&egrave;me conducteur</div>
@@ -280,6 +281,7 @@
           </div>
           <div class="pct-sig-r">
             <div class="pct-sig-r-ttl">Signature de La Soci&eacute;t&eacute;</div>
+            <img *ngIf="delivery?.signatureSocieteDepart" [src]="delivery.signatureSocieteDepart" class="pct-sig-img" alt="" />
             <div class="pct-fld"><span class="pct-lbl">Fait &agrave;&nbsp;:</span><span class="pct-val">{{v(contractData?.faitA)}}</span></div>
             <div class="pct-fld"><span class="pct-lbl">Le&nbsp;:</span><span class="pct-val">{{fmtDate(v(contractData?.signedAt))}}</span></div>
             <div class="pct-dlv pct-dlv-sm">
@@ -584,9 +586,11 @@
             <div class="pct-sig-row">
               <div class="pct-sig-l">
                 <div class="pct-sig-l-ttl">Signature du Locataire (au retour)</div>
+                <img *ngIf="returnData?.signatureClientRetour" [src]="returnData.signatureClientRetour" class="pct-sig-img" alt="" />
               </div>
               <div class="pct-sig-r">
                 <div class="pct-sig-r-ttl">Signature de La Soci&eacute;t&eacute; (au retour)</div>
+                <img *ngIf="returnData?.signatureSocieteRetour" [src]="returnData.signatureSocieteRetour" class="pct-sig-img" alt="" />
                 <div class="pct-fld"><span class="pct-lbl">Le&nbsp;:</span><span class="pct-val">{{fmtDate(v(returnData?.inspectedAt))}}</span></div>
               </div>
             </div>
