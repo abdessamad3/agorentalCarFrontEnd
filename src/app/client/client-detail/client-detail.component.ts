@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { CrudService } from '../../services/crud.service';
@@ -54,6 +54,7 @@ export class ClientDetailComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private crud: CrudService,
     private invoiceSvc: InvoiceService,
     private ts: TranslationService,
@@ -129,6 +130,10 @@ export class ClientDetailComponent implements OnInit {
       in_progress: 'status-active',
     };
     return m[s] || '';
+  }
+
+  goToReservation(r: any) {
+    this.router.navigate(['/location', r.id]);
   }
 
   downloadInvoice(r: any) {

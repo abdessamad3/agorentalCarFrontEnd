@@ -161,7 +161,7 @@
           </thead>
           <tbody>
             <ng-container *ngFor="let r of filteredReservations">
-              <tr>
+              <tr class="res-row-link" (click)="goToReservation(r)">
                 <td class="id-cell">{{ r.id }}</td>
                 <td>
                   <span class="vehicle-name">{{ r.voiture?.marque }} {{ r.voiture?.modele }}</span>
@@ -179,7 +179,7 @@
                     {{ r.reservationStatus | appStatus:'reservation' }}
                   </span>
                 </td>
-                <td class="actions-cell">
+                <td class="actions-cell" (click)="$event.stopPropagation()">
                   <button *ngIf="r.reservationStatus !== 'annulee' && r.reservationStatus !== 'cancelled'"
                           class="btn-act" (click)="downloadContract(r)" [title]="t('downloadContractTitle')">🧾</button>
                   <button *ngIf="r.reservationStatus !== 'annulee' && r.reservationStatus !== 'cancelled'"

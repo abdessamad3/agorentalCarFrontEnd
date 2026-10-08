@@ -183,6 +183,8 @@
 .detail-table th { padding: 10px 12px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
 .detail-table td { padding: 12px; font-size: 14px; color: #334155; border-top: 1px solid #f1f5f9; }
 .detail-table tbody tr:hover { background: #f8fafc; }
+.res-row-link { cursor: pointer; }
+.res-row-link:hover { background: #f1f5f9; }
 
 .id-cell       { color: #94a3b8; font-size: 12px; }
 .date-cell     { white-space: nowrap; }
