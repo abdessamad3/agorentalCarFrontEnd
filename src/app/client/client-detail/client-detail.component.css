@@ -257,3 +257,18 @@
   /* Tabs */
   .tab-btn { padding: 8px 14px; font-size: 13px; }
 }
+
+/* Print loading overlay */
+.print-loading-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.35);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 8000;
+}
+.print-loading-box {
+  background: #fff; border-radius: 10px; padding: 24px 32px;
+  display: flex; align-items: center; gap: 12px;
+  font-size: .95rem; color: #1a3a5c; font-weight: 600;
+  box-shadow: 0 8px 32px rgba(0,0,0,.18);
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.print-spin { animation: spin .8s linear infinite; }

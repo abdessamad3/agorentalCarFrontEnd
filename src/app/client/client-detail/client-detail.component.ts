@@ -5,11 +5,12 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { CrudService } from '../../services/crud.service';
-import { InvoiceService } from '../../services/invoice.service';
 import { TranslationService } from '../../services/translation.service';
 import { ActivityLogService } from '../../services/activity-log.service';
+import { ToastService } from '../../services/toast.service';
 import { BtnComponent } from '../../shared/btn/btn.component';
 import { ClientDocumentsComponent } from '../client-documents/client-documents.component';
+import { PrintContratComponent } from '../../contrat/print-contrat/print-contrat.component';
 import { debtRiskClass } from '../../shared/utils/debt.utils';
 import { environment } from '../../../environments/environment';
 import { StatusPipe } from '../../shared/pipes/status.pipe';
@@ -21,7 +22,7 @@ const CAR_PLACEHOLDER = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlna
 @Component({
   selector: 'app-client-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, BtnComponent, ClientDocumentsComponent, StatusPipe, PayResPanelComponent],
+  imports: [CommonModule, FormsModule, RouterModule, BtnComponent, ClientDocumentsComponent, StatusPipe, PayResPanelComponent, PrintContratComponent],
   templateUrl: './client-detail.component.html',
   styleUrls: ['./client-detail.component.css']
 })
@@ -46,13 +47,17 @@ export class ClientDetailComponent implements OnInit {
   payPanelPaid  = 0;
   payPanelTitle = '';
 
+  printItem: any = null;
+  printLoading = false;
+  autoDownloadPdf = false;
+
   constructor(
     private route: ActivatedRoute,
     private crud: CrudService,
-    private invoiceSvc: InvoiceService,
     private ts: TranslationService,
     private activityLog: ActivityLogService,
     private bus: EventBusService,
+    private toast: ToastService,
   ) {}
 
   ngOnInit() {
@@ -124,8 +129,63 @@ export class ClientDetailComponent implements OnInit {
     return m[s] || '';
   }
 
-  downloadInvoice(r: any) {
-    this.invoiceSvc.generateFromData(r);
+  downloadContract(r: any) {
+    const contrat = this.contrats.find(c => c.reservation?.id === r.id || c.reservationId === r.id);
+    if (!contrat) {
+      this.toast.show(this.ts.translate('noContractYetMsg'), 'error');
+      return;
+    }
+    this.autoDownloadPdf = true;
+    this.printLoading = true;
+    this.crud.getById('contrat', contrat.id + '/full').subscribe({
+      next: (full: any) => { this.printItem = this.adaptContratFull(full); this.printLoading = false; },
+      error: () => { this.printLoading = false; this.autoDownloadPdf = false; }
+    });
+  }
+
+  onPrintClosed() { this.printItem = null; this.autoDownloadPdf = false; }
+
+  private adaptContratFull(data: any): any {
+    const c    = data.contrat;
+    const res  = c?.reservation;
+    const cli  = res?.client;
+    const voit = res?.voiture;
+    const d2   = c?.deuxiemeChauffeur;
+    const del  = data.vehicleDelivery;
+    const ret  = data.vehicleReturnInspection;
+    return {
+      numeroContrat: c?.numero, id: c?.id,
+      dateDebut: res?.dateDebut, dateFin: res?.dateFin,
+      faitA: c?.faitA, signedAt: c?.signedAt,
+      montantTotal: res?.total, montantPaye: res?.montantPaye,
+      prixParJour: res?.prixParJour ?? c?.prixParJourSnapshot,
+      nbJoursFactures: c?.nbJoursFactures, remise: c?.remise,
+      franchise: c?.franchise, hasCaution: c?.hasCaution, cautionMontant: c?.cautionMontant,
+      lieuLivraison: res?.lieuLivraison, lieuRetour: res?.lieuRetour,
+      client: cli ? {
+        nom: cli.nom, prenom: '',
+        dateNaissance: cli.dateNaissance, lieuNaissance: cli.lieuNaissance,
+        nationalite: cli.nationalite,
+        adresseMaroc: cli.adresseMaroc, adresseEtranger: cli.adresseEtranger,
+        telephone: cli.telephone, telephoneEtranger: cli.telephoneEtranger,
+        cin: cli.cin,
+        permisConduite: cli.permisConduite, permisDelivreLe: cli.permisDelivreLe, permisDelivreA: cli.permisDelivreA,
+        passeport: cli.passeport, passeportDelivreLe: cli.passeportDelivreLe, passeportDelivreA: cli.passeportDelivreA,
+      } : {},
+      deuxiemeChauffeur: d2 ? {
+        nom: d2.nom, dateNaissance: d2.dateNaissance, nationalite: d2.nationalite,
+        adresseMaroc: d2.adresseMaroc, telephone: d2.telephone, cin: d2.cin,
+        permisConduite: d2.permisConduite, permisDelivreLe: d2.permisDelivreLe, permisDelivreA: d2.permisDelivreA,
+        passeport: d2.passeport, passeportDelivreLe: d2.passeportDelivreLe, passeportDelivreA: d2.passeportDelivreA,
+      } : null,
+      voiture: voit ? {
+        marque: voit.marque, modele: voit.modele, immatriculation: voit.immatriculation,
+        kilometrageActuel: del?.mileageOut ?? voit.kilometrageActuel,
+        prixJour: res?.prixParJour ?? c?.prixParJourSnapshot ?? voit.prixJour,
+      } : {},
+      vehicleDelivery: del ?? null,
+      vehicleReturnInspection: ret ?? null,
+    };
   }
 
   togglePaymentPanel(r: any): void {
