@@ -48,9 +48,9 @@ export class ClientDocumentsComponent implements OnChanges {
 
   readonly docTypes: { type: DocType; label: string }[] = [
     { type: 'cin',       label: 'CIN' },
-    { type: 'passeport', label: 'Passport' },
-    { type: 'permis',    label: 'Driving Licence' },
-    { type: 'autre',     label: 'Other' },
+    { type: 'passeport', label: 'passportDocLbl' },
+    { type: 'permis',    label: 'drivingLicenceDocLbl' },
+    { type: 'autre',     label: 'otherDocLbl' },
   ];
 
   get today(): string {

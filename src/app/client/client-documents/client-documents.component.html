@@ -1,25 +1,25 @@
 ﻿<div class="cd-root">
 
   <div class="cd-error" *ngIf="error">{{ error }}</div>
-  <div class="cd-loading" *ngIf="loading">Loading documents…</div>
+  <div class="cd-loading" *ngIf="loading">{{ 'loadingDocuments' | translate }}</div>
 
   <div class="cd-sections" *ngIf="!loading">
     <div class="cd-section" *ngFor="let dt of docTypes">
 
       <div class="cd-section-header">
-        <span class="cd-section-title">{{ dt.label }}</span>
+        <span class="cd-section-title">{{ dt.label | translate }}</span>
         <button class="cd-manage-btn" type="button" (click)="openModal(dt.type)">
-          ✏️ Gérer
+          ✏️ {{ 'manageLbl' | translate }}
         </button>
       </div>
 
       <!-- Current expiration badge -->
       <div class="cd-expiry-row" *ngIf="hasExpirationField(dt.type) && currentExpiration(dt.type)">
-        <span class="cd-expiry-label">Expires:</span>
+        <span class="cd-expiry-label">{{ 'expiresColonLbl' | translate }}</span>
         <span class="cd-expiry-val">{{ currentExpiration(dt.type) | date:'dd/MM/yyyy' }}</span>
       </div>
 
-      <div class="cd-empty" *ngIf="docsOf(dt.type).length === 0">No document</div>
+      <div class="cd-empty" *ngIf="docsOf(dt.type).length === 0">{{ 'noDocumentLbl' | translate }}</div>
 
       <div class="cd-doc-list">
         <div class="cd-doc" *ngFor="let doc of docsOf(dt.type)">
@@ -34,8 +34,8 @@
             <span class="cd-doc-date">{{ doc.uploadedAt | date:'dd/MM/yyyy' }}</span>
           </div>
           <div class="cd-doc-actions">
-            <app-btn variant="icon-view" (click)="openFile(doc)" title="Open"></app-btn>
-            <app-btn variant="icon-delete" (click)="delete(doc)" title="Delete"></app-btn>
+            <app-btn variant="icon-view" (click)="openFile(doc)" [title]="'view' | translate"></app-btn>
+            <app-btn variant="icon-delete" (click)="delete(doc)" [title]="'delete' | translate"></app-btn>
           </div>
         </div>
       </div>
@@ -50,7 +50,7 @@
   <div class="cd-modal" (click)="$event.stopPropagation()">
 
     <div class="cd-modal-header">
-      <h3 class="cd-modal-title">{{ editingLabel }}</h3>
+      <h3 class="cd-modal-title">{{ editingLabel | translate }}</h3>
       <button class="cd-modal-close" type="button" (click)="closeModal()">×</button>
     </div>
 
@@ -58,7 +58,7 @@
 
       <!-- Expiration date (only for CIN / Passport / Permis) -->
       <div class="cd-modal-section" *ngIf="editingType && hasExpirationField(editingType)">
-        <label class="cd-form-label">Expiration date</label>
+        <label class="cd-form-label">{{ 'expirationDateLbl' | translate }}</label>
         <input class="cd-form-input"
                type="date"
                [(ngModel)]="editExpiration"
@@ -70,9 +70,9 @@
 
       <!-- Upload -->
       <div class="cd-modal-section">
-        <label class="cd-form-label">Upload document</label>
+        <label class="cd-form-label">{{ 'uploadDocumentTitle' | translate }}</label>
         <app-upload-btn
-          label="Choose file(s)"
+          [label]="'chooseFilesLbl' | translate"
           accept=".jpg,.jpeg,.png,.webp,.pdf"
           [multiple]="true"
           [loading]="uploading === editingType"
@@ -88,7 +88,7 @@
               class="cd-btn-save" type="button"
               [disabled]="!editExpiration || saving"
               (click)="saveExpiration()">
-        {{ saving ? 'Saving…' : 'Save date' }}
+        {{ (saving ? 'saving' : 'saveDateLbl') | translate }}
       </button>
     </div>
 

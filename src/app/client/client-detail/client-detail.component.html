@@ -1,14 +1,14 @@
 <div class="detail-page" [attr.dir]="dir">
 
   <!-- Loading / Error -->
-  <div *ngIf="loading" class="loading-state"><p>Loading client profile…</p></div>
+  <div *ngIf="loading" class="loading-state"><p>{{ t('loadingClientProfile') }}</p></div>
   <div *ngIf="error && !loading" class="error-state"><p>{{ error }}</p></div>
 
   <ng-container *ngIf="!loading && !error && client">
 
     <!-- Back link -->
     <div class="back-bar">
-      <a routerLink="/client" class="back-link">← Back to Clients</a>
+      <a routerLink="/client" class="back-link">← {{ t('backToClientsLbl') }}</a>
     </div>
 
     <!-- Profile header -->
@@ -19,13 +19,13 @@
         <div class="profile-meta">
           <span *ngIf="client.telephone">📞 {{ client.telephone }}</span>
           <span *ngIf="client.cin">🪪 CIN: {{ client.cin }}</span>
-          <span *ngIf="client.passeport">🛂 Passeport: {{ client.passeport }}</span>
-          <span *ngIf="client.permisConduite">🚗 Permis: {{ client.permisConduite }}</span>
+          <span *ngIf="client.passeport">🛂 {{ t('passportDocLbl') }}: {{ client.passeport }}</span>
+          <span *ngIf="client.permisConduite">🚗 {{ t('drivingLicenceDocLbl') }}: {{ client.permisConduite }}</span>
           <span *ngIf="client.nationalite">🌍 {{ client.nationalite }}</span>
         </div>
       </div>
       <div class="profile-actions">
-        <app-btn variant="secondary" [routerLink]="['/client']">← Clients</app-btn>
+        <app-btn variant="secondary" [routerLink]="['/client']">← {{ t('clients') }}</app-btn>
       </div>
     </div>
 
@@ -33,48 +33,48 @@
     <div class="stats-row">
       <div class="stat-card">
         <div class="stat-value">{{ reservations.length }}</div>
-        <div class="stat-label">Total Reservations</div>
+        <div class="stat-label">{{ t('statTotalReservations') }}</div>
       </div>
       <div class="stat-card stat-card-active">
         <div class="stat-value">{{ activeCount }}</div>
-        <div class="stat-label">Active</div>
+        <div class="stat-label">{{ t('active') }}</div>
       </div>
       <div class="stat-card stat-card-billed">
         <div class="stat-value">{{ totalBilled | number:'1.0-0' }} MAD</div>
-        <div class="stat-label">Total Billed</div>
+        <div class="stat-label">{{ t('statTotalBilled') }}</div>
       </div>
       <div class="stat-card stat-card-paid">
         <div class="stat-value">{{ totalSpent | number:'1.0-0' }} MAD</div>
-        <div class="stat-label">Total Paid</div>
+        <div class="stat-label">{{ t('totalPaid') }}</div>
       </div>
       <div class="stat-card stat-card-remaining" *ngIf="totalBilled - totalSpent > 0">
         <div class="stat-value">{{ (totalBilled - totalSpent) | number:'1.0-0' }} MAD</div>
-        <div class="stat-label">Outstanding</div>
+        <div class="stat-label">{{ t('thOutstanding') }}</div>
       </div>
     </div>
 
     <!-- Expired documents warning card -->
     <div class="expired-card" *ngIf="client.cinExpired || client.passeportExpired || client.permisExpired">
-      <div class="expired-card-title">⚠️ Expired Documents</div>
+      <div class="expired-card-title">⚠️ {{ t('expiredDocuments') }}</div>
       <div class="expired-items">
         <div class="expired-item" *ngIf="client.cinExpired">
           <span class="expired-badge">CIN</span>
-          <span class="expired-date">expired {{ client.cinExpiration | date:'dd/MM/yyyy' }}</span>
+          <span class="expired-date">{{ t('expired') }} {{ client.cinExpiration | date:'dd/MM/yyyy' }}</span>
         </div>
         <div class="expired-item" *ngIf="client.passeportExpired">
-          <span class="expired-badge">Passport</span>
-          <span class="expired-date">expired {{ client.passeportExpiration | date:'dd/MM/yyyy' }}</span>
+          <span class="expired-badge">{{ t('passportDocLbl') }}</span>
+          <span class="expired-date">{{ t('expired') }} {{ client.passeportExpiration | date:'dd/MM/yyyy' }}</span>
         </div>
         <div class="expired-item" *ngIf="client.permisExpired">
-          <span class="expired-badge">Driver Licence</span>
-          <span class="expired-date">expired {{ client.permisExpiration | date:'dd/MM/yyyy' }}</span>
+          <span class="expired-badge">{{ t('drivingLicenceDocLbl') }}</span>
+          <span class="expired-date">{{ t('expired') }} {{ client.permisExpiration | date:'dd/MM/yyyy' }}</span>
         </div>
       </div>
     </div>
 
     <!-- Rented cars photo strip -->
     <div class="cars-section" *ngIf="rentedCars.length > 0">
-      <div class="cars-section-title">🚗 Cars Rented ({{ rentedCars.length }})</div>
+      <div class="cars-section-title">🚗 {{ t('carsRentedLbl') }} ({{ rentedCars.length }})</div>
       <div class="cars-strip">
         <a *ngFor="let v of rentedCars" class="car-card" [routerLink]="['/voiture', v.id]">
           <div class="car-photo-wrap">
@@ -91,10 +91,10 @@
     <!-- Tabs -->
     <div class="tabs">
       <button class="tab-btn" [class.active]="activeTab === 'reservations'" (click)="setTab('reservations')">
-        Reservations <span class="tab-count">{{ reservations.length }}</span>
+        {{ t('reservations') }} <span class="tab-count">{{ reservations.length }}</span>
       </button>
       <button class="tab-btn" [class.active]="activeTab === 'documents'" (click)="setTab('documents')">
-        🪪 Documents
+        🪪 {{ t('documentsTabLbl') }}
       </button>
     </div>
 
@@ -109,39 +109,39 @@
       <!-- Filter bar -->
       <div class="res-filter-bar" *ngIf="reservations.length > 0">
         <select class="res-filter-select" [(ngModel)]="filterStatus">
-          <option value="">All statuses</option>
-          <option value="active">Active (confirmed + in progress)</option>
-          <option value="confirmed">Confirmed only</option>
-          <option value="in_progress">In Progress only</option>
-          <option value="pending">Pending</option>
-          <option value="terminee">Done</option>
-          <option value="cancelled">Cancelled</option>
+          <option value="">{{ t('allStatuses') }}</option>
+          <option value="active">{{ t('activeConfirmedInProgress') }}</option>
+          <option value="confirmed">{{ t('confirmedOnlyLbl') }}</option>
+          <option value="in_progress">{{ t('inProgressOnlyLbl') }}</option>
+          <option value="pending">{{ t('pending') }}</option>
+          <option value="terminee">{{ t('done') }}</option>
+          <option value="cancelled">{{ t('cancelled') }}</option>
         </select>
 
         <div class="res-date-range">
           <input class="res-date-input" type="date" [(ngModel)]="filterDateFrom"
-                 [max]="filterDateTo || null" placeholder="From" title="Start date from" />
+                 [max]="filterDateTo || null" [placeholder]="t('from')" [title]="t('from')" />
           <span class="res-date-sep">→</span>
           <input class="res-date-input" type="date" [(ngModel)]="filterDateTo"
-                 [min]="filterDateFrom || null" placeholder="To" title="Start date to" />
+                 [min]="filterDateFrom || null" [placeholder]="t('to')" [title]="t('to')" />
         </div>
 
         <span class="res-filter-count" *ngIf="hasActiveFilter">
           {{ filteredReservations.length }} / {{ reservations.length }}
         </span>
-        <button class="res-filter-clear" *ngIf="hasActiveFilter" (click)="clearFilters()">× Clear</button>
+        <button class="res-filter-clear" *ngIf="hasActiveFilter" (click)="clearFilters()">× {{ t('clearLbl') }}</button>
       </div>
 
       <!-- Empty: no reservations at all -->
       <div *ngIf="reservations.length === 0" class="empty-section">
         <span class="empty-icon">📅</span>
-        <p>No reservations found for this client.</p>
+        <p>{{ t('noReservationsForClient') }}</p>
       </div>
 
       <!-- Empty: filter returned nothing -->
       <div *ngIf="reservations.length > 0 && filteredReservations.length === 0" class="empty-section">
         <span class="empty-icon">🔍</span>
-        <p>No reservations match this filter.</p>
+        <p>{{ t('noReservationsMatchFilter') }}</p>
       </div>
 
       <div *ngIf="filteredReservations.length > 0" class="table-container">
@@ -149,14 +149,14 @@
           <thead>
             <tr>
               <th>#</th>
-              <th>Vehicle</th>
-              <th>Start</th>
-              <th>End</th>
-              <th>Total</th>
-              <th>Paid</th>
-              <th>Remaining</th>
-              <th>Status</th>
-              <th>Actions</th>
+              <th>{{ t('vehicleCol') }}</th>
+              <th>{{ t('startCol') }}</th>
+              <th>{{ t('endCol') }}</th>
+              <th>{{ t('totalCol') }}</th>
+              <th>{{ t('colPaidCol') }}</th>
+              <th>{{ t('colRemaining') }}</th>
+              <th>{{ t('status') }}</th>
+              <th>{{ t('actions') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -199,8 +199,8 @@
 
   <!-- No client found -->
   <div *ngIf="!loading && !error && !client" class="error-state">
-    <p>Client not found.</p>
-    <a routerLink="/client" class="back-link">← Back to Clients</a>
+    <p>{{ t('clientNotFoundLbl') }}</p>
+    <a routerLink="/client" class="back-link">← {{ t('backToClientsLbl') }}</a>
   </div>
 
 </div>
