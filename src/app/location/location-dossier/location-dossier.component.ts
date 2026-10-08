@@ -562,10 +562,10 @@ export class LocationDossierComponent implements OnInit {
    *  timer. Only applies to a normal closure (terminee) — termine_avant_terme has no inspection
    *  to undo. */
   get canUndoClosure(): boolean {
+    // Server-computed — see canUndoDelivery's comment for why (naive timestamp,
+    // timezone-ambiguous when parsed client-side).
     if (this.status !== 'terminee') return false;
-    const closedAt = this.dossier?.vehicleReturnInspection?.editAu;
-    if (!closedAt) return false;
-    return Date.now() - new Date(closedAt).getTime() <= 60 * 60 * 1000;
+    return this.dossier?.vehicleReturnInspection?.canUndo === true;
   }
 
   /** "Undo Hand-over" mirrors canUndoClosure: only available within 1h of the delivery
@@ -573,10 +573,14 @@ export class LocationDossierComponent implements OnInit {
    *  never re-edited). Only applies once the vehicle has been delivered but not yet
    *  returned (en_cours) — once it's terminee, use "Undo Closure" first. */
   get canUndoDelivery(): boolean {
+    // Server-computed (see LocationController::serializeDelivery) — the delivery timestamp
+    // itself is returned as a naive "Y-m-d H:i:s" string with no timezone marker, which
+    // `new Date(...)` parses as the BROWSER's local time rather than the server's. On a
+    // server running a different timezone than the client that silently throws the 1-hour
+    // window off, letting the button stay visible well past what the backend will accept
+    // (or disappear too early). Trusting the backend's own boolean keeps both in sync.
     if (this.status !== 'en_cours') return false;
-    const deliveredAt = this.dossier?.vehicleDelivery?.editAu ?? this.dossier?.vehicleDelivery?.creeAu;
-    if (!deliveredAt) return false;
-    return Date.now() - new Date(deliveredAt).getTime() <= 60 * 60 * 1000;
+    return this.dossier?.vehicleDelivery?.canUndo === true;
   }
   get contractNumber(): string { return this.dossier?.contrat?.numero ?? '—'; }
 
