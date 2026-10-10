@@ -24,6 +24,37 @@
 
 @media (min-width: 769px) {
   .sidebar { transform: none !important; }
+
+  /* ── Collapsed (icon-rail) mode — desktop only; mobile always ignores it,
+     the sidebar there is a full show/hide overlay instead of a width toggle. ── */
+  .sidebar.collapsed { width: 72px; transition: width 0.2s ease; }
+
+  .sidebar.collapsed .logo-text,
+  .sidebar.collapsed .bureau-switcher,
+  .sidebar.collapsed .nav-label,
+  .sidebar.collapsed .nav-chevron,
+  .sidebar.collapsed .nav-group-items,
+  .sidebar.collapsed .nav-badge,
+  .sidebar.collapsed .logout-text {
+    display: none;
+  }
+
+  .sidebar.collapsed .sidebar-header { justify-content: center; padding: 1.25rem 0.5rem 1rem; }
+  .sidebar.collapsed .logo-icon { margin: 0; }
+
+  .sidebar.collapsed .nav-group-header,
+  .sidebar.collapsed .nav-item,
+  .sidebar.collapsed .logout-btn,
+  .sidebar.collapsed .collapse-toggle-btn {
+    justify-content: center;
+    width: auto;
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+    padding: 0.6rem;
+  }
+
+  .sidebar.collapsed .nav-icon { margin-right: 0; }
+  .sidebar.collapsed .collapse-icon { margin-right: 0; }
 }
 
 @media (max-width: 768px) {
@@ -168,28 +199,58 @@
 .sidebar-nav::-webkit-scrollbar-track { background: transparent; }
 .sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 2px; }
 
-/* Group label */
-.nav-group-label {
-  padding: 1.1rem 1.25rem 0.35rem;
-  font-size: 0.65rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--sb-group-label, #475569);
+/* Group header (accordion toggle) */
+.nav-group { display: flex; flex-direction: column; }
+
+.nav-group-header {
+  display: flex;
+  align-items: center;
+  width: calc(100% - 1.2rem);
+  margin: 1px 0.6rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  background: none;
+  border: 1px solid transparent;
+  color: var(--sb-text);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.16s, color 0.16s;
+}
+.sidebar.rtl .nav-group-header { text-align: right; }
+
+.nav-group-header:hover {
+  background: var(--sb-bg-hover, rgba(255,255,255,.06));
+  color: var(--sb-text-hover, #e2e8f0);
 }
 
-.nav-group-label + .nav-group-label,
-.nav-item + .nav-group-label {
-  margin-top: 0.25rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--sb-border);
+.nav-group-header.expanded {
+  color: var(--sb-text-hover, #e2e8f0);
+}
+
+.nav-chevron {
+  margin-left: auto;
+  font-size: 0.65rem;
+  color: inherit;
+  opacity: 0.6;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+.sidebar.rtl .nav-chevron { margin-left: 0; margin-right: auto; }
+
+.nav-group-header.expanded .nav-chevron { transform: rotate(180deg); }
+
+.nav-group-items {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 0.25rem;
 }
 
 /* Nav item */
 .nav-item {
   display: flex;
   align-items: center;
-  margin: 1px 0.6rem;
+  margin: 1px 0.6rem 1px 1.25rem;
   padding: 0.6rem 0.75rem;
   border-radius: 8px;
   color: var(--sb-text);
@@ -199,6 +260,7 @@
   transition: background 0.16s, color 0.16s, transform 0.16s, border-color 0.16s;
   gap: 0;
 }
+.sidebar.rtl .nav-item { margin: 1px 1.25rem 1px 0.6rem; }
 
 .nav-item:hover {
   background: var(--sb-bg-hover, rgba(255,255,255,.06));
@@ -262,6 +324,35 @@
   justify-content: center;
   padding: 0 4px;
   flex-shrink: 0;
+}
+
+/* ── Collapse toggle (desktop only) ─────────────────────────────────────── */
+.collapse-toggle-btn {
+  display: none;
+  align-items: center;
+  width: calc(100% - 1.2rem);
+  margin: 0.4rem 0.6rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  background: none;
+  border: 1px solid var(--sb-border);
+  color: var(--sb-text);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.16s, color 0.16s;
+}
+.collapse-toggle-btn:hover {
+  background: var(--sb-bg-hover, rgba(255,255,255,.06));
+  color: var(--sb-text-hover, #e2e8f0);
+}
+.collapse-icon { margin-right: 0.6rem; font-size: 0.85rem; flex-shrink: 0; }
+.sidebar.rtl .collapse-icon { margin-right: 0; margin-left: 0.6rem; }
+
+@media (min-width: 769px) {
+  .collapse-toggle-btn { display: flex; }
 }
 
 /* ── Footer / Logout ────────────────────────────────────────────────────── */

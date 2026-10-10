@@ -16,6 +16,7 @@ import { filter } from 'rxjs/operators';
 export class SidebarComponent implements OnInit {
   @Input() isSidebarOpen = false;
   @Output() closeSidebar = new EventEmitter<void>();
+  @Output() collapsedChange = new EventEmitter<boolean>();
 
   dir = 'ltr';
   logoUrl: string | null = null;
@@ -24,14 +25,25 @@ export class SidebarComponent implements OnInit {
   bureaux: { id: number; nom: string }[] = [];
   currentBureauId: number | null = null;
 
+  /** Accordion: only one group's items are visible at a time, whichever contains
+   *  the current route (auto-expanded on navigation) or was last clicked open. */
+  expandedGroup: string | null = null;
+
+  /** Desktop-only icon-rail mode, remembered across sessions. Mobile always ignores
+   *  this (the sidebar there is a full show/hide overlay, not a width toggle). */
+  collapsed = false;
+  private readonly COLLAPSED_STORAGE_KEY = 'sidebar_collapsed';
+
   readonly ALL_ROLES = ['ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_STAFF'];
 
   menuGroups: {
     labelKey: string;
+    icon: string;
     items: { link: string; icon: string; key: string; badge?: string | number; roles?: string[] }[];
   }[] = [
     {
       labelKey: 'groupOrganisation',
+      icon: '📊',
       items: [
         { link: '/dashboard', icon: '📊', key: 'dashboard' },
         { link: '/bureau',    icon: '🏢', key: 'bureaus', roles: ['ROLE_ADMIN','ROLE_MANAGER','ROLE_STAFF'] },
@@ -39,6 +51,7 @@ export class SidebarComponent implements OnInit {
     },
     {
       labelKey: 'groupFleet',
+      icon: '🚗',
       items: [
         { link: '/voiture',              icon: '🚗', key: 'myCars' },
         { link: '/inspection-demo',      icon: '🔍', key: 'inspection3D',        roles: ['ROLE_ADMIN'] },
@@ -50,6 +63,7 @@ export class SidebarComponent implements OnInit {
     },
     {
       labelKey: 'groupRentals',
+      icon: '📅',
       items: [
         { link: '/client',             icon: '👤', key: 'clients',           roles: ['ROLE_ADMIN','ROLE_MANAGER','ROLE_STAFF'] },
         { link: '/client-debts',       icon: '💸', key: 'clientDebtors',     roles: ['ROLE_ADMIN','ROLE_MANAGER'] },
@@ -61,6 +75,7 @@ export class SidebarComponent implements OnInit {
     },
     {
       labelKey: 'groupFinance',
+      icon: '💰',
       items: [
         { link: '/paiement',                       icon: '💳', key: 'paiements',            roles: ['ROLE_ADMIN'] },
         { link: '/paiement-client',                icon: '💰', key: 'clientPayments',       roles: ['ROLE_ADMIN'] },
@@ -81,6 +96,7 @@ export class SidebarComponent implements OnInit {
     },
     {
       labelKey: 'groupAnalytics',
+      icon: '📈',
       items: [
         { link: '/executive',              icon: '👑', key: 'executiveDashboard',  roles: ['ROLE_ADMIN','ROLE_MANAGER'] },
         { link: '/rapports/fleet',         icon: '📋', key: 'fleetReports',        roles: ['ROLE_ADMIN','ROLE_MANAGER'] },
@@ -94,6 +110,7 @@ export class SidebarComponent implements OnInit {
     },
     {
       labelKey: 'groupAdmin',
+      icon: '⚙️',
       items: [
         { link: '/utilisateur',                  icon: '👥', key: 'usersRoles',        roles: ['ROLE_ADMIN'] },
         { link: '/company',                      icon: '🏢', key: 'companies',         roles: ['ROLE_ADMIN'] },
@@ -143,9 +160,49 @@ export class SidebarComponent implements OnInit {
       this.companyService.refreshBureaux();
     }
 
+    try {
+      this.collapsed = localStorage.getItem(this.COLLAPSED_STORAGE_KEY) === '1';
+    } catch { /* ignore — defaults to expanded */ }
+    this.collapsedChange.emit(this.collapsed);
+
+    this.updateExpandedGroupFromRoute(this.router.url);
+
     this.router.events
       .pipe(filter(e => e instanceof NavigationEnd))
-      .subscribe(() => this.closeSidebar.emit());
+      .subscribe((e: any) => {
+        this.closeSidebar.emit();
+        this.updateExpandedGroupFromRoute(e.urlAfterRedirects);
+      });
+  }
+
+  private updateExpandedGroupFromRoute(url: string): void {
+    const path = url.split('#')[0].split('?')[0];
+    const match = this.menuGroups.find(group =>
+      group.items.some(item => path === item.link || path.startsWith(item.link + '/'))
+    );
+    if (match) this.expandedGroup = match.labelKey;
+  }
+
+  /** Clicking a group header: in icon-rail mode it first expands the whole sidebar
+   *  (so there's room to actually see the items) and opens that group; otherwise
+   *  it just toggles that group open/closed, accordion-style. */
+  onGroupHeaderClick(labelKey: string): void {
+    if (this.collapsed) {
+      this.setCollapsed(false);
+      this.expandedGroup = labelKey;
+      return;
+    }
+    this.expandedGroup = this.expandedGroup === labelKey ? null : labelKey;
+  }
+
+  toggleCollapsed(): void {
+    this.setCollapsed(!this.collapsed);
+  }
+
+  private setCollapsed(value: boolean): void {
+    this.collapsed = value;
+    try { localStorage.setItem(this.COLLAPSED_STORAGE_KEY, value ? '1' : '0'); } catch { /* ignore */ }
+    this.collapsedChange.emit(value);
   }
 
   // Switching bureau re-derives branding from that bureau's company

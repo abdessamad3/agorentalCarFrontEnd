@@ -1,4 +1,4 @@
-<div class="sidebar" [class.open]="isSidebarOpen" [class.rtl]="dir === 'rtl'" [attr.dir]="dir">
+<div class="sidebar" [class.open]="isSidebarOpen" [class.rtl]="dir === 'rtl'" [class.collapsed]="collapsed" [attr.dir]="dir">
 
   <!-- Logo -->
   <div class="sidebar-header">
@@ -20,30 +20,54 @@
   <!-- Navigation -->
   <nav class="sidebar-nav">
     <ng-container *ngFor="let group of menuGroups">
-      <ng-container *ngIf="hasVisibleItems(group)">
-        <div *ngIf="group.labelKey" class="nav-group-label">{{ getLabel(group.labelKey) }}</div>
-        <ng-container *ngFor="let item of group.items">
-          <a
-            *ngIf="canSee(item.roles)"
-            [routerLink]="item.link"
-            routerLinkActive="active-link"
-            (click)="onNavClick()"
-            class="nav-item"
-          >
-            <span class="nav-icon">{{ item.icon }}</span>
-            <span class="nav-label">{{ getLabel(item.key) }}</span>
-            <span *ngIf="item.badge" class="nav-badge">{{ item.badge }}</span>
-          </a>
-        </ng-container>
-      </ng-container>
+      <div class="nav-group" *ngIf="hasVisibleItems(group)">
+        <button
+          type="button"
+          class="nav-group-header"
+          [class.expanded]="!collapsed && expandedGroup === group.labelKey"
+          [title]="collapsed ? getLabel(group.labelKey) : null"
+          (click)="onGroupHeaderClick(group.labelKey)"
+        >
+          <span class="nav-icon">{{ group.icon }}</span>
+          <span class="nav-label">{{ getLabel(group.labelKey) }}</span>
+          <span class="nav-chevron" *ngIf="!collapsed">▾</span>
+        </button>
+
+        <div class="nav-group-items" *ngIf="!collapsed && expandedGroup === group.labelKey">
+          <ng-container *ngFor="let item of group.items">
+            <a
+              *ngIf="canSee(item.roles)"
+              [routerLink]="item.link"
+              routerLinkActive="active-link"
+              (click)="onNavClick()"
+              class="nav-item"
+            >
+              <span class="nav-icon">{{ item.icon }}</span>
+              <span class="nav-label">{{ getLabel(item.key) }}</span>
+              <span *ngIf="item.badge" class="nav-badge">{{ item.badge }}</span>
+            </a>
+          </ng-container>
+        </div>
+      </div>
     </ng-container>
   </nav>
 
+  <!-- Collapse toggle (desktop only) -->
+  <button
+    type="button"
+    class="collapse-toggle-btn"
+    (click)="toggleCollapsed()"
+    [title]="getLabel(collapsed ? 'expandSidebar' : 'collapseSidebar')"
+  >
+    <span class="collapse-icon">{{ collapsed ? '»' : '«' }}</span>
+    <span class="nav-label" *ngIf="!collapsed">{{ getLabel('collapseSidebar') }}</span>
+  </button>
+
   <!-- Footer / Logout -->
   <div class="sidebar-footer">
-    <button class="logout-btn" (click)="onLogout()">
+    <button class="logout-btn" (click)="onLogout()" [title]="collapsed ? getLabel('logout') : null">
       <span class="logout-icon">🚪</span>
-      <span>{{ getLabel('logout') }}</span>
+      <span class="logout-text">{{ getLabel('logout') }}</span>
     </button>
   </div>
 

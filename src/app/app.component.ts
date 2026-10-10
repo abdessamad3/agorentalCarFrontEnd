@@ -21,6 +21,7 @@ import { environment } from '../environments/environment';
 })
 export class AppComponent implements OnInit {
   isSidebarOpen = false;
+  sidebarCollapsed = false;
   dir = 'ltr';
   showShell = false;
   routerLoading = false;
@@ -96,6 +97,10 @@ export class AppComponent implements OnInit {
 
   closeSidebar() {
     this.isSidebarOpen = false;
+  }
+
+  onSidebarCollapsedChange(collapsed: boolean) {
+    this.sidebarCollapsed = collapsed;
   }
 
   @HostListener('document:keydown.escape')

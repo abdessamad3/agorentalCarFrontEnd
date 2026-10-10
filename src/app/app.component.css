@@ -16,6 +16,7 @@
 .has-sidebar .main-content {
   margin-left: 260px;
   margin-right: 0;
+  transition: margin-left 0.2s ease, margin-right 0.2s ease;
 }
 
 [dir="rtl"].has-sidebar .main-content {
@@ -23,9 +24,20 @@
   margin-right: 260px;
 }
 
+.has-sidebar.sidebar-collapsed .main-content {
+  margin-left: 72px;
+}
+
+[dir="rtl"].has-sidebar.sidebar-collapsed .main-content {
+  margin-left: 0;
+  margin-right: 72px;
+}
+
 @media (max-width: 768px) {
   .has-sidebar .main-content,
-  [dir="rtl"].has-sidebar .main-content {
+  [dir="rtl"].has-sidebar .main-content,
+  .has-sidebar.sidebar-collapsed .main-content,
+  [dir="rtl"].has-sidebar.sidebar-collapsed .main-content {
     margin-left: 0;
     margin-right: 0;
   }

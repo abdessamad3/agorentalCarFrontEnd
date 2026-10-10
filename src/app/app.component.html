@@ -1,9 +1,10 @@
-<div class="app-layout" [attr.dir]="dir" [class.has-sidebar]="showShell">
+<div class="app-layout" [attr.dir]="dir" [class.has-sidebar]="showShell" [class.sidebar-collapsed]="sidebarCollapsed">
 
   <ng-container *ngIf="showShell">
     <app-sidebar
       [isSidebarOpen]="isSidebarOpen"
       (closeSidebar)="closeSidebar()"
+      (collapsedChange)="onSidebarCollapsedChange($event)"
     ></app-sidebar>
   </ng-container>
 
