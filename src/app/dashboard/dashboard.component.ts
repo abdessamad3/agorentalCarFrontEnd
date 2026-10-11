@@ -491,7 +491,8 @@ export class DashboardComponent implements OnInit {
 
   getVoitureLabel(r: any): string {
     const v = this.voitures.find(v => v.id === (r.voitureId || r.voiture?.id));
-    return v ? `${v.marque} ${v.modele}` : `#${r.voitureId || '?'}`;
+    if (!v) return `#${r.voitureId || '?'}`;
+    return v.immatriculation ? `${v.marque} ${v.modele} — ${v.immatriculation}` : `${v.marque} ${v.modele}`;
   }
   carLabel(v: any): string { return `${v.marque} ${v.modele}`; }
   getClientName(r: any): string {
