@@ -27,6 +27,7 @@ export class TopHeaderComponent implements OnInit, OnDestroy {
   logoUrl: string | null = null;
   isAdmin = false;
   netProfit = 0;
+  netProfitLoaded = false;
   pendingAmount = 0;
 
   notifPanelOpen = false;
@@ -220,8 +221,9 @@ export class TopHeaderComponent implements OnInit, OnDestroy {
       next: (r: any) => {
         this.netProfit     = r?.netProfit     ?? 0;
         this.pendingAmount = r?.pendingAmount ?? 0;
+        this.netProfitLoaded = true;
       },
-      error: () => {},
+      error: () => { this.netProfitLoaded = true; },
     });
   }
 

@@ -21,6 +21,7 @@
     "@types/three": "^0.185.4",
     "chart.js": "^4.5.1",
     "exceljs": "^4.4.0",
+    "flatpickr": "^4.6.13",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",

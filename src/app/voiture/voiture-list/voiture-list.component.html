@@ -107,9 +107,11 @@
   <div class="date-filter-row">
     <span class="date-filter-label">📅 {{ t('availabilityFilter') }}</span>
     <div class="date-filter-inputs">
-      <input type="date" [(ngModel)]="dateFrom" (change)="onDateFilterChange()" class="date-input" [placeholder]="t('from')" />
-      <span class="date-sep">→</span>
-      <input type="date" [(ngModel)]="dateTo"   (change)="onDateFilterChange()" class="date-input" [placeholder]="t('to')" />
+      <app-date-range-picker
+        [from]="dateFrom" [to]="dateTo"
+        [placeholder]="t('from') + ' → ' + t('to')"
+        (rangeChange)="onDateRangeChange($event)">
+      </app-date-range-picker>
     </div>
     <button *ngIf="datesActive" class="btn-clear-dates" (click)="clearDateFilter()">✕ {{ t('clearDates') }}</button>
     <span *ngIf="datesActive" class="date-active-hint">{{ t('checkAvailability') }}</span>

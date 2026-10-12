@@ -134,12 +134,6 @@
 }
 .date-filter-label { font-size: 0.83rem; font-weight: 700; color: #2b6cb0; white-space: nowrap; }
 .date-filter-inputs { display: flex; align-items: center; gap: 0.5rem; }
-.date-input {
-  padding: 0.42rem 0.7rem; border: 1px solid #cbd5e0; border-radius: 6px;
-  font-size: 0.84rem; color: #2d3748; background: white; cursor: pointer;
-  transition: border-color 0.2s;
-}
-.date-input:focus { outline: none; border-color: #3182ce; box-shadow: 0 0 0 3px rgba(49,130,206,0.1); }
 .date-sep { color: #a0aec0; font-weight: 700; font-size: 1rem; }
 .btn-clear-dates {
   padding: 0.38rem 0.85rem; background: transparent; color: #e53e3e;

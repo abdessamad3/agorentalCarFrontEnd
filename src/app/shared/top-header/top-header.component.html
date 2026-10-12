@@ -20,16 +20,24 @@
 
   <!-- KPI chips — inline on desktop, second row on tablet/mobile -->
   <div class="header-kpis">
-    <div class="profit-chip" [class.profit-positive]="netProfit >= 0" [class.profit-negative]="netProfit < 0" [title]="t('globalNetProfitHint')">
+    <div *ngIf="netProfitLoaded" class="profit-chip" [class.profit-positive]="netProfit >= 0" [class.profit-negative]="netProfit < 0" [title]="t('globalNetProfitHint')">
       <span class="profit-icon">{{ netProfit >= 0 ? '📈' : '📉' }}</span>
       <span class="profit-label">{{ t('netProfit') }}:</span>
       <span class="profit-value">{{ netProfit | number:'1.0-0' }} MAD</span>
     </div>
-    <a class="pending-chip" routerLink="/client-debts" *ngIf="pendingAmount > 0">
+    <div *ngIf="!netProfitLoaded" class="profit-chip profit-skeleton">
+      <span class="profit-label">{{ t('netProfit') }}:</span>
+      <span class="profit-value">···</span>
+    </div>
+    <a class="pending-chip" routerLink="/client-debts" *ngIf="netProfitLoaded && pendingAmount > 0">
       <span class="pending-icon">💳</span>
       <span class="pending-label">{{ t('clientsOwed') }}:</span>
       <span class="pending-value">{{ pendingAmount | number:'1.0-0' }} MAD</span>
     </a>
+    <div *ngIf="!netProfitLoaded" class="pending-chip profit-skeleton">
+      <span class="pending-label">{{ t('clientsOwed') }}:</span>
+      <span class="pending-value">···</span>
+    </div>
   </div>
 
   <!-- Right section -->

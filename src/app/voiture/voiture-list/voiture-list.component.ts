@@ -17,13 +17,14 @@ import { EventBusService } from '../../services/event-bus.service';
 import { environment } from '../../../environments/environment';
 import { complianceSeverity } from '../../shared/utils/compliance.utils';
 import { PAGE_SIZE } from '../../shared/constants/pagination';
+import { DateRangePickerComponent } from '../../shared/date-range-picker/date-range-picker.component';
 
 const PLACEHOLDER = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjI1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjI1MCIgZmlsbD0iI2VkZjJmNyIvPjx0ZXh0IHg9IjIwMCIgeT0iMTI1IiBmaWxsPSIjYTBhZWMwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiBmb250LXNpemU9IjYwIj7wn5qXPC90ZXh0Pjwvc3ZnPg==`;
 
 @Component({
   selector: 'app-voiture-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, ComplianceBadgeComponent, UploadBtnComponent, StatusPipe],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, ComplianceBadgeComponent, UploadBtnComponent, StatusPipe, DateRangePickerComponent],
   templateUrl: './voiture-list.component.html',
   styleUrls: ['./voiture-list.component.css']
 })
@@ -321,6 +322,12 @@ export class VoitureListComponent implements OnInit, OnDestroy {
       this.page = 1;
       this.loadCars();
     }
+  }
+
+  onDateRangeChange(range: { from: string; to: string }): void {
+    this.dateFrom = range.from;
+    this.dateTo = range.to;
+    this.onDateFilterChange();
   }
 
   clearDateFilter(): void {

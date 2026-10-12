@@ -622,3 +622,24 @@ tr.row-expired-docs td:first-child    { border-left: 3px solid #ef4444; }
 tr.row-expiring-soon                  { background-color: #fef9c3 !important; }
 tr.row-expiring-soon:hover            { background-color: #fef08a !important; }
 tr.row-expiring-soon td:first-child   { border-left: 3px solid #f59e0b; }
+
+/* ── Flatpickr range calendar (dropdown is appended to <body>, outside any
+   component's view encapsulation, so its overrides must live here) ── */
+.flatpickr-calendar.animate { transition: none; }
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange {
+  background: var(--clr-primary) !important;
+  border-color: var(--clr-primary) !important;
+}
+.flatpickr-day.inRange {
+  background: var(--clr-primary-light) !important;
+  border-color: var(--clr-primary-light) !important;
+  box-shadow: -5px 0 0 var(--clr-primary-light), 5px 0 0 var(--clr-primary-light);
+}
+.flatpickr-day.selected.startRange + .endRange:not(:nth-child(7n+1)),
+.flatpickr-day.startRange.startRange + .endRange:not(:nth-child(7n+1)),
+.flatpickr-day.endRange.startRange + .endRange:not(:nth-child(7n+1)) {
+  box-shadow: -10px 0 0 var(--clr-primary);
+}
+.flatpickr-day.today { border-color: var(--clr-primary); }
