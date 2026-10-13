@@ -19,15 +19,15 @@
     <div class="pay-dep-kpi">
       <div class="pay-dep-kpi-item">
         <span class="pay-dep-kpi-label">{{ t('totalAmount') }}</span>
-        <span class="pay-dep-kpi-value">{{ montantTotal | number:'1.0-0' }} MAD</span>
+        <span class="pay-dep-kpi-value" dir="ltr">{{ montantTotal | number:'1.0-0' }} MAD</span>
       </div>
       <div class="pay-dep-kpi-item pay-dep-kpi-green">
         <span class="pay-dep-kpi-label">{{ t('totalPaid') }}</span>
-        <span class="pay-dep-kpi-value">{{ montantPaye | number:'1.0-0' }} MAD</span>
+        <span class="pay-dep-kpi-value" dir="ltr">{{ montantPaye | number:'1.0-0' }} MAD</span>
       </div>
       <div class="pay-dep-kpi-item" [class.pay-dep-kpi-red]="reste > 0">
         <span class="pay-dep-kpi-label">{{ t('remaining') }}</span>
-        <span class="pay-dep-kpi-value">{{ reste | number:'1.0-0' }} MAD</span>
+        <span class="pay-dep-kpi-value" dir="ltr">{{ reste | number:'1.0-0' }} MAD</span>
       </div>
     </div>
 
@@ -58,8 +58,8 @@
               [class.pay-dep-initial-row]="p.paymentType === 'initial'">
             <td class="pay-dep-num">{{ i + 1 }}</td>
             <td>{{ p.datePaiement | date:'dd/MM/yyyy' }}</td>
-            <td class="pay-dep-amt" [style.color]="+p.montant < 0 ? '#dc2626' : null">
-              {{ +p.montant < 0 ? '− ' : '' }}{{ p.montant | number:'1.0-0' }} MAD
+            <td class="pay-dep-amt" dir="ltr" [style.color]="+p.montant < 0 ? '#dc2626' : null">
+              {{ p.montant | number:'1.0-0' }} MAD
             </td>
             <td class="pay-dep-note">
               <span *ngIf="p.paymentType === 'initial'" class="pay-dep-initial-badge">{{ t('initialPayment') || 'Initial' }}</span>

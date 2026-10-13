@@ -73,7 +73,17 @@ export class DamageTabComponent implements OnInit {
   }
 
   onRepairPaymentChanged(): void {
-    this.load();
+    // load() alone leaves payPanelDamage pointing at the stale object from the
+    // previous damages array, so the open panel's KPI totals/progress bar only
+    // updated after a full page refresh -- re-sync it to the fresh matching item.
+    this.fetchDamages().subscribe({
+      next: (data) => {
+        this.damages = data;
+        if (this.payPanelDamage) {
+          this.payPanelDamage = data.find(d => d.id === this.payPanelDamage!.id) ?? this.payPanelDamage;
+        }
+      },
+    });
     this.bus.paymentsChanged$.next();
     this.carRefresh.emit();
   }
@@ -125,10 +135,14 @@ export class DamageTabComponent implements OnInit {
     });
   }
 
+  private fetchDamages() {
+    return this.http.get<DamageRecord[]>(`${environment.apiUrl}/voiture/${this.carId}/damages`);
+  }
+
   load(): void {
     this.loading = true;
     this.error = '';
-    this.http.get<DamageRecord[]>(`${environment.apiUrl}/voiture/${this.carId}/damages`).subscribe({
+    this.fetchDamages().subscribe({
       next: (data) => { this.damages = data; this.loading = false; },
       error: () => { this.error = 'Failed to load damage records.'; this.loading = false; },
     });

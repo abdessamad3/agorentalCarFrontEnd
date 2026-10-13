@@ -19,15 +19,15 @@
     <div class="pay-res-kpi">
       <div class="pay-res-kpi-item">
         <span class="pay-res-kpi-label">{{ t('total') }}</span>
-        <span class="pay-res-kpi-value">{{ montantTotal | number:'1.0-0' }} MAD</span>
+        <span class="pay-res-kpi-value" dir="ltr">{{ montantTotal | number:'1.0-0' }} MAD</span>
       </div>
       <div class="pay-res-kpi-item pay-res-kpi-green">
         <span class="pay-res-kpi-label">{{ t('paid') || 'Payé' }}</span>
-        <span class="pay-res-kpi-value">{{ montantPaye | number:'1.0-0' }} MAD</span>
+        <span class="pay-res-kpi-value" dir="ltr">{{ montantPaye | number:'1.0-0' }} MAD</span>
       </div>
       <div class="pay-res-kpi-item" [class.pay-res-kpi-red]="reste > 0">
         <span class="pay-res-kpi-label">{{ t('remaining') }}</span>
-        <span class="pay-res-kpi-value">{{ reste | number:'1.0-0' }} MAD</span>
+        <span class="pay-res-kpi-value" dir="ltr">{{ reste | number:'1.0-0' }} MAD</span>
       </div>
     </div>
 
@@ -52,8 +52,8 @@
             <span class="pay-res-item-note" *ngIf="+p.montant < 0" style="color:#dc2626;font-weight:600">{{ t('refund') }}</span>
           </div>
           <div class="pay-res-item-right">
-            <span class="pay-res-item-amount" [style.color]="+p.montant < 0 ? '#dc2626' : null">
-              {{ +p.montant < 0 ? '− ' : '' }}{{ p.montant | number:'1.0-0' }} MAD
+            <span class="pay-res-item-amount" dir="ltr" [style.color]="+p.montant < 0 ? '#dc2626' : null">
+              {{ p.montant | number:'1.0-0' }} MAD
             </span>
             <button class="pay-res-del-btn" [disabled]="deleteId === p.id"
                     (click)="deletePay(p.id)" [title]="t('deletePayment') || 'Supprimer'">
