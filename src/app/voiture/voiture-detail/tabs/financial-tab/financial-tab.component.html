@@ -282,7 +282,7 @@
   [depenseId]="payRecord?.depenseId ?? null"
   [montantTotal]="+(payRecord?.montantTotal ?? 0)"
   [montantPaye]="+(payRecord?.montantPaye ?? 0)"
-  [title]="(payRecord?.description || t('payments')) + (payRecord?.date ? ' — ' + (payRecord.date | date:'dd/MM/yyyy') : '')"
+  [title]="(payRecord?.description ? txDescLabel(payRecord.description) : t('payments')) + (payRecord?.date ? ' — ' + (payRecord.date | date:'dd/MM/yyyy') : '')"
   [dir]="dir"
   (closed)="closePayPanel()"
   (paymentChanged)="onPaymentChanged()">

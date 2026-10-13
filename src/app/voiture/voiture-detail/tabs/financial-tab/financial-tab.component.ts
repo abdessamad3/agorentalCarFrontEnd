@@ -12,6 +12,7 @@ import { AuthService } from '../../../../services/auth.service';
 import { environment } from '../../../../../environments/environment';
 import { PayDepPanelComponent } from '../../../../shared/pay-dep-panel/pay-dep-panel.component';
 import { EventBusService } from '../../../../services/event-bus.service';
+import { VEHICLE_ZONES } from '../../../../shared/vehicle-map/vehicle-map.component';
 
 @Component({
   selector: 'app-financial-tab',
@@ -597,10 +598,29 @@ export class FinancialTabComponent implements OnInit, OnChanges, OnDestroy {
     adblue:          'adblue',
   };
 
+  private static readonly SEVERITY_KEY_MAP: Record<string, string> = {
+    scratch: 'sevScratch', dent: 'sevDent', crack: 'sevCrack', broken: 'sevBroken',
+  };
+
   txDescLabel(desc: string | null | undefined): string {
     if (!desc) return '—';
     const resMatch = desc.match(/^R[ée]servation #(\d+)$/i);
     if (resMatch) return `${this.t('reservation')} #${resMatch[1]}`;
+    // Damage-repair expenses store a raw, never-localized string baked in at
+    // creation time (backend DamageController: "Réparation: {zone} ({severity}})")
+    // -- parse it back out and rebuild it from the same translation keys the
+    // damage tab itself uses, instead of showing it verbatim in every language.
+    const repairMatch = desc.match(/^R[ée]paration:\s*(.+?)\s*\(([^)]+)\)$/i);
+    if (repairMatch) {
+      const [, rawZone, rawSeverity] = repairMatch;
+      const zoneKey = VEHICLE_ZONES.find(z => z.value === rawZone.toLowerCase().trim())?.key;
+      const severityKey = FinancialTabComponent.SEVERITY_KEY_MAP[rawSeverity.toLowerCase().trim()];
+      if (zoneKey) {
+        const zoneLabel = this.t(zoneKey);
+        const severityLabel = severityKey ? this.t(severityKey) : rawSeverity;
+        return `${this.t('reparations')}: ${zoneLabel} (${severityLabel})`;
+      }
+    }
     const key = FinancialTabComponent.DESC_TYPE_MAP[desc.toLowerCase().trim()];
     return key ? this.t(key) : desc;
   }
