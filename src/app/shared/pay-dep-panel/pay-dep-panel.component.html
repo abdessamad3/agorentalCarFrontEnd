@@ -117,7 +117,7 @@
         </div>
         <div class="pay-dep-field pay-dep-field-wide">
           <label>{{ t('note') }}</label>
-          <input type="text" formControlName="note" class="pay-dep-input" placeholder="Optional note">
+          <input type="text" formControlName="note" class="pay-dep-input" [placeholder]="t('note')">
         </div>
       </div>
       <div class="pay-dep-receipt-upload">
@@ -149,7 +149,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
         <polyline points="20 6 9 17 4 12"/>
       </svg>
-      Fully paid
+      {{ t('fullyPaid') }}
     </div>
 
     <!-- Refund -->
@@ -178,7 +178,7 @@
           </div>
           <div class="pay-dep-field pay-dep-field-wide">
             <label>{{ t('note') }}</label>
-            <input type="text" formControlName="note" class="pay-dep-input" placeholder="Optional note">
+            <input type="text" formControlName="note" class="pay-dep-input" [placeholder]="t('note')">
           </div>
         </div>
         <div class="pay-dep-form-actions">
