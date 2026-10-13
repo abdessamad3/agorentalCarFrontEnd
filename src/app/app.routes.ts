@@ -1,16 +1,19 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth.guard';
 import { roleGuard } from './guards/role.guard';
+import { guestGuard } from './guards/guest.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
   {
     path: 'login',
-    loadComponent: () => import('./auth/login/login.component').then(m => m.LoginComponent)
+    loadComponent: () => import('./auth/login/login.component').then(m => m.LoginComponent),
+    canActivate: [guestGuard]
   },
   {
     path: 'register',
-    loadComponent: () => import('./auth/register/register.component').then(m => m.RegisterComponent)
+    loadComponent: () => import('./auth/register/register.component').then(m => m.RegisterComponent),
+    canActivate: [guestGuard]
   },
 
   // ── Organisation ───────────────────────────────────────────────────────────
