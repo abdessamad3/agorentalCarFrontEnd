@@ -159,7 +159,8 @@ export class PayDepPanelComponent implements OnChanges {
 
   get progressPct(): number {
     if (!+this.montantTotal) return 0;
-    return Math.min(100, Math.round((+this.montantPaye / +this.montantTotal) * 100));
+    if (this.reste > 0) return Math.min(99, Math.round((+this.montantPaye / +this.montantTotal) * 100));
+    return 100;
   }
 
   close(): void { this.closed.emit(); }

@@ -217,7 +217,7 @@
           <td>{{ tx.date | date:'dd/MM/yyyy' }}</td>
           <td><span class="fin-tx-type">{{ txTypeLabel(tx.type) }}</span></td>
           <td>{{ txDescLabel(tx.description) }}</td>
-          <td [class.fin-tx-income]="tx.direction === 'income'" [class.fin-tx-expense]="tx.direction === 'expense'">
+          <td dir="ltr" [class.fin-tx-income]="tx.direction === 'income'" [class.fin-tx-expense]="tx.direction === 'expense'">
             {{ tx.direction === 'income' ? '+' : '-' }}{{ tx.amount | number:'1.0-0' }} MAD
           </td>
           <td>
@@ -259,7 +259,7 @@
           </span>
         </div>
 
-        <div class="fin-card-amount"
+        <div class="fin-card-amount" dir="ltr"
              [class.fin-tx-income]="tx.direction === 'income'"
              [class.fin-tx-expense]="tx.direction === 'expense'">
           {{ tx.direction === 'income' ? '+' : '-' }}{{ tx.amount | number:'1.0-0' }} MAD
