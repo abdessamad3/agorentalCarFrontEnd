@@ -551,7 +551,7 @@ export class VoitureDetailComponent implements OnInit {
       events.push({
         date: new Date(d),
         icon: '🔧',
-        title: r.description || r.type || 'Repair performed',
+        title: r.description || r.type || this.ts.translate('repairPerformed'),
         subtitle: [r.garage, r.montant ? r.montant + ' MAD' : ''].filter(Boolean).join(' · '),
         type: 'repair',
       });
