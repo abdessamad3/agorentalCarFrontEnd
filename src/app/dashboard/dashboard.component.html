@@ -48,7 +48,7 @@
       </div>
       <div>
         <div class="mob-stat-num">{{ urgentPendingCount }}</div>
-        <div class="mob-stat-lbl">En attente &lt;24h</div>
+        <div class="mob-stat-lbl">{{ t('urgentPendingShort') }}</div>
       </div>
     </div>
   </div>
@@ -267,7 +267,7 @@
       </div>
       <div class="stat-info">
         <span class="stat-num">{{ urgentPendingCount }}</span>
-        <span class="stat-lbl">En attente &lt;24h</span>
+        <span class="stat-lbl">{{ t('urgentPendingShort') }}</span>
       </div>
     </div>
   </div>
@@ -360,7 +360,7 @@
       <div class="leg-item"><span class="leg-dot ld-cancelled"></span>{{ t('cancelled') }}</div>
       <div class="leg-spacer"></div>
       <div class="leg-item"><span class="leg-today-swatch"></span>{{ t('today') }}</div>
-      <div class="leg-item"><span class="leg-weekend-swatch"></span>Weekend</div>
+      <div class="leg-item"><span class="leg-weekend-swatch"></span>{{ t('weekend') }}</div>
     </div>
 
   </div>
@@ -371,7 +371,7 @@
   <div class="detail-modal" (click)="$event.stopPropagation()">
     <div class="dm-header">
       <div>
-        <h3 class="dm-title">{{ selectedDay.date | date:'EEEE, d MMMM' }}</h3>
+        <h3 class="dm-title">{{ dayModalTitle(selectedDay.date) }}</h3>
         <span class="dm-subtitle">{{ selectedDay.bookings.length }} {{ t('reservations') }}</span>
       </div>
       <button class="dm-close" (click)="closeDay()">
@@ -403,9 +403,9 @@
           </div>
           <div class="dmi-actions" *ngIf="bookingStatusClass(b) === 'pending'">
             <button class="dmi-btn-confirm" [disabled]="confirmingId === b.id"
-                    (click)="confirmReservation(b, $event)">✓ Confirmer</button>
+                    (click)="confirmReservation(b, $event)">✓ {{ t('confirm') }}</button>
             <button class="dmi-btn-cancel" [disabled]="cancellingId === b.id"
-                    (click)="cancelReservation(b, $event)">✕ Annuler</button>
+                    (click)="cancelReservation(b, $event)">✕ {{ t('cancel') }}</button>
           </div>
         </div>
       </div>
@@ -427,7 +427,7 @@
       <div class="mob-bs-handle"></div>
       <div class="mob-bs-header">
         <div>
-          <h3 class="mob-bs-title">{{ bottomSheetDay.date | date:'EEEE, d MMMM' }}</h3>
+          <h3 class="mob-bs-title">{{ dayModalTitle(bottomSheetDay.date) }}</h3>
           <span class="mob-bs-subtitle">{{ bottomSheetDay.bookings.length }} {{ t('reservations') }}</span>
         </div>
         <button class="mob-bs-close-btn" (click)="closeBottomSheet()">
@@ -457,9 +457,9 @@
             </div>
             <div class="dmi-actions" *ngIf="bookingStatusClass(b) === 'pending'">
               <button class="dmi-btn-confirm" [disabled]="confirmingId === b.id"
-                      (click)="confirmReservation(b, $event)">✓ Confirmer</button>
+                      (click)="confirmReservation(b, $event)">✓ {{ t('confirm') }}</button>
               <button class="dmi-btn-cancel" [disabled]="cancellingId === b.id"
-                      (click)="cancelReservation(b, $event)">✕ Annuler</button>
+                      (click)="cancelReservation(b, $event)">✕ {{ t('cancel') }}</button>
             </div>
           </div>
         </div>
@@ -519,7 +519,7 @@
             <ng-container *ngIf="statModal === 'thisMonth'">{{ t('thisMonth') }}</ng-container>
             <ng-container *ngIf="statModal === 'available'">{{ t('availableCars') }}</ng-container>
             <ng-container *ngIf="statModal === 'returnToday'">{{ t('returningToday') }}</ng-container>
-            <ng-container *ngIf="statModal === 'urgentPending'">⚠ En attente — départ dans &lt;24h</ng-container>
+            <ng-container *ngIf="statModal === 'urgentPending'">{{ t('urgentPendingTitle') }}</ng-container>
           </h3>
           <span class="sm-count">
             <ng-container *ngIf="statModal === 'active'">{{ activeRentalsList.length }} {{ t('reservations') }}</ng-container>
@@ -635,7 +635,7 @@
 
       <!-- Urgent Pending -->
       <ng-container *ngIf="statModal === 'urgentPending'">
-        <div *ngIf="!urgentPendingList.length" class="sm-empty">Aucune réservation en attente urgente.</div>
+        <div *ngIf="!urgentPendingList.length" class="sm-empty">{{ t('noData') }}</div>
         <div *ngFor="let r of urgentPendingList" class="sm-item res-link sm-item-urgent"
              [routerLink]="['/location', r.id]" (click)="closeStatModal()">
           <div class="sm-item-accent sm-accent-urgent"></div>

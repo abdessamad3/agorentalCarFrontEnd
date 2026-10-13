@@ -512,4 +512,29 @@ export class DashboardComponent implements OnInit {
   }
 
   t(key: string) { return this.ts.translate(key); }
+
+  // ── Locale-aware day-modal title ────────────────────────────────────────────
+  // Angular's `date` pipe (used elsewhere as `| date:'EEEE, d MMMM'`) always renders
+  // weekday/month names in the app's compile-time LOCALE_ID, which this project never
+  // overrides -- so it silently stays in English regardless of the in-app language
+  // switcher. Format it manually here instead, from the same TranslationService
+  // language the rest of the page already follows.
+  private static readonly WEEKDAYS: Record<'fr' | 'en' | 'ar', string[]> = {
+    en: ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],
+    fr: ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'],
+    ar: ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'],
+  };
+  private static readonly MONTHS_FULL: Record<'fr' | 'en' | 'ar', string[]> = {
+    en: ['January','February','March','April','May','June','July','August','September','October','November','December'],
+    fr: ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'],
+    ar: ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'],
+  };
+
+  dayModalTitle(date: Date): string {
+    const lang = (this.ts.getCurrentLanguage() as 'fr' | 'en' | 'ar') in DashboardComponent.WEEKDAYS
+      ? this.ts.getCurrentLanguage() as 'fr' | 'en' | 'ar' : 'en';
+    const weekday = DashboardComponent.WEEKDAYS[lang][date.getDay()];
+    const month = DashboardComponent.MONTHS_FULL[lang][date.getMonth()];
+    return `${weekday}, ${date.getDate()} ${month}`;
+  }
 }

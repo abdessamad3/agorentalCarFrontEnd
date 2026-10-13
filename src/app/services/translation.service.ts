@@ -32,6 +32,7 @@ export class TranslationService {
 
       // Calendar
       today: 'Today', returningToday: 'Returning Today', thisMonth: 'This Month', fleetCalendar: 'Fleet Calendar', weekend: 'Weekend',
+      urgentPendingShort: 'Pending <24h', urgentPendingTitle: '⚠ Pending — departure in <24h',
       confirmed: 'Confirmed', inProgress: 'In Progress', pending: 'Pending',
       cancelled: 'Cancelled', more: 'more',
 
@@ -1034,6 +1035,7 @@ export class TranslationService {
 
       // Calendrier
       today: "Aujourd'hui", returningToday: 'Retours du jour', thisMonth: 'Ce Mois', fleetCalendar: 'Calendrier Flotte', weekend: 'Week-end',
+      urgentPendingShort: 'En attente <24h', urgentPendingTitle: '⚠ En attente — départ dans <24h',
       confirmed: 'Confirmé', inProgress: 'En Cours', pending: 'En Attente',
       cancelled: 'Annulé', more: 'de plus',
 
@@ -2006,6 +2008,7 @@ export class TranslationService {
 
       // التقويم
       today: 'اليوم', returningToday: 'إرجاعات اليوم', thisMonth: 'هذا الشهر', fleetCalendar: 'تقويم الأسطول', weekend: 'عطلة نهاية الأسبوع',
+      urgentPendingShort: 'قيد الانتظار <24 ساعة', urgentPendingTitle: '⚠ قيد الانتظار — المغادرة خلال 24 ساعة',
       confirmed: 'مؤكد', inProgress: 'جاري', pending: 'قيد الانتظار',
       cancelled: 'ملغى', more: 'المزيد',
 
