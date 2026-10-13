@@ -517,7 +517,12 @@ export class VoitureCreateComponent implements OnInit {
     // Build inspection observable (only for vehicles >= 3 years old and not skipped)
     const hasInspection = !this.complianceSkipped['inspection'] && this.needsInspection && !!(inspV.dateFin || inspV.dateReglages);
     const postInspection$: Observable<any> = hasInspection
-      ? this.crud.create('suivi-technique', { voitureId, ...this.compactObj(inspV) }).pipe(catchError(() => of(null)))
+      ? this.crud.create('suivi-technique', {
+          voitureId,
+          // backend reads montantTotal, not montant -- see suivi-tab.component.ts's
+          // own payload mapping for the same rename
+          ...this.compactObj({ dateReglages: inspV.dateReglages, dateFin: inspV.dateFin, montantTotal: inspV.montant }),
+        }).pipe(catchError(() => of(null)))
       : of(null);
 
     postAchat$.pipe(
