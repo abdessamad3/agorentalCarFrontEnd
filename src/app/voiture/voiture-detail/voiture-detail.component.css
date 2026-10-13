@@ -3669,6 +3669,12 @@
   padding: 0.35rem 0;
 }
 
+.fin-tx-remaining {
+  font-size: 0.74rem; font-weight: 600;
+  color: var(--red); opacity: 0.85;
+  margin-top: 0.15rem;
+}
+
 /* ── Expense mobile / desktop visibility ─────────────────────────────────── */
 .exp-desktop-only { display: block; }
 .exp-cards-mobile  { display: none; }

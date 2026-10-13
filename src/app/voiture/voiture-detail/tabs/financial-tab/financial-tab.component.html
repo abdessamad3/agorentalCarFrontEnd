@@ -219,6 +219,7 @@
           <td>{{ txDescLabel(tx.description) }}</td>
           <td dir="ltr" [class.fin-tx-income]="tx.direction === 'income'" [class.fin-tx-expense]="tx.direction === 'expense'">
             {{ tx.direction === 'income' ? '+' : '-' }}{{ tx.amount | number:'1.0-0' }} MAD
+            <div *ngIf="txRemaining(tx) > 0.01" class="fin-tx-remaining">{{ t('remaining') }}: {{ txRemaining(tx) | number:'1.0-0' }} MAD</div>
           </td>
           <td>
             <span *ngIf="tx.type === 'income'" class="tx-badge" [ngClass]="txResStatusClass(tx)">{{ tx.reservationStatus | appStatus:'reservation' }}</span>
@@ -264,6 +265,7 @@
              [class.fin-tx-expense]="tx.direction === 'expense'">
           {{ tx.direction === 'income' ? '+' : '-' }}{{ tx.amount | number:'1.0-0' }} MAD
         </div>
+        <div *ngIf="txRemaining(tx) > 0.01" class="fin-tx-remaining" dir="ltr">{{ t('remaining') }}: {{ txRemaining(tx) | number:'1.0-0' }} MAD</div>
 
         <div class="exp-card-actions" *ngIf="tx.filePath || tx.depenseId">
           <a *ngIf="tx.filePath" class="ia-btn ia-download" [href]="fileUrl(tx.filePath)" [download]="downloadFileName(tx.filePath)">📎 {{ t('download') }}</a>

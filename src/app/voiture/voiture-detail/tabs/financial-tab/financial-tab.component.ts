@@ -610,6 +610,14 @@ export class FinancialTabComponent implements OnInit, OnChanges, OnDestroy {
     scratch: 'sevScratch', dent: 'sevDent', crack: 'sevCrack', broken: 'sevBroken',
   };
 
+  /** Still-unpaid balance on an expense row -- the headline amount is the original
+   *  committed total (by design, stays fixed even after a refund), so this is the only
+   *  place on the card itself that shows whether anything's still outstanding. */
+  txRemaining(tx: any): number {
+    if (tx.montantTotal == null) return 0;
+    return Math.max(0, (+tx.montantTotal || 0) - (+tx.montantPaye || 0));
+  }
+
   txDescLabel(desc: string | null | undefined): string {
     if (!desc) return '—';
     const resMatch = desc.match(/^R[ée]servation #(\d+)$/i);
