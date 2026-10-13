@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { catchError } from 'rxjs/operators';
@@ -20,12 +20,23 @@ import { EventBusService } from '../../../../services/event-bus.service';
   templateUrl: './documents-tab.component.html',
   styleUrls: ['../../voiture-detail.component.css'],
 })
-export class DocumentsTabComponent implements OnInit {
+export class DocumentsTabComponent implements OnInit, OnChanges {
   @Input() carId!: number;
   @Input() car!: any;
   @Input() reparations: any[] = [];
   @Input() dir = 'ltr';
   @Output() carRefresh = new EventEmitter<void>();
+
+  ngOnChanges(changes: SimpleChanges): void {
+    // reparations flows down from the parent (refreshed via carRefresh.emit() after a
+    // repair payment/refund) -- without this, the open panel's [montantTotal]/
+    // [montantPaye] inputs stay bound to the stale pre-refresh object and its totals
+    // only update after a full page reload, same bug as financial-tab/damage-tab had.
+    if (changes['reparations'] && this.payDepPanelOpen && this.payDepRecord?.depenseId != null) {
+      const fresh = this.reparations.find((r: any) => r.depenseId === this.payDepRecord.depenseId);
+      if (fresh) this.payDepRecord = fresh;
+    }
+  }
 
   // ── Expense config ──────────────────────────────────────────────────────
   readonly EXPENSE_TYPES = [

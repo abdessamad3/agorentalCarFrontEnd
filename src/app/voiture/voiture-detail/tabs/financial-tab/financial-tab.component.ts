@@ -163,6 +163,14 @@ export class FinancialTabComponent implements OnInit, OnChanges, OnDestroy {
       .subscribe((data: any) => {
         this.finTransactions = Array.isArray(data) ? data : [];
         this.finLoading = false;
+        // The open payment panel's [montantTotal]/[montantPaye] inputs are bound to
+        // payRecord, a reference into the OLD finTransactions array -- without this,
+        // its KPI totals/progress bar stay stale after a refund until a full page
+        // reload, even though the new refund row itself shows up immediately.
+        if (this.payRecord?.depenseId != null) {
+          const fresh = this.finTransactions.find((t: any) => t.depenseId === this.payRecord.depenseId);
+          if (fresh) this.payRecord = fresh;
+        }
       });
   }
 
