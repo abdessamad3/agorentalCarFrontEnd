@@ -58,10 +58,13 @@
               [class.pay-dep-initial-row]="p.paymentType === 'initial'">
             <td class="pay-dep-num">{{ i + 1 }}</td>
             <td>{{ p.datePaiement | date:'dd/MM/yyyy' }}</td>
-            <td class="pay-dep-amt">{{ p.montant | number:'1.0-0' }} MAD</td>
+            <td class="pay-dep-amt" [style.color]="+p.montant < 0 ? '#dc2626' : null">
+              {{ +p.montant < 0 ? '− ' : '' }}{{ p.montant | number:'1.0-0' }} MAD
+            </td>
             <td class="pay-dep-note">
               <span *ngIf="p.paymentType === 'initial'" class="pay-dep-initial-badge">{{ t('initialPayment') || 'Initial' }}</span>
-              <span *ngIf="p.paymentType !== 'initial'">{{ p.note || '—' }}</span>
+              <span *ngIf="+p.montant < 0" style="color:#dc2626;font-weight:600">{{ t('refund') }}</span>
+              <span *ngIf="p.paymentType !== 'initial' && +p.montant >= 0">{{ p.note || '—' }}</span>
             </td>
             <td class="pay-dep-receipt-cell">
               <a *ngIf="p.filePath" [href]="p.filePath" target="_blank" rel="noopener"
@@ -147,6 +150,44 @@
         <polyline points="20 6 9 17 4 12"/>
       </svg>
       Fully paid
+    </div>
+
+    <!-- Refund -->
+    <div *ngIf="montantPaye > 0" class="pay-dep-add-form">
+      <button type="button" class="pay-dep-del-btn" style="width:auto;height:auto;padding:.4rem .8rem;border-radius:6px;color:#dc2626;border-color:#fca5a5"
+              (click)="showRefundForm = !showRefundForm">
+        {{ showRefundForm ? t('cancel') : t('recordRefund') }}
+      </button>
+
+      <ng-container [formGroup]="refundForm" *ngIf="showRefundForm">
+        <div class="pay-dep-section-title" style="color:#991b1b;margin-top:.75rem">{{ t('recordRefund') }}</div>
+        <p style="font-size:.75rem;color:#64748b;margin:0 0 .5rem">{{ t('refundHint') }}</p>
+        <div class="pay-dep-form-row">
+          <div class="pay-dep-field">
+            <label>{{ t('totalAmount') }}</label>
+            <input type="number" formControlName="montant" min="0.01" [max]="montantPaye" step="0.01"
+                   class="pay-dep-input" placeholder="0.00"
+                   [class.is-invalid]="(refundForm.get('montant')?.invalid && refundForm.get('montant')?.touched)">
+            <span class="pay-dep-field-error" *ngIf="+refundForm.get('montant')?.value > montantPaye">
+              {{ t('refundExceedsPaid') }}
+            </span>
+          </div>
+          <div class="pay-dep-field">
+            <label>{{ t('date') }}</label>
+            <input type="date" formControlName="datePaiement" class="pay-dep-input">
+          </div>
+          <div class="pay-dep-field pay-dep-field-wide">
+            <label>{{ t('note') }}</label>
+            <input type="text" formControlName="note" class="pay-dep-input" placeholder="Optional note">
+          </div>
+        </div>
+        <div class="pay-dep-form-actions">
+          <button class="btn-pay-dep-submit" style="background:#dc2626" (click)="submitRefund()" [disabled]="submittingRefund || refundForm.invalid">
+            <span *ngIf="submittingRefund" class="spin-sm"></span>
+            {{ submittingRefund ? t('saving') : t('recordRefund') }}
+          </button>
+        </div>
+      </ng-container>
     </div>
 
   </div>

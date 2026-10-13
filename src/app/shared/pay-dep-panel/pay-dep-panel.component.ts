@@ -31,6 +31,13 @@ export class PayDepPanelComponent implements OnChanges {
   receiptError = '';
   form!: FormGroup;
 
+  // ── Refund (recorded as its own negative payment, never by editing/deleting
+  //    the original -- keeps the real history for cash/expense reports, mirrors
+  //    pay-res-panel's reservation-side refund) ───────────────────────────────
+  showRefundForm = false;
+  submittingRefund = false;
+  refundForm!: FormGroup;
+
   constructor(
     private payDepSvc: PaiementDepenseService,
     private ts: TranslationService,
@@ -41,16 +48,24 @@ export class PayDepPanelComponent implements OnChanges {
       datePaiement: ['', Validators.required],
       note:         [''],
     });
+    this.refundForm = this.fb.group({
+      montant:      [null, [Validators.required, Validators.min(0.01)]],
+      datePaiement: ['', Validators.required],
+      note:         [''],
+    });
   }
 
   ngOnChanges(c: SimpleChanges): void {
     const openedNow = c['open']?.currentValue === true && c['open']?.previousValue !== true;
     if (openedNow && this.depenseId) {
-      this.form.reset({ datePaiement: new Date().toISOString().split('T')[0] });
+      const today = new Date().toISOString().split('T')[0];
+      this.form.reset({ datePaiement: today });
+      this.refundForm.reset({ datePaiement: today });
       this.paiements = [];
       this.deleteId  = null;
       this.receiptFile = null;
       this.receiptError = '';
+      this.showRefundForm = false;
       this.loadPaiements();
     }
     if (c['depenseId'] && this.open && this.depenseId) {
@@ -107,6 +122,28 @@ export class PayDepPanelComponent implements OnChanges {
         this.paymentChanged.emit();
       },
       error: () => { this.submitting = false; },
+    });
+  }
+
+  submitRefund(): void {
+    if (this.refundForm.invalid || !this.depenseId) return;
+    if (+this.refundForm.value.montant > this.montantPaye) return;
+    this.submittingRefund = true;
+    const v = this.refundForm.value;
+    this.payDepSvc.create({
+      depenseId:    this.depenseId,
+      montant:      -Math.abs(parseFloat(v.montant)),
+      datePaiement: v.datePaiement,
+      note:         v.note || undefined,
+    }).subscribe({
+      next: () => {
+        this.submittingRefund = false;
+        this.showRefundForm = false;
+        this.refundForm.reset({ datePaiement: new Date().toISOString().split('T')[0] });
+        this.loadPaiements();
+        this.paymentChanged.emit();
+      },
+      error: () => { this.submittingRefund = false; },
     });
   }
 
