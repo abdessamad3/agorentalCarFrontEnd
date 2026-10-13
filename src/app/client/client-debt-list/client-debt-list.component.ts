@@ -83,10 +83,13 @@ export class ClientDebtListComponent implements OnInit {
         clientMap.set(cl.id, { telephone: cl.telephone || '', cin: cl.cin || '', prenom: cl.prenom || '' });
       }
 
+      // Use the backend's montantRestant rather than recomputing total - montantPaye here --
+      // that local formula doesn't know about refunds, so a client refunded on an
+      // already-settled reservation would wrongly show up as still owing money.
       const unpaid = all.filter(r => {
         const status = (r.reservationStatus || r.statut || '').toLowerCase();
         if (['cancelled', 'annulee', 'annule', 'pending'].includes(status)) return false;
-        const remaining = parseFloat(r.total || 0) - parseFloat(r.montantPaye || 0);
+        const remaining = parseFloat(r.montantRestant ?? (r.total || 0) - (r.montantPaye || 0));
         return remaining > 0.01;
       });
 
@@ -94,7 +97,7 @@ export class ClientDebtListComponent implements OnInit {
       for (const r of unpaid) {
         const c = r.client;
         if (!c) continue;
-        const remaining = parseFloat(r.total || 0) - parseFloat(r.montantPaye || 0);
+        const remaining = parseFloat(r.montantRestant ?? (r.total || 0) - (r.montantPaye || 0));
         if (!map.has(c.id)) {
           const extra = clientMap.get(c.id);
           map.set(c.id, {
