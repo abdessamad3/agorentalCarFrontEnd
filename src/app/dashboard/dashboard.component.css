@@ -358,6 +358,7 @@
 
 .dm-item {
   display: flex;
+  flex-shrink: 0;
   border-radius: 10px;
   border: 1px solid #EEF2F7;
   overflow: hidden;
@@ -668,7 +669,7 @@
 .mob-empty-cta:hover { background: #1a6ed1; }
 
 .mob-day-list { display: flex; flex-direction: column; gap: 0.65rem; }
-.mob-day-item { display: flex; border-radius: 12px; border: 1px solid #EEF2F7; overflow: hidden; background: #fff; box-shadow: 0 2px 8px rgba(11,45,78,0.05); }
+.mob-day-item { display: flex; flex-shrink: 0; border-radius: 12px; border: 1px solid #EEF2F7; overflow: hidden; background: #fff; box-shadow: 0 2px 8px rgba(11,45,78,0.05); }
 .mob-dmi-accent { width: 4px; flex-shrink: 0; }
 .mob-dmi-confirmed .mob-dmi-accent   { background: #2F80ED; }
 .mob-dmi-active .mob-dmi-accent      { background: #27AE60; }
@@ -690,7 +691,7 @@
 .mob-agh-today .mob-agd-label { color: #2F80ED; }
 .mob-agd-count { font-size: 0.7rem; font-weight: 700; background: #0B2D4E; color: #fff; border-radius: 10px; padding: 1px 7px; min-width: 18px; text-align: center; }
 .mob-agh-today .mob-agd-count { background: #2F80ED; }
-.mob-agenda-item { display: flex; border-radius: 12px; border: 1px solid #EEF2F7; overflow: hidden; background: #fff; box-shadow: 0 1px 6px rgba(11,45,78,0.05); }
+.mob-agenda-item { display: flex; flex-shrink: 0; border-radius: 12px; border: 1px solid #EEF2F7; overflow: hidden; background: #fff; box-shadow: 0 1px 6px rgba(11,45,78,0.05); }
 .mob-agi-accent { width: 4px; flex-shrink: 0; }
 .mob-agi-confirmed .mob-agi-accent   { background: #2F80ED; }
 .mob-agi-active .mob-agi-accent      { background: #27AE60; }
@@ -727,7 +728,7 @@
 }
 .mob-bs-close-btn:hover { background: #0B2D4E; color: #fff; }
 .mob-bs-body { padding: 0.85rem; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 0.55rem; -webkit-overflow-scrolling: touch; }
-.mob-bs-item { display: flex; border-radius: 12px; border: 1px solid #EEF2F7; overflow: hidden; background: #FAFBFD; }
+.mob-bs-item { display: flex; flex-shrink: 0; border-radius: 12px; border: 1px solid #EEF2F7; overflow: hidden; background: #FAFBFD; }
 .mob-bsi-accent { width: 4px; flex-shrink: 0; }
 .mob-bsi-confirmed .mob-bsi-accent   { background: #2F80ED; }
 .mob-bsi-active .mob-bsi-accent      { background: #27AE60; }
