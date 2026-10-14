@@ -481,6 +481,12 @@
    row with room to spare, so the labels come back there. */
 @media (max-width: 1200px) and (min-width: 769px) {
   .profit-label, .pending-label { display: none; }
+  /* Labels are gone, so the 220px floor below (sized for the full
+     "Label: value MAD" text) is no longer needed -- without shrinking it
+     too the chips keep forcing 220px each, overflow .header-kpis, and
+     visually overlap the lang switcher / notif bell / page title to
+     their right. */
+  .profit-chip, .pending-chip { min-width: 0; flex-shrink: 1; }
 }
 
 @media (max-width: 768px) {
