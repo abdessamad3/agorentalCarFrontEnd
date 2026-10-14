@@ -422,19 +422,31 @@
     </div>
     <div class="dm-body" *ngIf="filterStatus === 'available'">
       <div *ngFor="let v of selectedDay.availableCars"
-           class="dm-item dmi-available res-link"
-           [routerLink]="['/voiture', v.id]" (click)="closeDay()">
+           class="dm-item dmi-available"
+           [class.dmi-available-on]="expandedCarId === v.id">
         <div class="dmi-accent"></div>
-        <div class="dmi-content">
-          <div class="dmi-top">
-            <span class="dmi-vehicle">
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-              {{ carLabel(v) }}
-            </span>
-            <span class="dmi-badge badge-available">{{ t('available') }}</span>
-          </div>
-          <div class="dmi-bottom" *ngIf="v.immatriculation">
-            <span class="dmi-client">{{ v.immatriculation }}</span>
+        <div class="dmi-inner">
+          <button class="dmi-toggle" (click)="toggleCarExpand(v.id)" [attr.aria-expanded]="expandedCarId === v.id">
+            <div class="dmi-content">
+              <div class="dmi-top">
+                <span class="dmi-vehicle">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                  {{ carLabel(v) }}
+                </span>
+                <span class="dmi-badge badge-available">{{ t('available') }}</span>
+              </div>
+              <div class="dmi-bottom" *ngIf="v.immatriculation">
+                <span class="dmi-client">{{ v.immatriculation }}</span>
+              </div>
+            </div>
+            <svg class="dmi-chevron" [class.dmi-chevron-on]="expandedCarId === v.id" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#CBD5E0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="dmi-expand" *ngIf="expandedCarId === v.id">
+            <ng-container *ngIf="nextBookingGap(v, selectedDay.date) as gap">
+              <span class="dmi-gap" *ngIf="gap.hasNext">↳ {{ t('freeUntil') }} {{ gap.dateLabel }} <span class="dmi-gap-days">({{ gap.days }} {{ t('days') }})</span></span>
+              <span class="dmi-gap dmi-gap-none" *ngIf="!gap.hasNext">↳ {{ t('noUpcomingBooking') }}</span>
+            </ng-container>
+            <a [routerLink]="['/voiture', v.id]" class="dmi-view-link" (click)="closeDay()">{{ t('viewVehicle') }} →</a>
           </div>
         </div>
       </div>
@@ -496,18 +508,30 @@
       </div>
       <div class="mob-bs-body" *ngIf="filterStatus === 'available'">
         <div *ngFor="let v of bottomSheetDay.availableCars"
-             class="mob-bs-item mob-bsi-available res-link"
-             [routerLink]="['/voiture', v.id]" (click)="closeBottomSheet()">
+             class="mob-bs-item mob-bsi-available"
+             [class.mob-bsi-available-on]="expandedCarId === v.id">
           <div class="mob-bsi-accent"></div>
-          <div class="mob-bsi-content">
-            <div class="mob-bsi-top">
-              <span class="mob-bsi-vehicle">
-                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-                {{ carLabel(v) }}
-              </span>
-              <span class="mob-bsi-badge mob-badge-available">{{ t('available') }}</span>
+          <div class="mob-bsi-inner">
+            <button class="mob-bsi-toggle" (click)="toggleCarExpand(v.id)" [attr.aria-expanded]="expandedCarId === v.id">
+              <div class="mob-bsi-content">
+                <div class="mob-bsi-top">
+                  <span class="mob-bsi-vehicle">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                    {{ carLabel(v) }}
+                  </span>
+                  <span class="mob-bsi-badge mob-badge-available">{{ t('available') }}</span>
+                </div>
+                <div class="mob-bsi-client" *ngIf="v.immatriculation">{{ v.immatriculation }}</div>
+              </div>
+              <svg class="mob-bsi-chevron" [class.mob-bsi-chevron-on]="expandedCarId === v.id" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#CBD5E0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="mob-bsi-expand" *ngIf="expandedCarId === v.id">
+              <ng-container *ngIf="nextBookingGap(v, bottomSheetDay.date) as gap">
+                <span class="mob-bsi-gap" *ngIf="gap.hasNext">↳ {{ t('freeUntil') }} {{ gap.dateLabel }} <span class="mob-bsi-gap-days">({{ gap.days }} {{ t('days') }})</span></span>
+                <span class="mob-bsi-gap mob-bsi-gap-none" *ngIf="!gap.hasNext">↳ {{ t('noUpcomingBooking') }}</span>
+              </ng-container>
+              <a [routerLink]="['/voiture', v.id]" class="mob-bsi-view-link" (click)="closeBottomSheet()">{{ t('viewVehicle') }} →</a>
             </div>
-            <div class="mob-bsi-client" *ngIf="v.immatriculation">{{ v.immatriculation }}</div>
           </div>
         </div>
       </div>

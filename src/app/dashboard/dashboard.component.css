@@ -394,6 +394,20 @@
 .badge-pending     { background: rgba(242,153,74,0.12);  color: #9a5e10; }
 .badge-available   { background: rgba(6,148,162,0.12);   color: #065f67; }
 .dmi-available .dmi-accent { background: #0694a2; }
+.dmi-available.dmi-available-on { border-color: #0694a2; box-shadow: 0 4px 14px rgba(6,148,162,0.14); }
+.dmi-inner { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.dmi-toggle {
+  all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 0.4rem;
+  width: 100%; cursor: pointer;
+}
+.dmi-chevron { flex-shrink: 0; margin-inline-end: 0.7rem; transition: transform 0.15s; }
+.dmi-chevron-on { transform: rotate(180deg); }
+.dmi-expand { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0 0.85rem 0.65rem; }
+.dmi-gap { font-size: 0.76rem; font-weight: 600; color: #0694a2; }
+.dmi-gap-days { color: #A0AEC0; font-weight: 500; }
+.dmi-gap-none { color: #A0AEC0; }
+.dmi-view-link { font-size: 0.74rem; font-weight: 700; color: #2F80ED; text-decoration: none; white-space: nowrap; flex-shrink: 0; }
+.dmi-view-link:hover { text-decoration: underline; }
 .badge-completed   { background: rgba(113,128,150,0.12); color: #4a5568; }
 .badge-cancelled   { background: rgba(235,87,87,0.12);   color: #961b1b; }
 .badge-maintenance { background: rgba(155,81,224,0.12);  color: #581a94; }
@@ -581,6 +595,19 @@
 .mob-badge-pending     { background: rgba(242,153,74,0.12);  color: #9a5e10; }
 .mob-badge-available   { background: rgba(6,148,162,0.12);   color: #065f67; }
 .mob-bsi-available .mob-bsi-accent { background: #0694a2; }
+.mob-bsi-available.mob-bsi-available-on { border-color: #0694a2; box-shadow: 0 4px 14px rgba(6,148,162,0.14); }
+.mob-bsi-inner { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.mob-bsi-toggle {
+  all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 0.4rem;
+  width: 100%; cursor: pointer;
+}
+.mob-bsi-chevron { flex-shrink: 0; margin-inline-end: 0.7rem; transition: transform 0.15s; }
+.mob-bsi-chevron-on { transform: rotate(180deg); }
+.mob-bsi-expand { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0 0.85rem 0.7rem; }
+.mob-bsi-gap { font-size: 0.78rem; font-weight: 600; color: #0694a2; }
+.mob-bsi-gap-days { color: #A0AEC0; font-weight: 500; }
+.mob-bsi-gap-none { color: #A0AEC0; }
+.mob-bsi-view-link { font-size: 0.76rem; font-weight: 700; color: #2F80ED; text-decoration: none; white-space: nowrap; flex-shrink: 0; }
 .mob-badge-completed   { background: rgba(113,128,150,0.12); color: #4a5568; }
 .mob-badge-cancelled   { background: rgba(235,87,87,0.12);   color: #961b1b; }
 .mob-badge-maintenance { background: rgba(155,81,224,0.12);  color: #581a94; }

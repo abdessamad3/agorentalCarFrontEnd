@@ -43,6 +43,7 @@ export class TranslationService {
 
       // Dashboard
       available: 'Available', activeRentals: 'Active Rentals',
+      freeUntil: 'Free until', noUpcomingBooking: 'No upcoming booking', viewVehicle: 'View vehicle',
       totalRevenue: 'Total Revenue', recentReservations: 'Recent Reservations',
       client: 'Client', car: 'Car', date: 'Date',
       noReservations: 'No recent reservations',
@@ -1045,6 +1046,7 @@ export class TranslationService {
       calendar: 'Calendrier',
 
       available: 'Disponible', activeRentals: 'Locations actives',
+      freeUntil: "Libre jusqu'au", noUpcomingBooking: 'Aucune réservation prévue', viewVehicle: 'Voir la fiche véhicule',
       totalRevenue: 'Revenus totaux', recentReservations: 'Réservations récentes',
       client: 'Client', car: 'Véhicule', date: 'Date',
       noReservations: 'Aucune réservation récente',
@@ -2018,6 +2020,7 @@ export class TranslationService {
       calendar: 'التقويم',
 
       available: 'متاح', activeRentals: 'الإيجارات النشطة',
+      freeUntil: 'متاح حتى', noUpcomingBooking: 'لا يوجد حجز قادم', viewVehicle: 'عرض السيارة',
       totalRevenue: 'إجمالي الإيرادات', recentReservations: 'الحجوزات الأخيرة',
       client: 'العميل', car: 'السيارة', date: 'التاريخ',
       noReservations: 'لا توجد حجوزات حديثة',

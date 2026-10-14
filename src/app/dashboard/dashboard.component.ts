@@ -42,6 +42,7 @@ export class DashboardComponent implements OnInit {
   clients: any[] = [];
   selectedDay: DayCell | null = null;
   filterStatus = 'all';
+  expandedCarId: number | null = null;
 
   activeCount = 0;
   thisMonthCount = 0;
@@ -366,10 +367,12 @@ export class DashboardComponent implements OnInit {
 
   selectDay(day: DayCell) {
     if (!this.dayHasContent(day)) return;
+    this.expandedCarId = null;
     this.selectedDay = this.selectedDay?.date.toDateString() === day.date.toDateString() ? null : day;
   }
   selectMobileDay(day: DayCell) {
     if (this.dayHasContent(day)) {
+      this.expandedCarId = null;
       this.bottomSheetDay = day;
     } else {
       this.selectedDayView = new Date(day.date);
@@ -378,8 +381,34 @@ export class DashboardComponent implements OnInit {
     }
   }
 
-  closeBottomSheet() { this.bottomSheetDay = null; }
-  closeDay() { this.selectedDay = null; }
+  closeBottomSheet() { this.bottomSheetDay = null; this.expandedCarId = null; }
+  closeDay() { this.selectedDay = null; this.expandedCarId = null; }
+
+  toggleCarExpand(carId: number, event?: Event) {
+    event?.stopPropagation();
+    this.expandedCarId = this.expandedCarId === carId ? null : carId;
+  }
+
+  /** How long a given car stays free starting from `fromDate`: either the gap
+   *  until its next non-cancelled reservation, or null when nothing is booked
+   *  ahead of it yet. */
+  nextBookingGap(voiture: any, fromDate: Date): { hasNext: boolean; days: number; dateLabel: string } | { hasNext: false } {
+    const fromStart = new Date(fromDate); fromStart.setHours(0, 0, 0, 0);
+    const upcomingStarts = this.reservations
+      .filter(r => this.bookingStatusClass(r) !== 'cancelled')
+      .filter(r => (r.voitureId || r.voiture?.id) === voiture.id)
+      .map(r => { const s = new Date(r.dateDebut); s.setHours(0, 0, 0, 0); return s; })
+      .filter(s => s > fromStart)
+      .sort((a, b) => a.getTime() - b.getTime());
+
+    if (!upcomingStarts.length) return { hasNext: false };
+
+    const next = upcomingStarts[0];
+    const days = Math.round((next.getTime() - fromStart.getTime()) / 86400000);
+    const lang = this.ts.getCurrentLanguage();
+    const months = this.monthNamesShort[lang] || this.monthNamesShort['en'];
+    return { hasNext: true, days, dateLabel: `${next.getDate()} ${months[next.getMonth()]}` };
+  }
 
   confirmingId: number | null = null;
   cancellingId: number | null = null;
