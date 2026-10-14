@@ -391,6 +391,8 @@
 .badge-confirmed   { background: rgba(47,128,237,0.12);  color: #1550a0; }
 .badge-active      { background: rgba(39,174,96,0.12);   color: #16623a; }
 .badge-pending     { background: rgba(242,153,74,0.12);  color: #9a5e10; }
+.badge-available   { background: rgba(6,148,162,0.12);   color: #065f67; }
+.dmi-available .dmi-accent { background: #0694a2; }
 .badge-completed   { background: rgba(113,128,150,0.12); color: #4a5568; }
 .badge-cancelled   { background: rgba(235,87,87,0.12);   color: #961b1b; }
 .badge-maintenance { background: rgba(155,81,224,0.12);  color: #581a94; }
@@ -576,6 +578,8 @@
 .mob-badge-confirmed   { background: rgba(47,128,237,0.12);  color: #1550a0; }
 .mob-badge-active      { background: rgba(39,174,96,0.12);   color: #16623a; }
 .mob-badge-pending     { background: rgba(242,153,74,0.12);  color: #9a5e10; }
+.mob-badge-available   { background: rgba(6,148,162,0.12);   color: #065f67; }
+.mob-bsi-available .mob-bsi-accent { background: #0694a2; }
 .mob-badge-completed   { background: rgba(113,128,150,0.12); color: #4a5568; }
 .mob-badge-cancelled   { background: rgba(235,87,87,0.12);   color: #961b1b; }
 .mob-badge-maintenance { background: rgba(155,81,224,0.12);  color: #581a94; }
@@ -614,6 +618,10 @@
 }
 .mob-event-dots { display: flex; align-items: center; justify-content: center; gap: 2px; flex-wrap: wrap; }
 .mob-dot-more { font-size: 0.5rem; font-weight: 700; color: #A0AEC0; }
+.mob-avail-count {
+  font-size: 0.6rem; font-weight: 800; color: #fff; background: #0694a2;
+  border-radius: 10px; padding: 1px 6px; min-width: 15px; text-align: center;
+}
 
 .mob-sk-cell { pointer-events: none; background: #fff; }
 .mob-sk-num {
@@ -644,6 +652,7 @@
 .mob-wc-num.mob-today-num { background: #2F80ED; color: #fff; box-shadow: 0 2px 8px rgba(47,128,237,0.38); }
 .mob-wc-badge { font-size: 0.6rem; font-weight: 800; background: #0B2D4E; color: #fff; border-radius: 10px; padding: 1px 5px; min-width: 16px; text-align: center; }
 .mob-week-col.mob-wc-today .mob-wc-badge { background: #2F80ED; }
+.mob-wc-badge-teal { background: #0694a2; }
 .mob-wc-empty-dot { width: 5px; height: 5px; border-radius: 50%; background: #E2E8F0; }
 .mob-wc-dots { display: flex; gap: 2px; align-items: center; min-height: 8px; }
 

@@ -106,13 +106,16 @@
              [class.other-month]="!day.isCurrentMonth"
              [class.mob-today]="day.isToday"
              [class.mob-weekend]="day.isWeekend && !day.isToday"
-             [class.has-events]="day.bookings.length > 0"
+             [class.has-events]="filterStatus === 'available' ? day.availableCars.length > 0 : day.bookings.length > 0"
              (click)="selectMobileDay(day)">
           <span class="mob-day-num" [class.mob-today-num]="day.isToday">{{ day.dayNum }}</span>
-          <div *ngIf="day.bookings.length > 0" class="mob-event-dots">
+          <div *ngIf="filterStatus !== 'available' && day.bookings.length > 0" class="mob-event-dots">
             <span *ngFor="let b of day.bookings | slice:0:3"
                   class="mob-dot" [ngClass]="'dot-' + bookingStatusClass(b)"></span>
             <span *ngIf="day.bookings.length > 3" class="mob-dot-more">+{{ day.bookings.length - 3 }}</span>
+          </div>
+          <div *ngIf="filterStatus === 'available' && day.availableCars.length > 0" class="mob-event-dots">
+            <span class="mob-avail-count">{{ day.availableCars.length }}</span>
           </div>
         </div>
       </ng-container>
@@ -127,16 +130,22 @@
            class="mob-week-col"
            [class.mob-wc-today]="cell.isToday"
            [class.mob-wc-weekend]="cell.isWeekend"
-           [class.has-events]="cell.bookings.length > 0"
+           [class.has-events]="filterStatus === 'available' ? cell.availableCars.length > 0 : cell.bookings.length > 0"
            (click)="selectMobileDay(cell)">
         <div class="mob-wc-dayname">{{ dayLabels[cell.date.getDay()] }}</div>
         <div class="mob-wc-num" [class.mob-today-num]="cell.isToday">{{ cell.dayNum }}</div>
-        <div *ngIf="cell.bookings.length > 0" class="mob-wc-badge">{{ cell.bookings.length }}</div>
-        <div *ngIf="cell.bookings.length === 0" class="mob-wc-empty-dot"></div>
-        <div class="mob-wc-dots">
-          <span *ngFor="let b of cell.bookings | slice:0:3"
-                class="mob-dot mob-dot-sm" [ngClass]="'dot-' + bookingStatusClass(b)"></span>
-        </div>
+        <ng-container *ngIf="filterStatus !== 'available'">
+          <div *ngIf="cell.bookings.length > 0" class="mob-wc-badge">{{ cell.bookings.length }}</div>
+          <div *ngIf="cell.bookings.length === 0" class="mob-wc-empty-dot"></div>
+          <div class="mob-wc-dots">
+            <span *ngFor="let b of cell.bookings | slice:0:3"
+                  class="mob-dot mob-dot-sm" [ngClass]="'dot-' + bookingStatusClass(b)"></span>
+          </div>
+        </ng-container>
+        <ng-container *ngIf="filterStatus === 'available'">
+          <div *ngIf="cell.availableCars.length > 0" class="mob-wc-badge mob-wc-badge-teal">{{ cell.availableCars.length }}</div>
+          <div *ngIf="cell.availableCars.length === 0" class="mob-wc-empty-dot"></div>
+        </ng-container>
       </div>
     </div>
   </div>
@@ -372,13 +381,14 @@
     <div class="dm-header">
       <div>
         <h3 class="dm-title">{{ dayModalTitle(selectedDay.date) }}</h3>
-        <span class="dm-subtitle">{{ selectedDay.bookings.length }} {{ t('reservations') }}</span>
+        <span class="dm-subtitle" *ngIf="filterStatus !== 'available'">{{ selectedDay.bookings.length }} {{ t('reservations') }}</span>
+        <span class="dm-subtitle" *ngIf="filterStatus === 'available'">{{ selectedDay.availableCars.length }} {{ t('vehicles') }}</span>
       </div>
       <button class="dm-close" (click)="closeDay()">
         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
-    <div class="dm-body">
+    <div class="dm-body" *ngIf="filterStatus !== 'available'">
       <div *ngFor="let b of selectedDay.bookings"
            class="dm-item res-link" [ngClass]="'dmi-' + bookingStatusClass(b)"
            [routerLink]="['/location', b.id]" (click)="closeDay()">
@@ -410,6 +420,25 @@
         </div>
       </div>
     </div>
+    <div class="dm-body" *ngIf="filterStatus === 'available'">
+      <div *ngFor="let v of selectedDay.availableCars"
+           class="dm-item dmi-available res-link"
+           [routerLink]="['/voiture', v.id]" (click)="closeDay()">
+        <div class="dmi-accent"></div>
+        <div class="dmi-content">
+          <div class="dmi-top">
+            <span class="dmi-vehicle">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+              {{ carLabel(v) }}
+            </span>
+            <span class="dmi-badge badge-available">{{ t('available') }}</span>
+          </div>
+          <div class="dmi-bottom" *ngIf="v.immatriculation">
+            <span class="dmi-client">{{ v.immatriculation }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="dm-footer">
       <button class="dm-close-btn" (click)="closeDay()">{{ t('close') }}</button>
       <a routerLink="/location/new" class="dm-add-btn" (click)="closeDay()">
@@ -428,13 +457,14 @@
       <div class="mob-bs-header">
         <div>
           <h3 class="mob-bs-title">{{ dayModalTitle(bottomSheetDay.date) }}</h3>
-          <span class="mob-bs-subtitle">{{ bottomSheetDay.bookings.length }} {{ t('reservations') }}</span>
+          <span class="mob-bs-subtitle" *ngIf="filterStatus !== 'available'">{{ bottomSheetDay.bookings.length }} {{ t('reservations') }}</span>
+          <span class="mob-bs-subtitle" *ngIf="filterStatus === 'available'">{{ bottomSheetDay.availableCars.length }} {{ t('vehicles') }}</span>
         </div>
         <button class="mob-bs-close-btn" (click)="closeBottomSheet()">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
-      <div class="mob-bs-body">
+      <div class="mob-bs-body" *ngIf="filterStatus !== 'available'">
         <div *ngFor="let b of bottomSheetDay.bookings"
              class="mob-bs-item res-link" [ngClass]="'mob-bsi-' + bookingStatusClass(b)"
              [routerLink]="['/location', b.id]" (click)="closeBottomSheet()">
@@ -461,6 +491,23 @@
               <button class="dmi-btn-cancel" [disabled]="cancellingId === b.id"
                       (click)="cancelReservation(b, $event)">✕ {{ t('cancel') }}</button>
             </div>
+          </div>
+        </div>
+      </div>
+      <div class="mob-bs-body" *ngIf="filterStatus === 'available'">
+        <div *ngFor="let v of bottomSheetDay.availableCars"
+             class="mob-bs-item mob-bsi-available res-link"
+             [routerLink]="['/voiture', v.id]" (click)="closeBottomSheet()">
+          <div class="mob-bsi-accent"></div>
+          <div class="mob-bsi-content">
+            <div class="mob-bsi-top">
+              <span class="mob-bsi-vehicle">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                {{ carLabel(v) }}
+              </span>
+              <span class="mob-bsi-badge mob-badge-available">{{ t('available') }}</span>
+            </div>
+            <div class="mob-bsi-client" *ngIf="v.immatriculation">{{ v.immatriculation }}</div>
           </div>
         </div>
       </div>
