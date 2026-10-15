@@ -67,6 +67,7 @@ export class SidebarComponent implements OnInit {
       items: [
         { link: '/client',             icon: '👤', key: 'clients',           roles: ['ROLE_ADMIN','ROLE_MANAGER','ROLE_STAFF'] },
         { link: '/client-debts',       icon: '💸', key: 'clientDebtors',     roles: ['ROLE_ADMIN','ROLE_MANAGER'] },
+        { link: '/client-duplicates',  icon: '⚠️', key: 'possibleDuplicatesTitle', roles: ['ROLE_ADMIN','ROLE_MANAGER','ROLE_STAFF'] },
         { link: '/location/new',      icon: '➕', key: 'createBooking',     roles: ['ROLE_ADMIN'] },
         { link: '/reservation',       icon: '📅', key: 'reservations',      roles: ['ROLE_ADMIN','ROLE_MANAGER','ROLE_STAFF'], badge: '!' },
         { link: '/contrat',           icon: '📄', key: 'contrats',          roles: ['ROLE_ADMIN'] },

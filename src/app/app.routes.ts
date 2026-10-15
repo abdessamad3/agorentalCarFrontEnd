@@ -160,6 +160,12 @@ export const routes: Routes = [
     data: { roles: ['ROLE_ADMIN', 'ROLE_MANAGER'], breadcrumbs: ['groupRentals', 'clientDebtors'] }
   },
   {
+    path: 'client-duplicates',
+    loadComponent: () => import('./client/client-duplicate-list/client-duplicate-list.component').then(m => m.ClientDuplicateListComponent),
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_STAFF'], breadcrumbs: ['groupRentals', 'possibleDuplicatesTitle'] }
+  },
+  {
     path: 'client/:id',
     loadComponent: () => import('./client/client-detail/client-detail.component').then(m => m.ClientDetailComponent),
     canActivate: [authGuard, roleGuard],

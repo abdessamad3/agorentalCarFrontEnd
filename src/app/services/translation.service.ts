@@ -21,6 +21,10 @@ export class TranslationService {
       retry: 'Retry', previous: 'Previous', next: 'Next', all: 'All',
       add: 'Add', search: 'Search', confirm: 'Confirm',
       possibleDuplicateOf: 'Possible duplicate of', possibleDuplicateBanner: 'This client may already exist in our database — matches',
+      possibleDuplicatesTitle: 'Possible Duplicates', noDuplicatesPending: 'No duplicates pending review',
+      dupNewClient: 'New client', matchedClient: 'Matches existing client', keepSeparate: 'Keep separate',
+      mergeClients: 'Merge', confirmMergeClients: 'Merge this new client into the matched existing one? Their reservations and documents will be moved onto the existing client, and this record will be retired. This cannot be undone.',
+      clientsMerged: 'Clients merged', duplicateDismissed: 'Marked as a different person',
 
       // Common states
       loading: 'Loading...', noData: 'No data found',
@@ -1027,6 +1031,10 @@ export class TranslationService {
       retry: 'Réessayer', previous: 'Précédent', next: 'Suivant', all: 'Tout',
       add: 'Ajouter', search: 'Chercher', confirm: 'Confirmer',
       possibleDuplicateOf: 'Doublon possible avec', possibleDuplicateBanner: 'Ce client existe peut-être déjà dans notre base — correspond à',
+      possibleDuplicatesTitle: 'Doublons possibles', noDuplicatesPending: 'Aucun doublon à examiner',
+      dupNewClient: 'Nouveau client', matchedClient: 'Correspond à un client existant', keepSeparate: 'Garder séparés',
+      mergeClients: 'Fusionner', confirmMergeClients: 'Fusionner ce nouveau client avec le client existant correspondant ? Ses réservations et documents seront transférés vers le client existant, et cette fiche sera retirée. Action irréversible.',
+      clientsMerged: 'Clients fusionnés', duplicateDismissed: 'Marqué comme une personne différente',
 
       loading: 'Chargement...', noData: 'Aucune donnée trouvée',
       loadError: 'Échec du chargement. Veuillez réessayer.',
@@ -2002,6 +2010,10 @@ export class TranslationService {
       retry: 'إعادة المحاولة', previous: 'السابق', next: 'التالي', all: 'الكل',
       add: 'إضافة', search: 'بحث', confirm: 'تأكيد',
       possibleDuplicateOf: 'تكرار محتمل مع', possibleDuplicateBanner: 'قد يكون هذا العميل موجودًا بالفعل في قاعدة بياناتنا — يطابق',
+      possibleDuplicatesTitle: 'التكرارات المحتملة', noDuplicatesPending: 'لا توجد تكرارات في الانتظار',
+      dupNewClient: 'عميل جديد', matchedClient: 'يطابق عميلاً موجودًا', keepSeparate: 'الاحتفاظ بهما منفصلين',
+      mergeClients: 'دمج', confirmMergeClients: 'دمج هذا العميل الجديد مع العميل الموجود المطابق؟ سيتم نقل حجوزاته ووثائقه إلى العميل الموجود، وسيتم إيقاف هذا السجل. لا يمكن التراجع عن هذا الإجراء.',
+      clientsMerged: 'تم دمج العملاء', duplicateDismissed: 'تم وضع علامة كشخص مختلف',
 
       loading: 'جاري التحميل...', noData: 'لا توجد بيانات',
       loadError: 'فشل التحميل. حاول مرة أخرى.',

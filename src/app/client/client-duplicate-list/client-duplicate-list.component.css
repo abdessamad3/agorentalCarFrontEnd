@@ -1,0 +1,37 @@
+.dup-list { display: flex; flex-direction: column; gap: 0.85rem; margin-top: 1rem; }
+
+.dup-card {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 1rem;
+  background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 12px;
+  padding: 1rem 1.25rem;
+}
+
+.dup-side { display: flex; flex-direction: column; gap: 0.2rem; min-width: 180px; flex: 1; }
+.dup-side-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #A0760F; }
+.dup-name { font-size: 0.95rem; font-weight: 700; color: #0B2D4E; text-decoration: none; }
+.dup-name:hover { text-decoration: underline; }
+.dup-detail { font-size: 0.8rem; color: #4A5568; }
+
+.dup-arrow { font-size: 1.1rem; flex-shrink: 0; }
+
+.dup-actions { display: flex; gap: 0.5rem; flex-shrink: 0; margin-inline-start: auto; }
+.btn-dismiss, .btn-merge {
+  padding: 0.5rem 0.9rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700;
+  cursor: pointer; border: none; white-space: nowrap; transition: opacity 0.15s;
+}
+.btn-dismiss { background: #fff; border: 1.5px solid #CBD5E0; color: #4A5568; }
+.btn-dismiss:hover:not(:disabled) { background: #F7FAFC; }
+.btn-merge { background: #2F80ED; color: #fff; }
+.btn-merge:hover:not(:disabled) { background: #1D6FD9; }
+.btn-dismiss:disabled, .btn-merge:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.empty-state { padding: 3rem 1rem; text-align: center; color: #718096; font-size: 0.95rem; }
+.loading-state, .error-state { padding: 2rem 1rem; text-align: center; color: #718096; }
+.paginator-wrap { margin-top: 1rem; }
+
+@media (max-width: 640px) {
+  .dup-card { flex-direction: column; align-items: stretch; }
+  .dup-arrow { align-self: center; }
+  .dup-actions { margin-inline-start: 0; justify-content: stretch; }
+  .btn-dismiss, .btn-merge { flex: 1; }
+}

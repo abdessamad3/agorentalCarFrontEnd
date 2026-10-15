@@ -1,0 +1,48 @@
+<div class="list-container" [attr.dir]="dir">
+  <div class="list-header">
+    <h1>{{ t('possibleDuplicatesTitle') }}</h1>
+  </div>
+
+  <div *ngIf="loading" class="loading-state">{{ t('loading') }}</div>
+  <div *ngIf="error" class="error-state">{{ error }}</div>
+
+  <div *ngIf="!loading && !error && items.length === 0" class="empty-state">
+    ✅ {{ t('noDuplicatesPending') }}
+  </div>
+
+  <div *ngIf="!loading && !error && items.length > 0" class="dup-list">
+    <div class="dup-card" *ngFor="let item of items">
+
+      <div class="dup-side">
+        <span class="dup-side-label">{{ t('dupNewClient') }}</span>
+        <a class="dup-name" [routerLink]="['/client', item.id]">{{ fullName(item) }}</a>
+        <span class="dup-detail" *ngIf="item.telephone">{{ item.telephone }}</span>
+        <span class="dup-detail" *ngIf="item.email">{{ item.email }}</span>
+        <span class="dup-detail" *ngIf="item.cin">CIN: {{ item.cin }}</span>
+        <span class="dup-detail" *ngIf="item.passeport">{{ t('passeport') }}: {{ item.passeport }}</span>
+      </div>
+
+      <div class="dup-arrow">⚠️</div>
+
+      <div class="dup-side" *ngIf="item.matchedClient as m">
+        <span class="dup-side-label">{{ t('matchedClient') }}</span>
+        <a class="dup-name" [routerLink]="['/client', m.id]">{{ fullName(m) }}</a>
+        <span class="dup-detail" *ngIf="m.telephone">{{ m.telephone }}</span>
+        <span class="dup-detail" *ngIf="m.email">{{ m.email }}</span>
+      </div>
+
+      <div class="dup-actions">
+        <button class="btn-dismiss" [disabled]="resolvingId === item.id" (click)="resolve(item, 'dismiss')">
+          {{ t('keepSeparate') }}
+        </button>
+        <button class="btn-merge" *ngIf="canMerge" [disabled]="resolvingId === item.id" (click)="resolve(item, 'merge')">
+          {{ t('mergeClients') }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="!loading && !error && items.length > 0" class="paginator-wrap">
+    <app-paginator [page]="page" [limit]="limit" [total]="total" (pageChange)="onPageChange($event)"></app-paginator>
+  </div>
+</div>
