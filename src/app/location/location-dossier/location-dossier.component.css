@@ -2,12 +2,21 @@
 
 /* Header */
 .dossier-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; background: var(--card-bg, #fff); border: 1px solid var(--border, #e5e7eb); border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; }
+.dup-banner {
+  display: flex; align-items: center; gap: 0.4rem; cursor: pointer;
+  background: #FFFBEB; border: 1px solid #FDE68A; color: #92400E;
+  border-radius: 10px; padding: 0.7rem 1.1rem; margin-bottom: 1.25rem;
+  font-size: 0.85rem; line-height: 1.4;
+}
+.dup-banner:hover { background: #FEF3C7; }
 .header-left, .header-right { display: flex; flex-direction: column; gap: .4rem; }
 .btn-back { background: none; border: none; color: var(--primary, #3b82f6); cursor: pointer; font-size: .875rem; padding: 0; width: fit-content; }
 .btn-back:hover { text-decoration: underline; }
 .header-info { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
 .contract-number { font-size: 1.25rem; font-weight: 700; color: var(--text-primary, #111827); }
 .vehicle-info, .client-info { font-size: .9rem; color: var(--text-secondary, #6b7280); }
+a.vehicle-info { text-decoration: none; cursor: pointer; width: fit-content; }
+a.vehicle-info:hover { text-decoration: underline; color: var(--primary, #3b82f6); }
 .payment-summary { margin-top: .25rem; display: flex; align-items: center; gap: .4rem; }
 .payment-summary-label { font-size: .75rem; color: var(--text-secondary, #6b7280); }
 
@@ -458,6 +467,69 @@
   color: #94a3b8;
   font-style: italic;
 }
+
+/* ── Per-zone damage detail (severity / note / photo) ── */
+.dpl-detailed { background: #fff; border-color: #e2e8f0; }
+.dpl-detail-row {
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+  margin-bottom: 0.5rem;
+  background: #fff5f5;
+}
+.dpl-detail-row:last-child { margin-bottom: 0; }
+.dpl-detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+.dpl-detail-zone { font-weight: 700; font-size: 0.8rem; color: #991b1b; }
+.dpl-detail-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+.dpl-sev-select, .dpl-note-input {
+  font-size: 0.78rem;
+  padding: 0.3rem 0.45rem;
+  border: 1px solid #fca5a5;
+  border-radius: 6px;
+  background: #fff;
+}
+.dpl-note-input { flex: 1; min-width: 120px; }
+.dpl-photo-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.74rem;
+  color: #991b1b;
+  border: 1px dashed #fca5a5;
+  border-radius: 6px;
+  padding: 0.3rem 0.5rem;
+  cursor: pointer;
+  background: #fff;
+}
+.dpl-photo-uploading { font-size: 0.75rem; color: #94a3b8; }
+.dpl-photo-thumb {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #fca5a5;
+}
+.dpl-sev-badge { font-size: 0.68rem; opacity: 0.8; }
+
+/* ── Retour tab: reference panel for damage already known on the car ── */
+.dmg-known-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 0.9rem;
+}
+.dmg-known-box .dpl-title { color: #475569; }
 
 /* ── Departure damage status ── */
 .dmg-loading-row   { padding: 0.5rem 0; color: #94a3b8; font-size: 0.82rem; font-style: italic; }

@@ -20,6 +20,7 @@ export class TranslationService {
       saving: 'Saving...', uploading: 'Uploading...', cancel: 'Cancel', close: 'Close',
       retry: 'Retry', previous: 'Previous', next: 'Next', all: 'All',
       add: 'Add', search: 'Search', confirm: 'Confirm',
+      possibleDuplicateOf: 'Possible duplicate of', possibleDuplicateBanner: 'This client may already exist in our database — matches',
 
       // Common states
       loading: 'Loading...', noData: 'No data found',
@@ -1025,6 +1026,7 @@ export class TranslationService {
       saving: 'Enregistrement...', uploading: 'Téléversement...', cancel: 'Annuler', close: 'Fermer',
       retry: 'Réessayer', previous: 'Précédent', next: 'Suivant', all: 'Tout',
       add: 'Ajouter', search: 'Chercher', confirm: 'Confirmer',
+      possibleDuplicateOf: 'Doublon possible avec', possibleDuplicateBanner: 'Ce client existe peut-être déjà dans notre base — correspond à',
 
       loading: 'Chargement...', noData: 'Aucune donnée trouvée',
       loadError: 'Échec du chargement. Veuillez réessayer.',
@@ -1999,6 +2001,7 @@ export class TranslationService {
       saving: 'جاري الحفظ...', uploading: 'جاري الرفع...', cancel: 'إلغاء', close: 'إغلاق',
       retry: 'إعادة المحاولة', previous: 'السابق', next: 'التالي', all: 'الكل',
       add: 'إضافة', search: 'بحث', confirm: 'تأكيد',
+      possibleDuplicateOf: 'تكرار محتمل مع', possibleDuplicateBanner: 'قد يكون هذا العميل موجودًا بالفعل في قاعدة بياناتنا — يطابق',
 
       loading: 'جاري التحميل...', noData: 'لا توجد بيانات',
       loadError: 'فشل التحميل. حاول مرة أخرى.',

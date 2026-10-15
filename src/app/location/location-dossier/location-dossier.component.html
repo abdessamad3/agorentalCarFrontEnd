@@ -13,7 +13,9 @@
       </div>
     </div>
     <div class="header-right">
-      <div class="vehicle-info">🚗 {{ vehicleLabel }}</div>
+      <a *ngIf="dossier.reservation?.voiture?.id; else vehicleTextOnly"
+         class="vehicle-info" [routerLink]="['/voiture', dossier.reservation.voiture.id]">🚗 {{ vehicleLabel }}</a>
+      <ng-template #vehicleTextOnly><div class="vehicle-info">🚗 {{ vehicleLabel }}</div></ng-template>
       <div class="client-info">👤 {{ clientLabel }}</div>
       <div class="payment-summary">
         <span class="payment-summary-label" *ngIf="status !== 'annulee'">{{ t('paymentSummaryLabel') }}:</span>
@@ -35,6 +37,11 @@
         {{ cancelling ? t('cancelling') : t('cancelReservation') }}
       </button>
     </div>
+  </div>
+
+  <!-- ── Possible-duplicate-client banner ──────────────────────────────── -->
+  <div class="dup-banner" *ngIf="dossier.reservation?.client?.possibleDuplicate as dup" [routerLink]="['/client', dup.clientId]">
+    ⚠️ {{ t('possibleDuplicateBanner') }} <strong>{{ dup.prenom }} {{ dup.nom }}</strong> ({{ dup.telephone }})
   </div>
 
   <!-- ── Tab bar ────────────────────────────────────────────────────────── -->
@@ -333,13 +340,32 @@
               </app-vehicle-map>
 
               <!-- Marked parts list -->
-              <div class="dpl-box" *ngIf="(departForm.damagedParts ?? []).length > 0">
+              <div class="dpl-box dpl-detailed" *ngIf="(departForm.damagedParts ?? []).length > 0">
                 <div class="dpl-title">{{ t('damagedParts') }}:</div>
-                <div class="dpl-tags">
-                  <span class="dpl-tag" *ngFor="let p of departForm.damagedParts">
-                    {{ carPartLabel(p) }}
+                <div class="dpl-detail-row" *ngFor="let p of departForm.damagedParts">
+                  <div class="dpl-detail-head">
+                    <span class="dpl-detail-zone">{{ carPartLabel(p) }}</span>
                     <button type="button" class="dpl-remove" (click)="toggleDepartPart(p)">×</button>
-                  </span>
+                  </div>
+                  <div class="dpl-detail-fields">
+                    <select class="dpl-sev-select"
+                            [ngModel]="departDamageDetail(p).severity" [ngModelOptions]="{standalone: true}"
+                            (ngModelChange)="updateDepartDamageDetail(p, 'severity', $event)">
+                      <option value="scratch">{{ t('sevScratch') }}</option>
+                      <option value="dent">{{ t('sevDent') }}</option>
+                      <option value="crack">{{ t('sevCrack') }}</option>
+                      <option value="broken">{{ t('sevBroken') }}</option>
+                    </select>
+                    <input type="text" class="dpl-note-input" [placeholder]="t('damageNoteOptional')"
+                           [ngModel]="departDamageDetail(p).description" [ngModelOptions]="{standalone: true}"
+                           (ngModelChange)="updateDepartDamageDetail(p, 'description', $event)" />
+                    <label class="dpl-photo-btn">
+                      📷 {{ t('damagePhotoAdd') }}
+                      <input type="file" accept="image/*" hidden (change)="onDepartDamagePhotoSelected($event, p)" />
+                    </label>
+                    <span *ngIf="uploadingDepartPhoto === p" class="dpl-photo-uploading">…</span>
+                    <img *ngIf="departDamageDetail(p).photo" [src]="departDamageDetail(p).photo" class="dpl-photo-thumb" alt="" />
+                  </div>
                 </div>
               </div>
               <div class="dpl-empty" *ngIf="(departForm.damagedParts ?? []).length === 0">
@@ -837,6 +863,26 @@
 
             <div class="collapsible-body" *ngIf="showDommages">
 
+              <!-- Reference: damage already known on this car (incl. this rental's own delivery) -->
+              <div class="dmg-known-box">
+                <div class="dpl-title">{{ t('damageKnownFromDelivery') }}</div>
+                <div class="dmg-loading-row" *ngIf="loadingDamages">…</div>
+                <ng-container *ngIf="!loadingDamages">
+                  <app-vehicle-map [damagedZones]="departureDamagedZones" mode="readonly"></app-vehicle-map>
+                  <div class="dpl-box" *ngIf="departureOpenDamages.length > 0">
+                    <div class="dpl-tags">
+                      <span class="dpl-tag" *ngFor="let d of departureOpenDamages">
+                        {{ carPartLabel(d.zone) }}
+                        <span class="dpl-sev-badge" *ngIf="d.severity"> · {{ d.severity }}</span>
+                      </span>
+                    </div>
+                  </div>
+                  <div class="dpl-empty" *ngIf="departureOpenDamages.length === 0">
+                    {{ t('damageNoneKnown') }}
+                  </div>
+                </ng-container>
+              </div>
+
               <!-- Damage toggle -->
               <div class="dmg-toggle-row">
                 <button type="button" class="dmg-opt"
@@ -874,13 +920,32 @@
                   </app-vehicle-map>
 
                   <!-- Damaged parts list -->
-                  <div class="dpl-box" *ngIf="(retourForm.damagedParts ?? []).length > 0">
+                  <div class="dpl-box dpl-detailed" *ngIf="(retourForm.damagedParts ?? []).length > 0">
                     <div class="dpl-title">{{ t('damagedParts') }}:</div>
-                    <div class="dpl-tags">
-                      <span class="dpl-tag" *ngFor="let p of retourForm.damagedParts">
-                        {{ carPartLabel(p) }}
+                    <div class="dpl-detail-row" *ngFor="let p of retourForm.damagedParts">
+                      <div class="dpl-detail-head">
+                        <span class="dpl-detail-zone">{{ carPartLabel(p) }}</span>
                         <button type="button" class="dpl-remove" (click)="togglePart(p)">×</button>
-                      </span>
+                      </div>
+                      <div class="dpl-detail-fields">
+                        <select class="dpl-sev-select"
+                                [ngModel]="retourDamageDetail(p).severity" [ngModelOptions]="{standalone: true}"
+                                (ngModelChange)="updateRetourDamageDetail(p, 'severity', $event)">
+                          <option value="scratch">{{ t('sevScratch') }}</option>
+                          <option value="dent">{{ t('sevDent') }}</option>
+                          <option value="crack">{{ t('sevCrack') }}</option>
+                          <option value="broken">{{ t('sevBroken') }}</option>
+                        </select>
+                        <input type="text" class="dpl-note-input" [placeholder]="t('damageNoteOptional')"
+                               [ngModel]="retourDamageDetail(p).description" [ngModelOptions]="{standalone: true}"
+                               (ngModelChange)="updateRetourDamageDetail(p, 'description', $event)" />
+                        <label class="dpl-photo-btn">
+                          📷 {{ t('damagePhotoAdd') }}
+                          <input type="file" accept="image/*" hidden (change)="onRetourDamagePhotoSelected($event, p)" />
+                        </label>
+                        <span *ngIf="uploadingRetourPhoto === p" class="dpl-photo-uploading">…</span>
+                        <img *ngIf="retourDamageDetail(p).photo" [src]="retourDamageDetail(p).photo" class="dpl-photo-thumb" alt="" />
+                      </div>
                     </div>
                   </div>
                   <div class="dpl-empty" *ngIf="(retourForm.damagedParts ?? []).length === 0">
@@ -1154,11 +1219,11 @@
       <br>
       <strong class="confirm-modal-ref">{{ contractNumber !== '—' ? contractNumber : ('N° ' + reservationId) }}</strong>
     </p>
-    <p class="confirm-modal-warning">Cette action est irréversible.</p>
+    <p class="confirm-modal-warning">{{ t('actionIrreversible') }}</p>
 
     <div class="confirm-modal-actions">
       <button class="btn-secondary confirm-modal-keep" (click)="closeCancelModal()">
-        Conserver
+        {{ t('keepReservation') }}
       </button>
       <button class="btn-danger confirm-modal-confirm" (click)="confirmCancelReservation()" [disabled]="cancelling">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">

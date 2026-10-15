@@ -412,6 +412,12 @@
 .badge-cancelled   { background: rgba(235,87,87,0.12);   color: #961b1b; }
 .badge-maintenance { background: rgba(155,81,224,0.12);  color: #581a94; }
 
+.dmi-dup-warning {
+  margin-top: 0.35rem; padding: 0.4rem 0.6rem; border-radius: 8px;
+  background: #FFFBEB; border: 1px solid #FDE68A; color: #92400E;
+  font-size: 0.72rem; line-height: 1.4; cursor: pointer;
+}
+.dmi-dup-warning:hover { background: #FEF3C7; }
 .dmi-actions { display: flex; gap: 0.4rem; margin-top: 0.35rem; }
 .dmi-btn-confirm, .dmi-btn-cancel {
   flex: 1; padding: 0.3rem 0.5rem; border-radius: 6px;
