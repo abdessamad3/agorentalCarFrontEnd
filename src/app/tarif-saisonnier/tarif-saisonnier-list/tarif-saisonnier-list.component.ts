@@ -17,7 +17,7 @@ import { PAGE_SIZE } from '../../shared/constants/pagination';
 })
 export class TarifSaisonnierListComponent implements OnInit {
   items: any[] = [];
-  bureaux: any[] = [];
+  voitures: any[] = [];
   loading = true; error = ''; dir = 'ltr'; search = '';
   page = 1; limit = PAGE_SIZE; total = 0;
   modalMode: 'form' | 'delete' | null = null;
@@ -35,7 +35,7 @@ export class TarifSaisonnierListComponent implements OnInit {
       dateFin:        ['', Validators.required],
       typeAjustement: ['percentage', Validators.required],
       valeur:         [0, Validators.required],
-      bureauId:       [''],
+      voitureId:      [''],
       actif:          [true],
     });
   }
@@ -43,7 +43,7 @@ export class TarifSaisonnierListComponent implements OnInit {
   ngOnInit() {
     this.ts.direction$.subscribe(d => this.dir = d);
     this.load();
-    this.crud.getAll('bureau').subscribe({ next: r => this.bureaux = r ?? [], error: () => {} });
+    this.crud.getAll('voiture').subscribe({ next: r => this.voitures = r ?? [], error: () => {} });
   }
 
   load() {
@@ -60,9 +60,10 @@ export class TarifSaisonnierListComponent implements OnInit {
   onSearch(): void { this.page = 1; this.load(); }
   onPageChange(p: number): void { this.page = p; this.load(); }
 
-  bureauLabel(bureauId: number | null): string {
-    if (!bureauId) return this.ts.translate('allBureaus');
-    return this.bureaux.find(b => b.id === bureauId)?.nom ?? '—';
+  voitureLabel(voitureId: number | null): string {
+    if (!voitureId) return this.ts.translate('allVehicles');
+    const v = this.voitures.find(v => v.id === voitureId);
+    return v ? `${v.marque} ${v.modele} (${v.immatriculation})` : '—';
   }
 
   adjustmentLabel(item: any): string {
@@ -72,8 +73,8 @@ export class TarifSaisonnierListComponent implements OnInit {
   }
 
   openView(item: any)   { this.drawerItem = item; this.drawerOpen = true; }
-  openAdd()             { this.selected = null; this.isEditing = false; this.form.reset({ typeAjustement: 'percentage', valeur: 0, actif: true, bureauId: '' }); this.modalMode = 'form'; }
-  openEdit(item: any)   { this.selected = item; this.isEditing = true; this.form.patchValue({ ...item, bureauId: item.bureauId ?? '' }); this.modalMode = 'form'; }
+  openAdd()             { this.selected = null; this.isEditing = false; this.form.reset({ typeAjustement: 'percentage', valeur: 0, actif: true, voitureId: '' }); this.modalMode = 'form'; }
+  openEdit(item: any)   { this.selected = item; this.isEditing = true; this.form.patchValue({ ...item, voitureId: item.voitureId ?? '' }); this.modalMode = 'form'; }
   openDelete(id: number){ this.deleteId = id; this.modalMode = 'delete'; }
   closeModal()          { this.modalMode = null; this.selected = null; this.deleteId = null; this.isSubmitting = false; this.isEditing = false; }
   closeDrawer()         { this.drawerOpen = false; this.drawerItem = null; }
@@ -83,7 +84,7 @@ export class TarifSaisonnierListComponent implements OnInit {
   save() {
     if (this.form.invalid) return;
     this.isSubmitting = true;
-    const payload = { ...this.form.value, bureauId: this.form.value.bureauId || null };
+    const payload = { ...this.form.value, voitureId: this.form.value.voitureId || null };
     const req = this.isEditing
       ? this.crud.update(this.endpoint, this.selected.id, payload)
       : this.crud.create(this.endpoint, payload);

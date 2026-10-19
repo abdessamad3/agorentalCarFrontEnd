@@ -89,7 +89,7 @@ export class ReservationCreateComponent implements OnInit {
    *  gets sent on submit(). The backend independently recomputes the real total from the
    *  submitted voiture/dates/accessoires/remise, so a stale or tampered preview can never
    *  become the saved total. */
-  preview: { prixParJour: number; nbJours: number; accessoireTotal: number; total: number } | null = null;
+  preview: { prixParJour: number; nbJours: number; accessoireTotal: number; total: number; tarifActif: { libelle: string; typeAjustement: string; valeur: number } | null } | null = null;
   previewLoading = false;
   private previewTimer: any = null;
 

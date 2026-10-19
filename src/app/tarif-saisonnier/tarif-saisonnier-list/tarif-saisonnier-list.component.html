@@ -11,14 +11,14 @@
   </div>
   <div *ngIf="!loading && !error && filtered.length > 0" class="table-container">
     <table class="bureaus-table">
-      <thead><tr><th>{{ 'label' | translate }}</th><th>{{ 'startDate' | translate }}</th><th>{{ 'expectedEndDate' | translate }}</th><th>{{ 'adjustment' | translate }}</th><th>{{ 'bureau' | translate }}</th><th>{{ 'status' | translate }}</th><th>{{ 'actions' | translate }}</th></tr></thead>
+      <thead><tr><th>{{ 'label' | translate }}</th><th>{{ 'startDate' | translate }}</th><th>{{ 'expectedEndDate' | translate }}</th><th>{{ 'adjustment' | translate }}</th><th>{{ 'vehicleLabel' | translate }}</th><th>{{ 'status' | translate }}</th><th>{{ 'actions' | translate }}</th></tr></thead>
       <tbody>
         <tr *ngFor="let item of paged" class="bureau-row">
           <td>{{ item.libelle }}</td>
           <td>{{ item.dateDebut | date:'dd/MM/yyyy' }}</td>
           <td>{{ item.dateFin | date:'dd/MM/yyyy' }}</td>
           <td [class.text-green]="adjustmentLabel(item).startsWith('-')" [class.text-red]="!adjustmentLabel(item).startsWith('-')">{{ adjustmentLabel(item) }}</td>
-          <td>{{ bureauLabel(item.bureauId) }}</td>
+          <td>{{ voitureLabel(item.voitureId) }}</td>
           <td><span class="status-chip" [ngClass]="item.actif ? 'chip-active' : 'chip-inactive'">{{ (item.actif ? 'active' : 'inactive') | translate }}</span></td>
           <td class="actions-cell">
             <app-btn variant="icon-view" (click)="openView(item)" [title]="'view'|translate"></app-btn>
@@ -58,10 +58,10 @@
             </div>
           </div>
           <div class="form-group">
-            <label>{{ 'bureau' | translate }}</label>
-            <select formControlName="bureauId">
-              <option value="">{{ 'allBureaus' | translate }}</option>
-              <option *ngFor="let b of bureaux" [value]="b.id">{{ b.nom }}</option>
+            <label>{{ 'vehicleLabel' | translate }}</label>
+            <select formControlName="voitureId">
+              <option value="">{{ 'allVehicles' | translate }}</option>
+              <option *ngFor="let v of voitures" [value]="v.id">{{ v.marque }} {{ v.modele }} ({{ v.immatriculation }})</option>
             </select>
           </div>
           <label class="checkbox-item"><input type="checkbox" formControlName="actif" /> {{ 'active' | translate }}</label>

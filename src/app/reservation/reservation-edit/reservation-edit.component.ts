@@ -35,7 +35,7 @@ export class ReservationEditComponent implements OnInit {
 
   /** Server-computed live preview -- never the form's own math. See reservation-create's
    *  identical pattern/comment for why (same bug class this whole feature replaces). */
-  preview: { prixParJour: number; nbJours: number; accessoireTotal: number; total: number } | null = null;
+  preview: { prixParJour: number; nbJours: number; accessoireTotal: number; total: number; tarifActif: { libelle: string; typeAjustement: string; valeur: number } | null } | null = null;
   previewLoading = false;
   private previewTimer: any = null;
 

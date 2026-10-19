@@ -103,6 +103,10 @@
             <label>{{ t('totalAmount') }} (MAD) <span *ngIf="previewLoading" class="preview-loading">…</span></label>
             <input type="text" [value]="(total | number:'1.2-2') + ' MAD'" readonly class="input-computed" />
             <span class="field-hint" *ngIf="days > 0">{{ days }} {{ t('days') }}</span>
+            <span class="field-hint" *ngIf="preview?.tarifActif" style="color:#059669">
+              {{ t('includesSeasonalRate') }}: {{ preview!.tarifActif!.libelle }}
+              ({{ preview!.tarifActif!.valeur >= 0 ? '+' : '' }}{{ preview!.tarifActif!.valeur }}{{ preview!.tarifActif!.typeAjustement === 'percentage' ? '%' : ' MAD' }})
+            </span>
           </div>
           <div class="form-group">
             <label>{{ t('amountPaid') }} (MAD)</label>
