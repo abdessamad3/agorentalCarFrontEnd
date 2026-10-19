@@ -395,9 +395,15 @@ export class ExecutiveComponent implements OnInit, OnDestroy, AfterViewInit {
     const activeRes = resList.filter((r: any) =>
       !['annulee', 'cancelled', 'annule'].includes((r.reservationStatus ?? r.statut ?? '').toLowerCase())
     );
+    // Reuse the backend's already-correct, refund-aware montantRestant (Reservation::
+    // getMontantRestant(), already present on every row this page already fetches)
+    // instead of recomputing total - montantPaye locally -- that naive local formula
+    // doesn't know about refunds, so a reservation refunded after being settled would
+    // wrongly count as new debt (Phase 12.9 Stage B1-F fixed the same category of bug
+    // on the backend's client-debt aggregation; this mirrors that fix here).
     this.outstanding = activeRes
       .filter((r: any) => (r.total ?? 0) > 0)
-      .reduce((s, r) => s + Math.max(0, parseFloat(r.total ?? 0) - parseFloat(r.montantPaye ?? 0)), 0);
+      .reduce((s, r) => s + Math.max(0, parseFloat(r.montantRestant ?? (r.total ?? 0) - (r.montantPaye ?? 0))), 0);
     this.collected = activeRes.reduce((s, r) => s + parseFloat(r.montantPaye ?? 0), 0);
 
     const vehicleRevMap = new Map<number, { label: string; revenue: number; rentals: number }>();

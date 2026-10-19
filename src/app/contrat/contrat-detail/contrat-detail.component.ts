@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { CrudService } from '../../services/crud.service';
@@ -63,12 +64,18 @@ export class ContratDetailComponent implements OnInit {
     private contratSvc: ContratService,
     private toast: ToastService,
     private activityLog: ActivityLogService,
+    private destroyRef: DestroyRef,
   ) {}
 
   ngOnInit() {
-    this.contratId = +this.route.snapshot.paramMap.get('id')!;
-    this.activityLog.logView('Contrat', this.contratId);
-    this.load();
+    // Subscribe (not snapshot) so navigating here from another contract's detail page --
+    // same route config, Angular reuses the component -- actually reloads instead of
+    // silently keeping the previous contract on screen.
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
+      this.contratId = +params.get('id')!;
+      this.activityLog.logView('Contrat', this.contratId);
+      this.load();
+    });
   }
 
   load() {

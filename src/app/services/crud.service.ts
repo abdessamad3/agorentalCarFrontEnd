@@ -179,6 +179,14 @@ export class CrudService {
     return this.http.post(`${environment.apiUrl}/depense/${depenseId}/justificatif`, form);
   }
 
+  /** Upload a photo for a damage mark on the delivery/return diagram — stateless,
+   *  returns { path } to attach to the damage entry sent on the next save. */
+  uploadDamagePhoto(file: File): Observable<{ path: string }> {
+    const form = new FormData();
+    form.append('photo', file);
+    return this.http.post<{ path: string }>(`${environment.apiUrl}/damage-photo`, form);
+  }
+
   // ── Private helpers ───────────────────────────────────────────────────────
 
   private injectBureau(endpoint: string, params: Record<string, any>): Record<string, any> {

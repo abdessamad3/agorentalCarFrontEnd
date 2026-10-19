@@ -12,7 +12,9 @@
         </button>
       </ng-container>
       <button class="itab-refresh" (click)="load()" [title]="t('retry')" *ngIf="!view3D">↻</button>
-      <button class="dmg-view-toggle" (click)="downloadPdfReport()" title="Télécharger le rapport PDF">📄 Rapport PDF</button>
+      <button class="dmg-view-toggle" (click)="downloadPdfReport()" [title]="t('downloadDamageReport')" [disabled]="downloadingReport">
+        📄 {{ downloadingReport ? t('loading') : t('damageReportPdf') }}
+      </button>
       <button class="dmg-add-btn" (click)="openAddForm()" *ngIf="!showAddForm && !view3D">+ {{ t('addDamage') }}</button>
     </div>
   </div>

@@ -169,17 +169,47 @@ export class PrintContratComponent implements OnChanges, OnDestroy {
     vide: 0, quart: 0.25, moitie: 0.5, trois_quarts: 0.75, plein: 1
   };
 
+  // Coordinates on the print-contrat SVG (viewBox 0 0 800 330), derived from
+  // app-vehicle-map's own geometry (viewBox 0 0 200 416) so markers land on the
+  // actual panel that was clicked during delivery/return inspection, instead of
+  // the diagram's center. front/rear/left/right/legacy keys kept for any older
+  // Damage rows saved before app-vehicle-map replaced the old 6-zone picker.
   private readonly carZones: Record<string, { cx: number; cy: number }> = {
-    front:      { cx: 110, cy: 165 },
-    rear:       { cx: 690, cy: 165 },
-    left:       { cx: 400, cy:  72 },
-    right:      { cx: 400, cy: 258 },
-    windshield: { cx: 220, cy: 120 },
-    roof:       { cx: 400, cy: 145 },
+    front_bumper: { cx: 108, cy: 165 }, hood:        { cx: 191, cy: 165 },
+    windshield:   { cx: 284, cy: 165 }, roof:         { cx: 389, cy: 165 },
+    rear_window:  { cx: 494, cy: 165 }, trunk:        { cx: 595, cy: 165 },
+    rear_bumper:  { cx: 689, cy: 165 },
+    fl_fender:    { cx: 205, cy:  88 }, fr_fender:    { cx: 205, cy: 242 },
+    rl_fender:    { cx: 578, cy:  88 }, rr_fender:    { cx: 578, cy: 242 },
+    fl_door:      { cx: 356, cy:  88 }, fr_door:      { cx: 356, cy: 242 },
+    rl_door:      { cx: 437, cy:  88 }, rr_door:      { cx: 437, cy: 242 },
+    left_mirror:  { cx: 341, cy:  72 }, right_mirror: { cx: 341, cy: 258 },
+    fl_wheel:     { cx: 208, cy:  68 }, fr_wheel:     { cx: 208, cy: 262 },
+    rl_wheel:     { cx: 573, cy:  68 }, rr_wheel:     { cx: 573, cy: 262 },
+    // Legacy (pre-vehicle-map) zone names
+    front: { cx: 108, cy: 165 }, rear: { cx: 689, cy: 165 },
+    left:  { cx: 400, cy:  72 }, right: { cx: 400, cy: 258 },
+  };
+
+  private readonly zoneLabels: Record<string, string> = {
+    front_bumper: 'Pare-chocs avant', hood: 'Capot', windshield: 'Pare-brise',
+    roof: 'Toit', rear_window: 'Lunette arrière', trunk: 'Coffre', rear_bumper: 'Pare-chocs arrière',
+    fl_fender: 'Aile avant-gauche', fr_fender: 'Aile avant-droite',
+    rl_fender: 'Aile arrière-gauche', rr_fender: 'Aile arrière-droite',
+    fl_door: 'Portière avant-gauche', fr_door: 'Portière avant-droite',
+    rl_door: 'Portière arrière-gauche', rr_door: 'Portière arrière-droite',
+    left_mirror: 'Rétroviseur gauche', right_mirror: 'Rétroviseur droit',
+    fl_wheel: 'Roue avant-gauche', fr_wheel: 'Roue avant-droite',
+    rl_wheel: 'Roue arrière-gauche', rr_wheel: 'Roue arrière-droite',
+    front: 'Avant', rear: 'Arrière', left: 'Côté gauche', right: 'Côté droit',
   };
 
   carZoneCenter(zone: string): { cx: number; cy: number } {
     return this.carZones[zone] ?? { cx: 400, cy: 165 };
+  }
+
+  zoneLabel(zone: string): string {
+    return this.zoneLabels[zone] ?? zone;
   }
 
   get deliveryDamages(): any[] {

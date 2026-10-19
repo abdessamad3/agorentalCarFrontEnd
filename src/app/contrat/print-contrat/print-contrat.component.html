@@ -242,17 +242,22 @@
               <text x="742" y="172" font-size="14" font-weight="bold">ARRIÈRE</text>
 
               <!-- Damage markers from vehicle delivery inspection -->
-              <ng-container *ngFor="let dmg of deliveryDamages">
+              <ng-container *ngFor="let dmg of deliveryDamages; let i = index">
                 <circle
                   [attr.cx]="carZoneCenter(dmg.zone).cx"
                   [attr.cy]="carZoneCenter(dmg.zone).cy"
-                  r="20" fill="#ef4444" opacity="0.9"/>
+                  r="18" fill="#ef4444" opacity="0.9"/>
                 <text
                   [attr.x]="carZoneCenter(dmg.zone).cx"
-                  [attr.y]="carZoneCenter(dmg.zone).cy + 8"
-                  text-anchor="middle" font-size="22" fill="white" font-weight="bold">!</text>
+                  [attr.y]="carZoneCenter(dmg.zone).cy + 7"
+                  text-anchor="middle" font-size="18" fill="white" font-weight="bold">{{ i + 1 }}</text>
               </ng-container>
             </svg>
+          </div>
+          <div *ngIf="deliveryDamages.length" class="pct-dmg-legend">
+            <span class="pct-dmg-item" *ngFor="let dmg of deliveryDamages; let i = index">
+              <b>{{ i + 1 }}.</b> {{ zoneLabel(dmg.zone) }}<ng-container *ngIf="dmg.description">&nbsp;&mdash; {{ dmg.description }}</ng-container>
+            </span>
           </div>
 
           <div class="pct-sig-r-lbl">Signature de La Soci&eacute;t&eacute;</div>
@@ -545,17 +550,22 @@
               <text x="742" y="172" font-size="14" font-weight="bold">ARRI&Egrave;RE</text>
 
               <!-- Damage markers from the return inspection -->
-              <ng-container *ngFor="let dmg of returnDamages">
+              <ng-container *ngFor="let dmg of returnDamages; let i = index">
                 <circle
                   [attr.cx]="carZoneCenter(dmg.zone).cx"
                   [attr.cy]="carZoneCenter(dmg.zone).cy"
-                  r="20" fill="#f59e0b" opacity="0.9"/>
+                  r="18" fill="#f59e0b" opacity="0.9"/>
                 <text
                   [attr.x]="carZoneCenter(dmg.zone).cx"
-                  [attr.y]="carZoneCenter(dmg.zone).cy + 8"
-                  text-anchor="middle" font-size="22" fill="white" font-weight="bold">!</text>
+                  [attr.y]="carZoneCenter(dmg.zone).cy + 7"
+                  text-anchor="middle" font-size="18" fill="white" font-weight="bold">{{ i + 1 }}</text>
               </ng-container>
             </svg>
+          </div>
+          <div *ngIf="returnDamages.length" class="pct-dmg-legend">
+            <span class="pct-dmg-item" *ngFor="let dmg of returnDamages; let i = index">
+              <b>{{ i + 1 }}.</b> {{ zoneLabel(dmg.zone) }}<ng-container *ngIf="dmg.description">&nbsp;&mdash; {{ dmg.description }}</ng-container>
+            </span>
           </div>
           <div *ngIf="!returnDamages.length" class="pct-fld" style="justify-content: center; margin-top: 1mm;">
             <span class="pct-val">Aucun dommage suppl&eacute;mentaire constat&eacute; au retour.</span>

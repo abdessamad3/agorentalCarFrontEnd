@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -51,6 +52,7 @@ export class ClientDetailComponent implements OnInit {
   printItem: any = null;
   printLoading = false;
   autoDownloadPdf = false;
+  clientId!: number;
 
   constructor(
     private route: ActivatedRoute,
@@ -61,13 +63,16 @@ export class ClientDetailComponent implements OnInit {
     private activityLog: ActivityLogService,
     private bus: EventBusService,
     private toast: ToastService,
+    private destroyRef: DestroyRef,
   ) {}
 
   ngOnInit() {
     this.ts.direction$.subscribe(d => this.dir = d);
-    const id = +this.route.snapshot.paramMap.get('id')!;
-    this.activityLog.logView('Client', id);
-    this.loadAll(id);
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
+      this.clientId = +params.get('id')!;
+      this.activityLog.logView('Client', this.clientId);
+      this.loadAll(this.clientId);
+    });
   }
 
   loadAll(id: number) {
@@ -217,8 +222,7 @@ export class ClientDetailComponent implements OnInit {
 
   onPaymentChanged(): void {
     this.bus.paymentsChanged$.next();
-    const id = +this.route.snapshot.paramMap.get('id')!;
-    this.loadAll(id);
+    this.loadAll(this.clientId);
   }
 
   setTab(t: 'reservations' | 'documents') { this.activeTab = t; }

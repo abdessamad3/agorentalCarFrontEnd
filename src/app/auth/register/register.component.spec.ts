@@ -1,4 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
 
 import { RegisterComponent } from './register.component';
 
@@ -7,8 +10,10 @@ describe('RegisterComponent', () => {
   let fixture: ComponentFixture<RegisterComponent>;
 
   beforeEach(async () => {
+    // AuthService needs HttpClient; the component injects Router.
     await TestBed.configureTestingModule({
-      imports: [RegisterComponent]
+      imports: [RegisterComponent],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     })
     .compileComponents();
 

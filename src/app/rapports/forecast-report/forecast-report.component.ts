@@ -6,6 +6,7 @@ import { map } from 'rxjs/operators';
 import { safe, toArr } from '../../shared/utils/rx.utils';
 import { CrudService } from '../../services/crud.service';
 import { TranslationService } from '../../services/translation.service';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 export interface MonthPoint {
   label: string;
@@ -41,7 +42,7 @@ function linearTrend(values: number[]): { slope: number; intercept: number } {
 @Component({
   selector: 'app-forecast-report',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   templateUrl: './forecast-report.component.html',
   styleUrls: ['../../shared/styles/reports.css'],
 })
@@ -186,5 +187,13 @@ export class ForecastReportComponent implements OnInit {
 
   fmt(n: number): string {
     return n.toLocaleString('fr-MA', { maximumFractionDigits: 0 }) + ' MAD';
+  }
+
+  revenueTooltip(p: MonthPoint): string {
+    return `${p.label} ${this.ts.translate('revenue')}: ${p.revenue.toLocaleString('fr-MA', { maximumFractionDigits: 0 })} MAD`;
+  }
+
+  expenseTooltip(p: MonthPoint): string {
+    return `${p.label} ${this.ts.translate('expenses')}: ${p.expenses.toLocaleString('fr-MA', { maximumFractionDigits: 0 })} MAD`;
   }
 }

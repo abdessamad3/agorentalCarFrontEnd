@@ -103,7 +103,7 @@
 .rp-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: .75rem; }
 .rp-header-left { display: flex; align-items: center; gap: .75rem; }
 .rp-header-icon { width: 44px; height: 44px; background: #ebf8ff; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #2b6cb0; flex-shrink: 0; }
-.rp-title { font-size: 1.35rem; font-weight: 700; color: #1a202c; }
+.rp-title { font-size: 1.35rem; font-weight: 700; color: #1a202c; margin: 0; }
 .rp-subtitle { font-size: .85rem; color: #718096; margin-top: .2rem; }
 .rp-loading-spinner { display: inline-block; width: 20px; height: 20px; border: 2.5px solid #e2e8f0; border-top-color: #4299e1; border-radius: 50%; animation: rp-spin 0.7s linear infinite; margin-right: .5rem; }
 @keyframes rp-spin { to { transform: rotate(360deg); } }

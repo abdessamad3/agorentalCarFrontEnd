@@ -1,23 +1,24 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { Subject, of } from 'rxjs';
+import { catchError, debounceTime, switchMap, takeUntil } from 'rxjs/operators';
 import { CrudService } from '../../services/crud.service';
 import { TranslationService } from '../../services/translation.service';
 import { EventBusService } from '../../services/event-bus.service';
 import { debtRiskClass, debtRiskLevel } from '../../shared/utils/debt.utils';
 import { PayResPanelComponent } from '../../shared/pay-res-panel/pay-res-panel.component';
+import { PaginatorComponent } from '../../shared/paginator/paginator.component';
+import { PAGE_SIZE } from '../../shared/constants/pagination';
 
 export interface ClientDebt {
-  clientId: number;
+  id: number;
   nom: string;
   prenom: string;
   telephone: string;
   cin: string;
-  totalOwed: number;
-  reservations: ReservationDebt[];
+  outstandingDebt: number;
 }
 
 export interface ReservationDebt {
@@ -33,17 +34,30 @@ export interface ReservationDebt {
 @Component({
   selector: 'app-client-debt-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, PayResPanelComponent],
+  imports: [CommonModule, FormsModule, RouterModule, PayResPanelComponent, PaginatorComponent],
   templateUrl: './client-debt-list.component.html',
   styleUrls: ['./client-debt-list.component.css']
 })
-export class ClientDebtListComponent implements OnInit {
+export class ClientDebtListComponent implements OnInit, OnDestroy {
   debtors: ClientDebt[] = [];
   loading = true;
   error = '';
   search = '';
   dir = 'ltr';
   expandedId: number | null = null;
+
+  // Current page only -- grandTotal/highRiskCount come from the backend (meta), computed
+  // across every debtor that matches the filter, not just this page.
+  page = 1;
+  limit = PAGE_SIZE;
+  total = 0;
+  grandTotal = 0;
+  highRiskCount = 0;
+
+  // Lazy-loaded reservation breakdown for whichever card is expanded -- fetched on demand
+  // (scoped to that one client, never the whole reservation table) rather than upfront.
+  expandedReservations: ReservationDebt[] = [];
+  expandedLoading = false;
 
   // Payment history panel state
   payPanelOpen  = false;
@@ -55,6 +69,9 @@ export class ClientDebtListComponent implements OnInit {
   readonly debtRiskClass = debtRiskClass;
   readonly debtRiskLevel = debtRiskLevel;
 
+  private searchSubject = new Subject<void>();
+  private destroy$ = new Subject<void>();
+
   constructor(
     private crud: CrudService,
     private ts: TranslationService,
@@ -64,75 +81,47 @@ export class ClientDebtListComponent implements OnInit {
 
   ngOnInit() {
     this.ts.direction$.subscribe(d => this.dir = d);
+    this.searchSubject.pipe(
+      debounceTime(300),
+      switchMap(() => this.fetchPage()),
+      takeUntil(this.destroy$)
+    ).subscribe(r => this.applyPage(r));
     this.load();
   }
 
-  load() {
-    this.loading = true;
-    this.error = '';
-    forkJoin({
-      reservations: this.crud.getAll('reservation').pipe(catchError(() => of([]))),
-      clients:      this.crud.getAll('client').pipe(catchError(() => of([]))),
-    }).subscribe(({ reservations, clients }) => {
-      const all: any[] = Array.isArray(reservations) ? reservations : (reservations as any)?.data ?? [];
-
-      // Build a phone/cin lookup from the full client list
-      const clientMap = new Map<number, { telephone: string; cin: string; prenom: string }>();
-      const clientArr: any[] = Array.isArray(clients) ? clients : (clients as any)?.data ?? [];
-      for (const cl of clientArr) {
-        clientMap.set(cl.id, { telephone: cl.telephone || '', cin: cl.cin || '', prenom: cl.prenom || '' });
-      }
-
-      // Use the backend's montantRestant rather than recomputing total - montantPaye here --
-      // that local formula doesn't know about refunds, so a client refunded on an
-      // already-settled reservation would wrongly show up as still owing money.
-      const unpaid = all.filter(r => {
-        const status = (r.reservationStatus || r.statut || '').toLowerCase();
-        if (['cancelled', 'annulee', 'annule', 'pending'].includes(status)) return false;
-        const remaining = parseFloat(r.montantRestant ?? (r.total || 0) - (r.montantPaye || 0));
-        return remaining > 0.01;
-      });
-
-      const map = new Map<number, ClientDebt>();
-      for (const r of unpaid) {
-        const c = r.client;
-        if (!c) continue;
-        const remaining = parseFloat(r.montantRestant ?? (r.total || 0) - (r.montantPaye || 0));
-        if (!map.has(c.id)) {
-          const extra = clientMap.get(c.id);
-          map.set(c.id, {
-            clientId:     c.id,
-            nom:          c.nom || '',
-            prenom:       extra?.prenom || c.prenom || '',
-            telephone:    extra?.telephone || c.telephone || '',
-            cin:          extra?.cin || c.cin || '',
-            totalOwed:    0,
-            reservations: [],
-          });
-        }
-        const entry = map.get(c.id)!;
-        entry.totalOwed += remaining;
-        entry.reservations.push({ id: r.id, dateDebut: r.dateDebut, dateFin: r.dateFin, total: parseFloat(r.total || 0), montantPaye: parseFloat(r.montantPaye || 0), remaining, matricule: r.voiture?.immatriculation || '' });
-      }
-
-      this.debtors = Array.from(map.values()).sort((a, b) => b.totalOwed - a.totalOwed);
-      this.loading = false;
-    });
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
-  get filtered(): ClientDebt[] {
-    if (!this.search.trim()) return this.debtors;
-    const q = this.search.toLowerCase();
-    return this.debtors.filter(c =>
-      (c.nom || '').toLowerCase().includes(q) ||
-      (c.prenom || '').toLowerCase().includes(q) ||
-      (c.telephone || '').includes(q) ||
-      (c.cin || '').toLowerCase().includes(q)
+  private fetchPage() {
+    this.loading = true;
+    this.error = '';
+    return this.crud.getPage<ClientDebt>('client/debtors', { page: this.page, limit: this.limit, search: this.search }).pipe(
+      catchError(() => { this.error = this.ts.translate('loadError'); return of(null); })
     );
   }
 
-  get grandTotal(): number { return this.debtors.reduce((s, c) => s + c.totalOwed, 0); }
-  get highRiskCount(): number { return this.debtors.filter(c => debtRiskLevel(c.totalOwed) === 'high').length; }
+  // On a failed request (r === null, from fetchPage()'s catchError), reset to empty
+  // rather than leaving a previous page's data on screen underneath the error banner.
+  private applyPage(r: any) {
+    this.debtors       = r?.data ?? [];
+    this.total         = r?.meta?.total ?? 0;
+    this.grandTotal     = r?.meta?.grandTotal ?? 0;
+    this.highRiskCount = r?.meta?.highRiskCount ?? 0;
+    this.loading = false;
+  }
+
+  load() {
+    this.fetchPage().subscribe(r => this.applyPage(r));
+  }
+
+  onSearch(): void { this.page = 1; this.searchSubject.next(); }
+  onPageChange(p: number): void { this.page = p; this.expandedId = null; this.load(); }
+
+  /** Global rank across all pages (page 2's first row is #101, not #1), since this list
+   *  is specifically ranked by debt amount. */
+  rankOf(indexOnPage: number): number { return (this.page - 1) * this.limit + indexOnPage + 1; }
 
   riskLabel(amount: number): string {
     const level = debtRiskLevel(amount);
@@ -140,8 +129,42 @@ export class ClientDebtListComponent implements OnInit {
     return this.ts.translate(keys[level] ?? 'debtLowRisk');
   }
 
-  toggleExpand(id: number) {
-    this.expandedId = this.expandedId === id ? null : id;
+  toggleExpand(c: ClientDebt) {
+    if (this.expandedId === c.id) {
+      this.expandedId = null;
+      this.expandedReservations = [];
+      return;
+    }
+    this.expandedId = c.id;
+    this.loadReservationsFor(c.id);
+  }
+
+  /** Scoped to one client's own reservations -- bounded by nature, never the full table. */
+  private loadReservationsFor(clientId: number) {
+    this.expandedLoading = true;
+    this.expandedReservations = [];
+    this.crud.getAll('reservation', { clientId }).pipe(
+      catchError(() => of([]))
+    ).subscribe((reservations: any) => {
+      const all: any[] = Array.isArray(reservations) ? reservations : reservations?.data ?? [];
+      this.expandedReservations = all
+        .filter(r => {
+          const status = (r.reservationStatus || r.statut || '').toLowerCase();
+          if (['cancelled', 'annulee', 'annule', 'pending'].includes(status)) return false;
+          const remaining = parseFloat(r.montantRestant ?? (r.total || 0) - (r.montantPaye || 0));
+          return remaining > 0.01;
+        })
+        .map(r => ({
+          id: r.id,
+          dateDebut: r.dateDebut,
+          dateFin: r.dateFin,
+          total: parseFloat(r.total || 0),
+          montantPaye: parseFloat(r.montantPaye || 0),
+          remaining: parseFloat(r.montantRestant ?? (r.total || 0) - (r.montantPaye || 0)),
+          matricule: r.voiture?.immatriculation || '',
+        }));
+      this.expandedLoading = false;
+    });
   }
 
   goProfile(clientId: number) { this.router.navigate(['/client', clientId]); }
@@ -167,7 +190,8 @@ export class ClientDebtListComponent implements OnInit {
     this.bus.paymentsChanged$.next();
     this.load();
     // A reservation that just became fully paid drops out of the debtors list entirely,
-    // so refresh the panel's own totals straight from the reservation, not from `debtors`.
+    // so refresh the expanded breakdown (if open) straight from the server too.
+    if (this.expandedId) this.loadReservationsFor(this.expandedId);
     if (this.payPanelResId) {
       this.crud.getById('reservation', this.payPanelResId).subscribe((r: any) => {
         if (r) {

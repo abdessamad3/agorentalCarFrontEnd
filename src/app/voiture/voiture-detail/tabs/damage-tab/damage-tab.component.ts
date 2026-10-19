@@ -3,6 +3,7 @@ import { CommonModule, TitleCasePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { TranslationService } from '../../../../services/translation.service';
+import { ToastService } from '../../../../services/toast.service';
 import { environment } from '../../../../../environments/environment';
 import { VehicleMapComponent, VEHICLE_ZONES } from '../../../../shared/vehicle-map/vehicle-map.component';
 import { ModalComponent } from '../../../../shared/modal/modal.component';
@@ -109,7 +110,7 @@ export class DamageTabComponent implements OnInit {
     { value: 'broken',  key: 'sevBroken' },
   ];
 
-  constructor(private http: HttpClient, private ts: TranslationService, private bus: EventBusService) {}
+  constructor(private http: HttpClient, private ts: TranslationService, private bus: EventBusService, private toast: ToastService) {}
 
   ngOnInit(): void { this.load(); }
 
@@ -121,17 +122,28 @@ export class DamageTabComponent implements OnInit {
     }, 100);
   }
 
+  downloadingReport = false;
+
   downloadPdfReport(): void {
-    this.http.get(`${environment.apiUrl}/voiture/${this.carId}/damage-report`, { responseType: 'blob' }).subscribe({
-      next: (blob) => {
-        const url = URL.createObjectURL(blob);
+    if (this.downloadingReport) return;
+    this.downloadingReport = true;
+    this.http.get(`${environment.apiUrl}/voiture/${this.carId}/damage-report`, { responseType: 'blob', observe: 'response' }).subscribe({
+      next: (res) => {
+        this.downloadingReport = false;
+        const disposition = res.headers.get('Content-Disposition') ?? '';
+        const match = /filename="([^"]+)"/.exec(disposition);
+        const filename = match ? match[1] : `rapport-dommages-${this.carId}.pdf`;
+        const url = URL.createObjectURL(res.body as Blob);
         const a = document.createElement('a');
         a.href = url;
-        a.target = '_blank';
+        a.download = filename;
         a.click();
         setTimeout(() => URL.revokeObjectURL(url), 5000);
       },
-      error: () => {},
+      error: () => {
+        this.downloadingReport = false;
+        this.toast.show(this.t('error'), 'error');
+      },
     });
   }
 

@@ -301,7 +301,7 @@ export class VoitureCreateComponent implements OnInit {
       },
       error: (err: any) => {
         this.isCreatingSupplier = false;
-        this.supplierError = err?.error?.message || err?.error?.detail || err?.error?.['hydra:description'] || 'Failed to create supplier.';
+        this.supplierError = err?.error?.message || err?.error?.detail || err?.error?.['hydra:description'] || this.t('supplierCreateError');
       },
     });
   }

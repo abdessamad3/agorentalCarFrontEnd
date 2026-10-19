@@ -225,7 +225,8 @@
 }
 
 .nav-group-header.expanded {
-  color: var(--sb-text-hover, #e2e8f0);
+  background: var(--sb-bg-active, rgba(59,130,246,.10));
+  color: var(--sb-text-active, #93c5fd);
 }
 
 .nav-chevron {

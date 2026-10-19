@@ -3,11 +3,16 @@
   <div class="search-filter-bar"><div class="search-input"><input type="text" [(ngModel)]="search" (ngModelChange)="onSearch()" [placeholder]="'search' | translate" /></div></div>
   <div *ngIf="loading" class="loading-state"><p>{{ 'loading' | translate }}</p></div>
   <div *ngIf="error && !loading" class="error-state"><p>{{ error }}</p><button (click)="load()" class="btn-retry">{{ 'retry' | translate }}</button></div>
-  <div *ngIf="!loading && !error && filtered.length === 0" class="empty-state">
+  <div *ngIf="!loading && !error && filtered.length === 0 && !search" class="empty-state">
     <span class="empty-icon">🎒</span>
-    <div class="empty-title">No accessories</div>
-    <div class="empty-message">Add accessories like GPS, child seats, and more that can be added to rental packages.</div>
-    <button class="empty-action" (click)="openAdd()">+ Add Accessory</button>
+    <div class="empty-title">{{ 'noAccessoriesTitle' | translate }}</div>
+    <div class="empty-message">{{ 'noAccessoriesDesc' | translate }}</div>
+    <button class="empty-action" (click)="openAdd()">{{ 'addAccessoryBtn' | translate }}</button>
+  </div>
+  <div *ngIf="!loading && !error && filtered.length === 0 && search" class="empty-state">
+    <span class="empty-icon">🔍</span>
+    <div class="empty-title">{{ 'noSearchResultsTitle' | translate }}</div>
+    <div class="empty-message">{{ 'noSearchResultsDesc' | translate }}</div>
   </div>
   <div *ngIf="!loading && !error && filtered.length > 0" class="table-container">
     <table class="bureaus-table">

@@ -74,6 +74,10 @@
 .plate-input {
   display: flex; align-items: center; border: 1.5px solid #cbd5e0;
   border-radius: 8px; overflow: hidden; background: white; transition: border-color 0.2s;
+  /* A Moroccan plate's segment order (digits-letter-digits) is a fixed physical format,
+     not UI text -- without this, dir="rtl" (Arabic) reverses the flex row and visually
+     scrambles the plate (e.g. 14703-A-18 becomes 18-A-14703). */
+  direction: ltr;
 }
 .plate-input:focus-within { border-color: #3182ce; box-shadow: 0 0 0 3px rgba(49,130,206,0.1); }
 .plate-input input {

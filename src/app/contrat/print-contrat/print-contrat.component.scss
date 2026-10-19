@@ -410,6 +410,19 @@
   height: 28mm;
 }
 
+.pct-dmg-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 3mm;
+  font-size: 6pt;
+  margin: 0.5mm 0 1mm;
+  padding: 0 1mm;
+}
+
+.pct-dmg-item {
+  line-height: 1.4;
+}
+
 .pct-car-lbl {
   font-size: 6pt;
   font-weight: 900;

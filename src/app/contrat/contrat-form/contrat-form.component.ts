@@ -1,4 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { combineLatest } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
@@ -9,7 +11,6 @@ import { TranslationService } from '../../services/translation.service';
 import { AuthService } from '../../services/auth.service';
 import { SignaturePadComponent } from '../../shared/signature-pad/signature-pad.component';
 import { FuelGaugeComponent } from '../../shared/fuel-gauge/fuel-gauge.component';
-import { DamageDiagramComponent, Damage } from '../../shared/damage-diagram/damage-diagram.component';
 import { PrintContratComponent } from '../print-contrat/print-contrat.component';
 
 @Component({
@@ -17,7 +18,7 @@ import { PrintContratComponent } from '../print-contrat/print-contrat.component'
   standalone: true,
   imports: [
     CommonModule, FormsModule, RouterModule,
-    SignaturePadComponent, FuelGaugeComponent, DamageDiagramComponent,
+    SignaturePadComponent, FuelGaugeComponent,
     PrintContratComponent,
   ],
   templateUrl: './contrat-form.component.html',
@@ -75,20 +76,18 @@ export class ContratFormComponent implements OnInit {
   cautionMontant: number | null = null;
   franchise: number | null = null;
 
-  // Equipment
+  // Equipment -- labelKey reuses the same translation keys as the vehicle-delivery/
+  // return-inspection equipment list (shared concept, same checkbox set).
   equipements: string[] = [];
   readonly equipementItems = [
-    { key: 'extincteur',     label: 'Extincteur' },
-    { key: 'roue_secours',   label: 'Roue de secours' },
-    { key: 'cric',           label: 'Cric' },
-    { key: 'gilet_securite', label: 'Gilet de sécurité' },
-    { key: 'triangle',       label: 'Triangle de signalisation' },
-    { key: 'siege_enfant',   label: 'Siège enfant' },
-    { key: 'kit_nettoyage',  label: 'Kit de nettoyage' },
+    { key: 'extincteur',     labelKey: 'extinguisher' },
+    { key: 'roue_secours',   labelKey: 'spareWheel' },
+    { key: 'cric',           labelKey: 'jack' },
+    { key: 'gilet_securite', labelKey: 'safetyVest' },
+    { key: 'triangle',       labelKey: 'warningTriangle' },
+    { key: 'siege_enfant',   labelKey: 'babySeat' },
+    { key: 'kit_nettoyage',  labelKey: 'carWash' },
   ];
-
-  // Damages
-  dommages: Damage[] = [];
 
   // Signatures
   signatureClient: string | null = null;
@@ -103,14 +102,21 @@ export class ContratFormComponent implements OnInit {
     private toast: ToastService,
     private ts: TranslationService,
     private auth: AuthService,
+    private destroyRef: DestroyRef,
   ) {}
 
   ngOnInit() {
     this.ts.direction$.subscribe(d => this.dir = d);
 
-    const idParam = this.route.snapshot.paramMap.get('id');
-    const resParam = this.route.snapshot.queryParamMap.get('reservationId');
+    // Subscribe to both the path and query params (not a one-time snapshot) so navigating
+    // straight from one contract's edit page to another's -- same route config, component
+    // reused -- actually reloads instead of silently keeping the previous contract's data.
+    combineLatest([this.route.paramMap, this.route.queryParamMap])
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(([params, queryParams]) => this.loadFromRoute(params.get('id'), queryParams.get('reservationId')));
+  }
 
+  private loadFromRoute(idParam: string | null, resParam: string | null) {
     if (idParam) {
       this.isEditing = true;
       this.contratId = +idParam;
@@ -170,7 +176,6 @@ export class ContratFormComponent implements OnInit {
             this.signatureClient         = d.signatureClientDepart ?? null;
             this.signatureDeuxiemeChauffeur = d.signatureDeuxiemeChauffeur ?? null;
             this.signatureSociete        = d.signatureSocieteDepart ?? null;
-            this.dommages                = (d.damages ?? []) as Damage[];
             const equip: string[] = [];
             if (d.hasExtincteur)  equip.push('extincteur');
             if (d.hasRoueSecours) equip.push('roue_secours');
@@ -184,7 +189,7 @@ export class ContratFormComponent implements OnInit {
           error: () => { this.loading = false; },
         });
       },
-      error: () => { this.error = 'Erreur de chargement'; this.loading = false; }
+      error: () => { this.error = this.t('contractLoadError'); this.loading = false; }
     });
   }
 
@@ -200,7 +205,7 @@ export class ContratFormComponent implements OnInit {
         this.fillClient(r.client);
         this.loading = false;
       },
-      error: () => { this.error = 'Réservation introuvable'; this.loading = false; }
+      error: () => { this.error = this.t('reservationNotFound'); this.loading = false; }
     });
   }
 
@@ -244,7 +249,7 @@ export class ContratFormComponent implements OnInit {
 
   save() {
     if (!this.reservationId) {
-      this.toast.show('Réservation manquante', 'error');
+      this.toast.show(this.t('missingReservation'), 'error');
       return;
     }
     // An odometer reading never decreases — block an accidental 0/blank or lower-than-current
@@ -252,7 +257,7 @@ export class ContratFormComponent implements OnInit {
     if (this.kilometrageDepart !== null && this.vehiculeKilometrageActuel !== null
         && this.kilometrageDepart < this.vehiculeKilometrageActuel) {
       this.toast.show(
-        `Le kilométrage départ (${this.kilometrageDepart}) est inférieur au kilométrage actuel du véhicule (${this.vehiculeKilometrageActuel}). Vérifiez la valeur saisie.`,
+        `${this.t('mileageWarningPart1')}${this.kilometrageDepart}${this.t('mileageWarningPart2')}${this.vehiculeKilometrageActuel}${this.t('mileageWarningPart3')}`,
         'error'
       );
       return;
@@ -281,7 +286,7 @@ export class ContratFormComponent implements OnInit {
       next: (res: any) => {
         const savedId = this.contratId ?? res?.id ?? null;
         this.saveDelivery(() => {
-          this.toast.show(this.isEditing ? 'Contrat mis à jour' : 'Contrat créé', 'success');
+          this.toast.show(this.isEditing ? this.t('contractUpdated') : this.t('contractCreated'), 'success');
           this.saving = false;
           if (!this.isEditing && savedId) {
             this.router.navigate(['/contrat', savedId, 'edit']);
@@ -291,7 +296,7 @@ export class ContratFormComponent implements OnInit {
         });
       },
       error: (err: any) => {
-        this.toast.show(err?.error?.message || 'Erreur lors de l\'enregistrement', 'error');
+        this.toast.show(err?.error?.message || this.t('contractSaveError'), 'error');
         this.saving = false;
       }
     });
@@ -309,7 +314,6 @@ export class ContratFormComponent implements OnInit {
       hasGilet:                   this.equipements.includes('gilet_securite'),
       hasRoueSecours:             this.equipements.includes('roue_secours'),
       hasSiegeBebe:               this.equipements.includes('siege_enfant'),
-      damages:                    this.dommages,
       signatureClientDepart:      this.signatureClient,
       signatureDeuxiemeChauffeur: this.signatureDeuxiemeChauffeur,
       signatureSocieteDepart:     this.signatureSociete,
@@ -335,11 +339,13 @@ export class ContratFormComponent implements OnInit {
     if (!this.contratId) return;
     this.crud.getById('contrat', `${this.contratId}/full`).subscribe({
       next: (full: any) => { this.printContractData = this.adaptFull(full); this.autoDownloadPdf = true; },
-      error: () => this.toast.show('Erreur de génération PDF', 'error'),
+      error: () => this.toast.show(this.t('pdfGenerationError'), 'error'),
     });
   }
 
   onPrintClosed() { this.printContractData = null; this.autoDownloadPdf = false; }
+
+  t(key: string): string { return this.ts.translate(key); }
 
   private adaptFull(data: any): any {
     const c    = data.contrat;

@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -165,7 +166,7 @@ export class LocationDossierComponent implements OnInit {
   confirmReservation(): void {
     if (this.confirming) return;
     this.confirming = true;
-    this.crud.rawPatch('reservation', this.reservationId, { reservationStatus: 'confirmee' }).subscribe({
+    this.crud.rawPut(`reservation/${this.reservationId}`, { reservationStatus: 'confirmee' }).subscribe({
       next: () => {
         this.toast.show(this.t('reservationConfirmed') || 'Réservation confirmée', 'success');
         this.confirming = false;
@@ -192,7 +193,7 @@ export class LocationDossierComponent implements OnInit {
   confirmCancelReservation(): void {
     this.showCancelModal = false;
     this.cancelling = true;
-    this.crud.rawPatch('reservation', this.reservationId, { reservationStatus: 'annulee' }).subscribe({
+    this.crud.rawPut(`reservation/${this.reservationId}`, { reservationStatus: 'annulee' }).subscribe({
       next: () => {
         this.toast.show(this.t('reservationCancelled'), 'info');
         this.cancelling = false;
@@ -234,6 +235,7 @@ export class LocationDossierComponent implements OnInit {
     private contratSvc: ContratService,
     private bus: EventBusService,
     private auth: AuthService,
+    private destroyRef: DestroyRef,
   ) {}
 
   t(key: string) { return this.ts.translate(key); }
@@ -242,10 +244,17 @@ export class LocationDossierComponent implements OnInit {
     ['reservation','depart','paiements','retour','documents','validation'];
 
   ngOnInit() {
-    this.reservationId = Number(this.route.snapshot.paramMap.get('id'));
-    const frag = this.route.snapshot.fragment as typeof this.activeTab | null;
-    if (frag && this.VALID_TABS.includes(frag)) this.activeTab = frag;
-    this.load();
+    // Angular reuses this component instance when navigating from one dossier straight
+    // to another (both match the same '/location/:id' route config) -- a snapshot read
+    // here would never pick up the new id, so a notification linking to a different
+    // reservation while already on this page would silently do nothing. Subscribe to the
+    // param map instead so every navigation (first load or id change) reloads correctly.
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
+      this.reservationId = Number(params.get('id'));
+      const frag = this.route.snapshot.fragment as typeof this.activeTab | null;
+      this.activeTab = (frag && this.VALID_TABS.includes(frag)) ? frag : 'reservation';
+      this.load();
+    });
     this.auth.getMySignature().subscribe(sig => {
       this.myProfileSignature = sig;
       if (!sig) return;
@@ -308,7 +317,10 @@ export class LocationDossierComponent implements OnInit {
         hasCaution:         contrat?.hasCaution ?? false,
         cautionMontant:     contrat?.cautionMontant ?? 0,
         franchise:          contrat?.franchise ?? 0,
-        damagedParts:       [],
+        damagedParts:       (vd.damages ?? []).map((d: any) => d.zone),
+        damageDetails:      (vd.damages ?? []).map((d: any) => ({
+          zone: d.zone, severity: d.severity ?? d.type ?? 'scratch', description: d.description ?? '', photo: d.photo ?? null,
+        })),
         nbJoursFactures:    contrat?.nbJoursFactures ?? null,
         lieuLivraison:      res?.lieuLivraison ?? '',
         lieuRetour:         res?.lieuRetour ?? '',
@@ -325,6 +337,7 @@ export class LocationDossierComponent implements OnInit {
         equipementNotes: '', deliveryNotes: '',
         hasCaution: false, cautionMontant: 0, franchise: 0,
         damagedParts: [],
+        damageDetails: [],
         nbJoursFactures: null,
         lieuLivraison: res?.lieuLivraison ?? '',
         lieuRetour:    res?.lieuRetour ?? '',
@@ -341,7 +354,10 @@ export class LocationDossierComponent implements OnInit {
         kilometrage:     vri.kilometrage ?? null,
         inspectedAt:     vri.inspectedAt ? vri.inspectedAt.slice(0, 16) : now,
         condition:       vri.condition ?? 'clean',
-        damagedParts:    vri.damagedParts ?? [],
+        damagedParts:    (vri.damageItems ?? []).map((d: any) => d.zone),
+        damageDetails:   (vri.damageItems ?? []).map((d: any) => ({
+          zone: d.zone, severity: d.severity ?? d.type ?? 'scratch', description: d.description ?? '', photo: d.photo ?? null,
+        })),
         fuelCharge:      vri.fuelCharge ?? 0,
         lateCharge:      vri.lateCharge ?? 0,
         damageCharge:    vri.damageCharge ?? 0,
@@ -363,6 +379,7 @@ export class LocationDossierComponent implements OnInit {
         inspectedAt:  now,
         condition:    'clean',
         damagedParts: [],
+        damageDetails: [],
         fuelCharge:      0,
         lateCharge:      0,
         damageCharge:    0,
@@ -418,8 +435,9 @@ export class LocationDossierComponent implements OnInit {
 
   setNoDamage(): void {
     if (this.isRetourDone) return;
-    this.retourForm.condition    = 'clean';
-    this.retourForm.damagedParts = [];
+    this.retourForm.condition     = 'clean';
+    this.retourForm.damagedParts  = [];
+    this.retourForm.damageDetails = [];
   }
 
   setHasDamage(): void {
@@ -429,9 +447,17 @@ export class LocationDossierComponent implements OnInit {
 
   togglePart(partId: string): void {
     if (this.isRetourDone) return;
-    const parts: string[] = this.retourForm.damagedParts ?? [];
+    const parts: string[] = this.retourForm.damagedParts ?? (this.retourForm.damagedParts = []);
+    const details: any[]  = this.retourForm.damageDetails ?? (this.retourForm.damageDetails = []);
     const idx = parts.indexOf(partId);
-    if (idx === -1) parts.push(partId); else parts.splice(idx, 1);
+    if (idx === -1) {
+      parts.push(partId);
+      details.push({ zone: partId, severity: 'scratch', description: '', photo: null });
+    } else {
+      parts.splice(idx, 1);
+      const dIdx = details.findIndex(d => d.zone === partId);
+      if (dIdx !== -1) details.splice(dIdx, 1);
+    }
   }
 
   isPartDamaged(partId: string): boolean {
@@ -443,20 +469,88 @@ export class LocationDossierComponent implements OnInit {
     return zone ? this.t(zone.key) : partId;
   }
 
+  retourDamageDetail(partId: string): any {
+    return (this.retourForm.damageDetails ?? []).find((d: any) => d.zone === partId) ?? {};
+  }
+
+  updateRetourDamageDetail(partId: string, field: 'severity' | 'description', value: string): void {
+    const d = this.retourDamageDetail(partId);
+    if (d) d[field] = value;
+  }
+
+  uploadingRetourPhoto: string | null = null;
+
+  onRetourDamagePhotoSelected(event: Event, partId: string): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.uploadingRetourPhoto = partId;
+    this.crud.uploadDamagePhoto(file).subscribe({
+      next: (res) => {
+        const d = this.retourDamageDetail(partId);
+        if (d) d.photo = res.path;
+        this.uploadingRetourPhoto = null;
+      },
+      error: () => {
+        this.toast.show(this.t('error'), 'error');
+        this.uploadingRetourPhoto = null;
+      },
+    });
+    input.value = '';
+  }
+
   // ── Damage noted at hand-over (separate from the read-only pre-existing list) ──
 
   get hasDepartDamage(): boolean { return (this.departForm.damagedParts ?? []).length > 0; }
 
   toggleDepartPart(partId: string): void {
     if (this.isDeliveryDone) return;
-    const parts: string[] = this.departForm.damagedParts ?? [];
+    const parts: string[] = this.departForm.damagedParts ?? (this.departForm.damagedParts = []);
+    const details: any[]  = this.departForm.damageDetails ?? (this.departForm.damageDetails = []);
     const idx = parts.indexOf(partId);
-    if (idx === -1) parts.push(partId); else parts.splice(idx, 1);
+    if (idx === -1) {
+      parts.push(partId);
+      details.push({ zone: partId, severity: 'scratch', description: '', photo: null });
+    } else {
+      parts.splice(idx, 1);
+      const dIdx = details.findIndex(d => d.zone === partId);
+      if (dIdx !== -1) details.splice(dIdx, 1);
+    }
     this.departForm.damagedParts = parts;
   }
 
   isDepartPartDamaged(partId: string): boolean {
     return (this.departForm.damagedParts ?? []).includes(partId);
+  }
+
+  departDamageDetail(partId: string): any {
+    return (this.departForm.damageDetails ?? []).find((d: any) => d.zone === partId) ?? {};
+  }
+
+  updateDepartDamageDetail(partId: string, field: 'severity' | 'description', value: string): void {
+    const d = this.departDamageDetail(partId);
+    if (d) d[field] = value;
+  }
+
+  uploadingDepartPhoto: string | null = null;
+
+  onDepartDamagePhotoSelected(event: Event, partId: string): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.uploadingDepartPhoto = partId;
+    this.crud.uploadDamagePhoto(file).subscribe({
+      next: (res) => {
+        const d = this.departDamageDetail(partId);
+        if (d) d.photo = res.path;
+        this.uploadingDepartPhoto = null;
+      },
+      error: () => {
+        this.toast.show(this.t('error'), 'error');
+        this.uploadingDepartPhoto = null;
+      },
+    });
+    input.value = '';
   }
 
   get totalChargesBeforeRemise(): number {

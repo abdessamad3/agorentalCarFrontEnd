@@ -175,10 +175,10 @@
           <div class="form-group">
             <label>{{ t('paymentMethod') }}</label>
             <select formControlName="modePaiement">
-              <option value="especes">Espèces</option>
-              <option value="carte">Carte</option>
-              <option value="virement">Virement</option>
-              <option value="cheque">Chèque</option>
+              <option value="especes">{{ t('cash') }}</option>
+              <option value="carte">{{ t('card') }}</option>
+              <option value="virement">{{ t('transfer') }}</option>
+              <option value="cheque">{{ t('cheque') }}</option>
             </select>
           </div>
           <div class="form-group">

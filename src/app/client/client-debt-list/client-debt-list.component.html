@@ -8,7 +8,7 @@
     </div>
 
     <!-- Stats bar -->
-    <div class="stats-bar" *ngIf="!loading && debtors.length > 0">
+    <div class="stats-bar" *ngIf="!loading && total > 0">
       <div class="stat-card stat-total">
         <span class="stat-icon">💰</span>
         <div class="stat-body">
@@ -19,7 +19,7 @@
       <div class="stat-card stat-count">
         <span class="stat-icon">👥</span>
         <div class="stat-body">
-          <div class="stat-value">{{ debtors.length }}</div>
+          <div class="stat-value">{{ total }}</div>
           <div class="stat-label">{{ t('debtors') }}</div>
         </div>
       </div>
@@ -34,15 +34,16 @@
   </div>
 
   <!-- Search -->
-  <div class="search-bar" *ngIf="!loading && debtors.length > 0">
+  <div class="search-bar" *ngIf="(!loading && total > 0) || search">
     <span class="search-icon">🔍</span>
     <input
       type="text"
       [(ngModel)]="search"
+      (ngModelChange)="onSearch()"
       [placeholder]="t('searchByNameOrPhone')"
       class="search-input"
     />
-    <button class="search-clear" *ngIf="search" (click)="search = ''">✕</button>
+    <button class="search-clear" *ngIf="search" (click)="search = ''; onSearch()">✕</button>
   </div>
 
   <!-- Loading -->
@@ -55,28 +56,28 @@
   <div class="state-error" *ngIf="error && !loading">⚠️ {{ error }}</div>
 
   <!-- Empty — no debts at all -->
-  <div class="empty-state" *ngIf="!loading && !error && debtors.length === 0">
+  <div class="empty-state" *ngIf="!loading && !error && total === 0 && !search">
     <div class="empty-icon">🎉</div>
     <div class="empty-text">{{ t('noDebtors') }}</div>
   </div>
 
   <!-- Empty — search returned nothing -->
-  <div class="empty-state" *ngIf="!loading && debtors.length > 0 && filtered.length === 0">
+  <div class="empty-state" *ngIf="!loading && !error && total === 0 && search">
     <div class="empty-icon">🔍</div>
     <div class="empty-text">{{ t('noResults') || 'No results found' }}</div>
   </div>
 
   <!-- Debtor cards -->
-  <div class="debtor-list" *ngIf="!loading && filtered.length > 0">
+  <div class="debtor-list" *ngIf="!loading && debtors.length > 0">
     <div
-      *ngFor="let c of filtered; let i = index"
+      *ngFor="let c of debtors; let i = index"
       class="debtor-card"
-      [class.card-high]="debtRiskLevel(c.totalOwed) === 'high'"
-      [class.card-medium]="debtRiskLevel(c.totalOwed) === 'medium'"
+      [class.card-high]="debtRiskLevel(c.outstandingDebt) === 'high'"
+      [class.card-medium]="debtRiskLevel(c.outstandingDebt) === 'medium'"
     >
       <!-- Card header — click to expand -->
-      <div class="card-header" (click)="toggleExpand(c.clientId)">
-        <div class="rank-num">#{{ i + 1 }}</div>
+      <div class="card-header" (click)="toggleExpand(c)">
+        <div class="rank-num">#{{ rankOf(i) }}</div>
         <div class="client-avatar">{{ (c.nom || '?')[0].toUpperCase() }}</div>
 
         <div class="client-info">
@@ -88,22 +89,26 @@
         </div>
 
         <div class="card-right">
-          <div class="debt-amount">{{ c.totalOwed | number:'1.0-0' }} MAD</div>
+          <div class="debt-amount">{{ c.outstandingDebt | number:'1.0-0' }} MAD</div>
           <div class="card-right-meta">
-            <span class="risk-badge" [ngClass]="'debt-risk-' + debtRiskLevel(c.totalOwed)">
-              {{ riskLabel(c.totalOwed) }}
+            <span class="risk-badge" [ngClass]="'debt-risk-' + debtRiskLevel(c.outstandingDebt)">
+              {{ riskLabel(c.outstandingDebt) }}
             </span>
-            <button class="btn-profile" (click)="$event.stopPropagation(); goProfile(c.clientId)">
+            <button class="btn-profile" (click)="$event.stopPropagation(); goProfile(c.id)">
               👤
             </button>
-            <span class="expand-chevron">{{ expandedId === c.clientId ? '▲' : '▼' }}</span>
+            <span class="expand-chevron">{{ expandedId === c.id ? '▲' : '▼' }}</span>
           </div>
         </div>
       </div>
 
       <!-- Expanded: reservation breakdown + per-row payment button -->
-      <div class="reservation-panel" *ngIf="expandedId === c.clientId">
-        <div class="res-table-wrap">
+      <div class="reservation-panel" *ngIf="expandedId === c.id">
+        <div class="state-msg" *ngIf="expandedLoading">
+          <div class="spinner"></div>
+          <span>{{ t('loading') || 'Loading...' }}</span>
+        </div>
+        <div class="res-table-wrap" *ngIf="!expandedLoading">
           <table class="res-table">
             <thead>
               <tr>
@@ -118,7 +123,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let r of c.reservations">
+              <tr *ngFor="let r of expandedReservations">
                 <td class="res-id res-id-link" (click)="goToReservation(r.id)" [title]="t('view') || 'View'">#{{ r.id }}</td>
                 <td class="res-matricule">{{ r.matricule || '—' }}</td>
                 <td class="res-date">{{ r.dateDebut | date:'dd/MM/yy' }}</td>
@@ -141,6 +146,8 @@
         </div>
       </div>
     </div>
+
+    <app-paginator [page]="page" [limit]="limit" [total]="total" (pageChange)="onPageChange($event)"></app-paginator>
   </div>
 
 </div>

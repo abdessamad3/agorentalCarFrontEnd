@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CrudService } from '../../services/crud.service';
@@ -33,11 +34,14 @@ export class ContratPrintPageComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private crud: CrudService,
+    private destroyRef: DestroyRef,
   ) {}
 
   ngOnInit() {
-    this.contratId = +this.route.snapshot.paramMap.get('id')!;
-    this.load();
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
+      this.contratId = +params.get('id')!;
+      this.load();
+    });
   }
 
   load() {

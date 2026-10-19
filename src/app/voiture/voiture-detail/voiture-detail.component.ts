@@ -1,4 +1,5 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+import { Component, DestroyRef, OnInit, HostListener } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { vehicleStatusClass, vehicleStatusLabel } from '../../shared/utils/status.utils';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -136,6 +137,7 @@ export class VoitureDetailComponent implements OnInit {
     private bus: EventBusService,
     private auth: AuthService,
     private activityLog: ActivityLogService,
+    private destroyRef: DestroyRef,
   ) {
     this.saleForm = this.fb.group({
       dateVente: [new Date().toISOString().substring(0, 10)],
@@ -174,11 +176,13 @@ export class VoitureDetailComponent implements OnInit {
 
   ngOnInit(): void {
     this.ts.direction$.subscribe(d => this.dir = d);
-    const id  = +this.route.snapshot.paramMap.get('id')!;
-    const tab = this.route.snapshot.fragment ?? this.route.snapshot.queryParamMap.get('tab');
-    if (tab) this.activeTab = tab;
-    this.activityLog.logView('Voiture', id);
-    this.load(id);
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
+      const id  = +params.get('id')!;
+      const tab = this.route.snapshot.fragment ?? this.route.snapshot.queryParamMap.get('tab');
+      if (tab) this.activeTab = tab;
+      this.activityLog.logView('Voiture', id);
+      this.load(id);
+    });
   }
 
   load(id: number): void {

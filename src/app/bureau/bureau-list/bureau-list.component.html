@@ -28,11 +28,16 @@
     <p>{{ error }}</p>
     <button (click)="loadBureaus()" class="btn-retry">{{ 'retry' | translate }}</button>
   </div>
-  <div *ngIf="!loading && bureaus.length === 0 && !error" class="empty-state">
+  <div *ngIf="!loading && bureaus.length === 0 && !error && !search && !statut" class="empty-state">
     <span class="empty-icon">🏢</span>
-    <div class="empty-title">No offices yet</div>
-    <div class="empty-message">Add your first office to start organising your fleet by location.</div>
-    <a *ngIf="isAdmin" routerLink="/bureau/create" class="empty-action">+ Add Office</a>
+    <div class="empty-title">{{ 'noOfficesTitle' | translate }}</div>
+    <div class="empty-message">{{ 'noOfficesDesc' | translate }}</div>
+    <a *ngIf="isAdmin" routerLink="/bureau/create" class="empty-action">+ {{ 'addBureau' | translate }}</a>
+  </div>
+  <div *ngIf="!loading && bureaus.length === 0 && !error && (search || statut)" class="empty-state">
+    <span class="empty-icon">🔍</span>
+    <div class="empty-title">{{ 'noSearchResultsTitle' | translate }}</div>
+    <div class="empty-message">{{ 'noSearchResultsDesc' | translate }}</div>
   </div>
 
   <!-- Table -->
@@ -41,10 +46,10 @@
       <thead>
         <tr>
           <th>{{ 'name' | translate }}</th>
-          <th>Company</th>
-          <th>Manager</th>
+          <th>{{ 'company' | translate }}</th>
+          <th>{{ 'managerLabel' | translate }}</th>
           <th>{{ 'address' | translate }}</th>
-          <th>Téléphone</th>
+          <th>{{ 'telephone' | translate }}</th>
           <th>{{ 'status' | translate }}</th>
           <th>{{ 'created' | translate }}</th>
           <th>{{ 'actions' | translate }}</th>
@@ -119,14 +124,14 @@
             </select>
           </div>
           <div class="form-group">
-            <label>Company</label>
+            <label>{{ 'company' | translate }}</label>
             <select formControlName="companyId">
               <option [ngValue]="null">— None —</option>
               <option *ngFor="let c of companies" [ngValue]="c.id">{{ c.nom }}</option>
             </select>
           </div>
           <div class="form-group">
-            <label>Manager</label>
+            <label>{{ 'managerLabel' | translate }}</label>
             <select formControlName="managerId">
               <option [ngValue]="null">— None —</option>
               <option *ngFor="let u of managers" [ngValue]="u.id">{{ getManagerLabel(u) }}</option>
@@ -172,14 +177,14 @@
             </select>
           </div>
           <div class="form-group">
-            <label>Company</label>
+            <label>{{ 'company' | translate }}</label>
             <select formControlName="companyId">
               <option [ngValue]="null">— None —</option>
               <option *ngFor="let c of companies" [ngValue]="c.id">{{ c.nom }}</option>
             </select>
           </div>
           <div class="form-group">
-            <label>Manager</label>
+            <label>{{ 'managerLabel' | translate }}</label>
             <select formControlName="managerId">
               <option [ngValue]="null">— None —</option>
               <option *ngFor="let u of managers" [ngValue]="u.id">{{ getManagerLabel(u) }}</option>

@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -140,15 +141,18 @@ export class CreditDetailComponent implements OnInit {
     private crud: CrudService,
     private ts: TranslationService,
     private activityLog: ActivityLogService,
+    private destroyRef: DestroyRef,
   ) {}
 
   t(key: string): string { return this.ts.translate(key); }
 
   ngOnInit() {
     this.ts.direction$.subscribe(d => this.dir = d);
-    this.id = +this.route.snapshot.paramMap.get('id')!;
-    this.activityLog.logView('Credit', this.id);
-    this.load();
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
+      this.id = +params.get('id')!;
+      this.activityLog.logView('Credit', this.id);
+      this.load();
+    });
   }
 
   load() {

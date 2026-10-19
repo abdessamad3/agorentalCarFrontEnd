@@ -1,13 +1,18 @@
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
 
-import { BureauserviceService } from './bureauservice.service';
+import { BureauService } from './bureauservice.service';
 
-describe('BureauserviceService', () => {
-  let service: BureauserviceService;
+describe('BureauService', () => {
+  let service: BureauService;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
-    service = TestBed.inject(BureauserviceService);
+    // The service injects HttpClient -- without provideHttpClient() this fails at
+    // injection time with NullInjectorError, even though the class itself compiles.
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient()],
+    });
+    service = TestBed.inject(BureauService);
   });
 
   it('should be created', () => {

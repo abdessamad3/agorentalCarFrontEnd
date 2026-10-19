@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -45,6 +46,7 @@ export class ReservationEditComponent implements OnInit {
     private ts:     TranslationService,
     private fb:     FormBuilder,
     private http:   HttpClient,
+    private destroyRef: DestroyRef,
   ) {
     this.form = this.fb.group({
       clientId:          ['', Validators.required],
@@ -61,41 +63,44 @@ export class ReservationEditComponent implements OnInit {
 
   ngOnInit() {
     this.ts.direction$.subscribe(d => this.dir = d);
-    const id = this.route.snapshot.paramMap.get('id');
-    if (!id) { this.router.navigate(['/reservation']); return; }
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
+      const id = params.get('id');
+      if (!id) { this.router.navigate(['/reservation']); return; }
+      this.loading = true;
 
-    forkJoin({
-      reservation: this.crud.getById('reservation', +id).pipe(catchError(() => of(null))),
-      clients:     this.crud.getAll('client').pipe(catchError(() => of([]))),
-      voitures:    this.crud.getAll('voiture').pipe(catchError(() => of([]))),
-      accessoires: this.crud.getAll('accessoire').pipe(catchError(() => of([])))
-    }).subscribe(({ reservation, clients, voitures, accessoires }) => {
-      if (!reservation) {
-        this.error   = this.t('notFound');
+      forkJoin({
+        reservation: this.crud.getById('reservation', +id).pipe(catchError(() => of(null))),
+        clients:     this.crud.getAll('client').pipe(catchError(() => of([]))),
+        voitures:    this.crud.getAll('voiture').pipe(catchError(() => of([]))),
+        accessoires: this.crud.getAll('accessoire').pipe(catchError(() => of([])))
+      }).subscribe(({ reservation, clients, voitures, accessoires }) => {
+        if (!reservation) {
+          this.error   = this.t('notFound');
+          this.loading = false;
+          return;
+        }
+        this.reservation = reservation;
+        this.clients     = Array.isArray(clients)     ? clients     : (clients     as any)?.data ?? [];
+        this.voitures    = Array.isArray(voitures)    ? voitures    : (voitures    as any)?.data ?? [];
+        this.accessoires = Array.isArray(accessoires) ? accessoires : (accessoires as any)?.data ?? [];
+
+        this.form.patchValue({
+          clientId:          reservation.client?.id  ?? reservation.clientId  ?? '',
+          voitureId:         reservation.voiture?.id ?? reservation.voitureId ?? '',
+          dateDebut:         reservation.dateDebut   ?? '',
+          dateFin:           reservation.dateFin     ?? '',
+          reservationStatus: reservation.reservationStatus || 'confirmee',
+          modePaiement:      reservation.modePaiement || 'especes',
+          montantPaye:       reservation.montantPaye ?? 0,
+          remiseMontant:     reservation.remiseMontant ?? null,
+          remiseMotif:       reservation.remiseMotif ?? '',
+        });
+
+        const accIds: number[] = (reservation.accessoires ?? []).map((a: any) => a.id ?? a);
+        this.selectedAccessoireIds = accIds;
         this.loading = false;
-        return;
-      }
-      this.reservation = reservation;
-      this.clients     = Array.isArray(clients)     ? clients     : (clients     as any)?.data ?? [];
-      this.voitures    = Array.isArray(voitures)    ? voitures    : (voitures    as any)?.data ?? [];
-      this.accessoires = Array.isArray(accessoires) ? accessoires : (accessoires as any)?.data ?? [];
-
-      this.form.patchValue({
-        clientId:          reservation.client?.id  ?? reservation.clientId  ?? '',
-        voitureId:         reservation.voiture?.id ?? reservation.voitureId ?? '',
-        dateDebut:         reservation.dateDebut   ?? '',
-        dateFin:           reservation.dateFin     ?? '',
-        reservationStatus: reservation.reservationStatus || 'confirmee',
-        modePaiement:      reservation.modePaiement || 'especes',
-        montantPaye:       reservation.montantPaye ?? 0,
-        remiseMontant:     reservation.remiseMontant ?? null,
-        remiseMotif:       reservation.remiseMotif ?? '',
+        this.refreshPreview();
       });
-
-      const accIds: number[] = (reservation.accessoires ?? []).map((a: any) => a.id ?? a);
-      this.selectedAccessoireIds = accIds;
-      this.loading = false;
-      this.refreshPreview();
     });
 
     // Live preview refreshes when dates or vehicle change (closed reservations' totals

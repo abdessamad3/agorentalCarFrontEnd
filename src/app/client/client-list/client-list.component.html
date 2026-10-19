@@ -25,11 +25,16 @@
   </div>
   <div *ngIf="loading" class="loading-state"><p>{{ 'loading' | translate }}</p></div>
   <div *ngIf="error && !loading" class="error-state"><p>{{ error }}</p><button (click)="load()" class="btn-retry">{{ 'retry' | translate }}</button></div>
-  <div *ngIf="!loading && !error && filtered.length === 0" class="empty-state">
+  <div *ngIf="!loading && !error && filtered.length === 0 && !search" class="empty-state">
     <span class="empty-icon">👤</span>
     <div class="empty-title">{{ 'noClientsYet' | translate }}</div>
     <div class="empty-message">{{ 'noClientsMessage' | translate }}</div>
     <button class="empty-action" (click)="openAdd()">+ {{ 'addFirstClient' | translate }}</button>
+  </div>
+  <div *ngIf="!loading && !error && filtered.length === 0 && search" class="empty-state">
+    <span class="empty-icon">🔍</span>
+    <div class="empty-title">{{ 'noSearchResultsTitle' | translate }}</div>
+    <div class="empty-message">{{ 'noSearchResultsDesc' | translate }}</div>
   </div>
   <div *ngIf="!loading && !error && filtered.length > 0" class="table-container">
     <table class="bureaus-table">
