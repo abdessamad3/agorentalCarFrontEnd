@@ -48,6 +48,18 @@ export class LoginComponent {
     this.authService.login(email, password).subscribe({
       next: () => {
         this.isLoading = false;
+
+        // The login API succeeds for a customer (ROLE_CLIENT) account too --
+        // it's a real account, just not one with admin-panel access. Catch
+        // that here instead of showing a false "success" toast and silently
+        // bouncing them back to this page when authGuard rejects ROLE_USER.
+        if (!this.authService.hasRole('ROLE_USER')) {
+          this.authService.logout();
+          this.errorMessage = this.ts.translate('clientAccountNoAccessMsg');
+          this.toast.show(this.ts.translate('clientAccountNoAccessMsg'), 'error');
+          return;
+        }
+
         this.successMessage = this.ts.translate('loginSuccessRedirecting');
         this.toast.show(this.ts.translate('welcomeBackToast'), 'success');
         setTimeout(() => {
