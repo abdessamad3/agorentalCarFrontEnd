@@ -62,7 +62,7 @@ export class InvoiceService {
 
   private companyFromSettings(settings: any): InvoiceCompany {
     return {
-      name:    settings.companyName || this.companySvc.getCurrentName() || 'AGOCAR',
+      name:    settings.companyName || this.companySvc.getCurrentName() || 'AjrCar',
       address: settings.adresse     || '',
       phone:   settings.phone       || '',
       email:   settings.email       || '',

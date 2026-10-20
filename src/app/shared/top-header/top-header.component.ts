@@ -23,7 +23,7 @@ export class TopHeaderComponent implements OnInit, OnDestroy {
   dir = 'ltr';
   currentLang = 'en';
   pageTitle = 'dashboard';
-  companyName = 'AGOCAR';
+  companyName = 'AjrCar';
   logoUrl: string | null = null;
   isAdmin = false;
   netProfit = 0;

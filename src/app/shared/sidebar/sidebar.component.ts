@@ -20,7 +20,7 @@ export class SidebarComponent implements OnInit {
 
   dir = 'ltr';
   logoUrl: string | null = null;
-  companyName = 'AGOCAR';
+  companyName = 'AjrCar';
 
   bureaux: { id: number; nom: string }[] = [];
   currentBureauId: number | null = null;

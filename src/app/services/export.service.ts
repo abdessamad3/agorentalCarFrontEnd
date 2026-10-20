@@ -79,7 +79,7 @@ export class ExportService {
       startY: 50,
       head: [['PARTIES', '']],
       body: [
-        ['Lessor (Company)', 'AGOCAR'],
+        ['Lessor (Company)', 'AjrCar'],
         ['Lessee (Client)',  clientName],
         ['CIN / ID',         clientCIN],
         ['Phone',            clientPhone],
@@ -148,7 +148,7 @@ export class ExportService {
 
     doc.setFontSize(20);
     doc.setTextColor(41, 128, 185);
-    doc.text('AGOCAR', 105, 18, { align: 'center' });
+    doc.text('AjrCar', 105, 18, { align: 'center' });
     doc.setFontSize(14);
     doc.setTextColor(0);
     doc.text('COMPLIANCE REPORT', 105, 27, { align: 'center' });
@@ -209,7 +209,7 @@ export class ExportService {
 
   async expenseExcel(depenses: any[]): Promise<void> {
     const wb = new Workbook();
-    wb.creator = 'AGOCAR';
+    wb.creator = 'AjrCar';
     wb.created = wb.modified = new Date();
 
     const C = {
@@ -261,7 +261,7 @@ export class ExportService {
 
     ov.mergeCells('A1:D1');
     const ov1 = ov.getCell('A1');
-    ov1.value = 'AGOCAR'; ov1.font = { name: 'Calibri', size: 18, bold: true, color: { argb: C.white } };
+    ov1.value = 'AjrCar'; ov1.font = { name: 'Calibri', size: 18, bold: true, color: { argb: C.white } };
     ov1.fill = fill(C.primary); ov1.alignment = { horizontal: 'center', vertical: 'middle' };
     ov.getRow(1).height = 36;
 
@@ -364,7 +364,7 @@ export class ExportService {
     ov.pageSetup.paperSize   = 9; ov.pageSetup.orientation = 'portrait';
     ov.pageSetup.fitToPage   = true; ov.pageSetup.fitToWidth = 1;
     ov.pageSetup.margins     = { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.3, footer: 0.3 };
-    ov.headerFooter.oddHeader = `&C&"Calibri,Bold"&14AGOCAR — Expense Report`;
+    ov.headerFooter.oddHeader = `&C&"Calibri,Bold"&14AjrCar — Expense Report`;
     ov.headerFooter.oddFooter = `&L&8Generated: ${new Date().toLocaleDateString('fr-FR')}&R&8Page &P of &N`;
 
     // ── Sheet 2: All Expenses (full list sorted by date desc) ──────────────────
@@ -373,7 +373,7 @@ export class ExportService {
 
     ws2.mergeCells('A1:D1');
     const w1 = ws2.getCell('A1');
-    w1.value = 'AGOCAR'; w1.font = { name: 'Calibri', size: 18, bold: true, color: { argb: C.white } };
+    w1.value = 'AjrCar'; w1.font = { name: 'Calibri', size: 18, bold: true, color: { argb: C.white } };
     w1.fill = fill(C.primary); w1.alignment = { horizontal: 'center', vertical: 'middle' };
     ws2.getRow(1).height = 36;
 
@@ -444,7 +444,7 @@ export class ExportService {
     ws2.pageSetup.paperSize   = 9; ws2.pageSetup.orientation = 'landscape';
     ws2.pageSetup.fitToPage   = true; ws2.pageSetup.fitToWidth = 1;
     ws2.pageSetup.margins     = { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.3, footer: 0.3 };
-    ws2.headerFooter.oddHeader = `&C&"Calibri,Bold"&12AGOCAR — All Expenses`;
+    ws2.headerFooter.oddHeader = `&C&"Calibri,Bold"&12AjrCar — All Expenses`;
     ws2.headerFooter.oddFooter = `&L&8Generated: ${new Date().toLocaleDateString('fr-FR')}&R&8Page &P of &N`;
 
     // ── Download ───────────────────────────────────────────────────────────────
@@ -466,7 +466,7 @@ export class ExportService {
 
   async financialExcel(monthBars: { label: string; revenue: number; expenses: number }[], year: number): Promise<void> {
     const wb = new Workbook();
-    wb.creator = 'AGOCAR';
+    wb.creator = 'AjrCar';
     wb.created = wb.modified = new Date();
 
     const ws = wb.addWorksheet(`Financial ${year}`);
@@ -507,7 +507,7 @@ export class ExportService {
     // Row 1 — company header
     ws.mergeCells('A1:E1');
     const r1 = ws.getCell('A1');
-    r1.value     = 'AGOCAR';
+    r1.value     = 'AjrCar';
     r1.font      = { name: 'Calibri', size: 18, bold: true, color: { argb: C.white } };
     r1.fill      = fill(C.primary);
     r1.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -655,7 +655,7 @@ export class ExportService {
     ws.pageSetup.fitToPage   = true;
     ws.pageSetup.fitToWidth  = 1;
     ws.pageSetup.margins     = { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.3, footer: 0.3 };
-    ws.headerFooter.oddHeader = `&C&"Calibri,Bold"&14AGOCAR — Financial Report ${year}`;
+    ws.headerFooter.oddHeader = `&C&"Calibri,Bold"&14AjrCar — Financial Report ${year}`;
     ws.headerFooter.oddFooter = `&L&8Generated: ${new Date().toLocaleDateString('fr-FR')}&R&8Page &P of &N`;
 
     const buffer = await wb.xlsx.writeBuffer();
@@ -677,7 +677,7 @@ export class ExportService {
   private header(doc: jsPDF, title: string, ref: string, date: string): void {
     doc.setFontSize(20);
     doc.setTextColor(41, 128, 185);
-    doc.text('AGOCAR', 105, 18, { align: 'center' });
+    doc.text('AjrCar', 105, 18, { align: 'center' });
     doc.setFontSize(13);
     doc.setTextColor(0);
     doc.text(title, 105, 27, { align: 'center' });
@@ -694,7 +694,7 @@ export class ExportService {
     const pageH = doc.internal.pageSize.getHeight();
     doc.setFontSize(8);
     doc.setTextColor(160);
-    doc.text('AGOCAR — Car Rental Management System', 105, pageH - 10, { align: 'center' });
+    doc.text('AjrCar — Car Rental Management System', 105, pageH - 10, { align: 'center' });
     doc.text(`Generated on ${date}`, 105, pageH - 5, { align: 'center' });
   }
 

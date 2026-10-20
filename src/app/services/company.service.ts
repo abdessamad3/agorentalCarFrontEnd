@@ -15,7 +15,7 @@ export interface BureauOption {
 @Injectable({ providedIn: 'root' })
 export class CompanyService {
   private logoSrc     = new BehaviorSubject<string | null>(this.loadLogo());
-  private companyName = new BehaviorSubject<string>(localStorage.getItem(NAME_KEY) || 'AGOCAR');
+  private companyName = new BehaviorSubject<string>(localStorage.getItem(NAME_KEY) || 'AjrCar');
   private bureauId    = new BehaviorSubject<number | null>(this.loadBureauId());
   private bureauxList = new BehaviorSubject<BureauOption[]>([]);
 
@@ -117,10 +117,10 @@ export class CompanyService {
     }
 
     if (bureau) {
-      this.setCompanyName(bureau.companyNom || 'AGOCAR');
+      this.setCompanyName(bureau.companyNom || 'AjrCar');
       this.setLogo(bureau.companyLogo ?? null);
     } else if (id == null) {
-      this.setCompanyName('AGOCAR');
+      this.setCompanyName('AjrCar');
       this.setLogo(null);
     }
   }

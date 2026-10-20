@@ -10,10 +10,10 @@ export class TranslationService {
   private translations: Translations = {
     en: {
       // Nav
-      logo: 'AGOCAR', dashboard: 'Dashboard', myCars: 'My Cars', inspection3D: '3D Inspection',
+      logo: 'AjrCar', dashboard: 'Dashboard', myCars: 'My Cars', inspection3D: '3D Inspection',
       bureaus: 'Bureaus', profile: 'Profile', settings: 'Settings',
       logout: 'Logout', language: 'Language', hello: 'Hello',
-      welcome: 'Welcome to AGOCAR',
+      welcome: 'Welcome to AjrCar',
 
       // Common actions
       view: 'View', edit: 'Edit', delete: 'Delete', save: 'Save', download: 'Download',
@@ -359,7 +359,7 @@ export class TranslationService {
       passwordOptional: 'leave blank to keep current',
       bureau: 'Bureau', none: 'None',
       loginBtn: 'Login', registerBtn: 'Register',
-      loginTitle: 'Sign in to AGOCAR', registerTitle: 'Create Account',
+      loginTitle: 'Sign in to AjrCar', registerTitle: 'Create Account',
       brandTagline: 'Car Rental Management Platform',
       loginSubtitle: 'Sign in to your account to continue',
       featAnalyticsTitle: 'Fleet Analytics', featAnalyticsDesc: 'Real-time profitability & KPI tracking',
@@ -1074,10 +1074,10 @@ export class TranslationService {
     },
 
     fr: {
-      logo: 'AGOCAR', dashboard: 'Tableau de Bord', myCars: 'Mes Voitures', inspection3D: 'Inspection 3D',
+      logo: 'AjrCar', dashboard: 'Tableau de Bord', myCars: 'Mes Voitures', inspection3D: 'Inspection 3D',
       bureaus: 'Bureaux', profile: 'Profil', settings: 'Paramètres',
       logout: 'Déconnexion', language: 'Langue', hello: 'Bonjour',
-      welcome: 'Bienvenue sur AGOCAR',
+      welcome: 'Bienvenue sur AjrCar',
 
       view: 'Voir', edit: 'Modifier', delete: 'Supprimer', save: 'Enregistrer', download: 'Télécharger',
       saving: 'Enregistrement...', uploading: 'Téléversement...', cancel: 'Annuler', close: 'Fermer',
@@ -1413,7 +1413,7 @@ export class TranslationService {
       passwordOptional: 'laisser vide pour conserver',
       bureau: 'Bureau', none: 'Aucun',
       loginBtn: 'Connexion', registerBtn: "S'inscrire",
-      loginTitle: 'Connexion à AGOCAR', registerTitle: 'Créer un compte',
+      loginTitle: 'Connexion à AjrCar', registerTitle: 'Créer un compte',
       brandTagline: 'Plateforme de gestion de location de voitures',
       loginSubtitle: 'Connectez-vous à votre compte pour continuer',
       featAnalyticsTitle: 'Analyse de flotte', featAnalyticsDesc: 'Suivi de la rentabilité & des KPI en temps réel',
@@ -2106,10 +2106,10 @@ export class TranslationService {
     },
 
     ar: {
-      logo: 'AGOCAR', dashboard: 'لوحة التحكم', myCars: 'سياراتي', inspection3D: 'فحص ثلاثي الأبعاد',
+      logo: 'AjrCar', dashboard: 'لوحة التحكم', myCars: 'سياراتي', inspection3D: 'فحص ثلاثي الأبعاد',
       bureaus: 'المكاتب', profile: 'الملف الشخصي', settings: 'الإعدادات',
       logout: 'تسجيل الخروج', language: 'اللغة', hello: 'مرحبا',
-      welcome: 'مرحبا بك في AGOCAR',
+      welcome: 'مرحبا بك في AjrCar',
 
       view: 'عرض', edit: 'تعديل', delete: 'حذف', save: 'حفظ', download: 'تنزيل',
       saving: 'جاري الحفظ...', uploading: 'جاري الرفع...', cancel: 'إلغاء', close: 'إغلاق',
@@ -2445,7 +2445,7 @@ export class TranslationService {
       passwordOptional: 'اتركه فارغاً للإبقاء على الحالي',
       bureau: 'المكتب', none: 'لا شيء',
       loginBtn: 'تسجيل الدخول', registerBtn: 'إنشاء حساب',
-      loginTitle: 'تسجيل الدخول إلى AGOCAR', registerTitle: 'إنشاء حساب جديد',
+      loginTitle: 'تسجيل الدخول إلى AjrCar', registerTitle: 'إنشاء حساب جديد',
       brandTagline: 'منصة إدارة تأجير السيارات',
       loginSubtitle: 'سجّل الدخول إلى حسابك للمتابعة',
       featAnalyticsTitle: 'تحليلات الأسطول', featAnalyticsDesc: 'تتبع الربحية ومؤشرات الأداء في الوقت الفعلي',
