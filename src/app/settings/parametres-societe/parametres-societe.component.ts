@@ -34,6 +34,18 @@ export class ParametresSocieteComponent implements OnInit {
   whatsapp = '';
   logoPath: string | null = null;
 
+  promoMessageFr = '';
+  promoMessageEn = '';
+  promoMessageAr = '';
+  horairesFr = '';
+  horairesEn = '';
+  horairesAr = '';
+  facebookUrl = '';
+  instagramUrl = '';
+  tiktokUrl = '';
+  nombreClients: number | null = null;
+  villesDesservies: number | null = null;
+
   readonly serverUrl = environment.serverUrl || '';
 
   constructor(
@@ -62,6 +74,17 @@ export class ParametresSocieteComponent implements OnInit {
         if (this.logoPath) {
           this.logoPreviewUrl = `${this.serverUrl}${this.logoPath}`;
         }
+        this.promoMessageFr   = data.promoMessage?.fr ?? '';
+        this.promoMessageEn   = data.promoMessage?.en ?? '';
+        this.promoMessageAr   = data.promoMessage?.ar ?? '';
+        this.horairesFr       = data.horaires?.fr ?? '';
+        this.horairesEn       = data.horaires?.en ?? '';
+        this.horairesAr       = data.horaires?.ar ?? '';
+        this.facebookUrl      = data.facebookUrl ?? '';
+        this.instagramUrl     = data.instagramUrl ?? '';
+        this.tiktokUrl        = data.tiktokUrl ?? '';
+        this.nombreClients    = data.nombreClients ?? null;
+        this.villesDesservies = data.villesDesservies ?? null;
         this.loading = false;
       },
       error: () => { this.error = 'Erreur de chargement'; this.loading = false; }
@@ -97,6 +120,21 @@ export class ParametresSocieteComponent implements OnInit {
       email:         this.email,
       website:       this.website,
       whatsapp:      this.whatsapp,
+      promoMessage: {
+        fr: this.promoMessageFr.trim() || null,
+        en: this.promoMessageEn.trim() || null,
+        ar: this.promoMessageAr.trim() || null,
+      },
+      horaires: {
+        fr: this.horairesFr.trim(),
+        en: this.horairesEn.trim(),
+        ar: this.horairesAr.trim(),
+      },
+      facebookUrl:       this.facebookUrl.trim() || null,
+      instagramUrl:      this.instagramUrl.trim() || null,
+      tiktokUrl:         this.tiktokUrl.trim() || null,
+      nombreClients:     this.nombreClients,
+      villesDesservies:  this.villesDesservies,
     }).subscribe({
       next: () => {
         this.toast.show('Paramètres enregistrés', 'success');

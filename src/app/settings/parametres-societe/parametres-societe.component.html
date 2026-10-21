@@ -79,6 +79,52 @@
       </div>
     </div>
 
+    <!-- Site web public -->
+    <div class="contrat-section">
+      <div class="section-title">Site web public (ajrcar.com)</div>
+
+      <div class="field" style="margin-bottom: 1rem">
+        <label>Message promotionnel du bandeau (optionnel — vide = masqué)</label>
+        <div class="grid-2">
+          <input [(ngModel)]="promoMessageFr" placeholder="Français" />
+          <input [(ngModel)]="promoMessageEn" placeholder="English" />
+          <input [(ngModel)]="promoMessageAr" placeholder="العربية" dir="rtl" />
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom: 1rem">
+        <label>Horaires affichés sur le site</label>
+        <div class="grid-2">
+          <input [(ngModel)]="horairesFr" placeholder="Français" />
+          <input [(ngModel)]="horairesEn" placeholder="English" />
+          <input [(ngModel)]="horairesAr" placeholder="العربية" dir="rtl" />
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label>Facebook (vide = icône masquée)</label>
+          <input [(ngModel)]="facebookUrl" type="url" placeholder="https://facebook.com/..." />
+        </div>
+        <div class="field">
+          <label>Instagram (vide = icône masquée)</label>
+          <input [(ngModel)]="instagramUrl" type="url" placeholder="https://instagram.com/..." />
+        </div>
+        <div class="field">
+          <label>TikTok (vide = icône masquée)</label>
+          <input [(ngModel)]="tiktokUrl" type="url" placeholder="https://tiktok.com/@..." />
+        </div>
+        <div class="field">
+          <label>Nombre de clients affiché</label>
+          <input [(ngModel)]="nombreClients" type="number" placeholder="Ex: 12000" />
+        </div>
+        <div class="field">
+          <label>Nombre de villes desservies affiché</label>
+          <input [(ngModel)]="villesDesservies" type="number" placeholder="Ex: 8" />
+        </div>
+      </div>
+    </div>
+
     <div class="bottom-actions">
       <button type="button" class="btn-save" (click)="save()" [disabled]="saving">
         {{ saving ? 'Enregistrement...' : 'Enregistrer' }}
