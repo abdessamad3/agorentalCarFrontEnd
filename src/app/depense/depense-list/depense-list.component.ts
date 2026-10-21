@@ -43,7 +43,7 @@ export class DepenseListComponent implements OnInit, OnDestroy {
       montant:     [0, [Validators.required, Validators.min(0)]],
       description: [''],
       date:        [''],
-      categorie:   ['']
+      typeDepense: ['']
     });
   }
 
