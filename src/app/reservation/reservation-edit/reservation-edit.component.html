@@ -145,6 +145,35 @@
         </div>
       </div>
 
+      <!-- Second driver -->
+      <div class="form-section">
+        <div class="section-title-row">
+          <span class="section-title" style="border:none; margin:0; padding:0">{{ t('secondDriver') }}</span>
+          <label class="toggle-label">
+            <input type="checkbox" [(ngModel)]="hasSecondDriver" [ngModelOptions]="{standalone: true}" />
+            {{ t('secondDriverCheckbox') }}
+          </label>
+        </div>
+        <div *ngIf="hasSecondDriver" class="grid-2" style="margin-top:12px">
+          <div class="form-group">
+            <label>{{ t('fullName') }}</label>
+            <input [(ngModel)]="secondNom" [ngModelOptions]="{standalone: true}" />
+          </div>
+          <div class="form-group">
+            <label>{{ t('dateOfBirth') }}</label>
+            <input type="date" [(ngModel)]="secondDateNaissance" [ngModelOptions]="{standalone: true}" />
+          </div>
+          <div class="form-group">
+            <label>{{ t('cin') }}</label>
+            <input [(ngModel)]="secondCin" [ngModelOptions]="{standalone: true}" />
+          </div>
+          <div class="form-group">
+            <label>{{ t('permisConduire') }}</label>
+            <input [(ngModel)]="secondPermis" [ngModelOptions]="{standalone: true}" />
+          </div>
+        </div>
+      </div>
+
       <!-- Actions -->
       <div class="form-actions">
         <app-btn variant="secondary" type="button" (click)="cancel()">{{ t('cancel') }}</app-btn>

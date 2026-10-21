@@ -84,6 +84,12 @@ export class ReservationCreateComponent implements OnInit {
 
   selectedAccessoires: Set<number> = new Set();
 
+  hasSecondDriver = false;
+  secondNom = '';
+  secondCin = '';
+  secondPermis = '';
+  secondDateNaissance = '';
+
   /** The server is the only source of truth for pricing (seasonal rate rules live there) --
    *  this is a live preview only, refreshed on every relevant field change, and is NOT what
    *  gets sent on submit(). The backend independently recomputes the real total from the
@@ -551,6 +557,14 @@ export class ReservationCreateComponent implements OnInit {
     const payload = {
       ...this.form.value,
       accessoireIds: Array.from(this.selectedAccessoires),
+      deuxiemeChauffeur: this.hasSecondDriver && this.secondNom.trim()
+        ? {
+            nom:            this.secondNom,
+            cin:            this.secondCin || null,
+            permisConduite: this.secondPermis || null,
+            dateNaissance:  this.secondDateNaissance || null,
+          }
+        : null,
     };
 
     this.crud.create('reservation', payload).subscribe({

@@ -33,6 +33,12 @@ export class ReservationEditComponent implements OnInit {
   form: FormGroup;
   selectedAccessoireIds: number[] = [];
 
+  hasSecondDriver = false;
+  secondNom = '';
+  secondCin = '';
+  secondPermis = '';
+  secondDateNaissance = '';
+
   /** Server-computed live preview -- never the form's own math. See reservation-create's
    *  identical pattern/comment for why (same bug class this whole feature replaces). */
   preview: { prixParJour: number; nbJours: number; accessoireTotal: number; total: number; tarifActif: { libelle: string; typeAjustement: string; valeur: number } | null } | null = null;
@@ -98,6 +104,16 @@ export class ReservationEditComponent implements OnInit {
 
         const accIds: number[] = (reservation.accessoires ?? []).map((a: any) => a.id ?? a);
         this.selectedAccessoireIds = accIds;
+
+        const dc = reservation.deuxiemeChauffeur;
+        if (dc) {
+          this.hasSecondDriver     = true;
+          this.secondNom           = dc.nom ?? '';
+          this.secondCin           = dc.cin ?? '';
+          this.secondPermis        = dc.permisConduite ?? '';
+          this.secondDateNaissance = dc.dateNaissance ?? '';
+        }
+
         this.loading = false;
         this.refreshPreview();
       });
@@ -186,7 +202,15 @@ export class ReservationEditComponent implements OnInit {
 
     const payload = {
       ...this.form.value,
-      accessoireIds: this.selectedAccessoireIds
+      accessoireIds: this.selectedAccessoireIds,
+      deuxiemeChauffeur: this.hasSecondDriver && this.secondNom.trim()
+        ? {
+            nom:            this.secondNom,
+            cin:            this.secondCin || null,
+            permisConduite: this.secondPermis || null,
+            dateNaissance:  this.secondDateNaissance || null,
+          }
+        : null,
     };
 
     this.crud.update('reservation', this.reservation.id, payload).subscribe({
