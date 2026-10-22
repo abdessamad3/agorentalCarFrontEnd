@@ -305,6 +305,18 @@ input[type="datetime-local"] {
 }
 .vehicle-meta { font-size: 0.72rem; color: #718096; }
 .vehicle-price { font-size: 0.82rem; font-weight: 600; color: #3182ce; }
+.price-old { font-size: 0.75rem; font-weight: 500; color: #a0aec0; text-decoration: line-through; margin-inline-end: 4px; }
+.tarif-badge {
+  display: inline-block;
+  margin-inline-start: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 0.68rem;
+  font-weight: 700;
+  vertical-align: middle;
+}
 .vehicle-check {
   position: absolute; top: 8px; right: 8px;
   background: #3182ce; color: white; border-radius: 50%;

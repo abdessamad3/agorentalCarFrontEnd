@@ -16,12 +16,13 @@
   </div>
   <div *ngIf="!loading && !error && filtered.length > 0" class="table-container">
     <table class="bureaus-table">
-      <thead><tr><th>{{ 'name' | translate }}</th><th>{{ 'description' | translate }}</th><th>{{ 'prixJour' | translate }}</th><th>{{ 'actions' | translate }}</th></tr></thead>
+      <thead><tr><th>{{ 'name' | translate }}</th><th>{{ 'description' | translate }}</th><th>{{ 'prixJour' | translate }}</th><th>{{ 'pricingType' | translate }}</th><th>{{ 'actions' | translate }}</th></tr></thead>
       <tbody>
         <tr *ngFor="let item of paged" class="bureau-row">
           <td>{{ item.nom }}</td>
           <td>{{ item.description || '-' }}</td>
           <td>{{ item.prixJour }} MAD</td>
+          <td>{{ (item.typeTarification === 'unique' ? 'oneTime' : 'perDay') | translate }}</td>
           <td class="actions-cell">
             <app-btn variant="icon-view" (click)="openView(item)" [title]="'view'|translate"></app-btn>
             <app-btn variant="icon-edit" (click)="openEdit(item)" [title]="'edit'|translate"></app-btn>
@@ -44,6 +45,13 @@
           <div class="form-row">
             <div class="form-group"><label>{{ 'name' | translate }} <span class="required">*</span></label><input type="text" formControlName="nom" /></div>
             <div class="form-group"><label>{{ 'prixJour' | translate }}</label><input type="number" formControlName="prixJour" min="0" /></div>
+          </div>
+          <div class="form-group">
+            <label>{{ 'pricingType' | translate }}</label>
+            <select formControlName="typeTarification">
+              <option value="par_jour">{{ 'perDay' | translate }}</option>
+              <option value="unique">{{ 'oneTime' | translate }}</option>
+            </select>
           </div>
           <div class="form-group"><label>{{ 'description' | translate }}</label><input type="text" formControlName="description" /></div>
         </div>

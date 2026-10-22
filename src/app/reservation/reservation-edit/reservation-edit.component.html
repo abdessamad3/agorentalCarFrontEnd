@@ -140,7 +140,7 @@
             [class.selected]="isAccessoireSelected(a.id)"
             (click)="toggleAccessoire(a.id)">
             {{ a.nom || a.name }}
-            <span *ngIf="a.prixJour"> +{{ a.prixJour }} MAD/j</span>
+            <span *ngIf="a.prixJour"> +{{ a.prixJour }} MAD{{ a.typeTarification === 'unique' ? '' : '/j' }}</span>
           </label>
         </div>
       </div>

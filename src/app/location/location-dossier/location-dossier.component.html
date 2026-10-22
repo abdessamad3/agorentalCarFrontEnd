@@ -156,7 +156,7 @@
           <h3>{{ t('accessories') }}</h3>
           <div class="info-row" *ngFor="let a of dossier.reservation.accessoires">
             <span>{{ a.nom }}</span>
-            <span>{{ (a.prix | number:'1.2-2') }} MAD</span>
+            <span>{{ (a.prix | number:'1.2-2') }} MAD{{ a.typeTarification === 'unique' ? '' : '/j' }}</span>
           </div>
         </div>
       </div>

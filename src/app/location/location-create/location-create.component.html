@@ -163,7 +163,14 @@
             <div class="vehicle-info">
               <span class="vehicle-name">{{ v.marque }} {{ v.modele }}</span>
               <span class="vehicle-meta">{{ v.immatriculation }}</span>
-              <span class="vehicle-price" *ngIf="v.prixJour">{{ v.prixJour | number:'1.0-0' }} MAD/j</span>
+              <span class="vehicle-price" *ngIf="v.prixJour && !v.tarifActif">{{ v.prixJour | number:'1.0-0' }} MAD/j</span>
+              <span class="vehicle-price" *ngIf="v.prixJour && v.tarifActif">
+                <span class="price-old">{{ v.prixJour | number:'1.0-0' }}</span>
+                {{ v.prixJourAjuste | number:'1.0-0' }} MAD/j
+                <span class="tarif-badge" [title]="v.tarifActif.libelle">
+                  {{ v.tarifActif.valeur >= 0 ? '+' : '' }}{{ v.tarifActif.valeur }}{{ v.tarifActif.typeAjustement === 'percentage' ? '%' : ' MAD' }}
+                </span>
+              </span>
             </div>
             <span class="compliance-tag" [ngClass]="complianceClass(v)" *ngIf="v.compliance?.overall">
               {{ v.compliance?.overall }}
@@ -185,7 +192,7 @@
             (click)="toggleAccessoire(a.id)">
             <span class="acc-icon">{{ selectedAccessoireIds.has(a.id) ? '✓' : '+' }}</span>
             <span class="acc-name">{{ a.nom }}</span>
-            <span class="acc-price" *ngIf="a.prix">{{ a.prix }} MAD/j</span>
+            <span class="acc-price" *ngIf="a.prix">{{ a.prix }} MAD{{ a.typeTarification === 'unique' ? '' : '/j' }}</span>
           </div>
         </div>
       </div>

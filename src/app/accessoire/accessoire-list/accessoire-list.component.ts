@@ -29,9 +29,10 @@ export class AccessoireListComponent implements OnInit {
 
   constructor(private crud: CrudService, private ts: TranslationService, private fb: FormBuilder) {
     this.form = this.fb.group({
-      nom:         ['', Validators.required],
-      description: [''],
-      prixJour:    [0, Validators.min(0)]
+      nom:              ['', Validators.required],
+      description:      [''],
+      prixJour:         [0, Validators.min(0)],
+      typeTarification: ['par_jour', Validators.required],
     });
   }
 
@@ -53,7 +54,7 @@ export class AccessoireListComponent implements OnInit {
   onPageChange(p: number): void { this.page = p; this.load(); }
 
   openView(item: any)   { this.drawerItem = item; this.drawerOpen = true; }
-  openAdd()             { this.selected = null; this.isEditing = false; this.form.reset({ prixJour: 0 }); this.modalMode = 'form'; }
+  openAdd()             { this.selected = null; this.isEditing = false; this.form.reset({ prixJour: 0, typeTarification: 'par_jour' }); this.modalMode = 'form'; }
   openEdit(item: any)   { this.selected = item; this.isEditing = true; this.form.patchValue(item); this.modalMode = 'form'; }
   openDelete(id: number){ this.deleteId = id; this.modalMode = 'delete'; }
   closeModal()          { this.modalMode = null; this.selected = null; this.deleteId = null; this.isSubmitting = false; this.isEditing = false; }

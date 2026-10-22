@@ -217,7 +217,18 @@
         </div>
 
         <div class="card-pricing">
-          <div class="price-main">{{ car.prixJour | number:'1.0-0' }} <span class="price-unit">MAD/{{ t('daily') }}</span></div>
+          <ng-container *ngIf="car.tarifActif; else noTarif">
+            <div class="price-main">
+              <span class="price-old">{{ car.prixJour | number:'1.0-0' }}</span>
+              {{ car.prixJourAjuste | number:'1.0-0' }} <span class="price-unit">MAD/{{ t('daily') }}</span>
+              <span class="tarif-badge" [title]="car.tarifActif.libelle">
+                {{ car.tarifActif.valeur >= 0 ? '+' : '' }}{{ car.tarifActif.valeur }}{{ car.tarifActif.typeAjustement === 'percentage' ? '%' : ' MAD' }}
+              </span>
+            </div>
+          </ng-container>
+          <ng-template #noTarif>
+            <div class="price-main">{{ car.prixJour | number:'1.0-0' }} <span class="price-unit">MAD/{{ t('daily') }}</span></div>
+          </ng-template>
           <div *ngIf="car.prixSemaine" class="price-secondary">{{ car.prixSemaine | number:'1.0-0' }} MAD/{{ t('weekly') }}</div>
         </div>
 
@@ -295,7 +306,16 @@
           </td>
           <td>{{ t(car.typeCarburant?.toLowerCase() || '') }}</td>
           <td>{{ car.kilometrageActuel | number:'1.0-0' }} km</td>
-          <td class="td-price">{{ car.prixJour | number:'1.0-0' }} MAD</td>
+          <td class="td-price">
+            <ng-container *ngIf="car.tarifActif; else noTarifTd">
+              <span class="price-old">{{ car.prixJour | number:'1.0-0' }}</span>
+              {{ car.prixJourAjuste | number:'1.0-0' }} MAD
+              <span class="tarif-badge" [title]="car.tarifActif.libelle">
+                {{ car.tarifActif.valeur >= 0 ? '+' : '' }}{{ car.tarifActif.valeur }}{{ car.tarifActif.typeAjustement === 'percentage' ? '%' : ' MAD' }}
+              </span>
+            </ng-container>
+            <ng-template #noTarifTd>{{ car.prixJour | number:'1.0-0' }} MAD</ng-template>
+          </td>
           <td>
             <app-compliance-badge
               [status]="car.compliance?.vignette?.status || 'UNKNOWN'"

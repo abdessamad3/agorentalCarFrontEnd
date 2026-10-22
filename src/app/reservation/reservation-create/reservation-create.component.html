@@ -131,7 +131,14 @@
               <div class="vehicle-info">
                 <span class="vehicle-name">{{ v.marque }} {{ v.modele }}</span>
                 <span class="vehicle-meta">{{ v.annee }} · {{ v.carburant || v.typeCarburant }}</span>
-                <span class="vehicle-price">{{ v.prixJour }} MAD/{{ t('days') }}</span>
+                <span class="vehicle-price" *ngIf="!v.tarifActif">{{ v.prixJour }} MAD/{{ t('days') }}</span>
+                <span class="vehicle-price" *ngIf="v.tarifActif">
+                  <span class="price-old">{{ v.prixJour }}</span>
+                  {{ v.prixJourAjuste }} MAD/{{ t('days') }}
+                  <span class="tarif-badge" [title]="v.tarifActif.libelle">
+                    {{ v.tarifActif.valeur >= 0 ? '+' : '' }}{{ v.tarifActif.valeur }}{{ v.tarifActif.typeAjustement === 'percentage' ? '%' : ' MAD' }}
+                  </span>
+                </span>
               </div>
               <div class="vehicle-booked-badge" *ngIf="isVoitureConflicted(v.id)">{{ t('booked') }}</div>
               <div class="vehicle-booked-badge" style="background:#fee2e2;color:#b91c1c" *ngIf="!isVoitureConflicted(v.id) && isVignetteExpired(v)">Vignette expirée</div>
@@ -156,7 +163,7 @@
               (click)="toggleAccessoire(acc.id)">
               <span class="acc-icon">{{ isAccessoireSelected(acc.id) ? '✓' : '+' }}</span>
               <span class="acc-name">{{ acc.nom }}</span>
-              <span class="acc-price" *ngIf="acc.prix">{{ acc.prix }} MAD/j</span>
+              <span class="acc-price" *ngIf="acc.prix">{{ acc.prix }} MAD{{ acc.typeTarification === 'unique' ? '' : '/j' }}</span>
             </div>
           </div>
         </div>

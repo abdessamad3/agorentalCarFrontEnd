@@ -327,6 +327,7 @@ export class TranslationService {
       reparation: 'Repair', vidange: 'Oil Change', assurance: 'Insurance',
       depense: 'Expense', credit: 'Credit', infraction: 'Infraction',
       accessoire: 'Accessory', utilisateur: 'User', vignette: 'Vignette',
+      pricingType: 'Pricing', perDay: 'Per day', oneTime: 'One-time',
       noAccessoriesTitle: 'No accessories', noAccessoriesDesc: 'Add accessories like GPS, child seats, and more that can be added to rental packages.', addAccessoryBtn: '+ Add Accessory',
 
       // Form fields
@@ -1383,6 +1384,7 @@ export class TranslationService {
       reparation: 'Réparation', vidange: 'Vidange', assurance: 'Assurance',
       depense: 'Dépense', credit: 'Crédit', infraction: 'Infraction',
       accessoire: 'Accessoire', utilisateur: 'Utilisateur', vignette: 'Vignette',
+      pricingType: 'Tarification', perDay: 'Par jour', oneTime: 'Unique',
       noAccessoriesTitle: 'Aucun accessoire', noAccessoriesDesc: 'Ajoutez des accessoires comme un GPS, un siège bébé, et plus encore, qui pourront être ajoutés aux forfaits de location.', addAccessoryBtn: '+ Ajouter un accessoire',
 
       montant: 'Montant', dateDebut: 'Date début', dateFin: 'Date fin', dateLimite: 'Date limite',
@@ -2415,6 +2417,7 @@ export class TranslationService {
       reparation: 'الإصلاح', vidange: 'تغيير الزيت', assurance: 'التأمين',
       depense: 'المصروف', credit: 'الائتمان', infraction: 'المخالفة',
       accessoire: 'الملحق', utilisateur: 'المستخدم', vignette: 'الضريبة',
+      pricingType: 'نوع التسعير', perDay: 'في اليوم', oneTime: 'مرة واحدة',
       noAccessoriesTitle: 'لا توجد ملحقات', noAccessoriesDesc: 'أضف ملحقات مثل نظام تحديد المواقع، مقعد الطفل، وغيرها، يمكن إضافتها إلى باقات الإيجار.', addAccessoryBtn: '+ إضافة ملحق',
 
       montant: 'المبلغ', dateDebut: 'تاريخ البداية', dateFin: 'تاريخ النهاية', dateLimite: 'تاريخ الحد',
