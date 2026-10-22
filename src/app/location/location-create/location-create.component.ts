@@ -67,7 +67,7 @@ export class LocationCreateComponent implements OnInit {
    *  rules live server-side). Never sent as-is on submit; the backend independently
    *  recomputes the real total from voitureId/dates/accessoireIds/remiseMontant, so this
    *  can never become the saved total even if tampered with client-side. */
-  preview: { prixParJour: number; nbJours: number; accessoireTotal: number; total: number } | null = null;
+  preview: { prixParJour: number; nbJours: number; accessoireTotal: number; total: number; tarifActif: { libelle: string; typeAjustement: string; valeur: number } | null } | null = null;
   previewLoading = false;
   private previewTimer: any = null;
 

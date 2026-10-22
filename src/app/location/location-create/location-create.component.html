@@ -253,6 +253,10 @@
             <span>{{ t('total') }}</span>
             <span class="total-val">{{ totalAmount | number:'1.2-2' }} MAD</span>
           </div>
+          <div class="summary-row" *ngIf="preview?.tarifActif" style="color:#059669; font-size:0.8rem">
+            {{ t('includesSeasonalRate') }}: {{ preview!.tarifActif!.libelle }}
+            ({{ preview!.tarifActif!.valeur >= 0 ? '+' : '' }}{{ preview!.tarifActif!.valeur }}{{ preview!.tarifActif!.typeAjustement === 'percentage' ? '%' : ' MAD' }})
+          </div>
         </div>
       </div>
 
