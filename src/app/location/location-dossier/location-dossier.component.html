@@ -568,6 +568,7 @@
                 <h3>{{ t('infoSection') }}</h3>
                 <div class="form-grid">
                   <div class="form-group"><label>{{ t('fullName') }}</label><input type="text" [(ngModel)]="driverForm.nom" /></div>
+                  <div class="form-group"><label>{{ t('price') }} (MAD)</label><input type="number" min="0" [(ngModel)]="driverForm.prix" /></div>
                   <div class="form-group"><label>CIN</label><input type="text" [(ngModel)]="driverForm.cin" /></div>
                   <div class="form-group"><label>{{ t('passeport') }}</label><input type="text" [(ngModel)]="driverForm.passeport" /></div>
                   <div class="form-group"><label>{{ t('passportIssueDate') }}</label><input type="date" [(ngModel)]="driverForm.passeportDelivreLe" /></div>

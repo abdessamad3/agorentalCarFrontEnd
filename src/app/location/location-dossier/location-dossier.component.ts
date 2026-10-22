@@ -949,6 +949,7 @@ export class LocationDossierComponent implements OnInit {
       const d = this.dossier?.reservation?.deuxiemeChauffeur ?? {};
       this.driverForm = {
         nom:                d.nom            ?? '',
+        prix:               d.prix           ?? null,
         cin:                d.cin            ?? '',
         passeport:          d.passeport      ?? '',
         passeportDelivreLe: d.passeportDelivreLe ? d.passeportDelivreLe.slice(0, 10) : '',
