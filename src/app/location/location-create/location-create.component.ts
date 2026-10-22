@@ -57,6 +57,12 @@ export class LocationCreateComponent implements OnInit {
   remiseMontant: number | null = null;
   remiseMotif    = '';
 
+  hasSecondDriver = false;
+  secondNom = '';
+  secondCin = '';
+  secondPermis = '';
+  secondDateNaissance = '';
+
   /** Server-computed live preview -- the only source of truth for pricing (seasonal rate
    *  rules live server-side). Never sent as-is on submit; the backend independently
    *  recomputes the real total from voitureId/dates/accessoireIds/remiseMontant, so this
@@ -438,6 +444,14 @@ export class LocationCreateComponent implements OnInit {
       lieuRetour:        this.lieuRetour    || null,
       accessoireIds:     Array.from(this.selectedAccessoireIds),
       reservationStatus: 'confirmee',
+      deuxiemeChauffeur: this.hasSecondDriver && this.secondNom.trim()
+        ? {
+            nom:            this.secondNom,
+            cin:            this.secondCin || null,
+            permisConduite: this.secondPermis || null,
+            dateNaissance:  this.secondDateNaissance || null,
+          }
+        : null,
     };
 
     this.crud.rawPost('reservation', payload).pipe(
