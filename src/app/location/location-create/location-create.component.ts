@@ -62,6 +62,7 @@ export class LocationCreateComponent implements OnInit {
   secondCin = '';
   secondPermis = '';
   secondDateNaissance = '';
+  secondPrix: number | null = null;
 
   /** Server-computed live preview -- the only source of truth for pricing (seasonal rate
    *  rules live server-side). Never sent as-is on submit; the backend independently
@@ -361,6 +362,10 @@ export class LocationCreateComponent implements OnInit {
     this.refreshPreview();
   }
 
+  onSecondDriverChange() {
+    this.refreshPreview();
+  }
+
   refreshPreview(): void {
     clearTimeout(this.previewTimer);
     if (!this.selectedVoiture || !this.dateDebut || !this.dateFin) { this.preview = null; return; }
@@ -373,6 +378,7 @@ export class LocationCreateComponent implements OnInit {
         dateFin:   this.dateFin,
         accessoireIds: Array.from(this.selectedAccessoireIds),
         remiseMontant: this.remiseMontant || null,
+        deuxiemeChauffeur: this.hasSecondDriver && this.secondPrix ? { prix: this.secondPrix } : null,
       }).subscribe({
         next: (r: any) => { this.preview = r; this.previewLoading = false; },
         error: () => { this.previewLoading = false; },
@@ -450,6 +456,7 @@ export class LocationCreateComponent implements OnInit {
             cin:            this.secondCin || null,
             permisConduite: this.secondPermis || null,
             dateNaissance:  this.secondDateNaissance || null,
+            prix:           this.secondPrix || null,
           }
         : null,
     };

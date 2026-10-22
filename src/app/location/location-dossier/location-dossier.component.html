@@ -140,6 +140,7 @@
           <div class="info-row"><span class="info-label">{{ t('name') }}</span><span>{{ dossier.reservation.deuxiemeChauffeur.nom }}</span></div>
           <div class="info-row"><span class="info-label">CIN</span><span>{{ dossier.reservation.deuxiemeChauffeur.cin || '—' }}</span></div>
           <div class="info-row"><span class="info-label">{{ t('permisConduire') }}</span><span>{{ dossier.reservation.deuxiemeChauffeur.permisConduite || '—' }}</span></div>
+          <div class="info-row" *ngIf="dossier.reservation.deuxiemeChauffeur.prix"><span class="info-label">{{ t('price') }}</span><span>{{ dossier.reservation.deuxiemeChauffeur.prix | number:'1.2-2' }} MAD</span></div>
         </div>
 
         <div class="info-card" *ngIf="dossier.contrat">
@@ -509,6 +510,7 @@
         </div>
         <div class="driver-info-grid">
           <div class="info-row"><span class="info-label">{{ t('fullName') }}</span><span>{{ dossier.reservation.deuxiemeChauffeur.nom || '—' }}</span></div>
+          <div class="info-row" *ngIf="dossier.reservation.deuxiemeChauffeur.prix"><span class="info-label">{{ t('price') }}</span><span>{{ dossier.reservation.deuxiemeChauffeur.prix | number:'1.2-2' }} MAD</span></div>
           <div class="info-row"><span class="info-label">CIN</span><span>{{ dossier.reservation.deuxiemeChauffeur.cin || '—' }}</span></div>
           <div class="info-row"><span class="info-label">{{ t('passeport') }}</span><span>{{ dossier.reservation.deuxiemeChauffeur.passeport || '—' }}</span></div>
           <div class="info-row"><span class="info-label">{{ t('passportIssueDate') }}</span><span>{{ (dossier.reservation.deuxiemeChauffeur.passeportDelivreLe | date:'dd/MM/yyyy') || '—' }}</span></div>

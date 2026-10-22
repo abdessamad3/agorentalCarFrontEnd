@@ -38,6 +38,7 @@ export class ReservationEditComponent implements OnInit {
   secondCin = '';
   secondPermis = '';
   secondDateNaissance = '';
+  secondPrix: number | null = null;
 
   /** Server-computed live preview -- never the form's own math. See reservation-create's
    *  identical pattern/comment for why (same bug class this whole feature replaces). */
@@ -112,6 +113,7 @@ export class ReservationEditComponent implements OnInit {
           this.secondCin           = dc.cin ?? '';
           this.secondPermis        = dc.permisConduite ?? '';
           this.secondDateNaissance = dc.dateNaissance ?? '';
+          this.secondPrix          = dc.prix ?? null;
         }
 
         this.loading = false;
@@ -135,6 +137,10 @@ export class ReservationEditComponent implements OnInit {
     this.form.get('remiseMontant')?.valueChanges.subscribe(() => this.refreshPreview());
   }
 
+  onSecondDriverChange() {
+    this.refreshPreview();
+  }
+
   refreshPreview(): void {
     clearTimeout(this.previewTimer);
     const voitureId = this.form.get('voitureId')?.value;
@@ -148,6 +154,7 @@ export class ReservationEditComponent implements OnInit {
         voitureId, dateDebut, dateFin,
         accessoireIds: this.selectedAccessoireIds,
         remiseMontant: this.form.get('remiseMontant')?.value || null,
+        deuxiemeChauffeur: this.hasSecondDriver && this.secondPrix ? { prix: this.secondPrix } : null,
       }).subscribe({
         next: (r: any) => { this.preview = r; this.previewLoading = false; },
         error: () => { this.previewLoading = false; },
@@ -209,6 +216,7 @@ export class ReservationEditComponent implements OnInit {
             cin:            this.secondCin || null,
             permisConduite: this.secondPermis || null,
             dateNaissance:  this.secondDateNaissance || null,
+            prix:           this.secondPrix || null,
           }
         : null,
     };

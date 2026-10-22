@@ -202,7 +202,7 @@
         <div class="section-title-row">
           <span class="section-title" style="border:none; margin:0; padding:0">🧑‍🤝‍🧑 {{ t('secondDriver') }}</span>
           <label class="toggle-label">
-            <input type="checkbox" [(ngModel)]="hasSecondDriver" [ngModelOptions]="{standalone: true}" />
+            <input type="checkbox" [(ngModel)]="hasSecondDriver" [ngModelOptions]="{standalone: true}" (change)="onSecondDriverChange()" />
             {{ t('secondDriverCheckbox') }}
           </label>
         </div>
@@ -222,6 +222,10 @@
           <div class="form-group">
             <label>{{ t('permisConduire') }}</label>
             <input [(ngModel)]="secondPermis" [ngModelOptions]="{standalone: true}" />
+          </div>
+          <div class="form-group">
+            <label>{{ t('price') }} (MAD)</label>
+            <input type="number" min="0" [(ngModel)]="secondPrix" [ngModelOptions]="{standalone: true}" (ngModelChange)="onSecondDriverChange()" />
           </div>
         </div>
       </div>
@@ -246,6 +250,10 @@
           <div class="summary-row">
             <span>{{ t('accessories') }}</span>
             <span>{{ accessoryTotal | number:'1.2-2' }} MAD</span>
+          </div>
+          <div class="summary-row" *ngIf="hasSecondDriver && secondPrix">
+            <span>{{ t('secondDriver') }}</span>
+            <span>{{ secondPrix | number:'1.2-2' }} MAD</span>
           </div>
           <div class="form-group">
             <label>{{ t('discountAmount') }}</label>

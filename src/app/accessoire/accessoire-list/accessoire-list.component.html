@@ -16,7 +16,7 @@
   </div>
   <div *ngIf="!loading && !error && filtered.length > 0" class="table-container">
     <table class="bureaus-table">
-      <thead><tr><th>{{ 'name' | translate }}</th><th>{{ 'description' | translate }}</th><th>{{ 'prixJour' | translate }}</th><th>{{ 'pricingType' | translate }}</th><th>{{ 'actions' | translate }}</th></tr></thead>
+      <thead><tr><th>{{ 'name' | translate }}</th><th>{{ 'description' | translate }}</th><th>{{ 'price' | translate }}</th><th>{{ 'pricingType' | translate }}</th><th>{{ 'actions' | translate }}</th></tr></thead>
       <tbody>
         <tr *ngFor="let item of paged" class="bureau-row">
           <td>{{ item.nom }}</td>
@@ -44,7 +44,7 @@
         <div class="modal-body">
           <div class="form-row">
             <div class="form-group"><label>{{ 'name' | translate }} <span class="required">*</span></label><input type="text" formControlName="nom" /></div>
-            <div class="form-group"><label>{{ 'prixJour' | translate }}</label><input type="number" formControlName="prixJour" min="0" /></div>
+            <div class="form-group"><label>{{ 'price' | translate }}</label><input type="number" formControlName="prixJour" min="0" /></div>
           </div>
           <div class="form-group">
             <label>{{ 'pricingType' | translate }}</label>

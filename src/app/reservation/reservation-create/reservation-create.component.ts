@@ -89,6 +89,7 @@ export class ReservationCreateComponent implements OnInit {
   secondCin = '';
   secondPermis = '';
   secondDateNaissance = '';
+  secondPrix: number | null = null;
 
   /** The server is the only source of truth for pricing (seasonal rate rules live there) --
    *  this is a live preview only, refreshed on every relevant field change, and is NOT what
@@ -115,6 +116,10 @@ export class ReservationCreateComponent implements OnInit {
     return this.preview?.total ?? 0;
   }
 
+  onSecondDriverChange() {
+    this.refreshPreview();
+  }
+
   refreshPreview(): void {
     clearTimeout(this.previewTimer);
     const voitureId = this.form.get('voitureId')?.value;
@@ -130,6 +135,7 @@ export class ReservationCreateComponent implements OnInit {
         voitureId, dateDebut, dateFin,
         accessoireIds: Array.from(this.selectedAccessoires),
         remiseMontant: this.form.get('remiseMontant')?.value || null,
+        deuxiemeChauffeur: this.hasSecondDriver && this.secondPrix ? { prix: this.secondPrix } : null,
       }).subscribe({
         next: (r: any) => { this.preview = r; this.previewLoading = false; },
         error: () => { this.previewLoading = false; },
@@ -563,6 +569,7 @@ export class ReservationCreateComponent implements OnInit {
             cin:            this.secondCin || null,
             permisConduite: this.secondPermis || null,
             dateNaissance:  this.secondDateNaissance || null,
+            prix:           this.secondPrix || null,
           }
         : null,
     };
